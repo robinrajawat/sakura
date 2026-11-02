@@ -173,11 +173,11 @@ contradicts README.md or docs/feature-reference.md, trust them.)*
 
 ### Latest changes
 
+- **No "Untitled" flash on reload (2026-11-02).** The static page painted (empty "Untitled", filter box) while the 1.8 MB inline script loaded. The pre-setup script adds `presetup-doc-pending` (`#editor-wrap`, `#sidebar-inner` visibility:hidden, presetup.css); the startup line removes it right after `render()`, with a 4s safety timeout. Spec `reload-no-untitled-flash.spec.ts`.
+
 - **AI rewrite prompt folded (2026-11-02).** Settings → AI → Rewrite: the prompt is one row (`#ai-prompt-summary`: default / Rephrase / Your own prompt) with **Edit**; Edit opens `#ai-prompt-editor` in place (textarea, Reset to default, Rephrase, Save prompt), Save or Done folds it. Spec `ai-prompt-folded.spec.ts`.
 
 - **Version in About (2026-11-02).** `vite.config.js` plugin `stampVersion` replaces `__SAKURA_VERSION__` in the built HTML with `YYYY.MM.DD · sha7` (git, else `GITHUB_SHA`, else today); `#about-version` shows "Version …" only when stamped (unbuilt copies hide it). No number to bump by hand; Robin chose this over a manual version ("we should do that kind of versioning"). Spec `about-version.spec.ts`.
-
-- **Untitled documents named by their first row (2026-11-02).** The docs index title (File Explorer, Search, Recent) uses `untitledDocName(payload.nodes)` when the title is empty, so new documents aren't all "Untitled"; display only, the title field stays empty. Audit item "new document starts in the title" dropped: New document already focuses `#header-title`, and the empty state keeps its greeting. Spec `untitled-doc-first-row-name.spec.ts`.
 
 ### In progress / not built
 

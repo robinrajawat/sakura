@@ -190,6 +190,11 @@ window.addEventListener('unhandledrejection',e=>{
     if (dockRailCollapsed) cls.push('presetup-dockrail-collapsed');
     // The layout (app bar as a left rail) is set before first paint so it never flashes.
     cls.push('calm-layout');
+    // The browser paints the static page (an empty "Untitled") while the big script below is still
+    // loading; keep the document and File Explorer invisible until the saved document has rendered
+    // (removed right after the startup render, with a 4s safety net) so a reload never flashes it.
+    cls.push('presetup-doc-pending');
+    setTimeout(function(){ document.documentElement.classList.remove('presetup-doc-pending'); }, 4000);
     if (cls.length) document.documentElement.className += ' ' + cls.join(' ');
   }catch(e){}
 })();
@@ -203,6 +208,8 @@ window.addEventListener('unhandledrejection',e=>{
 .presetup-appbar-io-icononly #import-toggle .btn-label,.presetup-appbar-io-icononly #export-toggle .btn-label{display:none}
 .presetup-appbar-io-icononly #import-toggle .btn-icon,.presetup-appbar-io-icononly #export-toggle .btn-icon{display:inline-flex}
 .presetup-appbar-io-icononly #import-toggle,.presetup-appbar-io-icononly #export-toggle{padding:4px 7px}
+/* Hidden until the saved document has rendered on load (see the pre-setup script). */
+.presetup-doc-pending #editor-wrap,.presetup-doc-pending #sidebar-inner{visibility:hidden}
 /* GENERATED:css-presetup:END */
 </style>
 <style>
@@ -25256,7 +25263,7 @@ let zenMode=false;
 // again by hand while in zen mode (see setZenMode). The toolbar and tab bar are hidden by CSS.
 let _zenAutoHidSidebar=false;
 
-loadPrefs(); migrateStaleModelIds(); loadAiFallbackPrefs(); loadAiPrefs(); applyFallbackToggle(); ensureDocSystem(); purgeExpiredTrash(); restoreOpenTabsOnStartup(null); setTheme(currentTheme||'light',true,false); setThemeMode(themeMode,false); setEditorScale(editorScale,false); setTreeIndentWidth(treeIndentWidth,false); setOutlineNumbering(outlineNumbering,false); setBacklinksEnabled(backlinksEnabled,false); setSpellcheckEnabled(spellcheckEnabled,false); setSectionMarkingsEnabled(sectionMarkingsEnabled,false); setSvgSectionIconsEnabled(svgSectionIconsEnabled,false); setRowHighlightStyle(rowHighlightStyle,false); setCoverPageEnabled(coverPageEnabled,false); setOpenItemsPageEnabled(openItemsPageEnabled,false); applyAccentColor(); setSearchMatchCase(searchMatchCase,false); setSearchWholeWord(searchWholeWord,false); setAutoRewriteEnabled(autoRewriteEnabled,false); applyCalmLayout(); noteDocVisit(null,currentDocId); setQaLocation('appbar',false); setDefaultAuthorName(defaultAuthorName,false); setTrashRetentionDays(trashRetentionDays,false); setSearchIncludesTrash(searchIncludesTrash,false); initFeatureActivationPanel(); ensureSelection(); render(); resetDirty(); focusPane(); updateExportStatus(); updatePreRestoreSnapshotStatus(); updateAiUsageDisplay(); restoreAccountSessionIfNeeded(); renderNotifBell();
+loadPrefs(); migrateStaleModelIds(); loadAiFallbackPrefs(); loadAiPrefs(); applyFallbackToggle(); ensureDocSystem(); purgeExpiredTrash(); restoreOpenTabsOnStartup(null); setTheme(currentTheme||'light',true,false); setThemeMode(themeMode,false); setEditorScale(editorScale,false); setTreeIndentWidth(treeIndentWidth,false); setOutlineNumbering(outlineNumbering,false); setBacklinksEnabled(backlinksEnabled,false); setSpellcheckEnabled(spellcheckEnabled,false); setSectionMarkingsEnabled(sectionMarkingsEnabled,false); setSvgSectionIconsEnabled(svgSectionIconsEnabled,false); setRowHighlightStyle(rowHighlightStyle,false); setCoverPageEnabled(coverPageEnabled,false); setOpenItemsPageEnabled(openItemsPageEnabled,false); applyAccentColor(); setSearchMatchCase(searchMatchCase,false); setSearchWholeWord(searchWholeWord,false); setAutoRewriteEnabled(autoRewriteEnabled,false); applyCalmLayout(); noteDocVisit(null,currentDocId); setQaLocation('appbar',false); setDefaultAuthorName(defaultAuthorName,false); setTrashRetentionDays(trashRetentionDays,false); setSearchIncludesTrash(searchIncludesTrash,false); initFeatureActivationPanel(); ensureSelection(); render(); document.documentElement.classList.remove('presetup-doc-pending'); resetDirty(); focusPane(); updateExportStatus(); updatePreRestoreSnapshotStatus(); updateAiUsageDisplay(); restoreAccountSessionIfNeeded(); renderNotifBell();
 
 /* === Sidebar === */
 /* === Sidebar: folders, search === */
