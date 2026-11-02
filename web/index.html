@@ -2779,6 +2779,14 @@ html.calm-layout body:has(#global-search-wrap.qa-open) :is(#row-sel-pill,#select
    swaps the content in one frame, like VS Code. The explorer's old width slide made the page jump 320px
    and slide back whenever another panel took or gave back the slot. */
 html.calm-layout #sidebar{transition:none}
+/* Help's right edge resizes the one side width, like Documents and To-Dos (owner 2026-11-02). The handle
+   lives on <body> (Help scrolls), sits on Help's edge, and only shows while Help is docked (900px+). */
+#help-resize-handle{display:none}
+@media (min-width:900px){
+  html.calm-layout body:has(.help-panel.open) #help-resize-handle{display:block;position:fixed;top:0;bottom:0;left:calc(52px + var(--side-w,320px) - 1px);width:6px;cursor:ew-resize;z-index:1001}
+  html.calm-layout #help-resize-handle::after{content:'';position:absolute;left:2px;top:50%;transform:translateY(-50%);width:1px;height:32px;border-radius:1px;background:var(--accent);opacity:0;transition:opacity .15s}
+  html.calm-layout #help-resize-handle:hover::after,html.calm-layout #help-resize-handle.dragging::after{opacity:1}
+}
 /* GENERATED:css-app:END */
 </style>
 <style>
@@ -4160,6 +4168,7 @@ html.calm-layout #sidebar{transition:none}
 <!-- Node Note Panel -->
 <div id="todos-panel" role="dialog" aria-label="To-Dos">
   <div id="todos-resize-handle"></div>
+  <div id="help-resize-handle" aria-hidden="true"></div>
   <!-- One bar: the add-task input + its add button, then History / Export / Maximize / Close.
        (Used to be a header row of icon buttons over a separate "Add a task" row; merged once the
        To-Dos AI header buttons were removed.) The whole bar is still the drag handle when the
@@ -26802,7 +26811,10 @@ function openDocumentsPanel(){
   if(currentDocId&&!sbSearchQuery){ revealDocInSidebar(currentDocId,{flash:false}); return; }
   setSidebarOpen(true);
 }
-function toggleDocumentsPanel(){ if(sidebarOpen)setSidebarOpen(false); else openDocumentsPanel(); }
+// One side slot (owner 2026-11-02): with Help in the slot, Documents takes it over (like from To-Dos).
+// Help only hides the explorer with CSS, so sidebarOpen can still be true underneath; toggling it shut
+// then did nothing visible ("Documents button seems unresponsive").
+function toggleDocumentsPanel(){ const help=el('help-panel'); if(help?.classList.contains('open')){ help.classList.remove('open'); if(!sidebarOpen)openDocumentsPanel(); return; } if(sidebarOpen)setSidebarOpen(false); else openDocumentsPanel(); }
 el('sidebar-toggle').addEventListener('click',toggleDocumentsPanel);
 el('sidebar-reopen-btn')?.addEventListener('click',openDocumentsPanel);
 function setZenMode(on){zenMode=!!on; document.body.classList.toggle('zen-mode',zenMode); const btn=el('editor-zen-toggle'); if(btn){btn.classList.toggle('is-active',zenMode); btn.setAttribute('aria-pressed',String(zenMode)); btn.dataset.tip=zenMode?'Restore (Esc or Ctrl/Cmd+Shift+E)':'Maximize editor (hide File Explorer & chrome) (Ctrl/Cmd+Shift+E)'} const icon=el('editor-zen-icon'); if(icon)icon.innerHTML=zenMode?'<polyline points="9 3 9 9 3 9"/><polyline points="15 3 15 9 21 9"/><polyline points="9 21 9 15 3 15"/><polyline points="15 21 15 15 21 15"/>':'<polyline points="9 3 3 3 3 9"/><polyline points="15 3 21 3 21 9"/><polyline points="3 15 3 21 9 21"/><polyline points="21 15 21 21 15 21"/>';
@@ -33067,6 +33079,32 @@ function todosHistorySummary(list) {
     });
   }
 
+  // Help sits in the same side slot, so it resizes the same way (owner 2026-11-02): drag its right edge,
+  // and the one shared width (Documents, To-Dos, Help) is remembered.
+  function initHelpResize(){
+    const handle=document.getElementById('help-resize-handle');
+    const panel=document.getElementById('help-panel');
+    if(!handle||!panel) return;
+    if(handle.parentElement!==document.body) document.body.appendChild(handle);
+    let dragging=false, startX=0, startWidth=0;
+    handle.addEventListener('mousedown',e=>{
+      dragging=true; startX=e.clientX; startWidth=panel.getBoundingClientRect().width;
+      handle.classList.add('dragging'); document.body.style.userSelect='none';
+      e.preventDefault(); e.stopPropagation();
+    });
+    document.addEventListener('mousemove',e=>{
+      if(!dragging) return;
+      const maxW=Math.min(TODOS_WIDTH_MAX, window.innerWidth-24);
+      todosWidth=Math.round(Math.max(TODOS_WIDTH_MIN, Math.min(maxW, startWidth+e.clientX-startX)));
+      applySidebarWidth(todosWidth);
+    });
+    document.addEventListener('mouseup',()=>{
+      if(!dragging) return;
+      dragging=false; handle.classList.remove('dragging'); document.body.style.userSelect='';
+      saveTodosWidth(todosWidth);
+    });
+  }
+
   // ── Auto-growing add-task textarea ──────────────────────────────────────
   function autoGrowInput(){
     const input=document.getElementById('todos-input');
@@ -33330,6 +33368,7 @@ function todosHistorySummary(list) {
 
   initTodosDrag();
   initTodosResize();
+  initHelpResize();
   window.toggleTodosPanel=toggleTodosPanel;
   // Settings or Help opening (from the rail, Search, a shortcut…) closes To-Dos: they share the slot
   // beside the rail, and with both open the page slid under Settings and was cut off.

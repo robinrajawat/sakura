@@ -67,3 +67,24 @@ test('a click on the page leaves docked Help open; below 900px Help is a sheet a
     else await expect(page.locator('#help-panel')).toBeHidden();
   }
 });
+
+// Owner 2026-11-02: "isn't it the same shared panel?" Help behaves like To-Dos in the side slot:
+// the Documents button takes the slot over, and Help's edge drags the one shared width.
+test('Documents takes the slot over from Help, and Help resizes the shared width', async ({ page }) => {
+  await page.setViewportSize({ width: 1400, height: 800 });
+  await page.evaluate(() => document.getElementById('help-toggle')!.click());
+  await expect(page.locator('#help-panel')).toBeVisible();
+  const handle = page.locator('#help-resize-handle');
+  await expect(handle).toBeVisible();
+  const h = (await handle.boundingBox())!;
+  await page.mouse.move(h.x + 3, h.y + 300);
+  await page.mouse.down();
+  await page.mouse.move(h.x + 83, h.y + 300, { steps: 4 });
+  await page.mouse.up();
+  const w = await page.locator('#help-panel').evaluate((e) => Math.round(e.getBoundingClientRect().width));
+  expect(w).toBeGreaterThan(380);
+  await page.locator('#rail-docs-btn').click();
+  await expect(page.locator('#help-panel')).toBeHidden();
+  await expect(page.locator('#sidebar')).toBeVisible();
+  expect(await page.locator('#sidebar').evaluate((e) => Math.round(e.getBoundingClientRect().width))).toBe(w);
+});
