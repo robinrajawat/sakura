@@ -1542,12 +1542,13 @@ body:has(#diagram-viewer.open) .sb-context-menu,body:has(#node-image-viewer.open
 .api-ed-sec[hidden]{display:none}
 .api-ed-hint{font:400 var(--fs-xs) 'Inter',sans-serif;color:var(--hint)}
 @media (max-width:560px){.api-ed-hint{display:none}.api-ed-line{flex-wrap:wrap}.api-ed-method{flex-basis:100%}#api-ed-query .api-ed-pair{flex-wrap:wrap}#api-ed-query .api-ed-note{flex-basis:calc(100% - 34px)}}
-.tbl-person{border-radius:999px;background:color-mix(in srgb,var(--pc) 13%,transparent);box-shadow:0 0 0 3px color-mix(in srgb,var(--pc) 13%,transparent);color:color-mix(in srgb,var(--pc) 75%,var(--fg));-webkit-box-decoration-break:clone;box-decoration-break:clone;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+/* Names are one neutral grey for everyone (owner 2026-11-02: colour is for meaning, and a colour per person meant nothing). */
+.tbl-person{border-radius:999px;background:color-mix(in srgb,var(--fg) 7%,transparent);box-shadow:0 0 0 3px color-mix(in srgb,var(--fg) 7%,transparent);color:var(--fg);-webkit-box-decoration-break:clone;box-decoration-break:clone;-webkit-print-color-adjust:exact;print-color-adjust:exact}
 .tbl-person.with-av{display:inline-flex;align-items:center;gap:5px;max-width:100%;margin:1px 4px 1px 0;padding:1px 8px 1px 2px;box-shadow:none;color:var(--fg);font-size:.92em;line-height:1.45;white-space:nowrap;vertical-align:middle}
-.tbl-person-av{display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;padding:0 3px;box-sizing:border-box;border-radius:999px;background:var(--pc);color:#fff;font:700 9.5px 'Inter',sans-serif;letter-spacing:.02em;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.tbl-person-av{display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;padding:0 3px;box-sizing:border-box;border-radius:999px;background:color-mix(in srgb,var(--fg) 14%,transparent);color:var(--fg);font:700 9.5px 'Inter',sans-serif;letter-spacing:.02em;-webkit-print-color-adjust:exact;print-color-adjust:exact}
 .pv-board-owner .tbl-person{font-size:var(--fs-sm);margin:0}
 .tbl-picker-person{border:0;background:transparent;padding:0;margin:2px;cursor:pointer;font:500 12px 'Inter',sans-serif}
-.tbl-picker-person.current .tbl-person{outline:2px solid var(--pc);outline-offset:1px}
+.tbl-picker-person.current .tbl-person{outline:2px solid var(--muted);outline-offset:1px}
 .tbl-check{display:inline-flex;vertical-align:-2px;color:var(--fc-gray);-webkit-print-color-adjust:exact;print-color-adjust:exact}
 .tbl-check[data-check="yes"]{color:var(--fc-green)}
 .tbl-check[data-check="no"]{color:var(--fc-red)}
@@ -15212,7 +15213,8 @@ function getMeta(){return {title:(el('header-title')?.value||'').trim(),author:(
 function formatDateTimeLocal(d){const date=d.toLocaleDateString(undefined,{month:'long',day:'2-digit',year:'numeric'}); const time=d.toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'}); return `${date}, ${time}`}
 function formatNow(){const d=new Date(); return formatDateTimeLocal(d)}
 function formatTimestamp(ts){if(!Number.isFinite(ts))return '—'; const d=new Date(ts); return formatDateTimeLocal(d)}
-function nodeTimestampTooltip(node){return `Created at ${formatTimestamp(node.createdAt)}\nLast edited at ${formatTimestamp(node.modifiedAt)}`}
+// Only the times we know (owner 2026-11-02): older or imported rows have none, and "Created at —" read as broken.
+function nodeTimestampTooltip(node){const c=Number.isFinite(node.createdAt), m=Number.isFinite(node.modifiedAt); return [c?`Created at ${formatTimestamp(node.createdAt)}`:'', m?`Last edited at ${formatTimestamp(node.modifiedAt)}`:''].filter(Boolean).join('\n')}
 function el(id){return document.getElementById(id)}
 
 // === Account & Sync (Phase 1: Google Sign-In only — no document/settings syncing yet) ===
@@ -23580,6 +23582,7 @@ let hideNodeTooltip=function(){};
       const row=trg.closest('.node-row'); const id=row?Number(row.dataset.id):NaN; const idx=getIndex(nodes,id);
       if(idx<0)return;
       text=nodeTimestampTooltip(nodes[idx]);
+      if(!text)return;
     } else {
       text=trg.dataset.tip||'';
       if(!text)return;

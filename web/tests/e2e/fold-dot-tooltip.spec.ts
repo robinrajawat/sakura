@@ -90,4 +90,26 @@ test.describe('Fold dot tooltip is the node timestamp, never "Expand/Collapse su
     expect(tipText).toContain('Created at');
     expect(tipText).not.toContain('Expand');
   });
+
+  // Older or imported rows have no saved times (owner 2026-11-02): no "Created at —" tip, just none.
+  test('a row with no saved times shows no timestamp tip', async ({ page }) => {
+    await page.goto('file://' + indexPath);
+    await dismissOverlays(page);
+    await page.evaluate(() => {
+      // @ts-expect-error
+      nodes = [
+        { id: 1, depth: 0, text: 'Parent', parentId: null, isCheckbox: false, checked: false, note: '', tags: [], styles: {} },
+        { id: 2, depth: 1, text: 'Child', parentId: 1, isCheckbox: false, checked: false, note: '', tags: [], styles: {} },
+      ];
+      // @ts-expect-error
+      collapsedIds = new Set(); selectedId = null; multiSelectedIds = []; selectAllMode = false; focusedId = null; undoStack = []; editingId = null; nextId = 3; render();
+    });
+    const box = (await page.locator('.node-row[data-id="1"] .fold-dot').boundingBox())!;
+    await page.mouse.move(5, 5);
+    await page.mouse.move(box.x + 3, box.y + 3, { steps: 5 });
+    await page.waitForTimeout(600);
+    await expect(page.locator('#node-timestamp-tip')).not.toHaveClass(/visible/);
+    // @ts-expect-error
+    expect(await page.evaluate(() => nodeTimestampTooltip({ createdAt: 1, modifiedAt: undefined }))).not.toContain('—');
+  });
 });
