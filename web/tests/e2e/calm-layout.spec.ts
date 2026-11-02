@@ -109,7 +109,13 @@ test('the top line shows the folders, not the document name; a folder there show
     // @ts-expect-error -- bare globals from index.html
     setSidebarOpen(false); ensureDocumentForEditing(); el('header-title').value = 'Plan'; el('header-title').dispatchEvent(new Event('input')); saveToStorage(); renderDocPath();
   });
-  // In no folder: it says where the explorer lists it (owner 2026-10-29).
+  // No folders at all: nothing to say (2026-11-02).
+  await expect(page.locator('#doc-path-crumbs')).toHaveText('');
+  // In no folder while folders exist: it says where the explorer lists it (owner 2026-10-29).
+  await page.evaluate(() => {
+    // @ts-expect-error -- bare globals from index.html
+    const fs = loadFolders(); fs.push({ id: 'f0', name: 'Other', parentId: null }); saveFolders(fs); renderDocPath();
+  });
   await expect(page.locator('#doc-path-crumbs')).toHaveText('Unfiled');
   await page.evaluate(() => {
     // @ts-expect-error -- bare globals from index.html
@@ -177,7 +183,7 @@ test('Settings: sentence-case headings, one card per group, real buttons', async
 test('the folder path follows the sidebar when a document is filed after it opened', async ({ page }) => {
   await page.evaluate(() => {
     // @ts-expect-error -- bare globals from index.html
-    ensureDocumentForEditing(); el('header-title').value = 'Plan'; el('header-title').dispatchEvent(new Event('input')); saveToStorage(); renderDocPath();
+    ensureDocumentForEditing(); el('header-title').value = 'Plan'; el('header-title').dispatchEvent(new Event('input')); saveToStorage(); const fs = loadFolders(); fs.push({ id: 'f0', name: 'Other', parentId: null }); saveFolders(fs); renderDocPath();
   });
   await expect(page.locator('#doc-path-crumbs')).toHaveText('Unfiled');
   await page.evaluate(() => {
