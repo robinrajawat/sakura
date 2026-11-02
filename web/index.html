@@ -2555,7 +2555,7 @@ html.calm-layout #header-actions>.settings-wrap,html.calm-layout #header-actions
 html.calm-layout #rail-settings-btn{order:1;margin-top:auto}
 html.calm-layout #notif-wrap{order:2}
 html.calm-layout #account-wrap{order:3}
-html.calm-layout:has(.settings-panel.open) #rail-settings-btn,html.calm-layout:has(#todos-panel.open) #dock-panel-appbar-toggle{color:var(--fg);background:var(--hover)}
+html.calm-layout:has(.settings-panel.open) #rail-settings-btn,html.calm-layout:has(#todos-panel.open) #dock-panel-appbar-toggle,html.calm-layout:has(#notif-menu.open) #notif-toggle,html.calm-layout:has(#account-menu.open) #account-toggle{color:var(--fg);background:var(--hover)}
 /* Overdue To-Dos: a small red dot instead of a counted badge (the count is in its label). */
 html.calm-layout #dock-panel-appbar-toggle .todo-overdue-badge{top:7px;right:7px;min-width:0;width:7px;height:7px;padding:0;font-size:0;outline:2px solid var(--bg)}
 html.calm-layout #sidebar-reopen-btn{display:none!important}
@@ -3454,7 +3454,7 @@ html.calm-layout #help-meta-links .help-coffee-icon{color:var(--support)}
       <div id="appbar-qa-slot"></div>
       <button class="btn" id="dock-panel-appbar-toggle" data-tip="To-Dos (Ctrl/Cmd+Shift+T)" aria-label="Open To-Dos"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="4"/><path d="M8 12.5l2.8 2.8L16.5 9.5"/></svg></button>
       <div class="export-wrap" id="notif-wrap">
-        <button class="btn" id="notif-toggle" data-tip="Notifications" aria-haspopup="true" aria-expanded="false">
+        <button class="btn" id="notif-toggle" data-tip="Notifications" aria-label="Notifications" aria-haspopup="true" aria-expanded="false">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
           <span id="notif-badge" class="notif-badge" style="display:none"></span>
         </button>
@@ -3468,7 +3468,7 @@ html.calm-layout #help-meta-links .help-coffee-icon{color:var(--support)}
       </div>
       <button class="btn rail-only" id="rail-settings-btn" data-tip="Settings" aria-label="Settings"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
       <div class="export-wrap" id="account-wrap">
-        <button class="btn" id="account-toggle" data-tip="Account &amp; sync">
+        <button class="btn" id="account-toggle" data-tip="Account &amp; sync" aria-label="Account" aria-haspopup="true">
           <span id="account-toggle-avatar-wrap" style="position:relative;display:none;vertical-align:-5px">
             <img id="account-toggle-avatar" width="20" height="20" style="border-radius:50%;display:block" alt="" />
             <span id="account-toggle-status-dot" class="account-status-dot"></span>
@@ -4047,10 +4047,10 @@ html.calm-layout #help-meta-links .help-coffee-icon{color:var(--support)}
           <span class="sb-section-label">Documents</span>
           </div>
           <div class="sb-section-actions">
-            <button class="sb-icon-btn" id="sb-new-folder-btn" data-tip="New folder">
+            <button class="sb-icon-btn" id="sb-new-folder-btn" data-tip="New folder" aria-label="New folder">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/><line x1="12" y1="11" x2="12" y2="17"/><line x1="9" y1="14" x2="15" y2="14"/></svg>
             </button>
-            <button class="sb-icon-btn" id="sb-new-doc-btn" data-tip="New document">
+            <button class="sb-icon-btn" id="sb-new-doc-btn" data-tip="New document" aria-label="New document">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
             </button>
           </div>
@@ -4136,7 +4136,7 @@ html.calm-layout #help-meta-links .help-coffee-icon{color:var(--support)}
         </button>
       </div></div></div><div id="editor-pane" tabindex="0"><div id="editor-pane-inner"></div></div>
   <div id="editor-floating-controls">
-  <button id="editor-zen-toggle" data-tip="Maximize editor (hide file explorer &amp; chrome) (Ctrl/Cmd+Shift+E)" aria-label="Maximize editor" aria-pressed="false">
+  <button id="editor-zen-toggle" data-tip="Zen mode (Ctrl/Cmd+Shift+E)" aria-label="Zen mode" aria-pressed="false">
     <svg id="editor-zen-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 3 3 3 3 9"/><polyline points="15 3 21 3 21 9"/><polyline points="3 15 3 21 9 21"/><polyline points="21 15 21 21 15 21"/></svg>
   </button>
   </div>
@@ -4178,7 +4178,7 @@ html.calm-layout #help-meta-links .help-coffee-icon{color:var(--support)}
     <div id="status-left"><span id="sb-wordcount" class="status-strong">Words 0</span><span id="sb-depth-divider" class="status-divider" style="display:none">·</span><span id="sb-depth" class="status-strong" style="display:none"></span></div>
     <div id="status-right"><span id="sb-saved-divider" class="status-divider" style="display:none">·</span><span id="sb-saved" class="status-strong" style="display:none"></span><span id="sb-vault-divider" class="status-divider" style="display:none">·</span><button type="button" id="sb-vault-chip" class="status-chip status-chip-btn status-chip-icon" style="display:none"></button><span id="sb-auto-rewrite-divider" class="status-divider" style="display:none">·</span><button type="button" id="sb-auto-rewrite-chip" class="status-chip status-chip-btn" style="display:none"></button><span id="sb-qa-divider" class="status-divider">·</span><div class="global-search-wrap status-qa" id="global-search-wrap">
         <div class="qa-input-row">
-          <button type="button" id="qa-category-icon-btn" class="qa-icon-btn" data-tip="Browse by category" aria-label="Browse search categories"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg></button>
+          <button type="button" id="qa-category-icon-btn" class="qa-icon-btn" data-tip="Search (Ctrl/Cmd+K)" aria-label="Search"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg></button>
           <input id="qa-input" type="text" placeholder="Search…" autocomplete="off" aria-label="Quick assist command and search input" />
         </div>
         <div class="qa-dropdown" id="qa-dropdown">
@@ -18779,6 +18779,8 @@ function setQaOpen(on){
   const dropdown=el('qa-dropdown'); if(!dropdown)return;
   dropdown.classList.toggle('open',!!on);
   const wrap=el('global-search-wrap'); if(wrap)wrap.classList.toggle('qa-open',!!on);
+  // The magnifier is the rail's Search button while closed and the category picker inside the open box.
+  const catBtn=el('qa-category-icon-btn'); if(catBtn){ catBtn.dataset.tip=on?'Browse by category':'Search (Ctrl/Cmd+K)'; catBtn.setAttribute('aria-label',on?'Browse search categories':'Search'); }
   if(on){
     // Only if still open: closed again within those 10ms (the shortcut pressed twice), focusing
     // the box would open it once more.
@@ -26913,7 +26915,7 @@ function openDocumentsPanel(){
 function toggleDocumentsPanel(){ if(sidebarOpen)setSidebarOpen(false); else openDocumentsPanel(); }
 el('sidebar-toggle').addEventListener('click',toggleDocumentsPanel);
 el('sidebar-reopen-btn')?.addEventListener('click',openDocumentsPanel);
-function setZenMode(on){zenMode=!!on; document.body.classList.toggle('zen-mode',zenMode); const btn=el('editor-zen-toggle'); if(btn){btn.classList.toggle('is-active',zenMode); btn.setAttribute('aria-pressed',String(zenMode)); btn.dataset.tip=zenMode?'Restore (Esc or Ctrl/Cmd+Shift+E)':'Maximize editor (hide File Explorer & chrome) (Ctrl/Cmd+Shift+E)'} const icon=el('editor-zen-icon'); if(icon)icon.innerHTML=zenMode?'<polyline points="9 3 9 9 3 9"/><polyline points="15 3 15 9 21 9"/><polyline points="9 21 9 15 3 15"/><polyline points="15 21 15 15 21 15"/>':'<polyline points="9 3 3 3 3 9"/><polyline points="15 3 21 3 21 9"/><polyline points="3 15 3 21 9 21"/><polyline points="21 15 21 21 15 21"/>';
+function setZenMode(on){zenMode=!!on; document.body.classList.toggle('zen-mode',zenMode); const btn=el('editor-zen-toggle'); if(btn){btn.classList.toggle('is-active',zenMode); btn.setAttribute('aria-pressed',String(zenMode)); btn.dataset.tip=zenMode?'Exit zen mode (Esc)':'Zen mode (Ctrl/Cmd+Shift+E)'; btn.setAttribute('aria-label',zenMode?'Exit zen mode':'Zen mode')} const icon=el('editor-zen-icon'); if(icon)icon.innerHTML=zenMode?'<polyline points="9 3 9 9 3 9"/><polyline points="15 3 15 9 21 9"/><polyline points="9 21 9 15 3 15"/><polyline points="15 21 15 15 21 15"/>':'<polyline points="9 3 3 3 3 9"/><polyline points="15 3 21 3 21 9"/><polyline points="3 15 3 21 9 21"/><polyline points="21 15 21 21 15 21"/>';
   // The toolbar and tab bar are hidden by CSS while zen mode is on (body.zen-mode). The File
   // Explorer is hidden on entry and restored on exit — but only if it's still in the
   // auto-hidden state; if the person manually re-showed it while in zen mode, leave that
@@ -32959,7 +32961,8 @@ function todosHistorySummary(list) {
     renderTodos();
     anchorTodosToStatusbarChip();
     document.querySelectorAll('#todos-toggle').forEach(b=>b.classList.add('is-active'));
-    if(!opts?.restore) setTimeout(()=>{ document.getElementById('todos-input')?.focus(); },40);
+    // Focus right away so keys typed straight after the click land in the task box, not the document.
+    if(!opts?.restore){ document.getElementById('todos-input')?.focus(); setTimeout(()=>{ if(panel.classList.contains('open')&&!panel.contains(document.activeElement)) document.getElementById('todos-input')?.focus(); },40); }
   }
   function closeTodosPanel(){
     const panel=document.getElementById('todos-panel');
