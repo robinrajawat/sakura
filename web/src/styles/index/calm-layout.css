@@ -43,7 +43,7 @@ html.calm-layout #todos-resize-handle{left:auto;right:0;z-index:5}
 /* Same flat surface as the File Explorer, no edge line (owner 2026-11-02: colour change only), so the two read as one sidebar showing different things. */
 html.calm-layout #todos-panel,html.calm-layout .settings-panel,html.calm-layout .help-panel{background:var(--tb-bg);box-shadow:none;border-right:none}
 /* Notifications use the same side slot (owner 2026-10-29): full height beside the rail, flat, the list scrolls. */
-html.calm-layout #notif-menu{position:fixed;top:0!important;left:52px!important;right:auto!important;bottom:auto;width:340px;max-width:calc(100vw - 52px);height:100vh;max-height:none;margin:0;padding:14px 8px;border-radius:0;border:none;border-right:none;background:var(--tb-bg);box-shadow:none;overflow-y:auto}
+html.calm-layout #notif-menu{position:fixed;top:0!important;left:52px!important;right:auto!important;bottom:auto;width:var(--side-w,320px);max-width:calc(100vw - 52px);height:100vh;max-height:none;margin:0;padding:14px 8px;border-radius:0;border:none;border-right:none;background:var(--tb-bg);box-shadow:none;overflow-y:auto}
 /* Quick Assist is the rail's search icon; opened, its field and results float beside the rail. */
 html.calm-layout #appbar-qa-slot{width:auto}
 html.calm-layout #global-search-wrap .qa-input-row{width:36px;height:36px;padding:0;gap:0;justify-content:center;overflow:hidden;border-color:transparent;border-radius:8px;background:transparent;color:var(--muted);cursor:pointer}
@@ -240,6 +240,11 @@ html.calm-layout #help-quick-links>div>span{color:var(--muted)}
 @media (min-width:900px){
   html.calm-layout body:has(.help-panel.open) :is(#sidebar,#sidebar-resize-handle){display:none}
   html.calm-layout body:has(.help-panel.open) #app-layout{margin-left:calc(var(--side-w,320px) + 5px)}
+}
+/* Notifications too: same shared width, takes the File Explorer's place and moves the page over (2026-11-02). */
+@media (min-width:900px){
+  html.calm-layout body:has(#notif-menu.open) :is(#sidebar,#sidebar-resize-handle){display:none}
+  html.calm-layout body:has(#notif-menu.open) #app-layout{margin-left:calc(var(--side-w,320px) + 5px)}
 }
 @media (max-width:899.98px){
   html.calm-layout body:has(.help-panel.open) :is(#editor-pane-inner,#editor-floating-controls,#doc-share-wrap){opacity:.3;transition:opacity .14s ease}
