@@ -173,11 +173,11 @@ contradicts README.md or docs/feature-reference.md, trust them.)*
 
 ### Latest changes
 
+- **Narrow File Explorer folds nested folders (2026-11-02).** `.sfolder-children` is a grid; its column grew to the longest name, so nested folder/doc rows stuck out past a narrow panel (names cut, counts gone). Now `grid-template-columns:minmax(0,1fr)`, so names end in "…" at every depth. Spec: `sidebar-nested-folder-narrow.spec.ts`.
+
 - **No "Untitled" flash on reload (2026-11-02).** The static page painted (empty "Untitled", filter box) while the 1.8 MB inline script loaded. The pre-setup script adds `presetup-doc-pending` (`#editor-wrap`, `#sidebar-inner` visibility:hidden, presetup.css); the startup line removes it right after `render()`, with a 4s safety timeout. Spec `reload-no-untitled-flash.spec.ts`.
 
 - **AI rewrite prompt folded (2026-11-02).** Settings → AI → Rewrite: the prompt is one row (`#ai-prompt-summary`: default / Rephrase / Your own prompt) with **Edit**; Edit opens `#ai-prompt-editor` in place (textarea, Reset to default, Rephrase, Save prompt), Save or Done folds it. Spec `ai-prompt-folded.spec.ts`.
-
-- **Version in About (2026-11-02).** `vite.config.js` plugin `stampVersion` replaces `__SAKURA_VERSION__` in the built HTML with `YYYY.MM.DD · sha7` (git, else `GITHUB_SHA`, else today); `#about-version` shows "Version …" only when stamped (unbuilt copies hide it). No number to bump by hand; Robin chose this over a manual version ("we should do that kind of versioning"). Spec `about-version.spec.ts`.
 
 ### In progress / not built
 
