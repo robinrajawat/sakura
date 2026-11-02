@@ -173,7 +173,7 @@ contradicts README.md or docs/feature-reference.md, trust them.)*
 
 ### Latest changes
 
-- **Notifications, folder counts, top line (2026-11-02, owner).** Notifications use the shared side width (`--side-w`) and, from 900px, hide the File Explorer and move the page over like Help. Empty folders show no "0". A document in no folder shows an empty top line (no more "Unfiled").
+- **Notifications, folder counts, top line (2026-11-02, owner).** Notifications use the shared side width (`--side-w`) and, from 900px, hide the File Explorer and move the page over like Help. Empty folders show no "0". A document in no folder shows an empty top line (no more "Unfiled"). About reads "An outliner for structured thinking: documents with tables, charts and diagrams, discussion threads, To-Dos and AI." (owner)
 
 - **Side panels: no edge line (2026-11-02, owner).** Robin prefers the File Explorer look: a panel edge is the colour change only. `border-right:none` on To-Dos, Help, Settings and Notifications in calm-layout.css (#792 briefly added a line to the explorer instead; reverted).
 
