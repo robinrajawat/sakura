@@ -2726,6 +2726,7 @@ html.calm-layout #appbar-qa-slot:has(.qa-open)::after{content:"";position:absolu
 .settings-back-btn{appearance:none;border:none;background:none;display:inline-flex;align-items:center;gap:2px;padding:3px 6px 3px 2px;margin-left:-4px;border-radius:6px;color:var(--hint);font:500 var(--fs-sm) 'Inter',sans-serif;cursor:pointer}
 .settings-back-btn:hover{background:var(--hover);color:var(--fg)}
 .settings-back-btn[hidden]{display:none}
+#ai-prompt-editor[hidden]{display:none}
 /* GENERATED:css-app:END */
 </style>
 <style>
@@ -3652,8 +3653,11 @@ html.calm-layout #appbar-qa-slot:has(.qa-open)::after{content:"";position:absolu
           <div class="settings-section" data-cat="ai" id="settings-section-ai-rewrite-behavior">
             <div class="settings-section-title">Rewrite</div>
             <div class="settings-list">
-              <div class="settings-list-row" style="flex-direction:column;align-items:flex-start;gap:6px">
-                <span class="settings-switch-text">Rewrite prompt</span>
+              <div class="settings-list-row">
+                <div class="settings-row-text"><span class="settings-switch-text">Rewrite prompt</span><span class="settings-row-desc" id="ai-prompt-summary">Fixes spelling and grammar (default).</span></div>
+                <button class="btn" id="ai-prompt-edit-btn" type="button" aria-expanded="false" aria-controls="ai-prompt-editor">Edit</button>
+              </div>
+              <div class="settings-list-row" id="ai-prompt-editor" hidden style="flex-direction:column;align-items:stretch;gap:6px">
                 <textarea id="ai-prompt-input" class="meta-input" rows="4" style="width:100%;font-family:'Inter',sans-serif;resize:vertical;line-height:1.5;padding:6px 8px" placeholder="You are a text correction tool. Your ONLY job is to return the corrected version of the input text. Do NOT explain, do NOT offer alternatives…"></textarea>
                 <div class="settings-inline-field" style="align-self:flex-end">
                   <button class="btn" id="ai-prompt-reset-btn">Reset to default</button>
@@ -24116,7 +24120,7 @@ initAiProvidersState({
   getLocalStorage:()=>{ try{ return localStorage; }catch(e){ return null; } }
 });
 /* GENERATED:aiProviders:END */
-function loadAiPrefs(){const validIds=getAiSelectableProviders().map(p=>p.id); const resolved=loadAiPrefsCore({provider:aiProvider,model:aiModel,modelByProvider:aiModelByProvider,prompt:aiRewritePrompt},validIds); aiProvider=resolved.provider; aiModel=resolved.model; aiModelByProvider=resolved.modelByProvider; aiRewritePrompt=resolved.prompt; syncAiProviderOptions(); const msel=el('ai-model-select'); if(msel)msel.value=aiModel; const ta=el('ai-prompt-input'); if(ta)ta.value=aiRewritePrompt||ta.value; updateAiKeyStatus(); syncAiModelOptions(); applyAiProviderModeUI()}
+function loadAiPrefs(){const validIds=getAiSelectableProviders().map(p=>p.id); const resolved=loadAiPrefsCore({provider:aiProvider,model:aiModel,modelByProvider:aiModelByProvider,prompt:aiRewritePrompt},validIds); aiProvider=resolved.provider; aiModel=resolved.model; aiModelByProvider=resolved.modelByProvider; aiRewritePrompt=resolved.prompt; syncAiProviderOptions(); const msel=el('ai-model-select'); if(msel)msel.value=aiModel; const ta=el('ai-prompt-input'); if(ta)ta.value=aiRewritePrompt||ta.value; updateAiPromptSummary(); updateAiKeyStatus(); syncAiModelOptions(); applyAiProviderModeUI()}
 function saveAiPrefs(){saveAiPrefsCore(aiProvider,aiModel,aiModelByProvider,aiRewritePrompt)}
 function getAiKey(){return getAiKeyForProvider(aiProvider)||''}
 // Whether an AI call could actually go through right now, for either mode — hosted has no BYOK
@@ -25199,11 +25203,17 @@ function setupPasswordShowToggle(inputId,btnId){
   });
 }
 setupPasswordShowToggle('ai-api-key-input','ai-api-key-show-btn');
-el('ai-prompt-save-btn').addEventListener('click',()=>{const ta=el('ai-prompt-input'); const v=(ta?.value||'').trim(); aiRewritePrompt=v||AI_DEFAULT_PROMPT; if(ta)ta.value=aiRewritePrompt; saveAiPrefs(); showToast(v?'Prompt saved':'Prompt reset to default')});
+// The rewrite prompt is folded to one line (what it does + Edit) so most people see only Provider,
+// key and Auto-rewrite (2026-11-02); Edit opens the prompt in place, Save or Done folds it again.
+function updateAiPromptSummary(){ const d=el('ai-prompt-summary'); if(!d)return; d.textContent=aiRewritePrompt===AI_DEFAULT_PROMPT?'Fixes spelling and grammar (default).':aiRewritePrompt===AI_REPHRASE_PROMPT?'Rephrases for clarity.':'Your own prompt.'; }
+function setAiPromptEditorOpen(open){ const ed=el('ai-prompt-editor'), b=el('ai-prompt-edit-btn'); if(ed)ed.hidden=!open; if(b){ b.textContent=open?'Done':'Edit'; b.setAttribute('aria-expanded',String(open)); } if(open){ const ta=el('ai-prompt-input'); if(ta){ ta.value=aiRewritePrompt; ta.focus(); } } updateAiPromptSummary(); }
+el('ai-prompt-edit-btn')?.addEventListener('click',()=>setAiPromptEditorOpen(el('ai-prompt-editor')?.hidden));
+updateAiPromptSummary();
+el('ai-prompt-save-btn').addEventListener('click',()=>{const ta=el('ai-prompt-input'); const v=(ta?.value||'').trim(); aiRewritePrompt=v||AI_DEFAULT_PROMPT; if(ta)ta.value=aiRewritePrompt; saveAiPrefs(); setAiPromptEditorOpen(false); showToast(v?'Prompt saved':'Prompt reset to default')});
 el('auto-rewrite-toggle')?.addEventListener('click',()=>setAutoRewriteEnabled(!autoRewriteEnabled));
 el('auto-rewrite-toggle')?.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault(); setAutoRewriteEnabled(!autoRewriteEnabled);}});
-el('ai-prompt-reset-btn').addEventListener('click',()=>{aiRewritePrompt=AI_DEFAULT_PROMPT; const ta=el('ai-prompt-input'); if(ta)ta.value=aiRewritePrompt; saveAiPrefs(); showToast('Prompt reset to default')});
-el('ai-prompt-rephrase-btn').addEventListener('click',()=>{aiRewritePrompt=AI_REPHRASE_PROMPT; const ta=el('ai-prompt-input'); if(ta)ta.value=aiRewritePrompt; saveAiPrefs(); showToast('Prompt switched to Rephrase — Auto-rewrite on commit will use this too, if it\'s on')});
+el('ai-prompt-reset-btn').addEventListener('click',()=>{aiRewritePrompt=AI_DEFAULT_PROMPT; const ta=el('ai-prompt-input'); if(ta)ta.value=aiRewritePrompt; saveAiPrefs(); updateAiPromptSummary(); showToast('Prompt reset to default')});
+el('ai-prompt-rephrase-btn').addEventListener('click',()=>{aiRewritePrompt=AI_REPHRASE_PROMPT; const ta=el('ai-prompt-input'); if(ta)ta.value=aiRewritePrompt; saveAiPrefs(); updateAiPromptSummary(); showToast('Prompt switched to Rephrase — Auto-rewrite on commit will use this too, if it\'s on')});
 async function resetAiSettingsToDefault(){
   // Lives inside the "Bring your own key" section now (moved there — this button is genuinely
   // BYOK-scoped, and Sakura Hosted AI has nothing here to reset), so aiProvider is always a BYOK

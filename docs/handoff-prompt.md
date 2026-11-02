@@ -173,11 +173,11 @@ contradicts README.md or docs/feature-reference.md, trust them.)*
 
 ### Latest changes
 
+- **AI rewrite prompt folded (2026-11-02).** Settings → AI → Rewrite: the prompt is one row (`#ai-prompt-summary`: default / Rephrase / Your own prompt) with **Edit**; Edit opens `#ai-prompt-editor` in place (textarea, Reset to default, Rephrase, Save prompt), Save or Done folds it. Spec `ai-prompt-folded.spec.ts`.
+
 - **Version in About (2026-11-02).** `vite.config.js` plugin `stampVersion` replaces `__SAKURA_VERSION__` in the built HTML with `YYYY.MM.DD · sha7` (git, else `GITHUB_SHA`, else today); `#about-version` shows "Version …" only when stamped (unbuilt copies hide it). No number to bump by hand; Robin chose this over a manual version ("we should do that kind of versioning"). Spec `about-version.spec.ts`.
 
 - **Untitled documents named by their first row (2026-11-02).** The docs index title (File Explorer, Search, Recent) uses `untitledDocName(payload.nodes)` when the title is empty, so new documents aren't all "Untitled"; display only, the title field stays empty. Audit item "new document starts in the title" dropped: New document already focuses `#header-title`, and the empty state keeps its greeting. Spec `untitled-doc-first-row-name.spec.ts`.
-
-- **Thread author default (2026-11-02).** The reply line wrote as "Who?" when nobody had written in the document and it had no author. `threadDefaultAuthor` now falls back to Your name (`defaultAuthorName`), then the account's name; with none it says "Add name" (entry placeholder too). Spec `thread-author-default.spec.ts`.
 
 ### In progress / not built
 
