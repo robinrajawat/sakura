@@ -62,6 +62,22 @@ export function mergeVersionLists<T extends VersionEntry>(a: T[], b: T[], max: n
   return trimVersions([...byTs.values()], max, now);
 }
 
+/**
+ * Syncing one document's versions with the cloud copy (one cloud record per version): the joined
+ * list to keep on this device, the versions the cloud is missing, and the cloud versions that the
+ * joined list no longer keeps (trimmed away here or on another device).
+ */
+export function planVersionSync<T extends VersionEntry>(local: T[], cloud: T[], max: number, now: number): { merged: T[]; upload: T[]; removeTs: number[] } {
+  const merged = mergeVersionLists(local, cloud, max, now);
+  const cloudTs = new Set((Array.isArray(cloud) ? cloud : []).map((v) => Number(v && v.ts)));
+  const keptTs = new Set(merged.map((v) => Number(v.ts)));
+  return {
+    merged,
+    upload: merged.filter((v) => !cloudTs.has(Number(v.ts))),
+    removeTs: [...cloudTs].filter((ts) => Number.isFinite(ts) && !keptTs.has(ts)),
+  };
+}
+
 interface WithId {
   id?: unknown;
 }
