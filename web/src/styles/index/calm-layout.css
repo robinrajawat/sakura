@@ -258,3 +258,7 @@ html.calm-layout #help-quick-links>div>span{color:var(--muted)}
 /* Settings covers the editor, so the editor's floating bars (selected-rows pill, formatting bar) hide
    while it is open (owner 2026-11-02: they leaked over Settings). */
 html.calm-layout body:has(#settings-panel.open) :is(#row-sel-pill,#selection-fmt-popover){display:none!important}
+/* One side slot, different content (owner 2026-11-02): switching Documents / To-Dos / Help / Notifications
+   swaps the content in one frame, like VS Code. The explorer's old width slide made the page jump 320px
+   and slide back whenever another panel took or gave back the slot. */
+html.calm-layout #sidebar{transition:none}
