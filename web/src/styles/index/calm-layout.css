@@ -127,9 +127,10 @@ html.calm-layout .settings-section{border:none;background:none;padding:0}
    on one line, sentence-case headings, each group in one soft card with hairlines between rows (as
    macOS System Settings), and actions that look like buttons. Scoped to the Settings panel. */
 /* Settings fills everything right of the app rail (owner 2026-11-02, as VS Code, Linear, Slack):
-   section rail on the left, the settings in one column up to 720px beside it. */
+   section rail on the left, the settings in one column up to 720px, centred in the space beside it
+   (wide rows are hard to read, so the column doesn't stretch). */
 html.calm-layout .settings-panel{width:calc(100vw - 52px);max-width:none;border-right:none;scrollbar-gutter:auto}
-html.calm-layout .settings-panel .settings-content{gap:26px;padding:20px 28px 32px;grid-template-columns:minmax(0,720px)}
+html.calm-layout .settings-panel .settings-content{gap:26px;padding:20px 28px 32px;grid-template-columns:minmax(0,720px);justify-content:center}
 html.calm-layout .settings-panel .settings-section{gap:8px}
 html.calm-layout .settings-panel .settings-section-title{font:600 var(--fs-md) 'Inter',sans-serif;letter-spacing:0;text-transform:none;color:var(--fg);border-bottom:none;padding:0}
 html.calm-layout .settings-panel .settings-list{border:1px solid color-mix(in srgb,var(--border) 70%,transparent);border-radius:12px;background:var(--bg);overflow:hidden}
@@ -162,7 +163,11 @@ html.calm-layout #settings-panel .settings-list-row>.settings-danger-btn:hover:n
 html.calm-layout #settings-panel .settings-row-desc a{color:var(--accent);text-decoration:underline;text-underline-offset:2px}
 .settings-inline-field{display:flex;align-items:center;gap:6px;flex:0 0 auto}
 html.calm-layout #settings-panel :is(#ai-hosted-section,#ai-byok-section)>.settings-list-row:first-child{border-top:1px solid color-mix(in srgb,var(--border) 70%,transparent)}
-.settings-about-head{display:flex;align-items:center;gap:14px;padding:2px 2px 6px}
+.settings-about-head{display:flex;align-items:flex-start;gap:16px;padding:2px 2px 10px}
+/* Name, then the version in a quieter grey, a gap, the description, and the copyright last. */
+.settings-about-head svg{margin-top:2px}
+.settings-about-head #about-version{color:var(--hint);margin-bottom:8px}
+.settings-about-head .settings-about-copy{margin-top:6px;color:var(--hint)}
 .settings-about-head svg{flex:0 0 auto}
 .settings-about-name{font:600 var(--fs-lg,15px) 'Inter',sans-serif;color:var(--fg)}
 .settings-subhead{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin-top:22px}
