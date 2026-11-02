@@ -173,11 +173,11 @@ contradicts README.md or docs/feature-reference.md, trust them.)*
 
 ### Latest changes
 
+- **Help behaves like To-Dos in the side slot (2026-11-02, owner bug).** The Documents button did nothing with Help open (Help hides the explorer with CSS, so `sidebarOpen` stayed true and the toggle shut it underneath); `toggleDocumentsPanel` now closes Help and shows Documents. Help gets the shared drag handle (`#help-resize-handle` on <body>, fixed at Help's edge, 900px+; same `sakura_sidebar_width_v1`).
+
 - **Grey name chips, no empty timestamp tip (2026-11-02, owner).** Names in a table Person column were each tinted by `--pc` (a colour per person, meaningless); `.tbl-person` and its avatar are now one neutral grey (status pills keep their colour). The row bullet tip shows only known times; with none it shows nothing (no "Created at —").
 
 - **Docked Help stays open on page clicks (2026-11-02, owner bug).** The outside-click handler still used the old 1160px docking width, so between 900 and 1160px a click on the page closed Help and the File Explorer came back. Help is docked from 900px (same as calm-layout.css), so outside clicks leave it open there; below 900 it stays a sheet that closes.
-
-- **Side panels swap in one frame (2026-11-02, owner).** Switching Documents / To-Dos / Help / Notifications felt jumpy: the explorer animated its width (.18s), so the page jumped 320px and slid back. `html.calm-layout #sidebar{transition:none}`; one-side-panel.spec checks the title never moves during the swap. Same sweep: Search (palette) now closes an open row menu and hides the selected-rows pill / formatting bar / row tooltip; Esc closes Notifications (Documents, To-Dos and Help stay until toggled, like VS Code side panels).
 
 
 ### In progress / not built
