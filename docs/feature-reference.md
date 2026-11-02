@@ -263,7 +263,7 @@ How your data is protected depends on whether you're signed in:
 
 ## Settings Reference
 
-The Settings panel has six sections, plus Account while signed in: **General** (theme, text size, To-Dos auto-expiry), **Shortcuts** (every shortcut with search and Reset all; click a combo to change it, edited in place, no popup), **Documents** (your name, PDF cover page / open items page / PDF mark, Trash), **Data & backup** (backup, restore, Secure Storage, reset), **AI**, and **About** (about, privacy, support, feedback and crash reports), and **Account** when signed in (Delete account; profile visibility is switched from the account menu). Dates and times follow your browser's language and region.
+The Settings panel has six sections, plus Account while signed in: **General** (theme, text size, To-Dos auto-expiry), **Documents** (your name, PDF cover page / open items page / PDF mark, Trash), **AI**, **Shortcuts** (every shortcut with search and Reset all; click a combo to change it, edited in place, no popup), **Data & backup** (backup, restore, Secure Storage, reset), and **About** (about, privacy, support, feedback and crash reports), and **Account** when signed in (Delete account; profile visibility is switched from the account menu). Dates and times follow your browser's language and region.
 
 | Setting | Section | Default | Notes |
 |---|---|---|---|

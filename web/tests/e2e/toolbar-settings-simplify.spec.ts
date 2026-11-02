@@ -217,7 +217,7 @@ test.describe('Settings', () => {
       await expect(page.locator(kept), kept).toHaveCount(1);
     }
     // Six rails; Account joins them only while signed in (Admin lives inside it).
-    await expect(page.locator('#settings-rail .settings-rail-btn span')).toHaveText(['General', 'Documents', 'Shortcuts', 'Data & backup', 'AI', 'Account', 'About']);
+    await expect(page.locator('#settings-rail .settings-rail-btn span')).toHaveText(['General', 'Documents', 'AI', 'Shortcuts', 'Data & backup', 'Account', 'About']);
     await expect(page.locator('#settings-rail-account-btn')).toBeHidden();
     await expect(page.locator('#settings-rail-admin-btn, #profile-visibility-segmented, #settings-section-account')).toHaveCount(0);
     // General = Appearance, To-Dos; Shortcuts = the shortcut list itself; Documents = New documents, PDF, Trash.
