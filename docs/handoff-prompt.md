@@ -173,11 +173,11 @@ contradicts README.md or docs/feature-reference.md, trust them.)*
 
 ### Latest changes
 
+- **File Explorer divider (2026-11-02, owner).** The File Explorer had no right edge line while To-Dos/Help/Settings/Notifications have `border-right:1px solid var(--border)`, so Documents looked sharp and To-Dos looked shadowed. `html.calm-layout #sidebar{box-shadow:inset -1px 0 0 var(--border)}` gives it the same hairline without changing its width.
+
 - **One side panel width (2026-11-02, owner).** Documents, To-Dos and Help share one width (`SIDE_W_DEFAULT` 320, 240–560, key `sakura_sidebar_width_v1`; `applySidebarWidth` sets `--sb-width`, `--side-w`, `--todos-w`). Dragging the File Explorer's or To-Dos' edge changes it for all; the old `sakura_dock_panel_width_v1` is no longer read. Help: icon section list (names in tooltips), quick links stacked (name over description); page margin = width + 5px (the explorer's drag handle) so it doesn't shift between panels. Help moves the page from 900px windows up.
 
 - **Settings page layout (2026-11-02).** The section list (200px) and the settings column (720px) are centred together as one ~950px block (GitHub/Linear); `#settings-panel .settings-body` is the scroller (wheel anywhere) and the list is sticky; the header's title/buttons line up with the block. Search box always shown in the header (toggle hidden, so no double ×). About is a centred block (56px logo, name, version, description, copyright). Below 760px the list turns into icons.
-
-- **Narrow File Explorer folds nested folders (2026-11-02).** `.sfolder-children` is a grid; its column grew to the longest name, so nested folder/doc rows stuck out past a narrow panel (names cut, counts gone). Now `grid-template-columns:minmax(0,1fr)`, so names end in "…" at every depth. Spec: `sidebar-nested-folder-narrow.spec.ts`.
 
 ### In progress / not built
 
