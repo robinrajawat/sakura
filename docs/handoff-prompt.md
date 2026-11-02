@@ -169,15 +169,15 @@ keep only the last 3 entries, and delete older ones (git history and the PRs kee
 anything still unbuilt or undecided into "In progress / not built" or "Parked". If this section
 contradicts README.md or docs/feature-reference.md, trust them.)*
 
-**Open work:** audit round 2026-11-02 (Robin's go, merge each on green): row-click fix, quieter +N badge + noise (Unfiled, not saved, Trash 0, About source link), thread author default instead of "Who", new document starts in the title / untitled docs named by first row. Check `mcp__github__list_pull_requests` at session start.
+**Open work:** none after the 2026-11-02 audit round (#779-#782). Check `mcp__github__list_pull_requests` at session start.
 
 ### Latest changes
+
+- **Untitled documents named by their first row (2026-11-02).** The docs index title (File Explorer, Search, Recent) uses `untitledDocName(payload.nodes)` when the title is empty, so new documents aren't all "Untitled"; display only, the title field stays empty. Audit item "new document starts in the title" dropped: New document already focuses `#header-title`, and the empty state keeps its greeting. Spec `untitled-doc-first-row-name.spec.ts`.
 
 - **Thread author default (2026-11-02).** The reply line wrote as "Who?" when nobody had written in the document and it had no author. `threadDefaultAuthor` now falls back to Your name (`defaultAuthorName`), then the account's name; with none it says "Add name" (entry placeholder too). Spec `thread-author-default.spec.ts`.
 
 - **Quieter chrome + way back to Help (2026-11-02).** `+N` fold badge weight 400 (was 500, read louder than the row icons); top line shows "Unfiled" only when folders exist; placeholder doc row drops its "not saved" word (tooltip stays); Trash count only when >0; About tagline lists tables/charts/diagrams/threads/row status/To-Dos/AI, Source code row removed (licence is All Rights Reserved). Help → About / Keyboard shortcuts open Settings with `#settings-back-btn` "‹ Help"; it or Esc returns to the same Help page (`showSettingsBackToHelp`/`goBackToHelp`; closing Settings any other way drops it). Spec `settings-back-to-help.spec.ts`.
-
-- **Click another row while typing (2026-11-02).** Bug: the row input's blur re-rendered between mouse-down and mouse-up, so the browser dropped the click and typing kept going into the old row. Now a document-level `_rowPointerDown` flag (set on mousedown on a `.node-row` outside `.node-input`) makes the blur wait for mouseup + a tick, so the other row's click handler moves the caret first. Spec `click-other-row-while-typing.spec.ts`.
 
 ### In progress / not built
 
