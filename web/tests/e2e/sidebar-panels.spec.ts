@@ -78,6 +78,9 @@ test('Notifications open full height beside the rail, with the same header as th
   await expect(page.locator('#sidebar')).toBeHidden();
   const ml = await page.locator('#app-layout').evaluate((e) => getComputedStyle(e).marginLeft);
   expect(ml).toBe('325px');
+  // Esc closes it, like any menu (owner 2026-11-02: Settings and Search already did).
+  await page.keyboard.press('Escape');
+  await expect(menu).toBeHidden();
 });
 
 // An empty folder shows no "0" next to its name (owner 2026-11-02).

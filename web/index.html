@@ -2771,7 +2771,9 @@ html.calm-layout #help-quick-links>div>span{color:var(--muted)}
 #ai-prompt-editor[hidden]{display:none}
 /* Settings covers the editor, so the editor's floating bars (selected-rows pill, formatting bar) hide
    while it is open (owner 2026-11-02: they leaked over Settings). */
-html.calm-layout body:has(#settings-panel.open) :is(#row-sel-pill,#selection-fmt-popover){display:none!important}
+/* Search too: the palette is on top, so the editor's bars and row tooltips wait underneath. */
+html.calm-layout body:has(#settings-panel.open) :is(#row-sel-pill,#selection-fmt-popover),
+html.calm-layout body:has(#global-search-wrap.qa-open) :is(#row-sel-pill,#selection-fmt-popover,#node-timestamp-tip){display:none!important}
 /* One side slot, different content (owner 2026-11-02): switching Documents / To-Dos / Help / Notifications
    swaps the content in one frame, like VS Code. The explorer's old width slide made the page jump 320px
    and slide back whenever another panel took or gave back the slot. */
@@ -16261,6 +16263,7 @@ bootLocalNotifications();
 el('notif-clear-all-btn')?.addEventListener('click',e=>{ e.stopPropagation(); clearAllNotifications(); });
 el('notif-toggle')?.addEventListener('click',e=>{ e.stopPropagation(); el('settings-panel')?.classList.remove('open'); el('help-panel')?.classList.remove('open'); el('export-menu')?.classList.remove('open'); el('appbar-more-menu')?.classList.remove('open'); el('account-menu')?.classList.remove('open'); toggleNotifMenu(); });
 document.addEventListener('click',e=>{ if(isNotifMenuOpen()&&!e.target.closest('#notif-wrap'))toggleNotifMenu(false); });
+document.addEventListener('keydown',e=>{ if(e.key==='Escape'&&isNotifMenuOpen()){ e.preventDefault(); toggleNotifMenu(false); } });
 /* GENERATED:notifications:END */
 
 function renderNotifList(){
@@ -18675,7 +18678,7 @@ function setQaOpen(on){
   if(on){
     // Only if still open: closed again within those 10ms (the shortcut pressed twice), focusing
     // the box would open it once more.
-    closeAllPanelsExceptGlobalSearch(); qaRender(); setTimeout(()=>{ if(isQaDropdownOpen())el('qa-input')?.focus(); },10);
+    closeAllPanelsExceptGlobalSearch(); hideContextMenu(); qaRender(); setTimeout(()=>{ if(isQaDropdownOpen())el('qa-input')?.focus(); },10);
   }
   else {
     if(qaRenderDebounceTimer){clearTimeout(qaRenderDebounceTimer); qaRenderDebounceTimer=null;} const input=el('qa-input'); if(input){input.value=''; input.blur();} qaRender();
