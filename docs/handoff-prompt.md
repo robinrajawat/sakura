@@ -173,11 +173,11 @@ contradicts README.md or docs/feature-reference.md, trust them.)*
 
 ### Latest changes
 
+- **Notifications are a popover beside the bell (2026-11-02, owner asked for the standard).** Like GitHub/Google/Jira for a few notices: `#notif-menu` opens up from the rail's bottom (fixed, left 60px, bottom 12px, 360px wide, `--radius-panel`/`--shadow-panel`), floats over the page and closes on a click away, Esc or opening a notice (existing handlers). It no longer takes the side slot: Documents stays and the page doesn't move.
+
 - **Help is a pane on the right (2026-11-02, owner: "don't cut corners on Help").** Standard placement (Slack, Office, Google): `.help-panel` docks at the right edge with its own width `--help-w` (default 360, 280-640, `sakura_help_width_v1`), resized by dragging its LEFT edge (`#help-resize-handle`, `initHelpResize`); from 900px `#app-layout` gets `margin-right`, below that it is a sheet over the faded page. Documents / To-Dos / Notifications stay open on the left beside it (they no longer close Help or get closed by it); Settings still closes it. Header has a × (`#help-close-btn`). Opened by a grey "?" (`#doc-help-btn`, lit while open) right after Share on the top line, right above where the pane appears (owner chose); Help left the account menu.
 
 - **Help behaves like To-Dos in the side slot (2026-11-02, owner bug).** The Documents button did nothing with Help open (Help hides the explorer with CSS, so `sidebarOpen` stayed true and the toggle shut it underneath); `toggleDocumentsPanel` now closes Help and shows Documents. Help gets the shared drag handle (`#help-resize-handle` on <body>, fixed at Help's edge, 900px+; same `sakura_sidebar_width_v1`).
-
-- **Grey name chips, no empty timestamp tip (2026-11-02, owner).** Names in a table Person column were each tinted by `--pc` (a colour per person, meaningless); `.tbl-person` and its avatar are now one neutral grey (status pills keep their colour). The row bullet tip shows only known times; with none it shows nothing (no "Created at —").
 
 
 ### In progress / not built

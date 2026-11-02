@@ -62,24 +62,32 @@ test('a new document starts in its title', async ({ page }) => {
   await expect(page.locator('#header-title')).toBeFocused();
 });
 
-test('Notifications open full height beside the rail, with the same header as the other panels', async ({ page }) => {
+// Notifications are a popover beside the bell (owner 2026-11-02, the standard for a few notices):
+// it floats over the page next to the rail, leaves Documents and the page where they are, and closes
+// on a click away or Esc.
+test('Notifications open as a popover beside the bell and close on a click away or Esc', async ({ page }) => {
+  // @ts-expect-error -- bare global from index.html
+  await page.evaluate(() => { if (!sidebarOpen) setSidebarOpen(true); });
+  const ml = () => page.locator('#app-layout').evaluate((e) => getComputedStyle(e).marginLeft);
+  const before = await ml();
   await page.locator('#notif-toggle').click();
   const menu = page.locator('#notif-menu');
   await expect(menu).toBeVisible();
   const r = (await menu.boundingBox())!;
-  expect(Math.round(r.x)).toBe(52);
-  expect(Math.round(r.y)).toBe(0);
-  expect(Math.round(r.height)).toBe(760);
+  const bell = (await page.locator('#notif-toggle').boundingBox())!;
+  expect(Math.round(r.x)).toBe(60);
+  expect(r.height).toBeLessThan(600);
+  expect(r.y + r.height).toBeGreaterThanOrEqual(bell.y + bell.height);
+  expect(Math.round(r.width)).toBe(360);
   const font = (sel: string) => page.locator(sel).evaluate((e) => { const c = getComputedStyle(e); return [c.fontSize, c.fontWeight, c.textTransform].join(' '); });
-  expect(await font('.notif-menu-title')).toBe(await font('#sidebar .sb-section-label'));
   expect(await font('.notif-menu-title')).toBe('14.5px 600 none');
-  // Same shared width as Documents/To-Dos/Help, and it moves the page over instead of covering it (owner 2026-11-02).
-  expect(Math.round(r.width)).toBe(320);
-  await expect(page.locator('#sidebar')).toBeHidden();
-  const ml = await page.locator('#app-layout').evaluate((e) => getComputedStyle(e).marginLeft);
-  expect(ml).toBe('325px');
-  // Esc closes it, like any menu (owner 2026-11-02: Settings and Search already did).
+  await expect(page.locator('#sidebar')).toBeVisible();
+  expect(await ml()).toBe(before);
   await page.keyboard.press('Escape');
+  await expect(menu).toBeHidden();
+  await page.locator('#notif-toggle').click();
+  await expect(menu).toBeVisible();
+  await page.mouse.click(900, 400);
   await expect(menu).toBeHidden();
 });
 
