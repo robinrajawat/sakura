@@ -23,10 +23,9 @@ test('opening Settings or Help closes To-Dos, and opening To-Dos closes them', a
   expect(await open('settings-panel')).toBe(true);
   expect(await open('todos-panel')).toBe(false);
   await expect(page.locator('#todos-toggle.is-active')).toHaveCount(0);
-  // The page sits fully to the right of Settings, not under it.
-  const pageLeft = await page.locator('#editor-pane-inner').evaluate(e => e.getBoundingClientRect().left);
+  // Settings fills everything right of the rail (owner 2026-11-02).
   const sheetRight = await page.locator('#settings-panel').evaluate(e => e.getBoundingClientRect().right);
-  expect(pageLeft).toBeGreaterThanOrEqual(sheetRight - 1);
+  expect(Math.round(sheetRight)).toBe(1400);
 
   // @ts-expect-error -- bare global from index.html
   await page.evaluate(() => toggleTodosPanel());
