@@ -173,11 +173,11 @@ contradicts README.md or docs/feature-reference.md, trust them.)*
 
 ### Latest changes
 
+- **Steady reload + tour follows the new layout (2026-11-02, owner).** A dark reload no longer flashes white in the installed app's title bar: a `<head>` script sets `theme-color` (and the html background, cleared by `syncThemeColorMeta`) to `#181816` before first paint, for saved Dark and for System on a dark OS (the body script now honours System too, and no saved prefs = System). The rail keeps Search's 36px slot while `#appbar-qa-slot` is still empty (`:empty{display:flex}` in calm layout), so To-Dos no longer jumps 40px on load. Help's Get started: four learning cards, then one quiet line `#help-meta-links` (Send feedback · Buy me a coffee · About; only the coffee cup has an icon, gold `--support` token). Guided tour: steps follow the rail order (Documents, Explorer, Search, To-Dos, Settings), then Editor, Share, Help (points at the "?", `#doc-help-btn`), Zen. Test: `reload-steady.spec.ts`.
+
 - **Account menu is only about your account (2026-11-02, owner).** Send feedback and Buy me a coffee moved out of the account menu into Help's Get started quick links (`#help-feedback-row`, `#help-support-row`, grey icons, also found by Search); the amber coffee icon is gone. Signed out the menu is just Sign in; signed in it is your account head + Sign out. Quick-link rows share one `#help-quick-links>div` style.
 
 - **Notifications are a popover beside the bell (2026-11-02, owner asked for the standard).** Like GitHub/Google/Jira for a few notices: `#notif-menu` opens up from the rail's bottom (fixed, left 60px, bottom 12px, 360px wide, `--radius-panel`/`--shadow-panel`), floats over the page and closes on a click away, Esc or opening a notice (existing handlers). It no longer takes the side slot: Documents stays and the page doesn't move.
-
-- **Help is a pane on the right (2026-11-02, owner: "don't cut corners on Help").** Standard placement (Slack, Office, Google): `.help-panel` docks at the right edge with its own width `--help-w` (default 360, 280-640, `sakura_help_width_v1`), resized by dragging its LEFT edge (`#help-resize-handle`, `initHelpResize`); from 900px `#app-layout` gets `margin-right`, below that it is a sheet over the faded page. Documents / To-Dos / Notifications stay open on the left beside it (they no longer close Help or get closed by it); Settings still closes it. Header has a × (`#help-close-btn`). Opened by a grey "?" (`#doc-help-btn`, lit while open) right after Share on the top line, right above where the pane appears (owner chose); Help left the account menu.
 
 
 ### In progress / not built

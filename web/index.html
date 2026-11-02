@@ -89,6 +89,12 @@ Sakura v1.0.0 — see LICENSE for terms.
 <meta name="twitter:image" content="https://www.sakura-notes.com/social-card.png" />
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#f8f8f6">
+<script>
+// The installed app's title bar takes its colour from theme-color as soon as it is parsed. It used to
+// stay light until the main script ran, so a dark reload flashed white up there (owner 2026-11-02).
+// Same decision as the body script below: the last saved theme, or the system's when none is saved.
+(function(){try{var raw=localStorage.getItem('sakura_v001_prefs');var d=raw?JSON.parse(raw):{};var t={vscode:'dark','clever-dark':'dark'}[d.theme]||d.theme;var dark=d.themeMode==='system'||!t?matchMedia('(prefers-color-scheme: dark)').matches:t==='dark';if(dark){document.querySelector('meta[name="theme-color"]').setAttribute('content','#181816');document.documentElement.style.background='#181816';}}catch(e){}})();
+</script>
 <link rel="icon" type="image/svg+xml" href="flower-glyph.svg">
 <link rel="apple-touch-icon" href="apple-touch-icon.png" media="(prefers-color-scheme: light)">
 <link rel="apple-touch-icon" href="apple-touch-icon-dark.png" media="(prefers-color-scheme: dark)">
@@ -248,8 +254,8 @@ body{display:flex;flex-direction:column;overflow:hidden;font-size:var(--fs-lg);t
    purpose — it's code/structure, not prose, and must stay monospace regardless. Fixed, not a
    setting. */
 :root{--content-font:'Inter','Public Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
-body.theme-light{color-scheme:light;--surface-raised:var(--bg);--surface-panel:var(--bg);--hover-raised:var(--hover);--danger:#dc2626;--success:#15803d;--warning:#b45309;--bg:#f8f8f6;--tb-bg:#f8f8f6;--border:#e3e0d8;--fg:#3d3929;--node-fg:#3d3929;--muted:#73716b;--hint:#71716b;--accent:#2e8479;--pv-heading:#2c4a6e;--pv-heading-2:#4a6f9e;--hover:#f1f0ec;--sel:#eae8e2;--sel-fg:#2b2a25;--edit-bg:#ffffff;--canvas-bg:#ffffff;--title-fg:#222222;--btn-primary-bg:#222222;--btn-primary-fg:#ffffff;--btn-primary-hover:#3a3a3a;--scroll:#ccc9bf;--scroll-hover:#a9a598;--vert:#999999;--conn:#999999;--chip:#eceae4;--sem-section:#3a52a8;--sem-alert:#b02020;--sem-code:#4a3a8a;--sem-quote:#6b6240;--fc-red:#c0392b;--fc-orange:#c2701d;--fc-green:#27824f;--fc-blue:#2766c2;--fc-purple:#7d3fb5;--fc-gray:#6f6b63}
-body.theme-dark{color-scheme:dark;--surface-raised:#1c1c1a;--surface-panel:#171715;--hover-raised:#262623;--danger:#f87171;--success:#4ade80;--warning:#fbbf24;--bg:#121212;--tb-bg:#181816;--border:#2a2a27;--fg:#eae9e4;--node-fg:#eae9e4;--muted:#9d9a93;--hint:#7d7b75;--accent:#3caa9b;--pv-heading:#8fb3d9;--pv-heading-2:#aac4e0;--hover:#1d1d1a;--sel:#26241f;--sel-fg:#f2f0e8;--edit-bg:#1a1a1a;--canvas-bg:#1a1a1a;--title-fg:#eeeeee;--btn-primary-bg:#eeeeee;--btn-primary-fg:#1a1a1a;--btn-primary-hover:#ffffff;--scroll:#4a4742;--scroll-hover:#67635c;--vert:#57544f;--conn:#57544f;--chip:#1d1d1a;--sem-section:#7b9ef0;--sem-alert:#d78a80;--sem-code:#a89bce;--sem-quote:#b5a87a;--fc-red:#e08585;--fc-orange:#e0a868;--fc-green:#7fd9a6;--fc-blue:#82b4f0;--fc-purple:#c39bea;--fc-gray:#a8a59d}
+body.theme-light{color-scheme:light;--surface-raised:var(--bg);--surface-panel:var(--bg);--hover-raised:var(--hover);--danger:#dc2626;--success:#15803d;--warning:#b45309;--bg:#f8f8f6;--tb-bg:#f8f8f6;--border:#e3e0d8;--fg:#3d3929;--node-fg:#3d3929;--muted:#73716b;--hint:#71716b;--accent:#2e8479;--pv-heading:#2c4a6e;--pv-heading-2:#4a6f9e;--hover:#f1f0ec;--sel:#eae8e2;--sel-fg:#2b2a25;--edit-bg:#ffffff;--canvas-bg:#ffffff;--title-fg:#222222;--btn-primary-bg:#222222;--btn-primary-fg:#ffffff;--btn-primary-hover:#3a3a3a;--scroll:#ccc9bf;--scroll-hover:#a9a598;--vert:#999999;--conn:#999999;--chip:#eceae4;--sem-section:#3a52a8;--sem-alert:#b02020;--sem-code:#4a3a8a;--sem-quote:#6b6240;--fc-red:#c0392b;--fc-orange:#c2701d;--fc-green:#27824f;--fc-blue:#2766c2;--fc-purple:#7d3fb5;--fc-gray:#6f6b63;--support:#b7791f}
+body.theme-dark{color-scheme:dark;--surface-raised:#1c1c1a;--surface-panel:#171715;--hover-raised:#262623;--danger:#f87171;--success:#4ade80;--warning:#fbbf24;--bg:#121212;--tb-bg:#181816;--border:#2a2a27;--fg:#eae9e4;--node-fg:#eae9e4;--muted:#9d9a93;--hint:#7d7b75;--accent:#3caa9b;--pv-heading:#8fb3d9;--pv-heading-2:#aac4e0;--hover:#1d1d1a;--sel:#26241f;--sel-fg:#f2f0e8;--edit-bg:#1a1a1a;--canvas-bg:#1a1a1a;--title-fg:#eeeeee;--btn-primary-bg:#eeeeee;--btn-primary-fg:#1a1a1a;--btn-primary-hover:#ffffff;--scroll:#4a4742;--scroll-hover:#67635c;--vert:#57544f;--conn:#57544f;--chip:#1d1d1a;--sem-section:#7b9ef0;--sem-alert:#d78a80;--sem-code:#a89bce;--sem-quote:#b5a87a;--fc-red:#e08585;--fc-orange:#e0a868;--fc-green:#7fd9a6;--fc-blue:#82b4f0;--fc-purple:#c39bea;--fc-gray:#a8a59d;--support:#e0b04a}
 body{background:var(--bg);color:var(--fg)}
 #appbar,#statusbar{flex-shrink:0;background:var(--tb-bg);border:none}#appbar{border-bottom:1px solid var(--border)}
 @media (display-mode: window-controls-overlay){
@@ -2737,6 +2743,9 @@ html.calm-layout,html.calm-layout body{overflow:clip}
 /* The Search slot keeps its place on the rail while the palette is open (owner 2026-10-29: To-Dos
    slid up under the pointer). */
 html.calm-layout #appbar-qa-slot{height:36px;flex:0 0 36px}
+/* Keep Search's place on the rail while the box is still being moved in, so To-Dos below it doesn't
+   jump 40px down on every load (owner 2026-11-02: "icons on the app bar seem to move"). */
+html.calm-layout #appbar-qa-slot:empty{display:flex}
 /* While open, the slot shows the Search icon as the pressed rail item. */
 html.calm-layout #appbar-qa-slot:has(.qa-open){position:relative;border-radius:8px;background:var(--hover)}
 html.calm-layout #appbar-qa-slot:has(.qa-open)::after{content:"";position:absolute;inset:9px;background:var(--fg);-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.7' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='M20 20l-3.5-3.5'/%3E%3C/svg%3E") center/18px no-repeat;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.7' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='M20 20l-3.5-3.5'/%3E%3C/svg%3E") center/18px no-repeat;pointer-events:none}
@@ -2791,6 +2800,13 @@ html.calm-layout .help-panel #help-search-toggle-btn{margin-left:auto}
 html.calm-layout #doc-help-btn{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;padding:0;margin-left:-4px;border-color:transparent;background:transparent;color:var(--muted)}
 html.calm-layout #doc-help-btn:hover{background:var(--hover);color:var(--fg)}
 html.calm-layout #doc-help-btn.is-active{background:var(--sel);color:var(--fg)}
+/* Help: the four learning cards, then one quiet line for the app itself (owner 2026-11-02: seven
+   stacked cards were too many). The coffee cup is gold, the colour people know for support. */
+html.calm-layout #help-meta-links{display:flex;flex-wrap:wrap;gap:6px 16px;padding:0 2px}
+html.calm-layout #help-meta-links button{display:inline-flex;align-items:center;gap:5px;padding:2px 0;color:var(--muted);font:500 12px 'Inter',sans-serif}
+html.calm-layout #help-meta-links button:hover{color:var(--fg)}
+html.calm-layout #help-meta-links svg:not(.help-coffee-icon){display:none}
+html.calm-layout #help-meta-links .help-coffee-icon{color:var(--support)}
 /* GENERATED:css-app:END */
 </style>
 <style>
@@ -3361,11 +3377,10 @@ html.calm-layout #doc-help-btn.is-active{background:var(--sel);color:var(--fg)}
   (function(){
     try{
       var raw=localStorage.getItem('sakura_v001_prefs');
-      if(!raw)return;
-      var d=JSON.parse(raw);
+      var d=raw?JSON.parse(raw):{themeMode:'system'}; // no saved prefs = the default, System
       var legacyMap={default:'light',vscode:'dark','clever-dark':'dark',clever:'light',sakura:'light'};
       var theme=legacyMap[d.theme]||d.theme;
-      var isDark=theme==='dark';
+      var isDark=d.themeMode==='system'?matchMedia('(prefers-color-scheme: dark)').matches:theme==='dark';
       if(isDark){
         document.body.classList.remove('theme-light');
         document.body.classList.add('theme-dark');
@@ -3789,11 +3804,8 @@ html.calm-layout #doc-help-btn.is-active{background:var(--sel);color:var(--fg)}
           <div id="help-cheatsheet-row"><span>Every shortcut, and changing them.</span><button type="button" id="cheatsheet-open-btn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/></svg>Keyboard shortcuts</button></div>
           <div id="help-why-row"><span>What Sakura is, and what it is for.</span><button type="button" id="help-why-open-btn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z" fill="currentColor" stroke="none"/></svg>What is Sakura</button></div>
           <div id="help-demo-row"><span>See it all come together, end to end.</span><button type="button" id="demo-open-btn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="6 4 18 12 6 20 6 4"/></svg>Watch a demo</button></div>
-          <div id="help-about-row"><span>Version, licence and privacy.</span><button type="button" id="help-about-open-btn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>About Sakura</button></div>
-          <div id="help-feedback-row"><span>Tell me what works and what doesn't.</span><button type="button" id="help-feedback-btn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Send feedback</button></div>
-          <div id="help-support-row"><span>Sakura is free, made by one person.</span><button type="button" id="help-support-btn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 8h1a4 4 0 1 1 0 8h-1"/><path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4z"/><line x1="6" y1="2" x2="6" y2="4"/><line x1="10" y1="2" x2="10" y2="4"/><line x1="14" y1="2" x2="14" y2="4"/></svg>Buy me a coffee</button></div>
           </div>
-          <div class="muted-help" style="margin-top:0">Pick a topic on the left, or search with the magnifier above.</div>
+          <div id="help-meta-links"><button data-tip="Tell me what works and what doesn't" type="button" id="help-feedback-btn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Send feedback</button><button data-tip="Sakura is free, made by one person" type="button" id="help-support-btn"><svg class="help-coffee-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 8h1a4 4 0 1 1 0 8h-1"/><path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4z"/><line x1="6" y1="2" x2="6" y2="4"/><line x1="10" y1="2" x2="10" y2="4"/><line x1="14" y1="2" x2="14" y2="4"/></svg>Buy me a coffee</button><button data-tip="Version, licence and privacy" type="button" id="help-about-open-btn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>About</button></div>
           </div>
           <div class="help-section" data-cat="writing">
 <h4>Rows</h4>
@@ -17701,8 +17713,8 @@ function collectHelpActionMatches(q){
     {row:'help-cheatsheet-row',label:'Keyboard shortcuts',hay:'keyboard shortcuts cheatsheet keys change customize',action:()=>{closeAllPanelsExceptGlobalSearch(); document.getElementById('cheatsheet-open-btn')?.click();}},
     {row:'help-demo-row',label:'Watch a demo',hay:'watch a demo see it all come together end to end',action:()=>{closeAllPanelsExceptGlobalSearch(); document.getElementById('demo-open-btn')?.click();}},
     {row:'help-tour-replay-row',label:'Take the tour',hay:'replay tour new here take the guided tour',action:()=>{closeAllPanelsExceptGlobalSearch(); document.getElementById('tour-replay-btn')?.click();}},
-    {row:'help-feedback-row',label:'Send feedback',hay:'send feedback tell me what works bug idea suggestion',action:()=>{closeAllPanelsExceptGlobalSearch(); openFeedbackModal();}},
-    {row:'help-support-row',label:'Buy me a coffee',hay:'buy me a coffee support donate ko-fi tip',action:()=>{window.open('https://ko-fi.com/robinrajawat','_blank','noopener,noreferrer');}},
+    {row:'help-feedback-btn',label:'Send feedback',hay:'send feedback tell me what works bug idea suggestion',action:()=>{closeAllPanelsExceptGlobalSearch(); openFeedbackModal();}},
+    {row:'help-support-btn',label:'Buy me a coffee',hay:'buy me a coffee support donate ko-fi tip',action:()=>{window.open('https://ko-fi.com/robinrajawat','_blank','noopener,noreferrer');}},
   ];
   items.forEach(it=>{
     if(out.length>=5)return;
@@ -20201,7 +20213,7 @@ function updateToolbarStates(){const ids=getSelectedIds(); const selectedNodes=i
 }
 // Keeps the browser's theme-color meta (mobile address bar tint) matched to the current
 // theme's toolbar background.
-function syncThemeColorMeta(){const themeColorMeta=document.querySelector('meta[name="theme-color"]'); if(themeColorMeta){const tbBg=getComputedStyle(document.body).getPropertyValue('--tb-bg').trim(); if(tbBg)themeColorMeta.setAttribute('content',tbBg);}}
+function syncThemeColorMeta(){document.documentElement.style.background=''; const themeColorMeta=document.querySelector('meta[name="theme-color"]'); if(themeColorMeta){const tbBg=getComputedStyle(document.body).getPropertyValue('--tb-bg').trim(); if(tbBg)themeColorMeta.setAttribute('content',tbBg);}}
 // Node text color is a fixed pair (--node-fg), deliberately separate from --accent above and
 // from --fg itself. --fg is the app's universal chrome color (buttons, settings labels, toasts,
 // status bar — 170+ uses across the stylesheet); overriding it here would have repainted the
@@ -27415,13 +27427,13 @@ const TOUR_STEPS=[
   {target:'#appbar',placement:'right',title:'The rail',bodyHtml:'<p>Everything outside the page lives on this rail: Documents, Search and To-Dos at the top; Settings, notifications and your account at the bottom.</p>'},
   {target:'#rail-docs-btn',placement:'right',title:'Documents',bodyHtml:'<p>Opens your File Explorer, already pointing at the document you are in.</p>'},
   {target:'#sidebar',placement:'right',title:'File Explorer',bodyHtml:'<p>Every document and folder lives here. Drag rows to reorder or move them, and right-click for more options, including Import (.opml).</p>',setup:()=>{ tourSidebarWasOpen=sidebarOpen; if(!sidebarOpen)setSidebarOpen(true); },teardown:()=>{ if(!tourSidebarWasOpen)setSidebarOpen(false); }},
-  {target:'#editor-pane',placement:'inside',title:'Editor',bodyHtml:'<p>Click to type. Enter adds a row, Tab indents it, Shift+Tab outdents. Type <strong>/</strong> for headings, notes, tables, images and more, and right-click any row for its actions.</p>'},
   {target:'#global-search-wrap',placement:'right',title:'Search',bodyHtml:'<p>Searches documents, rows, notes, threads, tables and To-Dos, plus settings and help, or runs a command like “dark mode”.</p><p>Press Ctrl/Cmd+/ to open it from anywhere.</p>'},
-  {target:'#doc-share-chip',placement:'bottom',title:'Share',bodyHtml:'<p>Download the document as a PDF, export it as an OPML file, or send someone a copy when you are signed in.</p>'},
-  {target:'#editor-floating-controls',placement:'left',title:'Zen mode',bodyHtml:'<p>Hides the File Explorer and the top line for a full page. Esc brings them back.</p>'},
   {target:'#dock-panel-appbar-toggle',placement:'right',title:'To-Dos',bodyHtml:'<p><strong>To-Dos</strong>: one task list that isn\'t tied to any single document, with due dates, sections and subtasks, docked beside the page wherever you are.</p>'},
   {target:'#rail-settings-btn',placement:'right',title:'Settings',bodyHtml:'<p>Theme, text size, PDF options, AI and backup. Everything is stored locally in this browser.</p>'},
-  {target:'#account-toggle',placement:'right',title:'Help',bodyHtml:'<p>Help is in your account menu: every shortcut and feature, in detail. Replay this tour from there anytime.</p>'},
+  {target:'#editor-pane',placement:'inside',title:'Editor',bodyHtml:'<p>Click to type. Enter adds a row, Tab indents it, Shift+Tab outdents. Type <strong>/</strong> for headings, notes, tables, images and more, and right-click any row for its actions.</p>'},
+  {target:'#doc-share-chip',placement:'bottom',title:'Share',bodyHtml:'<p>Download the document as a PDF, export it as an OPML file, or send someone a copy when you are signed in.</p>'},
+  {target:'#doc-help-btn',placement:'bottom',title:'Help',bodyHtml:'<p>Opens Help on the right: every shortcut and feature in detail, this tour to replay anytime, and Send feedback.</p>'},
+  {target:'#editor-floating-controls',placement:'left',title:'Zen mode',bodyHtml:'<p>Hides the File Explorer and the top line for a full page. Esc brings them back.</p>'},
   {target:null,placement:'center',title:"You’re set",bodyHtml:'<p>Start typing, or grow your first branch with AI.</p><p>Sakura is built on one belief.</p><span class="tour-quote">“Simplicity is the ultimate sophistication.”<span class="tour-attribution">— Leonardo da Vinci</span></span>'}
 ];
 function getTourStepRect(step){
@@ -27580,7 +27592,7 @@ el('tour-autoplay-btn')?.addEventListener('click',toggleTourAutoplay);
 setTourAutoplayBtnState();
 el('tour-replay-btn')?.addEventListener('click',()=>{ el('help-panel')?.classList.remove('open'); startTour(); });
 el('help-why-open-btn')?.addEventListener('click',()=>{ el('help-panel')?.classList.remove('open'); openWhySakura(); });
-['help-tour-replay-row','help-cheatsheet-row','help-demo-row','help-why-row','help-about-row','help-feedback-row','help-support-row'].forEach(rowId=>{
+['help-tour-replay-row','help-cheatsheet-row','help-demo-row','help-why-row'].forEach(rowId=>{
   const row=el(rowId); if(!row)return;
   row.addEventListener('click',e=>{ if(e.target.closest('button'))return; row.querySelector('button')?.click(); });
 });
