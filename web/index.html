@@ -2742,7 +2742,6 @@ html.calm-layout #appbar-qa-slot:has(.qa-open)::after{content:"";position:absolu
    one side panel width, as VS Code): it takes the File Explorer's place and moves the page over, so
    the document stays in view while you read Help. Its section list is icons (names in tooltips) so
    the text gets the room. On narrow windows it stays a sheet over the faded page. */
-html.calm-layout .help-panel{width:var(--side-w,320px);max-width:calc(100vw - 52px)}
 html.calm-layout .help-panel .settings-rail{flex:0 0 44px;padding:8px 4px}
 html.calm-layout .help-panel .settings-rail-btn span{display:none}
 html.calm-layout .help-panel .settings-rail-btn{justify-content:center;padding:8px 4px}
@@ -2752,10 +2751,6 @@ html.calm-layout .help-panel{scrollbar-gutter:auto}
 html.calm-layout #help-quick-links>div{flex-direction:column-reverse;align-items:flex-start;gap:2px}
 html.calm-layout #help-quick-links>div>button{padding:0;color:var(--fg);font-weight:500}
 html.calm-layout #help-quick-links>div>span{color:var(--muted)}
-@media (min-width:900px){
-  html.calm-layout body:has(.help-panel.open) :is(#sidebar,#sidebar-resize-handle){display:none}
-  html.calm-layout body:has(.help-panel.open) #app-layout{margin-left:calc(var(--side-w,320px) + 5px)}
-}
 /* Notifications too: same shared width, takes the File Explorer's place and moves the page over (2026-11-02). */
 @media (min-width:900px){
   html.calm-layout body:has(#notif-menu.open) :is(#sidebar,#sidebar-resize-handle){display:none}
@@ -2779,14 +2774,26 @@ html.calm-layout body:has(#global-search-wrap.qa-open) :is(#row-sel-pill,#select
    swaps the content in one frame, like VS Code. The explorer's old width slide made the page jump 320px
    and slide back whenever another panel took or gave back the slot. */
 html.calm-layout #sidebar{transition:none}
-/* Help's right edge resizes the one side width, like Documents and To-Dos (owner 2026-11-02). The handle
-   lives on <body> (Help scrolls), sits on Help's edge, and only shows while Help is docked (900px+). */
+/* Help is a pane on the RIGHT (owner 2026-11-02: "if the right way is the right side, consider it"), the
+   standard place for help in Slack, Office and Google apps. Documents / To-Dos / Notifications stay open on
+   the left while you read it. From 900px the page makes room on the right; below that it is a sheet over
+   the faded page. Its own width (--help-w), resized by dragging its left edge, remembered separately. */
+html.calm-layout .help-panel{left:auto!important;right:0!important;width:var(--help-w,360px);max-width:calc(100vw - 52px)}
+html.calm-layout .help-close-btn{flex:0 0 auto;margin-left:2px}
+html.calm-layout .help-panel #help-search-toggle-btn{margin-left:auto}
+@media (min-width:900px){
+  html.calm-layout body:has(.help-panel.open) #app-layout{margin-right:var(--help-w,360px)}
+}
 #help-resize-handle{display:none}
 @media (min-width:900px){
-  html.calm-layout body:has(.help-panel.open) #help-resize-handle{display:block;position:fixed;top:0;bottom:0;left:calc(52px + var(--side-w,320px) - 1px);width:6px;cursor:ew-resize;z-index:1001}
+  html.calm-layout body:has(.help-panel.open) #help-resize-handle{display:block;position:fixed;top:0;bottom:0;right:calc(var(--help-w,360px) - 3px);width:6px;cursor:ew-resize;z-index:1001}
   html.calm-layout #help-resize-handle::after{content:'';position:absolute;left:2px;top:50%;transform:translateY(-50%);width:1px;height:32px;border-radius:1px;background:var(--accent);opacity:0;transition:opacity .15s}
   html.calm-layout #help-resize-handle:hover::after,html.calm-layout #help-resize-handle.dragging::after{opacity:1}
 }
+/* The "?" beside Share opens Help (owner 2026-11-02): grey icon only, lit while Help is open. */
+html.calm-layout #doc-help-btn{display:inline-flex;align-items:center;justify-content:center;width:30px;height:28px;padding:0;margin-left:2px;border-color:transparent;background:transparent;color:var(--muted)}
+html.calm-layout #doc-help-btn:hover{background:var(--hover);color:var(--fg)}
+html.calm-layout #doc-help-btn.is-active{background:var(--sel);color:var(--fg)}
 /* GENERATED:css-app:END */
 </style>
 <style>
@@ -3458,7 +3465,6 @@ html.calm-layout #sidebar{transition:none}
               </div>
             </div>
           </div>
-          <button class="export-item" id="account-help-btn"><span class="export-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg></span><span class="export-label">Help</span></button>
           <button class="export-item" id="account-feedback-btn"><span class="export-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span><span class="export-label">Send feedback</span></button>
           <div class="export-divider"></div>
           <button class="export-item" id="account-support-btn" data-tip="Sakura is free, made by one person"><span class="export-icon account-support-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 8h1a4 4 0 1 1 0 8h-1"/><path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4z"/><line x1="6" y1="2" x2="6" y2="4"/><line x1="10" y1="2" x2="10" y2="4"/><line x1="14" y1="2" x2="14" y2="4"/></svg></span><span class="export-label">Buy me a coffee</span></button>
@@ -3749,6 +3755,7 @@ html.calm-layout #sidebar{transition:none}
             <button class="sb-icon-btn panel-search-toggle-btn" id="help-search-toggle-btn" data-tip="Search help" aria-pressed="false" aria-label="Search help" style="flex:0 0 auto">
               <svg id="help-search-toggle-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
             </button>
+            <button class="sb-icon-btn help-close-btn" id="help-close-btn" data-tip="Close (Esc)" aria-label="Close Help"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
           </div>
           <div class="settings-body">
             <div class="settings-rail" id="help-rail">
@@ -4069,6 +4076,7 @@ html.calm-layout #sidebar{transition:none}
             <div id="share-modal-error" class="share-modal-error" style="display:none"></div>
           </div>
         </div>
+        <button type="button" class="btn quick-btn" id="doc-help-btn" aria-label="Help" data-tip="Help" aria-pressed="false"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.2a2.6 2.6 0 0 1 5 .9c0 1.7-2.5 2.3-2.5 3.9"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></button>
       </div>
     </div>
     </div>
@@ -16272,7 +16280,7 @@ initNotificationsState({
 });
 bootLocalNotifications();
 el('notif-clear-all-btn')?.addEventListener('click',e=>{ e.stopPropagation(); clearAllNotifications(); });
-el('notif-toggle')?.addEventListener('click',e=>{ e.stopPropagation(); el('settings-panel')?.classList.remove('open'); el('help-panel')?.classList.remove('open'); el('export-menu')?.classList.remove('open'); el('appbar-more-menu')?.classList.remove('open'); el('account-menu')?.classList.remove('open'); toggleNotifMenu(); });
+el('notif-toggle')?.addEventListener('click',e=>{ e.stopPropagation(); el('settings-panel')?.classList.remove('open'); el('export-menu')?.classList.remove('open'); el('appbar-more-menu')?.classList.remove('open'); el('account-menu')?.classList.remove('open'); toggleNotifMenu(); });
 document.addEventListener('click',e=>{ if(isNotifMenuOpen()&&!e.target.closest('#notif-wrap'))toggleNotifMenu(false); });
 document.addEventListener('keydown',e=>{ if(e.key==='Escape'&&isNotifMenuOpen()){ e.preventDefault(); toggleNotifMenu(false); } });
 /* GENERATED:notifications:END */
@@ -23467,7 +23475,7 @@ el('search-input').addEventListener('keydown',e=>{
   if (matchesShortcut(e,'findInTree') || matchesShortcut(e,'findReplace')) return;
   e.stopPropagation(); if(e.key==='Enter'){e.preventDefault(); jumpSearch(e.shiftKey?-1:1)} else if(e.key==='Escape'){e.preventDefault(); closeSearch()}});
 document.querySelectorAll('.fmt-btn').forEach(btn=>btn.addEventListener('click',()=>handleToolbarStyle(btn.dataset.style)));
-el('settings-toggle').addEventListener('click',e=>{e.stopPropagation(); el('help-panel').classList.remove('open'); el('export-menu')?.classList.remove('open'); el('hl-palette')?.classList.remove('open'); el('fc-palette')?.classList.remove('open'); toggleNotifMenu(false); el('settings-panel').classList.toggle('open'); setSettingsSearchVisible(false); if(el('settings-panel').classList.contains('open')){updateExportStatus(); updatePreRestoreSnapshotStatus(); if(isAdmin){refreshAiVaultProvidersList(); refreshAiVaultQuota();}}}); el('help-toggle').addEventListener('click',e=>{e.stopPropagation(); el('settings-panel').classList.remove('open'); el('export-menu')?.classList.remove('open'); el('hl-palette')?.classList.remove('open'); el('fc-palette')?.classList.remove('open'); toggleNotifMenu(false); el('help-panel').classList.toggle('open'); setHelpSearchVisible(false)});
+el('settings-toggle').addEventListener('click',e=>{e.stopPropagation(); el('help-panel').classList.remove('open'); el('export-menu')?.classList.remove('open'); el('hl-palette')?.classList.remove('open'); el('fc-palette')?.classList.remove('open'); toggleNotifMenu(false); el('settings-panel').classList.toggle('open'); setSettingsSearchVisible(false); if(el('settings-panel').classList.contains('open')){updateExportStatus(); updatePreRestoreSnapshotStatus(); if(isAdmin){refreshAiVaultProvidersList(); refreshAiVaultQuota();}}}); el('help-close-btn')?.addEventListener('click',e=>{e.stopPropagation(); el('help-panel').classList.remove('open');}); el('help-toggle').addEventListener('click',e=>{e.stopPropagation(); el('settings-panel').classList.remove('open'); el('export-menu')?.classList.remove('open'); el('hl-palette')?.classList.remove('open'); el('fc-palette')?.classList.remove('open'); toggleNotifMenu(false); el('help-panel').classList.toggle('open'); setHelpSearchVisible(false)});
 el('export-toggle').addEventListener('click',e=>{e.stopPropagation(); toggleNotifMenu(false); openSbMenuUnder(e.currentTarget,exportMenuItems(),{id:'export-menu',label:'Export',alignRight:true,keyboard:e.detail===0});});
 el('import-toggle')?.addEventListener('click',e=>{e.stopPropagation(); toggleNotifMenu(false); openSbMenuUnder(e.currentTarget,importMenuItems(),{id:'import-menu',label:'Import',alignRight:true,keyboard:e.detail===0});});
 // Escape closes Settings or Help like every other panel, when focus is in that sheet or on the
@@ -23477,7 +23485,7 @@ document.addEventListener('keydown',e=>{
   const sheet=['settings-panel','help-panel'].map(id=>el(id)).find(p=>p?.classList.contains('open'));
   if(!sheet)return;
   const a=document.activeElement;
-  if(a&&a!==document.body&&!sheet.contains(a)&&!(a.id||'').startsWith('rail-'))return;
+  if(a&&a!==document.body&&!sheet.contains(a)&&!(a.id||'').startsWith('rail-')&&a.id!=='doc-help-btn')return;
   e.preventDefault();
   if(sheet.id==='settings-panel'&&_settingsBackHelpCat!=null){ goBackToHelp(); return; }
   sheet.classList.remove('open');
@@ -23516,7 +23524,9 @@ function anchorMenuToButton(menuEl,anchorEl){
   menuEl.style.right=(window.innerWidth-r.right)+'px';
   menuEl.style.left='auto';
 }
-el('account-help-btn')?.addEventListener('click',e=>{e.stopPropagation(); const anchor=el('account-toggle'); el('account-menu').classList.remove('open'); setTimeout(()=>{el('help-toggle').click(); anchorMenuToButton(el('help-panel'),anchor);},0)});
+// Help opens from the "?" beside Share, right above where its pane appears (owner 2026-11-02).
+el('doc-help-btn')?.addEventListener('click',e=>{e.stopPropagation(); el('help-toggle').click();});
+{ const hp=el('help-panel'), hb=el('doc-help-btn'); if(hp&&hb)new MutationObserver(()=>{ const on=hp.classList.contains('open'); hb.classList.toggle('is-active',on); hb.setAttribute('aria-pressed',String(on)); }).observe(hp,{attributes:true,attributeFilter:['class']}); }
 el('account-google-signin-btn')?.addEventListener('click',e=>{e.stopPropagation(); signInWithGoogleAccount()});
 el('account-signin-open-btn')?.addEventListener('click',e=>{e.stopPropagation(); el('account-menu').classList.remove('open'); showLandingOverlay()});
 el('account-signout-btn')?.addEventListener('click',async e=>{
@@ -23546,7 +23556,7 @@ document.addEventListener('click',e=>{
   // On wide windows Settings and Help sit beside the page (calm-layout.css), so working in the page
   // keeps them open like To-Dos; the rail and anything outside the page still close them.
   if(e.target.closest('[role="dialog"][aria-modal="true"].open'))return;
-  const help=el('help-panel'),helpToggle=el('help-toggle'),settings=el('settings-panel'),settingsToggle=el('settings-toggle'),context=el('context-menu'),gsWrap=el('global-search-wrap'),accountMenu=el('account-menu'),accountToggle=el('account-toggle'); const docked=(p,w)=>p.classList.contains('open')&&document.documentElement.classList.contains('calm-layout')&&matchMedia('(min-width:'+w+'px)').matches&&!!e.target.closest('#app-layout'); /* Help is docked beside the rail from 900px (calm-layout.css), like To-Dos: a click elsewhere leaves it open. Below 900 it is a sheet, so a click outside closes it. (Was 1160: clicks on the page closed Help between 900 and 1160px, owner bug 2026-11-02.) */ const helpDocked=help.classList.contains('open')&&document.documentElement.classList.contains('calm-layout')&&matchMedia('(min-width:900px)').matches; if(!help.contains(e.target)&&e.target!==helpToggle&&!helpDocked)help.classList.remove('open'); if(!settings.contains(e.target)&&e.target!==settingsToggle&&!docked(settings,1320)&&!el('rail-settings-btn')?.contains(e.target))settings.classList.remove('open'); if(accountMenu&&!accountMenu.contains(e.target)&&e.target!==accountToggle&&!accountToggle?.contains(e.target))accountMenu.classList.remove('open'); if(gsWrap&&!gsWrap.contains(e.target))setQaOpen(false); if(context && !context.contains(e.target))hideContextMenu(); const hlPal=el('hl-palette'),hlCaret=el('hl-caret-btn'); if(hlPal&&!hlPal.contains(e.target)&&e.target!==hlCaret)hlPal.classList.remove('open'); const fcPal=el('fc-palette'),fcCaret=el('fc-caret-btn'); if(fcPal&&!fcPal.contains(e.target)&&e.target!==fcCaret)fcPal.classList.remove('open');
+  const help=el('help-panel'),helpToggle=el('help-toggle'),settings=el('settings-panel'),settingsToggle=el('settings-toggle'),context=el('context-menu'),gsWrap=el('global-search-wrap'),accountMenu=el('account-menu'),accountToggle=el('account-toggle'); const docked=(p,w)=>p.classList.contains('open')&&document.documentElement.classList.contains('calm-layout')&&matchMedia('(min-width:'+w+'px)').matches&&!!e.target.closest('#app-layout'); /* Help is docked beside the rail from 900px (calm-layout.css), like To-Dos: a click elsewhere leaves it open. Below 900 it is a sheet, so a click outside closes it. (Was 1160: clicks on the page closed Help between 900 and 1160px, owner bug 2026-11-02.) */ const helpDocked=help.classList.contains('open')&&document.documentElement.classList.contains('calm-layout')&&matchMedia('(min-width:900px)').matches; if(!help.contains(e.target)&&e.target!==helpToggle&&!el('doc-help-btn')?.contains(e.target)&&!helpDocked)help.classList.remove('open'); if(!settings.contains(e.target)&&e.target!==settingsToggle&&!docked(settings,1320)&&!el('rail-settings-btn')?.contains(e.target))settings.classList.remove('open'); if(accountMenu&&!accountMenu.contains(e.target)&&e.target!==accountToggle&&!accountToggle?.contains(e.target))accountMenu.classList.remove('open'); if(gsWrap&&!gsWrap.contains(e.target))setQaOpen(false); if(context && !context.contains(e.target))hideContextMenu(); const hlPal=el('hl-palette'),hlCaret=el('hl-caret-btn'); if(hlPal&&!hlPal.contains(e.target)&&e.target!==hlCaret)hlPal.classList.remove('open'); const fcPal=el('fc-palette'),fcCaret=el('fc-caret-btn'); if(fcPal&&!fcPal.contains(e.target)&&e.target!==fcCaret)fcPal.classList.remove('open');
 },true);
 el('editor-pane').addEventListener('click',e=>{
   const blLink=e.target.closest('.bl-link[data-r]');
@@ -26811,10 +26821,8 @@ function openDocumentsPanel(){
   if(currentDocId&&!sbSearchQuery){ revealDocInSidebar(currentDocId,{flash:false}); return; }
   setSidebarOpen(true);
 }
-// One side slot (owner 2026-11-02): with Help in the slot, Documents takes it over (like from To-Dos).
-// Help only hides the explorer with CSS, so sidebarOpen can still be true underneath; toggling it shut
-// then did nothing visible ("Documents button seems unresponsive").
-function toggleDocumentsPanel(){ const help=el('help-panel'); if(help?.classList.contains('open')){ help.classList.remove('open'); if(!sidebarOpen)openDocumentsPanel(); return; } if(sidebarOpen)setSidebarOpen(false); else openDocumentsPanel(); }
+// Help is a pane on the right (owner 2026-11-02), so Documents opens and closes beside it on the left.
+function toggleDocumentsPanel(){ if(sidebarOpen)setSidebarOpen(false); else openDocumentsPanel(); }
 el('sidebar-toggle').addEventListener('click',toggleDocumentsPanel);
 el('sidebar-reopen-btn')?.addEventListener('click',openDocumentsPanel);
 function setZenMode(on){zenMode=!!on; document.body.classList.toggle('zen-mode',zenMode); const btn=el('editor-zen-toggle'); if(btn){btn.classList.toggle('is-active',zenMode); btn.setAttribute('aria-pressed',String(zenMode)); btn.dataset.tip=zenMode?'Restore (Esc or Ctrl/Cmd+Shift+E)':'Maximize editor (hide File Explorer & chrome) (Ctrl/Cmd+Shift+E)'} const icon=el('editor-zen-icon'); if(icon)icon.innerHTML=zenMode?'<polyline points="9 3 9 9 3 9"/><polyline points="15 3 15 9 21 9"/><polyline points="9 21 9 15 3 15"/><polyline points="15 21 15 15 21 15"/>':'<polyline points="9 3 3 3 3 9"/><polyline points="15 3 21 3 21 9"/><polyline points="3 15 3 21 9 21"/><polyline points="21 15 21 21 15 21"/>';
@@ -32852,10 +32860,9 @@ function todosHistorySummary(list) {
     if(!panel) return;
     pruneCompleted();
     // To-Dos opens in the File Explorer's place beside the rail (owner, 2026-10-28): one panel at a time,
-    // so it also closes Settings and Help, which take that same slot.
+    // so it also closes Settings. Help stays: it is a pane on the right (owner 2026-11-02).
     if(sidebarOpen)setSidebarOpen(false);
     document.getElementById('settings-panel')?.classList.remove('open');
-    document.getElementById('help-panel')?.classList.remove('open');
     panel.classList.add('open');
     applyTodosWidth();
     renderTodos();
@@ -33079,13 +33086,18 @@ function todosHistorySummary(list) {
     });
   }
 
-  // Help sits in the same side slot, so it resizes the same way (owner 2026-11-02): drag its right edge,
-  // and the one shared width (Documents, To-Dos, Help) is remembered.
+  // Help is a pane on the right (owner 2026-11-02): drag its LEFT edge to resize it. Its width is its
+  // own (the left slot keeps the Documents / To-Dos width), and it is remembered.
   function initHelpResize(){
     const handle=document.getElementById('help-resize-handle');
     const panel=document.getElementById('help-panel');
     if(!handle||!panel) return;
     if(handle.parentElement!==document.body) document.body.appendChild(handle);
+    const KEY='sakura_help_width_v1', MIN=280, MAX=640;
+    const apply=w=>document.documentElement.style.setProperty('--help-w',Math.max(MIN,Math.min(w,MAX,window.innerWidth-52))+'px');
+    let helpWidth=360; try{ const v=parseInt(localStorage.getItem(KEY)||'',10); if(v>0) helpWidth=v; }catch(e){}
+    apply(helpWidth);
+    window.addEventListener('resize',()=>apply(helpWidth));
     let dragging=false, startX=0, startWidth=0;
     handle.addEventListener('mousedown',e=>{
       dragging=true; startX=e.clientX; startWidth=panel.getBoundingClientRect().width;
@@ -33094,14 +33106,14 @@ function todosHistorySummary(list) {
     });
     document.addEventListener('mousemove',e=>{
       if(!dragging) return;
-      const maxW=Math.min(TODOS_WIDTH_MAX, window.innerWidth-24);
-      todosWidth=Math.round(Math.max(TODOS_WIDTH_MIN, Math.min(maxW, startWidth+e.clientX-startX)));
-      applySidebarWidth(todosWidth);
+      const maxW=Math.min(MAX, window.innerWidth-52-320);
+      helpWidth=Math.round(Math.max(MIN, Math.min(maxW, startWidth-(e.clientX-startX))));
+      apply(helpWidth);
     });
     document.addEventListener('mouseup',()=>{
       if(!dragging) return;
       dragging=false; handle.classList.remove('dragging'); document.body.style.userSelect='';
-      saveTodosWidth(todosWidth);
+      try{ localStorage.setItem(KEY,String(helpWidth)); }catch(e){}
     });
   }
 
@@ -33370,12 +33382,13 @@ function todosHistorySummary(list) {
   initTodosResize();
   initHelpResize();
   window.toggleTodosPanel=toggleTodosPanel;
-  // Settings or Help opening (from the rail, Search, a shortcut…) closes To-Dos: they share the slot
-  // beside the rail, and with both open the page slid under Settings and was cut off.
+  // Settings opening (from the rail, Search, a shortcut…) closes To-Dos: Settings covers the page, and
+  // with both open the page slid under Settings and was cut off. Help is a pane on the right
+  // (owner 2026-11-02), so To-Dos stays open beside it.
   {
-    const sheetOpened=()=>{ if(document.querySelector('#settings-panel.open,#help-panel.open')&&document.getElementById('todos-panel')?.classList.contains('open'))closeTodosPanel(); };
+    const sheetOpened=()=>{ if(document.querySelector('#settings-panel.open')&&document.getElementById('todos-panel')?.classList.contains('open'))closeTodosPanel(); };
     const mo=new MutationObserver(sheetOpened);
-    ['settings-panel','help-panel'].forEach(id=>{ const p=document.getElementById(id); if(p)mo.observe(p,{attributes:true,attributeFilter:['class']}); });
+    ['settings-panel'].forEach(id=>{ const p=document.getElementById(id); if(p)mo.observe(p,{attributes:true,attributeFilter:['class']}); });
   }
   // The selection bar on a To-Do title (owner, 2026-10-23: the same bar everywhere). Offsets are
   // in the stored title's characters: the editor's chips add zero-width spaces and typing can add

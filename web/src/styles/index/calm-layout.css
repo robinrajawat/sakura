@@ -227,7 +227,6 @@ html.calm-layout #appbar-qa-slot:has(.qa-open)::after{content:"";position:absolu
    one side panel width, as VS Code): it takes the File Explorer's place and moves the page over, so
    the document stays in view while you read Help. Its section list is icons (names in tooltips) so
    the text gets the room. On narrow windows it stays a sheet over the faded page. */
-html.calm-layout .help-panel{width:var(--side-w,320px);max-width:calc(100vw - 52px)}
 html.calm-layout .help-panel .settings-rail{flex:0 0 44px;padding:8px 4px}
 html.calm-layout .help-panel .settings-rail-btn span{display:none}
 html.calm-layout .help-panel .settings-rail-btn{justify-content:center;padding:8px 4px}
@@ -237,10 +236,6 @@ html.calm-layout .help-panel{scrollbar-gutter:auto}
 html.calm-layout #help-quick-links>div{flex-direction:column-reverse;align-items:flex-start;gap:2px}
 html.calm-layout #help-quick-links>div>button{padding:0;color:var(--fg);font-weight:500}
 html.calm-layout #help-quick-links>div>span{color:var(--muted)}
-@media (min-width:900px){
-  html.calm-layout body:has(.help-panel.open) :is(#sidebar,#sidebar-resize-handle){display:none}
-  html.calm-layout body:has(.help-panel.open) #app-layout{margin-left:calc(var(--side-w,320px) + 5px)}
-}
 /* Notifications too: same shared width, takes the File Explorer's place and moves the page over (2026-11-02). */
 @media (min-width:900px){
   html.calm-layout body:has(#notif-menu.open) :is(#sidebar,#sidebar-resize-handle){display:none}
@@ -264,11 +259,23 @@ html.calm-layout body:has(#global-search-wrap.qa-open) :is(#row-sel-pill,#select
    swaps the content in one frame, like VS Code. The explorer's old width slide made the page jump 320px
    and slide back whenever another panel took or gave back the slot. */
 html.calm-layout #sidebar{transition:none}
-/* Help's right edge resizes the one side width, like Documents and To-Dos (owner 2026-11-02). The handle
-   lives on <body> (Help scrolls), sits on Help's edge, and only shows while Help is docked (900px+). */
+/* Help is a pane on the RIGHT (owner 2026-11-02: "if the right way is the right side, consider it"), the
+   standard place for help in Slack, Office and Google apps. Documents / To-Dos / Notifications stay open on
+   the left while you read it. From 900px the page makes room on the right; below that it is a sheet over
+   the faded page. Its own width (--help-w), resized by dragging its left edge, remembered separately. */
+html.calm-layout .help-panel{left:auto!important;right:0!important;width:var(--help-w,360px);max-width:calc(100vw - 52px)}
+html.calm-layout .help-close-btn{flex:0 0 auto;margin-left:2px}
+html.calm-layout .help-panel #help-search-toggle-btn{margin-left:auto}
+@media (min-width:900px){
+  html.calm-layout body:has(.help-panel.open) #app-layout{margin-right:var(--help-w,360px)}
+}
 #help-resize-handle{display:none}
 @media (min-width:900px){
-  html.calm-layout body:has(.help-panel.open) #help-resize-handle{display:block;position:fixed;top:0;bottom:0;left:calc(52px + var(--side-w,320px) - 1px);width:6px;cursor:ew-resize;z-index:1001}
+  html.calm-layout body:has(.help-panel.open) #help-resize-handle{display:block;position:fixed;top:0;bottom:0;right:calc(var(--help-w,360px) - 3px);width:6px;cursor:ew-resize;z-index:1001}
   html.calm-layout #help-resize-handle::after{content:'';position:absolute;left:2px;top:50%;transform:translateY(-50%);width:1px;height:32px;border-radius:1px;background:var(--accent);opacity:0;transition:opacity .15s}
   html.calm-layout #help-resize-handle:hover::after,html.calm-layout #help-resize-handle.dragging::after{opacity:1}
 }
+/* The "?" beside Share opens Help (owner 2026-11-02): grey icon only, lit while Help is open. */
+html.calm-layout #doc-help-btn{display:inline-flex;align-items:center;justify-content:center;width:30px;height:28px;padding:0;margin-left:2px;border-color:transparent;background:transparent;color:var(--muted)}
+html.calm-layout #doc-help-btn:hover{background:var(--hover);color:var(--fg)}
+html.calm-layout #doc-help-btn.is-active{background:var(--sel);color:var(--fg)}
