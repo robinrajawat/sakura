@@ -54,3 +54,16 @@ test('switching Documents and To-Dos keeps the page still', async ({ page }) => 
     expect(new Set(xs)).toEqual(new Set([start]));
   }
 });
+
+// Bug (owner 2026-11-02): between 900 and 1160px a click on the page closed Help, so the File
+// Explorer popped back in. Help is docked from 900px like To-Dos, so it stays until toggled.
+test('a click on the page leaves docked Help open; below 900px Help is a sheet and closes', async ({ page }) => {
+  for (const [w, stays] of [[1100, true], [1600, true], [800, false]] as const) {
+    await page.setViewportSize({ width: w, height: 800 });
+    await page.evaluate(() => { const h = document.getElementById('help-panel')!; if (!h.classList.contains('open')) document.getElementById('help-toggle')!.click(); });
+    await expect(page.locator('#help-panel')).toBeVisible();
+    await page.mouse.click(w - 60, 600);
+    if (stays) await expect(page.locator('#help-panel')).toBeVisible();
+    else await expect(page.locator('#help-panel')).toBeHidden();
+  }
+});
