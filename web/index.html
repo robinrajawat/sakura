@@ -29444,7 +29444,10 @@ function threadDefaultAuthor(){
   if(_threadAuthor!=null)return _threadAuthor;
   const hidden=new Set(threadHiddenAuthors());
   let best=null; (remarks||[]).forEach(r=>{ if(r&&(r.person||'').trim()&&!hidden.has(r.person.trim())&&(!best||(r.createdAt||0)>=(best.createdAt||0)))best=r; });
-  return best?best.person.trim():((el('doc-author')?.value||'').trim());
+  if(best)return best.person.trim();
+  // Nobody has written here yet: the document's author, else your name (Settings → Your name), else
+  // the signed-in account's name -- never a bare "Who" (2026-11-02).
+  return (el('doc-author')?.value||'').trim()||(defaultAuthorName||'').trim()||((typeof currentUser!=='undefined'&&currentUser&&currentUser.displayName)||'').trim();
 }
 // Names used in this document, most recent first, plus the document's author.
 // Names taken off the "Add as" list for this document (this browser only); writing as one brings it back.
@@ -29563,7 +29566,7 @@ function renderThreadEntry(node,r,thread,place,commit,prev,nested){
   };
   // The author is picked like on the reply line (owner request): click → the names in this document,
   // or "Someone else…" to type one. Focusable, so moving here from an emptied entry keeps it.
-  const person=document.createElement('span'); person.contentEditable='false'; person.tabIndex=0; person.setAttribute('role','button'); person.className='node-remark-person-inline'; person.textContent=r.person||''; person.dataset.placeholder='Who'; person.spellcheck=false; person.dataset.tip='Author — click to pick another';
+  const person=document.createElement('span'); person.contentEditable='false'; person.tabIndex=0; person.setAttribute('role','button'); person.className='node-remark-person-inline'; person.textContent=r.person||''; person.dataset.placeholder='Add name'; person.spellcheck=false; person.dataset.tip='Author — click to pick another';
   const typing=()=>person.contentEditable==='true';
   const openAuthorMenu=()=>{
     const CHECK='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
@@ -29802,7 +29805,7 @@ function renderThreadComposer(node,thread,place,commit){
   const ask=kind==='question';
   const author=threadDefaultAuthor();
   let avatar=threadKindEl(kind==='question'?{type:'question'}:kind==='decision'?{decision:true}:{},null,'thread-kind');
-  const who=document.createElement('button'); who.type='button'; who.className='thread-author-btn'; who.textContent=(author||'Who?')+' ▾'; who.dataset.tip='Add as — pick who is speaking';
+  const who=document.createElement('button'); who.type='button'; who.className='thread-author-btn'; who.textContent=(author||'Add name')+' ▾'; who.dataset.tip='Add as — pick who is speaking';
   who.addEventListener('mousedown',e=>{ e.stopPropagation(); e.preventDefault(); });
   who.addEventListener('click',e=>{ e.stopPropagation(); const r=who.getBoundingClientRect(); showSbContextMenu(r.left,r.bottom+4,threadAuthorMenuItems(node,who)); });
   const input=document.createElement('div'); input.className='thread-composer-input remark-text-input'; input.contentEditable='true'; input.spellcheck=spellcheckEnabled; input.dataset.nodeId=node.id;
