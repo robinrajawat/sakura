@@ -48,3 +48,22 @@ test('formatting bar for chosen words hides under Settings', async ({ page }) =>
   await expect(page.locator('#settings-panel')).toBeVisible();
   await expect(page.locator('#selection-fmt-popover')).toBeHidden();
 });
+
+// The Search palette sits on top of the editor too: an open row menu closes, the bars wait underneath.
+test('Search closes an open row menu and hides the selected-rows bars', async ({ page }) => {
+  await row(page, 2).locator('.node-dot').click({ button: 'right' });
+  await expect(page.locator('#context-menu')).toBeVisible();
+  await page.keyboard.press('Control+/');
+  await expect(page.locator('#qa-input')).toBeFocused();
+  await expect(page.locator('#global-search-wrap')).toHaveClass(/qa-open/);
+  await expect(page.locator('#context-menu')).toBeHidden();
+  await page.keyboard.press('Escape');
+  await row(page, 1).locator('.node-dot').click();
+  await row(page, 2).locator('.node-dot').click({ modifiers: ['Shift'] });
+  await expect(page.locator('#row-sel-pill')).toBeVisible();
+  await page.keyboard.press('Control+/');
+  await expect(page.locator('#qa-input')).toBeFocused();
+  await expect(page.locator('#global-search-wrap')).toHaveClass(/qa-open/);
+  await expect(page.locator('#row-sel-pill')).toBeHidden();
+  await expect(page.locator('#selection-fmt-popover')).toBeHidden();
+});

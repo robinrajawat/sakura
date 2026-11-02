@@ -257,4 +257,10 @@ html.calm-layout #help-quick-links>div>span{color:var(--muted)}
 #ai-prompt-editor[hidden]{display:none}
 /* Settings covers the editor, so the editor's floating bars (selected-rows pill, formatting bar) hide
    while it is open (owner 2026-11-02: they leaked over Settings). */
-html.calm-layout body:has(#settings-panel.open) :is(#row-sel-pill,#selection-fmt-popover){display:none!important}
+/* Search too: the palette is on top, so the editor's bars and row tooltips wait underneath. */
+html.calm-layout body:has(#settings-panel.open) :is(#row-sel-pill,#selection-fmt-popover),
+html.calm-layout body:has(#global-search-wrap.qa-open) :is(#row-sel-pill,#selection-fmt-popover,#node-timestamp-tip){display:none!important}
+/* One side slot, different content (owner 2026-11-02): switching Documents / To-Dos / Help / Notifications
+   swaps the content in one frame, like VS Code. The explorer's old width slide made the page jump 320px
+   and slide back whenever another panel took or gave back the slot. */
+html.calm-layout #sidebar{transition:none}

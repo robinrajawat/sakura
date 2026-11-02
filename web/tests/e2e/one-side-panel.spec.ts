@@ -35,3 +35,22 @@ test('opening Settings or Help closes To-Dos, and opening To-Dos closes them', a
   await page.evaluate(() => document.getElementById('help-panel')!.classList.add('open'));
   expect(await open('todos-panel')).toBe(false);
 });
+
+// One side slot with different content (owner 2026-11-02: switching felt jumpy). The explorer used to
+// slide its width, so the page jumped 320px and slid back. Now the swap happens in one frame and the
+// page never moves.
+test('switching Documents and To-Dos keeps the page still', async ({ page }) => {
+  await page.setViewportSize({ width: 1400, height: 800 });
+  await page.evaluate(() => { (window as any).setSidebarOpen?.(true); });
+  const left = () => page.locator('#header-title').evaluate((e) => Math.round(e.getBoundingClientRect().left));
+  const start = await left();
+  const track = () => page.evaluate(() => new Promise<number[]>((done) => {
+    const xs: number[] = []; const t0 = performance.now();
+    const tick = () => { xs.push(Math.round(document.getElementById('header-title')!.getBoundingClientRect().left)); if (performance.now() - t0 < 400) requestAnimationFrame(tick); else done(xs); };
+    requestAnimationFrame(tick);
+  }));
+  const run = async (sel: string) => { const p = track(); await page.locator(sel).click(); return p; };
+  for (const xs of [await run('#dock-panel-appbar-toggle'), await run('#rail-docs-btn')]) {
+    expect(new Set(xs)).toEqual(new Set([start]));
+  }
+});
