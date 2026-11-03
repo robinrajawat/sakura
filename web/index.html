@@ -2803,7 +2803,10 @@ html.calm-layout #sidebar{transition:none}
    the faded page. Its own width (--help-w), resized by dragging its left edge, remembered separately. */
 html.calm-layout .help-panel{left:auto!important;right:0!important;width:var(--help-w,360px);max-width:calc(100vw - 52px)}
 html.calm-layout .help-close-btn{flex:0 0 auto;margin-left:2px}
-html.calm-layout .help-panel #help-search-toggle-btn{margin-left:auto}
+/* Same as Settings: the search box is always shown, so the header has one X per job (clear the
+   box, close the pane). The old toggle turned into a second, accent-filled X while searching. */
+html.calm-layout #help-search-wrap{display:block!important}
+html.calm-layout #help-search-toggle-btn{display:none!important}
 @media (min-width:900px){
   html.calm-layout body:has(.help-panel.open) #app-layout{margin-right:var(--help-w,360px)}
 }
@@ -28455,8 +28458,11 @@ function renderPreviewBody(){
 
     const depth=node.depth||0;
     const pvMainText=node.text||'';
-    const isSection=nodeIsSection(node,sectionMarkersDepthZero);
     const headingLevel=node.styles.heading||0;
+    // A top-level row prints as a section line unless it has its own heading format: then it
+    // prints as that heading, as the editor shows it (a Heading 1 at depth 0 used to look like
+    // any other section).
+    const isSection=!headingLevel&&nodeIsSection(node,sectionMarkersDepthZero);
     let mainEl,contentEl;
     if(isSection){
       const hrow=document.createElement('div'); hrow.className='pv-h-row pv-h-row-1'; hrow.id='pv-anchor-'+node.id;
@@ -28483,7 +28489,7 @@ function renderPreviewBody(){
       h.innerHTML=previewNodeInnerHtml(node,pvMainText);
       hrow.appendChild(h);
       mainEl=hrow; contentEl=h;
-      tocEntries.push({id:node.id,text:pvTocText(node.text||'')||'Untitled',level:headingLevel,kind:'heading'});
+      tocEntries.push({id:node.id,text:pvTocText(node.text||'')||'Untitled',level:headingLevel,kind:'heading',top:depth===0});
     } else {
       lastHeadingLevel=null;
       const isCb=isCheckboxNode(node);
@@ -28539,7 +28545,7 @@ function renderPreviewBody(){
     // label row at all, just the raw text right after the node), so a titled note always gets
     // the block below instead, where the title can actually sit next to the NOTE label.
     const hasNoteTitle = !!(node.noteTitle && node.noteTitle.trim());
-    const isPlainNote = !_pvForceFullNoteCard && !nodeIsSection(node,sectionMarkersDepthZero) && !hasNoteTitle && noteHasContent && noteIsPlainTextOnly(noteRestHtml) && noteIsSingleLine(noteRestHtml);
+    const isPlainNote = !_pvForceFullNoteCard && !isSection && !hasNoteTitle && noteHasContent && noteIsPlainTextOnly(noteRestHtml) && noteIsSingleLine(noteRestHtml);
     // isPlainNote notes are text-only by construction (noteIsPlainTextOnly already excludes
     // img/table), so there's nothing to pull out of those -- only worth computing for the ones
     // that are about to get the full card treatment below.
@@ -28642,7 +28648,7 @@ function renderPreviewBody(){
       if(featureNoteEnabled&&!isPlainNote&&(noteCardHasText||hasNoteTitle)){
         const wrap=document.createElement('div'); wrap.className='pv-inline-block'; wrap.style.paddingLeft=inlinePad;
         const label=document.createElement('div'); label.className='pv-inline-label pv-inline-label-note'+(hasNoteTitle?'':' pv-inline-label-untitled'); label.innerHTML='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8Z"/><path d="M15 3v4a2 2 0 0 0 2 2h4"/></svg><span>Note</span>'+(node.noteTitle&&node.noteTitle.trim()?`<span class="pv-inline-note-title-sep">—</span><span class="pv-inline-note-title">${esc(node.noteTitle.trim())}</span>`:'');
-        const inner=document.createElement('div'); inner.className='pv-inline-note-body'+(noteMatchEditorBg?'':' bg-distinct')+(!_pvForceFullNoteCard&&!nodeIsSection(node,sectionMarkersDepthZero)&&noteCanUsePlainCard(noteCardHtml)?' pv-note-plain':'');
+        const inner=document.createElement('div'); inner.className='pv-inline-note-body'+(noteMatchEditorBg?'':' bg-distinct')+(!_pvForceFullNoteCard&&!isSection&&noteCanUsePlainCard(noteCardHtml)?' pv-note-plain':'');
         // Any table left in noteCardHtml at this point (isPlainNote path only -- a non-plain
         // note's own tables were already extracted into blockVisuals above) still needs the same
         // chart swap renderNoteDisplayHtml gives the live editor's own unfocused display, via
@@ -28776,7 +28782,8 @@ function renderPreviewBody(){
   }
   body.replaceChildren(doc);
   const filteredTocEntries=tocEntries.filter(e=>{
-    if(e.level>PDF_TOC_MAX_LEVEL)return false;
+    // A top-level heading is one of the document's main parts, so it is listed at any level.
+    if(e.level>PDF_TOC_MAX_LEVEL&&!e.top)return false;
     return true;
   });
   renderPreviewToc(filteredTocEntries,!!doc.querySelector('#pv-qa-section'));
@@ -28794,7 +28801,7 @@ function renderPreviewToc(entries,showQa=false){
   if(showHeadings){
     entries.forEach(entry=>{
       const a=document.createElement('a');
-      a.className='pv-toc-item pv-toc-lvl-'+entry.level;
+      a.className='pv-toc-item pv-toc-lvl-'+(entry.top?1:entry.level);
       a.href='#pv-anchor-'+entry.id;
       const label=document.createElement('span'); label.className='pv-toc-label'; label.textContent=entry.text; a.appendChild(label);
       appendTocPageSlot(a);
@@ -28928,9 +28935,9 @@ function exportPreviewAsPdf(onDone){
   const footerDate=new Date().toLocaleDateString(undefined,{year:'numeric',month:'short',day:'numeric'});
   const paper=pdfPaperSize();
   // Footer: the document's title (and status, if set) on the left so a loose page still says what
-  // it belongs to; the date moves to the right. The branding wordmark stays on the cover page.
+  // it belongs to; the date and "Page x of y" on the right. The branding wordmark stays on the cover page.
   const footerTitleRaw=String(meta.title||'Untitled');
-  const footerTitle=footerTitleRaw.length>70?footerTitleRaw.slice(0,69)+'…':footerTitleRaw;
+  const footerTitle=footerTitleRaw.length>60?footerTitleRaw.slice(0,59).trimEnd()+'…':footerTitleRaw;
   const footerContent=cssStr(footerTitle+(docStatus&&DOC_STATUSES.includes(docStatus)?' · '+docStatusLabel(docStatus):''));
   const footerDateContent=cssStr(footerDate);
   style.textContent=`
@@ -28948,15 +28955,17 @@ function exportPreviewAsPdf(onDone){
          Chrome's own default header/footer (page URL + date) for the page. */
       /* The 40px side padding matches #preview-doc's own (below), so the footer lines up with
          the text column instead of reaching out to the page margin. */
-      @bottom-left{ content:"${footerContent}"; font-family:'Inter',sans-serif; font-size:8pt; color:#a3a099; padding-left:40px; }
-      @bottom-center{ content:"Page " counter(page) " of " counter(pages); font-family:'Inter',sans-serif; font-size:8pt; color:#a3a099; }
-      @bottom-right{ content:"${footerDateContent}"; font-family:'Inter',sans-serif; font-size:8pt; color:#a3a099; padding-right:40px; }
+      /* Two boxes with fixed shares, not three auto-sized ones: Chrome sizes auto margin boxes
+         by their text, so a long title squeezed a centred "Page x of y" until it wrapped
+         onto two lines. The title keeps one line (it is cut short above). */
+      @bottom-left{ content:"${footerContent}"; width:66%; white-space:nowrap; overflow:hidden; text-align:left; font-family:'Inter',sans-serif; font-size:8pt; color:#a3a099; padding-left:40px; }
+      @bottom-right{ content:"${footerDateContent} \\00B7  Page " counter(page) " of " counter(pages); width:34%; white-space:nowrap; text-align:right; font-family:'Inter',sans-serif; font-size:8pt; color:#a3a099; padding-right:40px; }
     }
     /* The cover page carries no footer. It still counts as page 1, so the footer's "Page x of y"
        comes straight from the browser's own page counters and can never disagree with the PDF
        (a measured total, cover excluded, was off by a page on some documents). */
     @page cover {
-      @bottom-left{ content:none; } @bottom-center{ content:none; } @bottom-right{ content:none; }
+      @bottom-left{ content:none; } @bottom-right{ content:none; }
     }
     @media print {
       body.printing-preview > *:not(#preview-overlay){ display:none !important; }

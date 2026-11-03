@@ -173,12 +173,11 @@ contradicts README.md or docs/feature-reference.md, trust them.)*
 
 ### Latest changes
 
+- **PDF headings, footer, Help search (2026-11-03, owner).** A top-level row with a heading format now prints as that heading (it used to print as a plain section line, so H1/H2/H3 at depth 0 looked the same); top-level headings of any level are in Contents. Footer is two one-line boxes: title · status left (cut at 60 chars), date · Page x of y right (a long title had squeezed a centred page number onto two lines). Help's search box is always shown like Settings (no magnifier toggle that turned into a second accent X).
+
 - **Phone page refresh, no "Hub" (2026-11-03, owner).** hub.html is just "Sakura" (title, sign-in, loading, About; manifest name was already Sakura). One header row: To-Dos | Documents switch left (segmented), search + avatar right; wordmark/HUB badge gone. Grey chrome: dark primary + button, grey done ticks, grey theme selection, grey account-menu icons. Account menu like desktop: System | Light | Dark row, Send feedback, Buy me a coffee (plain line), About Sakura, Sign out (not red). Greeting replaced by a "To-Dos" heading + "N open". About rewritten short with the build version (`#about-version`, `__SAKURA_VERSION__`).
 
 - **Documents on the phone, read only (2026-11-03, owner).** hub.html has a To-Dos | Documents switch (`setHubView`, remembered in `sakura_hub_view_v1`). Documents lists synced docs (meta docsIndex/folders/docFolderMap, Trash left out, newest first, folder path, search) and opens a full-screen read-only outline (`openDocReader`/`renderReader`): saved folds, chevrons, +N, expand/collapse all, headings, checkboxes, row marks and row links (jump), status icons, note and thread in place, pictures with mark-up, tables, diagram chips. Owner rule: no way to corrupt documents. The reader only reads (getDoc), never writes; `hub-docs-reader.spec.ts` fails on any write; stored HTML goes through an allowlist sanitizer (`readerSanitize`). Offline: list in localStorage, last 15 docs in IndexedDB `sakura_hub_reader`, cleared on sign-out. Pure parts `src/utils/docReader.ts` (+ hubDiscussionStatus/hubNodeImages blocks).
-
-- **Polish: pressed popover buttons, To-Dos typing, plain tooltips (2026-11-02, owner).** Bell and account show the pressed look while their popover is open (calm-layout.css line with `:has(#notif-menu.open)`). Opening To-Dos focuses the task box at once, so keys typed straight after the click no longer go into the document. The rail magnifier says "Search (Ctrl/Cmd+K)" (it read "Browse by category"; `setQaOpen` switches the tip while the box is open). Zen button tip "Zen mode (Ctrl/Cmd+Shift+E)" / "Exit zen mode (Esc)" (was "Maximize editor (hide File Explorer & chrome)"). aria-labels on bell, account, New folder, New document. Tests in `panels-stay-open.spec.ts`.
-
 
 ### In progress / not built
 

@@ -84,10 +84,14 @@ test('PDF section headings and Contents keep an old leading [label] intact: "Rel
     renderPreviewBody();
     return {
       sections: [...document.querySelectorAll('#preview-body .pv-section')].map((e) => e.textContent),
+      headings: [...document.querySelectorAll('#preview-body .pv-heading-3')].map((e) => e.textContent),
       toc: [...document.querySelectorAll('#preview-toc .pv-toc-label')].map((e) => e.textContent)
     };
   });
-  expect(r.sections).toEqual(['Release 2.4 · Plan', 'Risks', 'Plan [draft]']);
+  // A bare "[Risks]" became a Heading 3 row (as the editor shows it), so since 2026-11-03 it
+  // prints as that heading rather than as a section line; Contents still lists it.
+  expect(r.sections).toEqual(['Release 2.4 · Plan', 'Plan [draft]']);
+  expect(r.headings).toEqual(['Risks']);
   // typed brackets are plain text since rows became rich text, so "[draft]" stays as written
   expect(r.toc).toEqual(['Release 2.4 · Plan', 'Risks', 'Plan [draft]']);
   expect(errors).toEqual([]);

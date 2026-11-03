@@ -116,7 +116,7 @@ test('PDF: no blank Contents page when there are too few sections', async ({ pag
       printed: w.__printed,
       tocHidden: document.getElementById('preview-toc')!.classList.contains('pv-toc-hidden-auto'),
       hideRule: /#preview-toc\.pv-toc-hidden-auto\{\s*display:none !important;/.test(css),
-      footer: (css.match(/@bottom-center\{[^}]*\}/) || [''])[0]
+      footer: (css.match(/@bottom-right\{[^}]*\}/) || [''])[0]
     };
   });
   expect(r.printed).toBe(true);
