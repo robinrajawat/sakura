@@ -270,7 +270,10 @@ html.calm-layout #sidebar{transition:none}
    the faded page. Its own width (--help-w), resized by dragging its left edge, remembered separately. */
 html.calm-layout .help-panel{left:auto!important;right:0!important;width:var(--help-w,360px);max-width:calc(100vw - 52px)}
 html.calm-layout .help-close-btn{flex:0 0 auto;margin-left:2px}
-html.calm-layout .help-panel #help-search-toggle-btn{margin-left:auto}
+/* Same as Settings: the search box is always shown, so the header has one X per job (clear the
+   box, close the pane). The old toggle turned into a second, accent-filled X while searching. */
+html.calm-layout #help-search-wrap{display:block!important}
+html.calm-layout #help-search-toggle-btn{display:none!important}
 @media (min-width:900px){
   html.calm-layout body:has(.help-panel.open) #app-layout{margin-right:var(--help-w,360px)}
 }

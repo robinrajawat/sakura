@@ -63,7 +63,7 @@ test('Contents entries carry measured page numbers; cover is unnumbered', async 
     return {
       printed: w.__printed,
       entries,
-      footer: (css.match(/@bottom-center\{[^}]*\}/) || [''])[0],
+      footer: (css.match(/@bottom-right\{[^}]*\}/) || [''])[0],
       coverRule: /@page cover/.test(css),
       coverNamed: /#sakura-cover-page\{[^}]*page:cover;/.test(css.replace(/\s+/g, '')),
       leftoverFrames: document.querySelectorAll('iframe[aria-hidden="true"]').length
