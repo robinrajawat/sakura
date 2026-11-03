@@ -62,3 +62,13 @@ test('a .opml file dropped on the File Explorer becomes a new document', async (
   // @ts-expect-error -- bare global from index.html
   await expect.poll(() => page.evaluate(() => nodes.map((n: { text: string }) => n.text))).toEqual(['Alpha', 'Beta']);
 });
+
+test('the + lines up with the folder counts on the right (owner, 2026-11-03)', async ({ page }) => {
+  // @ts-expect-error -- bare globals from index.html
+  await page.evaluate(() => { saveFolders([{ id: 'fa', name: 'Projects', open: false, parentId: null }]); const m = loadDocFolderMap(); m[currentDocId] = 'fa'; localStorage.setItem('sakura_doc_folder_v1', JSON.stringify(m)); renderSidebar(); });
+  const r = await page.evaluate(() => ({
+    plus: document.querySelector('#sb-new-btn svg')!.getBoundingClientRect().right,
+    count: document.querySelector('.sfolder-count')!.getBoundingClientRect().right
+  }));
+  expect(Math.abs(r.plus - r.count)).toBeLessThanOrEqual(1);
+});
