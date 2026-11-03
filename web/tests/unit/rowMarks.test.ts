@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
   adjustRowMarksForText,
+  markdownInlineToMarks,
+  looksLikeMarkdown,
   replaceRowMarkedRange,
   convertLegacyRowLinks,
   convertLegacyRowMarkup,
@@ -352,5 +354,27 @@ describe('replaceRowMarkedRange', () => {
   });
   it('clamps the range and handles plain text', () => {
     expect(replaceRowMarkedRange('abc', undefined, 1, 99, 'XY')).toEqual({ text: 'aXY', marks: [] });
+  });
+});
+
+describe('markdownInlineToMarks', () => {
+  it('turns bold, italic, strike and links into marks', () => {
+    const r = markdownInlineToMarks('a **b** *i* ~~s~~ [w](https://x.com)');
+    expect(r.text).toBe('a b i s w');
+    expect(r.marks).toEqual([
+      { s: 2, e: 3, k: 'b' }, { s: 4, e: 5, k: 'i' }, { s: 6, e: 7, k: 's' }, { s: 8, e: 9, k: 'a', v: 'https://x.com' },
+    ]);
+  });
+  it('leaves snake_case, lone stars, code and escapes as typed', () => {
+    expect(markdownInlineToMarks('my_var_name 2 * 3 * 4').text).toBe('my_var_name 2 * 3 * 4');
+    expect(markdownInlineToMarks('`**x**` \\*y\\*')).toEqual({ text: '`**x**` *y*', marks: [] });
+  });
+  it('never links a script address', () => {
+    expect(markdownInlineToMarks('[x](javascript:alert(1))').marks).toEqual([]);
+  });
+  it('knows Markdown when it sees it', () => {
+    expect(looksLikeMarkdown('# Title')).toBe(true);
+    expect(looksLikeMarkdown('see [docs](https://x.com)')).toBe(true);
+    expect(looksLikeMarkdown('2 * 3 and my_var')).toBe(false);
   });
 });

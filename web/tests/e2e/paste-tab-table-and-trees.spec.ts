@@ -102,3 +102,15 @@ test('Markdown checkboxes become checkbox rows, ticked ones ticked', async ({ pa
   await paste(page, '- [ ] todo one\n- [x] done two');
   expect(await page.evaluate('nodes.map(n => [n.text, n.isCheckbox, n.checked])')).toEqual([['todo one', true, false], ['done two', true, true]]);
 });
+
+test('plain Markdown: # lines become headings, **bold** and [links] become formatting, symbols gone', async ({ page }) => {
+  await paste(page, '# Title\n## Section\n- **Key** point with [SAP](https://help.sap.com)');
+  expect(await page.evaluate('nodes.map(n => [n.text, n.styles.heading || 0])')).toEqual([['Title', 1], ['Section', 2], ['Key point with SAP', 0]]);
+  expect(await page.evaluate('nodes[2].marks')).toEqual([{ s: 0, e: 3, k: 'b' }, { s: 15, e: 18, k: 'a', v: 'https://help.sap.com' }]);
+});
+
+test('one line of Markdown goes in at the caret with its formatting', async ({ page }) => {
+  await paste(page, 'Use **Consider Stock** here');
+  await page.keyboard.press('Escape');
+  expect(await page.evaluate('[nodes.length, nodes[0].text, nodes[0].marks]')).toEqual([1, 'Use Consider Stock here', [{ s: 4, e: 18, k: 'b' }]]);
+});
