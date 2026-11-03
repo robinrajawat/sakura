@@ -1,0 +1,317 @@
+/* Tables (plain, polished, and every Show as display) as the computer draws them. Shared by
+   index.html and the phone's reader (hub.html), which shows the computer's ready-made copy of each
+   table (owner 2026-11-03: the same look on every device). Listed in both pages' style blocks. */
+.pv-diagram-row{display:flex;flex-wrap:wrap;gap:14px;margin:10px 0 14px;align-items:stretch}
+.pv-diagram-figure{margin:0;flex:1 1 320px;min-width:0;display:flex;flex-direction:column}
+.pv-diagram-img{max-width:100%;max-height:var(--pv-diagram-max-h,70vh);display:block;margin:0 auto}
+.pv-diagram-row-multi .pv-diagram-img{max-height:var(--pv-diagram-max-h-multi,42vh)}
+.pv-diagram-caption{font:500 12px 'Inter',sans-serif;color:var(--muted);text-align:center;margin-top:auto;padding-top:6px}
+.pv-table-figure{flex:1 1 100%}
+/* Position › Center (tableShowsCentered): the object sits in the middle of its column, outline and PDF. */
+.pv-table-figure.pos-center>table{margin-left:auto;margin-right:auto}
+.pv-table-figure.pos-center>svg.pv-table-chart-svg{display:block;margin-left:auto;margin-right:auto}
+.pv-table-figure.pos-center .pv-table-chips{justify-content:center}
+.pv-table-figure.pos-center .pv-table-inline{text-align:center;margin-left:auto;margin-right:auto}
+.pv-table-figure.pos-center .pv-timeline{width:max-content;max-width:100%;margin-left:auto;margin-right:auto}
+.pv-table-figure table{width:100%;border-collapse:collapse;font:400 14px 'Inter',sans-serif;color:var(--fg)}
+.pv-table-figure td,.pv-table-figure th{border:1px solid var(--border);padding:7px 12px;text-align:left;position:relative}
+.pv-table-figure th{background:color-mix(in srgb,var(--accent) 8%,transparent);font-weight:600;font-size:.82em;letter-spacing:.03em;text-transform:uppercase}
+/* Display polish (applyTableDisplayPolish, display copies only): horizontal rules only -- the
+   vertical ones turn transparent rather than going, and header text is styled the same in both,
+   so nothing moves on entering edit mode -- a quiet header, and a faint dash in blank cells. */
+.pv-table-figure table.tbl-polished td,.pv-table-figure table.tbl-polished th{border-left-color:transparent;border-right-color:transparent;border-top-color:transparent;border-bottom-color:color-mix(in srgb,var(--border) 70%,transparent)}
+.pv-table-figure table.tbl-polished th{background:transparent;color:var(--muted);border-bottom-color:color-mix(in srgb,var(--fg) 22%,var(--border))}
+.pv-table-figure table.tbl-polished td.tbl-empty::after{content:'\2013';color:var(--hint)}
+.pv-table-figure table.tbl-grouped tr.tbl-group-start>td{border-top:1.5px solid var(--border)}
+.pv-table-figure table.tbl-grouped td.tbl-group-cell{vertical-align:top}
+.pv-table-figure .tbl-grp-code{display:block;font-weight:600}
+.pv-table-figure .tbl-grp-name{display:block;color:var(--muted);font-size:.92em}
+.pv-table-figure .tbl-grp-count{display:block;margin-top:3px;color:var(--hint);font-size:.8em}
+/* Per-column alignment: data-align is stored on each cell of the column (cell menu -> Align column);
+   data-auto-align is the render-time marker for numeric columns (applyTableAutoAlign), never saved.
+   Same rules in the outline, while editing, in a chart's Edit data view and in the PDF. */
+.pv-table-figure td[data-auto-align="right"],.pv-table-figure th[data-auto-align="right"]{text-align:right;font-variant-numeric:tabular-nums}
+.pv-table-figure td[data-align="left"],.pv-table-figure th[data-align="left"]{text-align:left}
+.pv-table-figure td[data-align="center"],.pv-table-figure th[data-align="center"]{text-align:center}
+.pv-table-figure td[data-align="right"],.pv-table-figure th[data-align="right"]{text-align:right}
+.pv-table-chart-figure{flex:1 1 100%}
+.pv-table-chart-figure svg{width:100%;height:auto;max-height:340px;display:block;cursor:context-menu}
+.pv-table-chart-figure svg.pv-chart-size-full{max-height:none}
+.pv-table-chartable table{cursor:context-menu}
+.pv-table-progress{display:grid;grid-template-columns:minmax(0,max-content) minmax(120px,1fr) auto;column-gap:12px;row-gap:9px;align-items:center;width:100%;cursor:context-menu}
+.pv-progress-row{display:contents}
+.pv-progress-label{font:500 13px 'Inter',sans-serif;color:var(--fg);max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pv-progress-track{position:relative;height:10px;border-radius:999px;background:color-mix(in srgb,var(--fg) 9%,var(--bg));overflow:hidden}
+.pv-progress-fill{position:absolute;left:0;top:0;bottom:0;border-radius:999px;background:var(--accent);-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.pv-progress-fill.done{background:var(--fc-green)}
+.pv-progress-value{font:600 12px 'Inter',sans-serif;color:var(--muted);font-variant-numeric:tabular-nums;text-align:right;min-width:36px}
+.pv-timeline{display:grid;grid-template-columns:auto 18px minmax(0,1fr);column-gap:12px;width:100%;cursor:context-menu}
+.pv-tl-item{display:contents}
+.pv-tl-date{font:600 12px 'Inter',sans-serif;color:var(--muted);text-align:right;padding:2px 0 16px;white-space:nowrap;font-variant-numeric:tabular-nums}
+.pv-tl-rail{position:relative;display:flex;justify-content:center}
+.pv-tl-rail::before{content:'';position:absolute;top:0;bottom:0;left:50%;width:2px;margin-left:-1px;background:var(--border)}
+.pv-tl-item:first-child .pv-tl-rail::before{top:7px}
+.pv-tl-item:last-child .pv-tl-rail::before{bottom:auto;height:7px}
+.pv-tl-dot{position:relative;z-index:1;width:10px;height:10px;margin-top:3px;border-radius:50%;box-sizing:border-box;border:2px solid var(--hint);background:var(--bg);-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.pv-tl-item.done .pv-tl-dot{background:var(--accent);border-color:var(--accent)}
+.pv-tl-item.next .pv-tl-dot{width:12px;height:12px;margin-top:2px;border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 22%,transparent)}
+.pv-tl-body{padding:0 0 16px;min-width:0}
+.pv-tl-event{font:500 13.5px 'Inter',sans-serif;color:var(--fg);line-height:1.35}
+.pv-tl-item.done .pv-tl-event{color:var(--muted)}
+.pv-tl-detail{font:400 12px 'Inter',sans-serif;color:var(--muted);margin-top:2px;line-height:1.4}
+.pv-tl-next{display:inline-block;margin-left:8px;padding:1px 7px;border-radius:999px;font:700 9.5px 'Inter',sans-serif;letter-spacing:.06em;text-transform:uppercase;color:var(--accent);background:color-mix(in srgb,var(--accent) 13%,transparent);vertical-align:1px;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.pv-timeline.horizontal{grid-template-columns:repeat(var(--tl-cols,4),minmax(0,1fr));grid-template-rows:auto 14px auto;grid-auto-flow:column;column-gap:0;text-align:center;break-inside:avoid;page-break-inside:avoid}
+.pv-timeline.horizontal .pv-tl-date{text-align:center;white-space:normal;align-self:end;padding:0 6px 8px}
+.pv-timeline.horizontal .pv-tl-rail{height:14px;align-items:center}
+.pv-timeline.horizontal .pv-tl-rail::before{top:50%;bottom:auto;left:0;right:0;width:auto;height:2px;margin:-1px 0 0}
+.pv-timeline.horizontal .pv-tl-item:first-child .pv-tl-rail::before{left:50%}
+.pv-timeline.horizontal .pv-tl-item:last-child .pv-tl-rail::before{right:50%;height:2px}
+.pv-timeline.horizontal .pv-tl-item:only-child .pv-tl-rail::before{display:none}
+.pv-timeline.horizontal .pv-tl-dot,.pv-timeline.horizontal .pv-tl-item.next .pv-tl-dot{margin-top:0}
+.pv-timeline.horizontal .pv-tl-body{padding:8px 6px 0;min-width:0}
+.pv-timeline.horizontal .pv-tl-next{display:table;margin:4px auto 0}
+.pv-board{display:grid;grid-template-columns:repeat(var(--board-cols,4),minmax(0,1fr));gap:12px;width:100%;align-items:start;cursor:context-menu;--lane:var(--fc-gray)}
+.pv-board-lane{display:flex;flex-direction:column;gap:8px;min-width:0;padding:10px;border-radius:12px;background:color-mix(in srgb,var(--fg) 3.5%,var(--bg));-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.pv-board-lane[data-group="progress"]{--lane:var(--fc-orange)}
+.pv-board-lane[data-group="blocked"]{--lane:var(--fc-red)}
+.pv-board-lane[data-group="done"]{--lane:var(--fc-green)}
+.pv-board-lane[data-group="other"]{--lane:var(--fc-purple)}
+/* Lanes by a column (not statuses): neutral, so they don't read as a status. */
+.pv-board-lane[data-group="lane"]{--lane:var(--fc-gray)}
+.pv-board-head{display:flex;align-items:center;gap:7px;font:600 12px 'Inter',sans-serif;color:var(--fg);padding:0 2px 2px}
+.pv-board-dot{width:8px;height:8px;border-radius:50%;background:var(--lane);flex:none;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.pv-board-label{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pv-board-count{margin-left:auto;font:600 11px 'Inter',sans-serif;color:var(--muted);font-variant-numeric:tabular-nums}
+.pv-board-card{padding:8px 10px;border-radius:8px;background:var(--bg);border:1px solid var(--border);border-left:3px solid var(--lane);break-inside:avoid;page-break-inside:avoid;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.pv-board-item{font:500 13px 'Inter',sans-serif;color:var(--fg);line-height:1.35;overflow-wrap:anywhere}
+.pv-board-lane[data-group="done"] .pv-board-item{color:var(--muted)}
+.pv-board-meta{display:flex;flex-wrap:wrap;gap:4px 10px;margin-top:4px;font:500 11.5px 'Inter',sans-serif;color:var(--muted)}
+.pv-board-due{font-variant-numeric:tabular-nums}
+.pv-board-due.overdue{color:var(--fc-red);font-weight:600}
+.pv-board-note{font:400 12px 'Inter',sans-serif;color:var(--muted);margin-top:3px;line-height:1.4;overflow-wrap:anywhere}
+@media (max-width:640px){.pv-board{grid-template-columns:minmax(0,1fr)}}
+@media print{.pv-board.many{display:block}.pv-board.many .pv-board-lane{margin-bottom:10px;break-inside:auto;page-break-inside:auto}}
+/* Layout-neutral on purpose (no padding, same weight): the pill is drawn with a spread box-shadow so
+   the cell keeps exactly the size it has in edit mode, where the pill isn't shown. */
+.tbl-status-pill{border-radius:999px;color:var(--pill,var(--fc-gray));background:color-mix(in srgb,var(--pill,var(--fc-gray)) 14%,transparent);box-shadow:0 0 0 4px color-mix(in srgb,var(--pill,var(--fc-gray)) 14%,transparent);-webkit-box-decoration-break:clone;box-decoration-break:clone;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.tbl-status-pill[data-group="progress"]{--pill:var(--fc-orange)}
+.tbl-status-pill[data-group="blocked"]{--pill:var(--fc-red)}
+.tbl-status-pill[data-group="done"]{--pill:var(--fc-green)}
+.node-table-line.editing{position:relative}
+.tbl-grips{position:absolute;inset:0;pointer-events:none;z-index:2}
+.tbl-grip{position:absolute;pointer-events:auto;appearance:none;border:none;padding:0;margin:0;background:transparent;cursor:pointer;opacity:0;transition:opacity .12s}
+.tbl-grip::after{content:'';position:absolute;border-radius:3px;background:var(--hint)}
+.tbl-grip-row{width:12px}.tbl-grip-row::after{left:4px;top:50%;width:4px;height:16px;margin-top:-8px}
+.tbl-grip-col{height:10px}.tbl-grip-col::after{top:3px;left:50%;height:4px;width:16px;margin-left:-8px}
+.tbl-grip.hot{opacity:.55}.tbl-grip:hover{opacity:1}
+.tbl-grip.sel{opacity:1}.tbl-grip.sel::after{background:var(--accent)}
+.node-table-line td.tbl-sel,.node-table-line th.tbl-sel{background:color-mix(in srgb,var(--accent) 13%,transparent)!important;box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--accent) 45%,transparent)}
+.node-table-line.tbl-has-sel td,.node-table-line.tbl-has-sel th{caret-color:transparent}
+.pv-rowcards-box{width:100%;container-type:inline-size}
+.pv-rowcards{display:grid;grid-template-columns:repeat(var(--rc-cols,3),minmax(0,1fr));gap:12px;width:100%;align-items:stretch;cursor:context-menu}
+.pv-rowcards[data-cols="1"]{--rc-cols:1}.pv-rowcards[data-cols="2"]{--rc-cols:2}.pv-rowcards[data-cols="3"]{--rc-cols:3}.pv-rowcards[data-cols="4"]{--rc-cols:4}
+@container (max-width:1000px){.pv-rowcards[data-cols="4"]{--rc-cols:2}}
+@container (max-width:720px){.pv-rowcards[data-cols="3"]{--rc-cols:2}}
+@container (max-width:480px){.pv-rowcards{--rc-cols:1}}
+.pv-rc-card{border:1px solid var(--border);border-radius:12px;padding:12px 14px 13px;background:var(--bg);min-width:0;display:flex;flex-direction:column;gap:9px;break-inside:avoid;page-break-inside:avoid}
+.pv-rc-head{display:flex;flex-direction:column;gap:2px;padding-bottom:9px;border-bottom:1px solid var(--border)}
+.pv-rc-title{font:600 14px/1.35 'Inter',sans-serif;color:var(--fg);overflow-wrap:anywhere}
+.pv-rc-sub{font:500 12.5px/1.35 'Inter',sans-serif;color:var(--accent);overflow-wrap:anywhere}
+.pv-rc-label{font:600 10.5px 'Inter',sans-serif;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);margin-bottom:2px}
+.pv-rc-value{font:400 13px/1.45 'Inter',sans-serif;color:var(--fg);overflow-wrap:anywhere}
+.pv-rc-value b,.pv-rc-value strong{font-weight:600}
+.pv-proscons{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;width:100%;align-items:start;cursor:context-menu;break-inside:avoid;page-break-inside:avoid}
+.pv-pc-col{--pc:var(--fc-green);border:1px solid color-mix(in srgb,var(--pc) 30%,var(--border));border-top:3px solid var(--pc);border-radius:12px;padding:10px 12px 12px;background:color-mix(in srgb,var(--pc) 5%,var(--bg));min-width:0;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.pv-pc-col.cons{--pc:var(--fc-red)}
+.pv-pc-head{display:flex;align-items:center;gap:8px;font:600 13px 'Inter',sans-serif;color:var(--fg);margin-bottom:6px}
+.pv-pc-badge{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;color:#fff;background:var(--pc);flex:none;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.pv-pc-count{margin-left:auto;font:600 11px 'Inter',sans-serif;color:var(--muted);font-variant-numeric:tabular-nums}
+.pv-pc-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.pv-pc-list li{display:flex;gap:8px;align-items:flex-start;font:400 13px 'Inter',sans-serif;color:var(--fg);line-height:1.4;overflow-wrap:anywhere}
+.pv-pc-mark{color:var(--pc);flex:none;margin-top:2px;display:inline-flex}
+@media (max-width:640px){.pv-proscons{grid-template-columns:minmax(0,1fr)}}
+/* API request card (data-table-display="api"): method + URL, then query, headers, body, response.
+   Method colours follow the common convention (GET green, POST blue, PUT/PATCH orange, DELETE red). */
+.pv-api{--mc:var(--fc-gray);width:100%;border:1px solid var(--border);border-radius:8px;background:var(--bg);padding:10px 12px;display:flex;flex-direction:column;gap:10px;min-width:0;cursor:context-menu;break-inside:avoid;page-break-inside:avoid;font:400 var(--fs-md) 'Inter',sans-serif;color:var(--fg)}
+.pv-api[data-method="get"]{--mc:var(--fc-green)}.pv-api[data-method="post"]{--mc:var(--fc-blue)}.pv-api[data-method="put"],.pv-api[data-method="patch"]{--mc:var(--fc-orange)}.pv-api[data-method="delete"]{--mc:var(--fc-red)}
+.pv-api-line{display:flex;align-items:flex-start;gap:8px;min-width:0}
+.pv-api-line .pv-api-method{line-height:24px}.pv-api-line .pv-api-url{line-height:1.5;padding-top:2px}.pv-api-seg{display:inline-block;max-width:100%}
+.pv-api-method{flex:none;font:700 var(--fs-xs) 'Fira Code',Consolas,monospace;letter-spacing:.04em;color:var(--mc);-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.pv-api-url{flex:1;min-width:0;font:400 var(--fs-sm) 'Fira Code',Consolas,monospace;color:var(--fg);overflow-wrap:break-word;background:none;padding:0}
+.pv-api-curl{flex:none;display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;padding:0;border:1px solid transparent;border-radius:6px;background:none;color:var(--muted);cursor:pointer}
+.pv-api-curl:hover{background:var(--hover);color:var(--fg)}.pv-api-curl:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.pv-api-curl.copied{color:var(--fc-green)}
+.pv-api-var{color:var(--accent);-webkit-print-color-adjust:exact;print-color-adjust:exact}.pv-api-curl svg{flex:none;width:14px;height:14px}
+.pv-api-desc{color:var(--muted);line-height:1.45}
+.pv-api-sec{display:flex;flex-direction:column;gap:4px;min-width:0}
+.pv-api-label{display:flex;align-items:center;gap:8px;font:600 var(--fs-2xs) 'Inter',sans-serif;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.pv-api-pairs{display:flex;flex-direction:column;gap:2px}
+.pv-api-pair{font:400 var(--fs-sm) 'Fira Code',Consolas,monospace;line-height:1.5;overflow-wrap:anywhere}
+.pv-api-param{display:flex;flex-wrap:wrap;align-items:baseline;column-gap:8px;font:400 var(--fs-sm) 'Fira Code',Consolas,monospace;line-height:1.5;overflow-wrap:anywhere}
+.pv-api-in{font:500 var(--fs-2xs) 'Inter',sans-serif;color:var(--hint);border:1px solid var(--border);border-radius:4px;padding:0 4px;line-height:1.5}
+.pv-api-note{flex-basis:100%;padding-left:12px;font:400 var(--fs-sm) 'Inter',sans-serif;color:var(--muted);line-height:1.45}
+.pv-api-authval{font:400 var(--fs-sm) 'Inter',sans-serif;color:var(--fg);line-height:1.45}
+.pv-api-key{color:var(--fg)}.pv-api-sep{color:var(--muted);margin:0 4px 0 1px}.pv-api-val{color:var(--muted)}
+.pv-api-code{margin:0;padding:8px 10px;border-radius:6px;background:var(--hover);font:400 var(--fs-sm)/1.5 'Fira Code',Consolas,monospace;color:var(--fg);white-space:pre-wrap;overflow-wrap:anywhere}
+.pv-api-status{font:600 var(--fs-2xs) 'Fira Code',Consolas,monospace;letter-spacing:0;text-transform:none;color:var(--muted)}
+.pv-api-status.ok{color:var(--fc-green)}.pv-api-status.err{color:var(--fc-red)}
+@media print{.pv-api-curl{display:none}}
+/* API request editor: the card itself turns into this form (Edit request…), at the page's full
+   width. Standard 32px fields with 8px corners; body and response boxes grow with their text. */
+.api-ed{box-sizing:border-box;width:100%;min-width:0;border:1px solid var(--border);border-radius:8px;background:var(--edit-bg);padding:8px 12px 14px;display:flex;flex-direction:column;gap:10px;cursor:auto}
+.api-ed-bar{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.api-ed-bar .api-ed-hint{margin-left:auto}
+.api-ed-body{display:flex;flex-direction:column;gap:12px}.api-ed-body>*{flex-shrink:0}
+.api-ed-line{display:flex;gap:8px;min-width:0}
+.api-ed-input{box-sizing:border-box;height:32px;padding:0 10px;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--fg);font:400 var(--fs-md) 'Inter',sans-serif;min-width:0;width:100%}
+.api-ed-input:focus{outline:none;border-color:var(--accent)}
+.api-ed-input.invalid{border-color:var(--fc-red)}
+.api-ed-mono{font:400 var(--fs-sm) 'Fira Code',Consolas,monospace}
+.api-ed-method{flex:0 0 112px;height:32px;padding:0 8px;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--fg);font:700 var(--fs-sm) 'Fira Code',Consolas,monospace;cursor:pointer}
+.api-ed-method:focus{outline:none;border-color:var(--accent)}
+.api-ed-line .api-ed-input{flex:1}
+.api-ed-sec{display:flex;flex-direction:column;gap:6px}
+.api-ed-label{display:flex;align-items:center;gap:8px;font:600 var(--fs-2xs) 'Inter',sans-serif;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.api-ed-pairs{display:flex;flex-direction:column;gap:6px}
+.api-ed-pairs:empty{display:none}
+.api-ed-pair{display:flex;align-items:center;gap:6px}
+.api-ed-pair .api-ed-k{flex:0 0 38%}
+.api-ed-pair .api-ed-v{flex:1}
+.api-ed-sep{color:var(--muted);font:400 var(--fs-sm) 'Fira Code',Consolas,monospace}
+.api-ed-remove{flex:none;width:28px;height:28px;display:inline-flex;align-items:center;justify-content:center;border:none;border-radius:6px;background:none;color:var(--hint);cursor:pointer}
+.api-ed-remove:hover{background:var(--hover);color:var(--fg)}
+.api-ed-add,.api-ed-format{align-self:flex-start;border:none;background:none;padding:2px 0;color:var(--muted);font:500 var(--fs-sm) 'Inter',sans-serif;cursor:pointer}
+.api-ed-add:hover,.api-ed-format:hover{color:var(--fg)}
+.api-ed-format{margin-left:auto;letter-spacing:0;text-transform:none;font-weight:500;font-size:var(--fs-xs)}
+.api-ed-area{height:auto;min-height:72px;padding:8px 10px;line-height:1.5;resize:none;white-space:pre-wrap;overflow-wrap:anywhere;overflow:hidden}
+.api-ed-status{width:240px;max-width:60%;flex:none}
+#api-ed-query .api-ed-k{flex:0 0 24%}#api-ed-query .api-ed-v{flex:1 1 0;min-width:0}.api-ed-note{flex:1.3 1 0;min-width:0}
+.api-ed-pathrow{min-height:32px}
+.api-ed-pname{flex:0 0 24%;box-sizing:border-box;padding:0 6px 0 10px;display:flex;align-items:center;gap:6px;min-width:0}
+.api-ed-pname-t{min-width:0;font:400 var(--fs-sm) 'Fira Code',Consolas,monospace;color:var(--fg);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.api-ed-pname .api-ed-in{margin-left:auto}.api-ed-sep-blank{visibility:hidden}
+.api-ed-in{flex:none;font:500 var(--fs-2xs) 'Inter',sans-serif;color:var(--hint);border:1px solid var(--border);border-radius:4px;padding:0 4px;line-height:1.5}
+.api-ed-pathrow .api-ed-note{margin-right:34px}
+.api-ed-resps{display:flex;flex-direction:column;gap:10px}.api-ed-resps:empty{display:none}
+.api-ed-resp{display:flex;flex-direction:column;gap:6px}
+.api-ed-resp-head{display:flex;align-items:center;gap:6px}.api-ed-resp-head .api-ed-format{margin-left:auto;align-self:center}
+.api-ed-err{font:400 var(--fs-xs) 'Inter',sans-serif;color:var(--fc-red);margin-top:-6px}
+.api-ed-curl{min-height:72px}
+.api-ed-sec[hidden]{display:none}
+.api-ed-hint{font:400 var(--fs-xs) 'Inter',sans-serif;color:var(--hint)}
+@media (max-width:560px){.api-ed-hint{display:none}.api-ed-line{flex-wrap:wrap}.api-ed-method{flex-basis:100%}#api-ed-query .api-ed-pair{flex-wrap:wrap}#api-ed-query .api-ed-note{flex-basis:calc(100% - 34px)}}
+/* Names are one neutral grey for everyone (owner 2026-11-02: colour is for meaning, and a colour per person meant nothing). */
+.tbl-person{border-radius:999px;background:color-mix(in srgb,var(--fg) 7%,transparent);box-shadow:0 0 0 3px color-mix(in srgb,var(--fg) 7%,transparent);color:var(--fg);-webkit-box-decoration-break:clone;box-decoration-break:clone;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.tbl-person.with-av{display:inline-flex;align-items:center;gap:5px;max-width:100%;margin:1px 4px 1px 0;padding:1px 8px 1px 2px;box-shadow:none;color:var(--fg);font-size:.92em;line-height:1.45;white-space:nowrap;vertical-align:middle}
+.tbl-person-av{display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;padding:0 3px;box-sizing:border-box;border-radius:999px;background:color-mix(in srgb,var(--fg) 14%,transparent);color:var(--fg);font:700 9.5px 'Inter',sans-serif;letter-spacing:.02em;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.pv-board-owner .tbl-person{font-size:var(--fs-sm);margin:0}
+.tbl-picker-person{border:0;background:transparent;padding:0;margin:2px;cursor:pointer;font:500 12px 'Inter',sans-serif}
+.tbl-picker-person.current .tbl-person{outline:2px solid var(--muted);outline-offset:1px}
+.tbl-check{display:inline-flex;vertical-align:-2px;color:var(--fc-gray);-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.tbl-check[data-check="yes"]{color:var(--fc-green)}
+.tbl-check[data-check="no"]{color:var(--fc-red)}
+.tbl-check[data-check="partial"]{color:var(--fc-orange)}
+.tbl-cell-picker{position:absolute;z-index:30;display:flex;flex-wrap:wrap;align-items:center;gap:6px;max-width:320px;padding:var(--pad-pop);border-radius:var(--radius-menu);background:var(--surface-raised);border:1px solid var(--border);box-shadow:var(--shadow-menu);font:500 12px 'Inter',sans-serif;cursor:default;--hover:var(--hover-raised)}
+.tbl-picker-status{border:0;cursor:pointer;font:600 12px 'Inter',sans-serif;padding:0;margin:4px}
+.tbl-picker-status.current{outline:2px solid var(--pill,var(--fc-gray));outline-offset:4px}
+.tbl-picker-date{font:500 12px 'Inter',sans-serif;color:var(--fg);background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:3px 6px}
+.tbl-picker-btn{font:500 12px 'Inter',sans-serif;color:var(--fg);background:transparent;border:1px solid var(--border);border-radius:6px;padding:3px 9px;cursor:pointer}
+.tbl-picker-btn:hover{background:var(--hover)}
+.tbl-currency-picker{position:fixed;flex-direction:column;align-items:stretch;flex-wrap:nowrap;width:280px;max-width:calc(100vw - 16px);gap:6px}
+.tbl-currency-search{font:500 13px 'Inter',sans-serif;color:var(--fg);background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:6px 8px;outline:none}
+.tbl-currency-search:focus{border-color:var(--accent)}
+.tbl-currency-list{max-height:260px;overflow-y:auto;display:flex;flex-direction:column}
+.tbl-currency-row{display:flex;align-items:center;gap:8px;padding:5px 8px;border-radius:6px;cursor:pointer;font:400 12.5px 'Inter',sans-serif;color:var(--fg)}
+.tbl-currency-row b{font-weight:600;min-width:34px;font-variant-numeric:tabular-nums}
+.tbl-currency-name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--muted)}
+.tbl-currency-sym{color:var(--muted);font-weight:500}
+.tbl-currency-row.active{background:var(--hover)}
+.tbl-currency-row.current b::after{content:' \2713';color:var(--accent)}
+.tbl-currency-empty{padding:8px;color:var(--muted);font:400 12px 'Inter',sans-serif}
+table [data-heat]{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+table [data-heat="1"]{background:color-mix(in srgb,var(--accent) 7%,transparent)}
+table [data-heat="2"]{background:color-mix(in srgb,var(--accent) 15%,transparent)}
+table [data-heat="3"]{background:color-mix(in srgb,var(--accent) 25%,transparent)}
+table [data-heat="4"]{background:color-mix(in srgb,var(--accent) 37%,transparent)}
+table [data-heat="5"]{background:color-mix(in srgb,var(--accent) 50%,transparent)}
+.pv-table-chips{display:flex;flex-wrap:wrap;gap:8px;width:100%;cursor:context-menu}
+/* Owner-picked "Option A": codes look like codes (small monospace, accent colour), descriptions muted
+   and a size below row text, so the line reads as a code list rather than more of the row. */
+.pv-table-inline{margin:0;font:400 13px/1.8 'Inter',sans-serif;color:var(--muted);cursor:context-menu;max-width:80ch}
+.pv-table-inline-item{white-space:normal}
+.pv-table-inline-item code{font:600 12px 'Fira Code',Consolas,'Courier New',monospace;color:var(--accent);margin-right:1px}
+.pv-table-inline-sep{color:var(--hint)}
+.pv-table-chip{display:inline-flex;align-items:center;gap:8px;max-width:100%;padding:5px 12px 5px 5px;border-radius:999px;background:color-mix(in srgb,var(--fg) 4%,var(--bg));border:1px solid var(--border);font:400 13px 'Inter',sans-serif;color:var(--fg);line-height:1.3}
+.pv-table-chip-key{display:inline-flex;align-items:center;justify-content:center;min-width:28px;padding:2px 8px;border-radius:999px;background:color-mix(in srgb,var(--accent) 14%,var(--bg));color:var(--accent);font:700 12px 'Inter',sans-serif;letter-spacing:.02em;white-space:nowrap}
+.pv-table-chip-desc{overflow-wrap:anywhere}
+.pv-table-cards-grid{display:grid;grid-template-columns:repeat(var(--cards-cols,3),minmax(0,1fr));gap:12px;width:100%;cursor:context-menu}
+@media (max-width:640px){.pv-table-cards-grid{grid-template-columns:repeat(var(--cards-cols-narrow,2),minmax(0,1fr))}}
+.pv-table-card-change{font:600 11.5px 'Inter',sans-serif;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap;padding:2px 7px;border-radius:999px;background:color-mix(in srgb,currentColor 12%,transparent);-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.pv-table-card-change.up{color:var(--fc-green)}
+.pv-table-card-change.down{color:var(--fc-red)}
+.pv-table-chart-title{flex:1 1 100%;font:600 13px 'Inter',sans-serif;color:var(--fg);margin:0 0 8px}
+.pv-table-card{display:flex;flex-direction:column;gap:6px;min-width:0;padding:14px 16px;border-radius:12px;background:var(--canvas-bg);border:1px solid var(--border)}
+.pv-table-card-label{display:flex;align-items:flex-start;gap:7px;min-width:0;font:500 12.5px/16px 'Inter',sans-serif;color:var(--muted)}
+.pv-table-card-label-text{min-width:0;overflow-wrap:break-word}
+.pv-table-card-swatch{flex:0 0 auto;width:8px;height:8px;margin-top:4px;border-radius:2px;background:var(--card-color);-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.pv-table-card-icon{display:inline-flex;align-items:center;flex:0 0 auto;height:16px;color:var(--card-color)}
+.pv-table-card-main{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 10px;margin-top:auto}
+.pv-table-card-value{min-width:0;font:600 26px 'Inter',sans-serif;letter-spacing:-.01em;color:var(--fg);line-height:1.1;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.pv-table-card-details{display:flex;flex-direction:column;gap:2px;min-width:0;padding-top:6px;border-top:1px solid var(--border);font:400 12.5px/17px 'Inter',sans-serif;color:var(--muted);overflow-wrap:break-word}
+.pv-table-card-detail-label{font-weight:600;color:var(--fg);margin-right:4px}
+/* With detail lines, each card spans three rows of the grid (label · value · details) so values and
+   details line up along a row of cards even when one card's label or note wraps further. */
+.pv-table-cards-grid.has-details .pv-table-card{display:grid;grid-row:span 3;grid-template-rows:subgrid;row-gap:6px;align-content:start}
+.pv-table-cards-grid.has-details .pv-table-card-main{margin-top:0}
+.pv-table-cards-grid.has-details .pv-table-card-details{align-self:start}
+.pv-table-cards-total{display:flex;align-items:baseline;flex-wrap:wrap;gap:4px 12px;margin-top:12px;padding:12px 16px;border-radius:12px;background:color-mix(in srgb,var(--accent) 8%,var(--canvas-bg));border:1px solid color-mix(in srgb,var(--accent) 30%,var(--border));-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.pv-table-cards-total-label{display:inline-flex;align-items:center;gap:6px;font:600 12.5px 'Inter',sans-serif;color:var(--accent)}
+.pv-table-cards-total-label::before{content:'\03A3';font:700 13px 'Inter',sans-serif}
+.pv-table-cards-total-value{font:700 26px 'Inter',sans-serif;letter-spacing:-.01em;line-height:1.1;color:var(--fg);font-variant-numeric:tabular-nums}
+/* Total row (typed or calculated) on a plain table: bold, a firmer rule above, no rule below. */
+table tr.tbl-total>td,table tr.tbl-total>th{font-weight:700;border-top:1.5px solid color-mix(in srgb,var(--fg) 35%,transparent) !important;border-bottom-color:transparent !important}
+.tbl-total-hint{display:inline-block;margin-left:8px;padding:1px 6px;border-radius:999px;font:600 10.5px 'Inter',sans-serif;color:var(--fc-orange);background:color-mix(in srgb,var(--fc-orange) 13%,transparent);vertical-align:1px;white-space:nowrap}
+
+/* A table/chart/Cards object on node.tables -- a sibling of the note, not embedded inside it (see
+   buildNodeTableObject/migrateNoteTablesToNode) -- reuses .pv-table-figure/.pv-table-chart-figure
+   for its actual table/chart styling (border, header shading, SVG sizing), same as Preview/PDF
+   already get for free; these two classes just place it correctly in the outline's own layout. */
+.node-table-line-wrap{position:relative;width:calc(100% - 16px);max-width:calc(100% - 16px);margin:2px 0 8px}
+.node-table-line{cursor:pointer;border-radius:6px;max-width:100%}
+.node-table-line:not(.editing){overflow-x:auto}
+/* Objects keep inside the page margins (owner 2026-10-29): a table wider than the page scrolls
+   sideways in its own box, and so does a code block in a note. */
+.node-note-line pre{max-width:100%;overflow-x:auto}
+.node-table-line:has(td[contenteditable="true"],th[contenteditable="true"]){cursor:text}
+/* .pv-table-figure table's own font/padding (14px, 7px/12px) is a fine, deliberately fixed size for
+   a static Preview/PDF export, but the live outline editor scales everything else in a row off
+   --editor-scale (see #editor-pane's own font-size) -- left unscaled here, the table (and the text
+   caret sitting in it, which takes its height from the cell's own font-size) stayed pinned at that
+   literal export size regardless of the user's actual editor scale, reading as too small/misaligned
+   next to the rest of an already-scaled-up row, almost like a leftover fragment of some other
+   (smaller, fixed-size) editor surface rather than this table's own. */
+.node-table-line table{font-size:calc(14px * var(--editor-scale))}
+.node-table-line td,.node-table-line th{padding:calc(7px * var(--editor-scale)) calc(12px * var(--editor-scale))}
+/* .pv-table-figure table's own width:100% is right for Preview/PDF (a static export always wants
+   the table to use the full column it's given), but in the live editor it silently neutered column
+   resizing: with the table pinned to 100% regardless of what the colgroup's own widths said, the
+   browser's layout algorithm redistributed the "missing" width across columns on every drag (most
+   visibly the last one, which just absorbed whatever was left) rather than actually shrinking or
+   growing the table's own footprint the way _attachTableResizeHandles' own drag logic intends.
+   table-layout:fixed with width:auto sizes the table to the real sum of its <col> widths instead,
+   capped by max-width so an intentionally wide table still can't overflow past the editor itself. */
+.node-table-line table{width:auto;max-width:100%;table-layout:fixed}
+/* overflow-wrap:break-word, not word-break:break-word -- the latter also shrinks a cell's min-content
+   width below its longest word, so the column layout could squeeze a header like "Workstream" into
+   "Workstr/eam". overflow-wrap only breaks a word that can't fit on a line of its own (a column the
+   person dragged narrower than it). */
+.node-table-line td,.node-table-line th{overflow:hidden;word-break:normal;overflow-wrap:break-word}
+/* .node-table-line itself inherits .pv-diagram-figure's own display:flex;flex-direction:column --
+   fine for a chart's SVG or a Cards grid (both want to fill the figure), but for a PLAIN table its
+   default cross-axis align-items:stretch was overriding the table's own width:auto/table-layout:fixed
+   sizing above, stretching it to the wrap's full width regardless of what the colgroup said -- the
+   classic flex-stretch problem.
+   Scoped off :not(.pv-table-chart-figure), the class a chart OR Cards grid always carries (see
+   buildNodeTableObject/buildNoteTableFigure), so neither of those is affected. */
+.node-table-line:not(.pv-table-chart-figure){align-items:flex-start}
+.node-table-line.editing-chart-data::before{content:'Chart data \2014  Esc or click outside to show the chart';font:500 11px 'Inter',sans-serif;color:var(--muted);margin:0 0 4px}

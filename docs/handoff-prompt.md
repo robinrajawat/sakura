@@ -173,11 +173,11 @@ contradicts README.md or docs/feature-reference.md, trust them.)*
 
 ### Latest changes
 
+- **Phone: tables as on the computer, row object icons (2026-11-03, owner: "unified standard behaviour across platforms").** Desktop `drawTableDisplay` (extracted from buildNodeTableObject's showDisplay) also feeds `tableSnapshotOf`; `pushTablePreviews` sends all copies to `docs/{id}/previews/_tables` {items:{tableSnapshotKey:{cls,html}}} after the doc save (and `backfillTablePreviews` on open). hub `readerTableHtml` shows a copy through `readerSanitizeSnapshot` (allowlist) or the plain table polished. Table CSS moved to `src/styles/shared/table-display.css`, spliced into both pages (generator allows shared files twice; sidebar.css split, rest in sidebar-objects.css, order unchanged). Phone row icons note/table/picture/diagram/thread; diagrams closed by default; Expand/Collapse all covers objects. Tests: hub-docs-reader.spec.ts, diagram-pictures-for-phone.spec.ts, tableSnapshot.test.ts.
+
 - **Paste: tab-separated tables and ├── trees (2026-11-03, owner).** Tab-separated plain text (2+ lines, a tab between words on every line) pasted into a row, or onto a selected row, becomes a table on that row (`tabTextToTableHtml`, then the usual `pasteTableIntoNode`). Several ├── └── trees separated by blank lines keep their shape: in `parseTextToTreeNodes` a blank line ends the "unprefixed line continues the previous row" rule, so each tree's heading is a new depth-0 row; `pastedTreeNodes` reads trees from the plain text because the HTML copy often loses the blank lines. Also: Markdown tables (| a | b | with |---|) become tables; a tree heading right after a └── line (no blank line) starts a new tree; plain-character trees (|-- `--) nest (`asciiTreeToBoxDrawing`); Markdown `- [ ]`/`- [x]` lines become checkbox rows (ticked when x). Not done (offered): Markdown # headings/**bold**/[links] in plain text. Test: `paste-tab-table-and-trees.spec.ts`.
 
 - **Phone diagrams follow the app theme (2026-11-03, owner).** Robin saw dark diagrams in the light phone app. draw.io SVG exports declare `color-scheme: light dark` + light-dark() colours, so the picture followed the phone's system setting (Safari does this even inside `<img>`). `readerSvgForScheme` (docReader.ts) rewrites the declared scheme to the app theme in `readerPreviewFor`; `applyTheme` re-renders an open reader.
-
-- **PDF headings, footer, Help search (2026-11-03, owner).** A top-level row with a heading format now prints as that heading (it used to print as a plain section line, so H1/H2/H3 at depth 0 looked the same); top-level headings of any level are in Contents. Footer is two one-line boxes: title · status left (cut at 60 chars), date · Page x of y right (a long title had squeezed a centred page number onto two lines). Help's search box is always shown like Settings (no magnifier toggle that turned into a second accent X).
 
 
 ### In progress / not built
@@ -196,6 +196,7 @@ contradicts README.md or docs/feature-reference.md, trust them.)*
 
 ### Parked / open questions for the owner
 
+- Phone tables (owner OK'd 2026-11-03 "for now"): the phone shows the computer's ready-made table copies (`docs/{id}/previews/_tables`, a derived cache, never read back). Cleaner later option: move the table drawing code (drawTableDisplay and the Show as renderers, ~1,500 lines in index.html) into shared src modules so the phone draws tables itself and the cache goes away. Do it when tables are next reworked.
 - Zoom row as title: breadcrumb shows only ancestors, the zoomed row becomes the larger title.
 - Record the date a document is set to Approved or Rejected and show it on the PDF (needs a new
   saved field such as `docStatusAt`; undecided whether in the stamp or the cover's meta line).
