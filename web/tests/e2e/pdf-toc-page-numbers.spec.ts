@@ -24,7 +24,7 @@ test.beforeEach(async ({ page }) => {
         return id++;
       };
       const lorem = 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor. '.repeat(4);
-      // Ten sections: more than fit on the cover (PDF_TOC_INLINE_MAX), so Contents gets its own page.
+      // Ten sections, printed with the cover on, so Contents has a page of its own.
       ['Overview', 'Plan', 'Risks', 'Budget', 'Team', 'Timeline', 'Scope', 'Vendors', 'Support', 'Appendix'].forEach((s, i) => {
         const a = add(0, '[' + s + ']', null);
         for (let j = 0; j < 8; j++) add(1, lorem, a);

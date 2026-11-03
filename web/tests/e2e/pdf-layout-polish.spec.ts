@@ -7,7 +7,7 @@ const indexPath = path.resolve(__dirname, '../../index.html');
 
 // PDF layout: a node's note prints right under it, before its tables and images; with a cover the
 // title block isn't repeated on the first body page and Contents keeps its own page; without a
-// cover, a short Contents list (up to 8 entries) sits under the title instead.
+// cover, Contents sits under the title instead, however many entries it has.
 
 const KNOWN_NOISE = /ServiceWorker|cdnjs\.cloudflare\.com|cdn\.jsdelivr\.net|embed\.diagrams\.net|CORS policy|Failed to load resource|net::ERR/i;
 const DOC_ID = 'pdflayoutdoc';
