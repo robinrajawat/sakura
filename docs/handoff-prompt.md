@@ -182,6 +182,7 @@ contradicts README.md or docs/feature-reference.md, trust them.)*
 
 ### In progress / not built
 
+- Share stays as it is: Download PDF, Export (.opml), Send a copy (owner, 2026-11-03: "we have come a long way to simplify things"). Declined: email from Share (as text, or Send a copy also emailing the recipient) and public share links (anyone-with-the-link view). Don't re-propose unless the owner asks.
 - API documentation (2026-10-30): done — API request card + Copy as cURL, form editor, cURL paste (into the form or straight into a row) and per-card export. Owner decisions: no collection import, no document-wide export, nothing API-specific in Share. Live "Send" deliberately not built (CORS, secrets); "try it" = cURL or Postman. Next only if the owner asks.
 - Queue from 2026-10-29: done. Decided: the bottom-right focus-mode
   button `#editor-zen-toggle` stays (owner: "not really adding noise"; it's how people find focus mode). Its
