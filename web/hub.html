@@ -2185,6 +2185,82 @@ function stripRowMarkChars(text, marks, ch) {
     }
     return { text: out, marks: fromCharFormats(kept) };
 }
+/** Markdown's inline formatting, in text pasted as plain Markdown (owner, 2026-11-03: paste
+ * Markdown the way Notion does): `**x**`/`__x__` bold, `*x*`/`_x_` italic, `~~x~~` strikethrough
+ * and `[words](https://…)` a web link become formatting, and their symbols go. `` `code` `` is
+ * kept as typed (rows have no code format) and nothing inside it is read; `\*` is a plain `*`.
+ * `_x_` needs a non-word character on each side, so snake_case names stay as they are; a `*`
+ * or `_` with a space after the opener or before the closer is plain text. */
+function markdownInlineToMarks(text) {
+    const src = String(text || '');
+    const isWord = (c) => !!c && /[\p{L}\p{N}_]/u.test(c);
+    const read = (s) => {
+        const out = [];
+        const add = (inner, f) => read(inner).forEach(c => out.push({ ch: c.ch, f: { ...f, ...c.f } }));
+        let i = 0;
+        while (i < s.length) {
+            const c = s[i];
+            if (c === '\\' && /[*_~`[\]()\\#]/.test(s[i + 1] || '')) {
+                out.push({ ch: s[i + 1], f: {} });
+                i += 2;
+                continue;
+            }
+            if (c === '`') {
+                const end = s.indexOf('`', i + 1);
+                if (end > i + 1) {
+                    for (let j = i; j <= end; j++)
+                        out.push({ ch: s[j], f: {} });
+                    i = end + 1;
+                    continue;
+                }
+            }
+            if (c === '[') {
+                const m = /^\[([^\]\n]+)\]\(\s*<?([^)\s>]+)>?(?:\s+"[^"]*")?\s*\)/.exec(s.slice(i));
+                if (m && /^(https?:\/\/|mailto:)/i.test(m[2]) && isRowLinkUrl(m[2])) {
+                    add(m[1], { a: m[2] });
+                    i += m[0].length;
+                    continue;
+                }
+            }
+            const pair = s.slice(i, i + 2);
+            if (pair === '**' || pair === '__' || pair === '~~') {
+                const end = s.indexOf(pair, i + 2);
+                if (end > i + 2 && !/\s/.test(s[i + 2]) && !/\s/.test(s[end - 1]) && (pair !== '__' || (!isWord(s[i - 1]) && !isWord(s[end + 2])))) {
+                    add(s.slice(i + 2, end), pair === '~~' ? { s: true } : { b: true });
+                    i = end + 2;
+                    continue;
+                }
+            }
+            if ((c === '*' || c === '_') && s[i + 1] !== c && s[i + 1] && !/\s/.test(s[i + 1]) && (c === '*' || !isWord(s[i - 1]))) {
+                let end = i + 1;
+                while ((end = s.indexOf(c, end + 1)) > 0) {
+                    if (s[end + 1] === c) {
+                        end++;
+                        continue;
+                    }
+                    if (!/\s/.test(s[end - 1]) && (c === '*' || !isWord(s[end + 1])))
+                        break;
+                }
+                if (end > i + 1) {
+                    add(s.slice(i + 1, end), { i: true });
+                    i = end + 1;
+                    continue;
+                }
+            }
+            out.push({ ch: c, f: {} });
+            i++;
+        }
+        return out;
+    };
+    const chars = read(src);
+    return { text: chars.map(c => c.ch).join(''), marks: fromCharFormats(chars.map(c => c.f)) };
+}
+/** Whether plain pasted text is written in Markdown: a `#` heading line, or bold, strikethrough
+ * or a `[words](address)` link somewhere. Italic alone doesn't count (a lone `*` is too common). */
+function looksLikeMarkdown(text) {
+    const s = String(text || '');
+    return /^\s{0,3}#{1,6}\s+\S/m.test(s) || /\*\*\S[^*\n]*?\S?\*\*/.test(s) || /~~\S[^~\n]*?~~/.test(s) || /\[[^\]\n]+\]\((https?:\/\/|mailto:)[^)\s]+\)/.test(s);
+}
 
 /* GENERATED:hubRowMarks:END */
 /* GENERATED:hubTodoModel:START — DO NOT EDIT BY HAND. Source of truth: src/utils/todoModel.ts (tests: tests/unit/todoModel.test.ts). Regenerate with `npm run generate` after changing the source; CI fails if this block drifts from what the generator produces (see .github/workflows/ci.yml and scripts/generate-index-blocks.mjs). */
