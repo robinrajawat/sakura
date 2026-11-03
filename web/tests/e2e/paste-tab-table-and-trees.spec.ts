@@ -80,3 +80,25 @@ test('several trees keep their shape when the HTML copy drops the blank lines', 
   await paste(page, TREES, html);
   expect(await page.evaluate('nodes.map(n => [n.text, n.depth])')).toEqual(EXPECTED);
 });
+
+test('a Markdown table becomes a table (the |---| line dropped)', async ({ page }) => {
+  await paste(page, '| Item | Owner |\n|---|:--:|\n| A | Ana |\n| B | Bo |');
+  expect(await page.evaluate('nodes[0].tables.length')).toBe(1);
+  await expect(page.locator('.node-table-line table tr')).toHaveCount(3);
+  await expect(page.locator('.node-table-line table tr').nth(1)).toContainText('Ana');
+});
+
+test('a new tree right after the last └── line starts its own row, even without a blank line', async ({ page }) => {
+  await paste(page, 'Root A\n├── a1\n└── a2\nRoot B\n├── b1\n└── b2');
+  expect(await page.evaluate('nodes.map(n => [n.text, n.depth])')).toEqual([['Root A', 0], ['a1', 1], ['a2', 1], ['Root B', 0], ['b1', 1], ['b2', 1]]);
+});
+
+test('a plain-character tree (|-- `--) nests like a ├── tree', async ({ page }) => {
+  await paste(page, 'Root\n|-- a\n|   `-- a1\n`-- b');
+  expect(await page.evaluate('nodes.map(n => [n.text, n.depth])')).toEqual([['Root', 0], ['a', 1], ['a1', 2], ['b', 1]]);
+});
+
+test('Markdown checkboxes become checkbox rows, ticked ones ticked', async ({ page }) => {
+  await paste(page, '- [ ] todo one\n- [x] done two');
+  expect(await page.evaluate('nodes.map(n => [n.text, n.isCheckbox, n.checked])')).toEqual([['todo one', true, false], ['done two', true, true]]);
+});
