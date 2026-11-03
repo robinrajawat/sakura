@@ -130,11 +130,11 @@ test.describe('cutdown 9b: presets, dead settings, and leftovers removed', () =>
     expect(sectionTitles).not.toContain('Zen mode');
     await expect(page.locator('#settings-section-zen')).toHaveCount(0);
 
-    // Documents → PDF: Cover page, Open items page, PDF mark — and nothing else.
+    // Documents → PDF: Cover page, Contents (2026-11-03), Open items page, PDF mark — and nothing else.
     await openSettingsCategory(page, 'documents');
     const pdfSection = page.locator('#settings-panel .settings-section[data-cat="documents"]').filter({ has: page.locator('.settings-section-title', { hasText: /^PDF$/ }) });
     const rows = pdfSection.locator('.settings-list-row .settings-switch-text');
-    expect(await rows.allTextContents()).toEqual(['Cover page', 'Open items page', 'PDF mark']);
+    expect(await rows.allTextContents()).toEqual(['Cover page', 'Contents', 'Open items page', 'PDF mark']);
     // The mark defaults to SAKURA; blank means no mark.
     await expect(page.locator('#preview-branding-text-input')).toHaveValue('SAKURA');
 
