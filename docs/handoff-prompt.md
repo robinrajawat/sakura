@@ -173,15 +173,16 @@ contradicts README.md or docs/feature-reference.md, trust them.)*
 
 ### Latest changes
 
+- **File Explorer: one + menu; .opml drop (2026-11-03, owner).** The Documents header's two icons (New folder, New document) became one `#sb-new-btn` whose menu (`sbNewMenuItems`) has New document (highlighted: + then Enter), New folder and Import (.opml)…; right-click on empty space keeps the same three. A .opml file dropped on the File Explorer or the editor imports as a new document (capture-phase drop handler ahead of the editor's picture drop). Help, tour and feature-reference updated. Test: explorer-new-menu.spec.ts. Owner declined "Email as text" in Share (2026-11-03).
+
 - **Phone: document status shown as on the computer (2026-11-03, owner).** The reader printed the stored value (`draft`); it now maps it to the computer's words (Draft, Review, Approved, Rejected; case-insensitive, unknown values hidden). hub-docs-reader.spec.ts now seeds the real lowercase value (it seeded `Draft`, which hid the bug).
 
 - **PDF: Contents switch; layout follows settings only; no "min read" (2026-11-03, owner).** Settings → PDF: Contents (`contentsPageEnabled`, default on) next to Cover page. Off adds `pv-toc-hidden-auto` in exportPreviewAsPdf (the same state as a list under 2 entries, so page numbers, open-items placement and print CSS already handle it). Without a cover, Contents always sits under the title (`PDF_TOC_INLINE_MAX` = 8 removed: owner wants no length-based layout). "min read" removed from cover and header (screen convention; there is no on-screen preview, renderPreviewBody only feeds the PDF). Test: pdf-contents-setting.spec.ts (all four layouts).
 
-- **PDF: top-level headings keep the section line (2026-11-03, owner).** Every depth-0 row prints as a section (`.pv-section` plus its line); a heading format on it adds `pv-section-h pv-section-h{1-3}`, which sets the words' size and case instead of the small uppercase label. The line sits beside a short title and moves under a long one (flex-wrap, 48px minimum). Replaces #812's "heading at depth 0 drops the line". Contents entry is unchanged (heading, `top:true`). Tests: pdf-headings-footer.spec.ts, tables-pdf-bugs.spec.ts.
-
 
 ### In progress / not built
 
+- Share stays as it is: Download PDF, Export (.opml), Send a copy (owner, 2026-11-03: "we have come a long way to simplify things"). Declined: email from Share (as text, or Send a copy also emailing the recipient) and public share links (anyone-with-the-link view). Don't re-propose unless the owner asks.
 - API documentation (2026-10-30): done — API request card + Copy as cURL, form editor, cURL paste (into the form or straight into a row) and per-card export. Owner decisions: no collection import, no document-wide export, nothing API-specific in Share. Live "Send" deliberately not built (CORS, secrets); "try it" = cURL or Postman. Next only if the owner asks.
 - Queue from 2026-10-29: done. Decided: the bottom-right focus-mode
   button `#editor-zen-toggle` stays (owner: "not really adding noise"; it's how people find focus mode). Its

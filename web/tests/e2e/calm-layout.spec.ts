@@ -89,13 +89,13 @@ test('no tabs: path on the top line, back/forward between documents, recent docu
   await expect(page.locator('.qa-item', { hasText: 'Second' }).first()).toBeVisible();
 });
 
-// Fewer Documents buttons (owner 2026-10-29): the header keeps New folder and New document; Import
-// and Collapse all folders are on the explorer's right-click; clicking the document name locates it.
-test('the File Explorer header has two buttons; its right-click has Import', async ({ page }) => {
+// Fewer Documents buttons (owner 2026-10-29, then 2026-11-03): the header has one + (New document,
+// New folder, Import in its menu); the explorer's right-click still has Import and Collapse all folders.
+test('the File Explorer header has one + button; its right-click has Import', async ({ page }) => {
   // @ts-expect-error -- bare globals from index.html
   await page.evaluate(() => { setSidebarOpen(true); ensureDocumentForEditing(); });
   const ids = await page.locator('.sb-section-actions .sb-icon-btn').evaluateAll((els) => els.map((e) => e.id));
-  expect(ids).toEqual(['sb-new-folder-btn', 'sb-new-doc-btn']);
+  expect(ids).toEqual(['sb-new-btn']);
   await page.locator('#sidebar').click({ button: 'right', position: { x: 60, y: 400 } });
   const labels = await page.locator('.sb-context-menu .sb-context-item').allTextContents();
   expect(labels.slice(0, 3)).toEqual(['New document', 'New folder', 'Import (.opml)…']);

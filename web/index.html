@@ -3942,7 +3942,7 @@ html.calm-layout #help-meta-links .help-coffee-icon{color:var(--support)}
           <div class="help-section" data-cat="documents">
 <h4>Documents and folders</h4>
 <ul>
-<li>New document: the File Explorer's + button, or <span class="help-kbd">Ctrl/Cmd</span> + <span class="help-kbd">Alt</span> + <span class="help-kbd">N</span></li>
+<li>New document, New folder or Import (.opml): the File Explorer's + button (+ then Enter makes a document), or for a document <span class="help-kbd">Ctrl/Cmd</span> + <span class="help-kbd">Alt</span> + <span class="help-kbd">N</span></li>
 <li>Right-click a document or folder to rename, duplicate, move, share or delete it. Drag documents and folders to file and order them</li>
 <li>Deleted documents go to Trash at the bottom of the File Explorer, kept for 7 days by default (Settings → Documents)</li>
 </ul>
@@ -3966,7 +3966,7 @@ html.calm-layout #help-meta-links .help-coffee-icon{color:var(--support)}
 <ul>
 <li>Share → Download PDF prints the whole document, with notes, threads, tables and images. Cover page and PDF mark are in Settings → Documents</li>
 <li>Share → Send a copy (signed in) gives another Sakura user their own copy to edit and keep. It arrives in their notifications with Add to my documents and Decline; nothing is added until they choose</li>
-<li>Share → Export saves the outline as an OPML file; right-click empty space in the File Explorer → Import (.opml)… opens one</li>
+<li>Share → Export saves the outline as an OPML file; the File Explorer's + → Import (.opml)… opens one, or drop a .opml file on the File Explorer or the page</li>
 </ul>
 </div>
           <div class="help-section" data-cat="documents">
@@ -4063,10 +4063,7 @@ html.calm-layout #help-meta-links .help-coffee-icon{color:var(--support)}
           <span class="sb-section-label">Documents</span>
           </div>
           <div class="sb-section-actions">
-            <button class="sb-icon-btn" id="sb-new-folder-btn" data-tip="New folder" aria-label="New folder">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/><line x1="12" y1="11" x2="12" y2="17"/><line x1="9" y1="14" x2="15" y2="14"/></svg>
-            </button>
-            <button class="sb-icon-btn" id="sb-new-doc-btn" data-tip="New document" aria-label="New document">
+            <button class="sb-icon-btn" id="sb-new-btn" data-tip="New" aria-label="New" aria-haspopup="menu" aria-expanded="false">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
             </button>
           </div>
@@ -23956,7 +23953,7 @@ document.addEventListener('keydown',e=>{
 el('settings-close-btn')?.addEventListener('click',e=>{ e.stopPropagation(); el('settings-panel').classList.remove('open'); setSettingsSearchVisible(false); el('rail-settings-btn')?.focus(); });
 el('account-toggle')?.addEventListener('click',e=>{e.stopPropagation(); el('export-menu')?.classList.remove('open');  toggleNotifMenu(false); el('account-menu').classList.toggle('open')});
 // Export ▾ / Import ▾: the shared menu, one item per format. Download PDF and Export (.opml) live
-// under Share; Import (.opml) is in the File Explorer header.
+// under Share; Import (.opml) is in the File Explorer's + menu.
 const SB_EXPORT_ICON='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>';
 const SB_IMPORT_ICON='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>';
 const SB_PDF_ICON='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="13" y2="17"/></svg>';
@@ -27280,8 +27277,26 @@ el('sidebar-search-clear').addEventListener('click',()=>{
   el('sidebar-search').focus();
 });
 
-el('sb-new-folder-btn').addEventListener('click',()=>createFolder());
-el('sb-new-doc-btn').addEventListener('click',()=>{ createDoc(); renderSidebar(); });
+// One + for everything that adds to the File Explorer (owner, 2026-11-03): New document (highlighted,
+// so + then Enter makes one), New folder, Import (.opml). Right-click on empty space has the same three.
+el('sb-new-btn').addEventListener('click',e=>{ e.stopPropagation(); openSbMenuUnder(e.currentTarget,sbNewMenuItems(),{id:'sb-new-menu',label:'New',keyboard:true}); });
+function sbNewMenuItems(){ return [
+  {label:'New document', icon:SB_NEW_DOC_ICON, onClick:()=>{ createDoc(); renderSidebar(); }},
+  {label:'New folder', icon:SB_NEW_FOLDER_ICON, onClick:()=>createFolder()},
+  {label:'Import (.opml)…', icon:SB_IMPORT_ICON, onClick:()=>triggerOpmlImport()}
+]; }
+const SB_NEW_DOC_ICON='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="12" x2="12" y2="18"/><line x1="9" y1="15" x2="15" y2="15"/></svg>';
+const SB_NEW_FOLDER_ICON='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/><line x1="12" y1="11" x2="12" y2="17"/><line x1="9" y1="14" x2="15" y2="14"/></svg>';
+// A .opml file dropped on the File Explorer or the editor becomes a new document, like Import.
+function _opmlFilesFrom(files){ return [...(files||[])].filter(f=>/\.(opml)$/i.test(f.name||'')||f.type==='text/x-opml'); }
+function _dropInImportArea(t){ return !!(t&&t.closest&&t.closest('#sidebar, #editor-pane')); }
+document.addEventListener('dragover',e=>{ if(_dragHasFiles(e)&&_dropInImportArea(e.target)&&!el('editor-pane')?.contains(e.target)){ e.preventDefault(); e.dataTransfer.dropEffect='copy'; } });
+document.addEventListener('drop',async e=>{
+  if(!_dragHasFiles(e)||!_dropInImportArea(e.target))return;
+  const opml=_opmlFilesFrom(e.dataTransfer.files); if(!opml.length)return;
+  e.preventDefault(); e.stopPropagation();
+  for(const f of opml){ try{ importOpmlText(await f.text()); }catch(err){ showToast('Could not read that OPML file'); } }
+},true);
 el('sb-bulk-clear-btn')?.addEventListener('click',()=>{ sbSelectedDocIds.clear(); renderSidebar(); });
 el('sb-bulk-delete-btn')?.addEventListener('click',async()=>{ await bulkDeleteDocs(Array.from(sbSelectedDocIds)); });
 el('sb-bulk-move-btn')?.addEventListener('click',e=>{ showBulkMoveMenu(e); });
@@ -27887,7 +27902,7 @@ const TOUR_STEPS=[
   {target:null,placement:'center',title:'Welcome to Sakura',bodyHtml:'<div style="text-align:center;margin-bottom:10px;font-size:32px;line-height:1"><svg width="1em" height="1em" viewBox="0 0 72 72" xmlns="http://www.w3.org/2000/svg" style="display:inline-block;vertical-align:middle" aria-hidden="true"><g opacity="0.9"><ellipse cx="36" cy="18" rx="9" ry="9" fill="color-mix(in srgb,var(--fg) 38%,transparent)" stroke="color-mix(in srgb,var(--fg) 55%,transparent)" stroke-width="1"/><ellipse cx="18" cy="30" rx="9" ry="9" fill="color-mix(in srgb,var(--fg) 30%,transparent)" stroke="color-mix(in srgb,var(--fg) 45%,transparent)" stroke-width="1"/><ellipse cx="54" cy="30" rx="9" ry="9" fill="color-mix(in srgb,var(--fg) 30%,transparent)" stroke="color-mix(in srgb,var(--fg) 45%,transparent)" stroke-width="1"/><ellipse cx="24" cy="46" rx="9" ry="9" fill="color-mix(in srgb,var(--fg) 22%,transparent)" stroke="color-mix(in srgb,var(--fg) 38%,transparent)" stroke-width="1"/><ellipse cx="48" cy="46" rx="9" ry="9" fill="color-mix(in srgb,var(--fg) 22%,transparent)" stroke="color-mix(in srgb,var(--fg) 38%,transparent)" stroke-width="1"/><circle cx="36" cy="32" r="5.5" fill="color-mix(in srgb,var(--fg) 18%,transparent)" stroke="color-mix(in srgb,var(--fg) 48%,transparent)" stroke-width="1.2"/></g></svg></div><p>Like a cherry blossom tree, every idea here grows as a branch — nested, structured, beautiful.</p><p>This is a quick tour of the basics. Skip anytime; replay it later from Help.</p>'},
   {target:'#appbar',placement:'right',title:'The rail',bodyHtml:'<p>Everything outside the page lives on this rail: Documents, Search and To-Dos at the top; Settings, notifications and your account at the bottom.</p>'},
   {target:'#rail-docs-btn',placement:'right',title:'Documents',bodyHtml:'<p>Opens your File Explorer, already pointing at the document you are in.</p>'},
-  {target:'#sidebar',placement:'right',title:'File Explorer',bodyHtml:'<p>Every document and folder lives here. Drag rows to reorder or move them, and right-click for more options, including Import (.opml).</p>',setup:()=>{ tourSidebarWasOpen=sidebarOpen; if(!sidebarOpen)setSidebarOpen(true); },teardown:()=>{ if(!tourSidebarWasOpen)setSidebarOpen(false); }},
+  {target:'#sidebar',placement:'right',title:'File Explorer',bodyHtml:'<p>Every document and folder lives here. Drag rows to reorder or move them, and use + for a new document, a folder or an OPML import.</p>',setup:()=>{ tourSidebarWasOpen=sidebarOpen; if(!sidebarOpen)setSidebarOpen(true); },teardown:()=>{ if(!tourSidebarWasOpen)setSidebarOpen(false); }},
   {target:'#global-search-wrap',placement:'right',title:'Search',bodyHtml:'<p>Searches documents, rows, notes, threads, tables and To-Dos, plus settings and help, or runs a command like “dark mode”.</p><p>Press Ctrl/Cmd+/ to open it from anywhere.</p>'},
   {target:'#dock-panel-appbar-toggle',placement:'right',title:'To-Dos',bodyHtml:'<p><strong>To-Dos</strong>: one task list that isn\'t tied to any single document, with due dates, sections and subtasks, docked beside the page wherever you are.</p>'},
   {target:'#rail-settings-btn',placement:'right',title:'Settings',bodyHtml:'<p>Theme, text size, PDF options, AI and backup. Everything is stored locally in this browser.</p>'},
