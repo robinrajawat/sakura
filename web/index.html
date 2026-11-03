@@ -20720,6 +20720,75 @@ function setEditableSelectionRange(el,start,end){
 let _rowPointerDown=false;
 document.addEventListener('mousedown',e=>{const t=e.target; _rowPointerDown=e.button===0&&!!(t&&t.closest&&t.closest('.node-row'))&&!t.closest('.node-input')},true);
 document.addEventListener('mouseup',()=>{setTimeout(()=>{_rowPointerDown=false},0)},true);
+// Keep the screen still across a re-render (owner, 2026-11-03: folding a row or opening/closing a
+// note, diagram or thread "shifted the screen"). render() rebuilds every row, so the browser's own
+// scroll anchoring loses its anchor, and near the end of a document a fold or close leaves too
+// little content below for the old scroll position, so the browser snapped the page down. Anchor:
+// the row last pressed (or the row an object belongs to) while it is on screen, else the first row
+// on screen. After the rebuild the anchor goes back to the same place on screen, with blank space
+// added at the end when the document has become too short for that; the space shrinks away as
+// soon as the person scrolls up.
+let _scrollAnchorRowId=null, _scrollAnchorAt=0;
+function anchorRowForTarget(t){
+  if(!t||!t.closest)return null; const pane=el('editor-pane-inner'); if(!pane||!pane.contains(t))return null;
+  let line=t.closest('.node-row'); if(line)return line;
+  line=t; while(line&&line.parentElement!==pane)line=line.parentElement; // the object's line (note, diagram, thread...)
+  while(line&&!(line.classList&&line.classList.contains('node-row')))line=line.previousElementSibling; // ...belongs to the row above it
+  return line;
+}
+['mousedown','contextmenu'].forEach(type=>document.addEventListener(type,e=>{const row=anchorRowForTarget(e.target); if(row){_scrollAnchorRowId=row.dataset.id; _scrollAnchorAt=Date.now()}},true));
+function captureRenderScrollAnchor(){
+  const sc=el('editor-pane'); if(!sc||!sc.clientHeight)return null;
+  const box=sc.getBoundingClientRect(); const onScreen=r=>{const b=r.getBoundingClientRect(); return b.bottom>box.top&&b.top<box.bottom};
+  let row=null, pressed=false;
+  if(_scrollAnchorRowId!=null&&Date.now()-_scrollAnchorAt<5000){row=sc.querySelector(`.node-row[data-id="${_scrollAnchorRowId}"]`); if(row&&!onScreen(row))row=null; pressed=!!row}
+  if(!row){const cur=editingId??selectedId; if(cur!=null){row=sc.querySelector(`.node-row[data-id="${cur}"]`); if(row&&!onScreen(row))row=null}}
+  if(!row)row=Array.from(sc.querySelectorAll('.node-row')).find(r=>r.getBoundingClientRect().bottom>box.top)||null;
+  if(!row)return null;
+  // Its parents too, nearest first: when a fold hides the anchor itself (Collapse all), the nearest
+  // row still shown takes its place.
+  const ids=[row.dataset.id]; let n=nodes[getIndex(nodes,Number(row.dataset.id))]; const seen=new Set();
+  while(n&&n.parentId!=null&&!seen.has(n.parentId)){seen.add(n.parentId); ids.push(String(n.parentId)); n=nodes[getIndex(nodes,n.parentId)]}
+  return {docId:currentDocId,focusId:focusedId,ids,offset:row.getBoundingClientRect().top-box.top,objectLines:pressed?rowObjectLines(row).length:-1};
+}
+// Puts `row` back at `offset` px below the top of scroller `sc`. When the list has become too short
+// for that (a fold or close near its end), blank space goes at the end of `host` instead of the
+// browser snapping the list down; that space shrinks away as the person scrolls up. Used by the
+// editor and the File Explorer.
+function scrollAnchorSpacer(sc){return sc.querySelector(':scope > .scroll-anchor-spacer, :scope > * > .scroll-anchor-spacer')}
+function putRowBackInPlace(sc,host,row,offset){
+  if(!sc||!host||!row||!sc.clientHeight)return;
+  const target=Math.max(0,row.getBoundingClientRect().top-sc.getBoundingClientRect().top+sc.scrollTop-offset);
+  let sp=scrollAnchorSpacer(sc); const had=sp?(parseFloat(sp.style.height)||0):0;
+  const short=target+sc.clientHeight-(sc.scrollHeight-had);
+  if(short>0){if(!sp){sp=document.createElement('div'); sp.className='scroll-anchor-spacer'; sp.setAttribute('aria-hidden','true'); sp.style.flexShrink='0'; host.appendChild(sp)} sp.style.height=Math.ceil(short)+'px'}
+  else if(sp)sp.remove();
+  if(Math.abs(sc.scrollTop-target)>=1)sc.scrollTop=target;
+}
+document.addEventListener('scroll',e=>{
+  const sc=e.target; if(!sc||!sc.querySelector)return; const sp=scrollAnchorSpacer(sc); if(!sp)return;
+  const spare=sc.scrollHeight-sc.scrollTop-sc.clientHeight; if(spare<=0)return; // blank space below the screen
+  const left=(parseFloat(sp.style.height)||0)-spare; if(left<1)sp.remove(); else sp.style.height=left+'px';
+},{capture:true,passive:true});
+// A row's note, diagram, thread, table and picture lines sit right after it, before the next row.
+function rowObjectLines(row){const out=[]; let n=row.nextElementSibling; while(n&&!n.classList.contains('node-row')&&!n.classList.contains('scroll-anchor-spacer')){out.push(n); n=n.nextElementSibling} return out}
+// Opening something on a row near the bottom of the screen: scroll just enough to show it (as
+// Notion and Dynalist do), never so far that the row itself leaves the top.
+function revealRowObjects(sc,row){
+  const lines=rowObjectLines(row); if(!lines.length)return;
+  const box=sc.getBoundingClientRect(); const pad=16;
+  const below=lines[lines.length-1].getBoundingClientRect().bottom-(box.bottom-pad);
+  const room=row.getBoundingClientRect().top-(box.top+pad);
+  const by=Math.min(below,room); if(by>=1)sc.scrollBy({top:by,behavior:'smooth'});
+}
+function restoreRenderScrollAnchor(a){
+  if(!a||a.docId!==currentDocId||a.focusId!==focusedId)return;
+  const inner=el('editor-pane-inner'); if(!inner)return;
+  let row=null; for(const id of a.ids){row=inner.querySelector(`.node-row[data-id="${id}"]`); if(row)break}
+  if(!row)return;
+  putRowBackInPlace(el('editor-pane'),inner,row,a.offset);
+  if(a.objectLines>=0&&row.dataset.id===a.ids[0]&&rowObjectLines(row).length>a.objectLines)revealRowObjects(el('editor-pane'),row);
+}
 function beginEditAt(id,caretPos){if(id===null||getIndex(nodes,id)<0)return; setSingleSelection(id); editingId=id; inputCaret=caretPos; autoRewritePasteTainted=false; editSessionOriginalText=nodes[getIndex(nodes,id)].text; editSessionOriginalMarks=rowMarksOf(nodes[getIndex(nodes,id)]); render()}
 // Best-effort mapping from a click point to a character offset in the node's raw text. Walks the
 // rendered label's text nodes (via the browser's native caret-from-point APIs) and sums lengths up
@@ -21429,6 +21498,7 @@ function render(){if(_apiEd)apiEditorFinish({cancelIfInvalid:true,focusBack:fals
     const liveInput=getEditingInput();
     if(liveInput&&document.activeElement===liveInput)_preservedCaretOffset=getEditableCaretOffset(liveInput);
   }
+  const _scrollAnchor=captureRenderScrollAnchor();
   const pane=el('editor-pane-inner'); pane.innerHTML=''; const focusIdx=focusedId!==null?getIndex(nodes,focusedId):-1; const focusActive=focusIdx>=0; const focusBaseDepth=focusActive?nodes[focusIdx].depth:0; const focusEnd=focusActive?getSubtreeEnd(nodes,focusIdx):-1; if(focusActive)pane.appendChild(buildFocusBar(focusIdx)); let focusEmptyEl=null; if(focusActive && focusEnd<=focusIdx+1){const empty=document.createElement('div'); empty.className='empty-state focus-empty-state'; empty.innerHTML='<div style="font-size:.92em;opacity:.7;line-height:1.6;cursor:text">No sub-items yet. Press <kbd style="font-family:inherit;font-size:.85em;padding:1px 6px;border:1px solid var(--border);border-radius:5px;background:color-mix(in srgb,var(--bg) 80%,var(--tb-bg) 20%)">Enter</kbd> or just start typing to add one.</div>'; empty.addEventListener('click',()=>{if(focusedId!==null)insertChildFirst(focusedId,true)}); focusEmptyEl=empty;} if(!focusActive&&!nodes.length){const empty=document.createElement('div'); empty.className='empty-state doc-empty'; const hint='Press <kbd style="font-family:inherit;font-size:.85em;padding:1px 6px;border:1px solid var(--border);border-radius:5px;background:color-mix(in srgb,var(--bg) 80%,var(--tb-bg) 20%)">Enter</kbd> or just type — or paste a tree.'; const greetName=getGreetingName(); const esTitle=greetName?`${esc(getGreetingTimePrefix())}, ${esc(greetName)}`:'Nothing here yet'; const esSubtitle=greetName?`Nothing here yet. ${hint}`:hint; empty.innerHTML=`<div><div class="empty-state-illustration"><svg width="72" height="72" viewBox="0 0 72 72" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><g opacity="0.9"><ellipse cx="36" cy="18" rx="9" ry="9" fill="color-mix(in srgb,var(--fg) 38%,transparent)" stroke="color-mix(in srgb,var(--fg) 55%,transparent)" stroke-width="1"/><ellipse cx="18" cy="30" rx="9" ry="9" fill="color-mix(in srgb,var(--fg) 30%,transparent)" stroke="color-mix(in srgb,var(--fg) 45%,transparent)" stroke-width="1"/><ellipse cx="54" cy="30" rx="9" ry="9" fill="color-mix(in srgb,var(--fg) 30%,transparent)" stroke="color-mix(in srgb,var(--fg) 45%,transparent)" stroke-width="1"/><ellipse cx="24" cy="46" rx="9" ry="9" fill="color-mix(in srgb,var(--fg) 22%,transparent)" stroke="color-mix(in srgb,var(--fg) 38%,transparent)" stroke-width="1"/><ellipse cx="48" cy="46" rx="9" ry="9" fill="color-mix(in srgb,var(--fg) 22%,transparent)" stroke="color-mix(in srgb,var(--fg) 38%,transparent)" stroke-width="1"/><circle cx="36" cy="32" r="5.5" fill="color-mix(in srgb,var(--fg) 18%,transparent)" stroke="color-mix(in srgb,var(--fg) 48%,transparent)" stroke-width="1.2"/></g></svg></div><div style="font-size:1.1em;margin-bottom:6px;color:var(--fg)">${esTitle}</div><div style="font-size:.88em;opacity:.7;line-height:1.6">${esSubtitle}</div><div class="empty-state-actions"><button class="btn primary" id="es-first-row-btn">Add first row</button><button class="btn" id="es-ai-outline-btn">Generate with AI ✦</button></div></div>`; pane.appendChild(empty); const firstRowBtn=document.getElementById('es-first-row-btn'); if(firstRowBtn)firstRowBtn.addEventListener('click',()=>createRootAndEdit());
 const aiOutlineBtn=document.getElementById('es-ai-outline-btn'); if(aiOutlineBtn)aiOutlineBtn.addEventListener('click',()=>generateOutlineWithAi(aiOutlineBtn));} else {const frag=document.createDocumentFragment(); const counters=[]; let skipDepth=null; nodes.forEach((node,idx)=>{ if(focusActive&&(idx<focusIdx||idx>=focusEnd)){ return } if(skipDepth!==null){ if(node.depth>skipDepth){ return } else { skipDepth=null } } const folded=collapsedIds.has(node.id); const hasChildren=nodeHasChildren(nodes,idx); if(folded&&hasChildren) skipDepth=node.depth; let numberStr=''; if(outlineNumbering){ const depth=(node.depth||0)-(focusActive?focusBaseDepth:0); counters.length=depth+1; counters[depth]=(counters[depth]||0)+1; numberStr=counters.slice(0,depth+1).join('.') } const row=document.createElement('div'); const isSectionNode=nodeIsSection(node,sectionMarkersDepthZero); const isMatch=searchMatches.includes(node.id); const isCurrentMatch=isMatch&&searchMatches[searchIndex]===node.id; row.className='node-row'+(isIdSelected(node.id,selectAllMode,multiSelectedIds,selectedId)?' selected':'')+(node.id===selectedId?' primary-selection':'')+(node.id===flashNodeId?' flash-new':'')+(isSectionNode?' is-section':'')+(hasChildren&&!isSectionNode?' has-kids':'')+(isMatch?' search-match':'')+(isCurrentMatch?' search-current':''); row.dataset.id=String(node.id); if(hideTreeLines){ const vDepth=focusActive?((node.depth||0)-focusBaseDepth):(node.depth||0); row.style.paddingLeft=(vDepth*32+0*editorScale)+'px'; if(depthGuideLines){ const vFlags=focusActive?buildVertFlags(nodes.slice(focusIdx,focusEnd),idx-focusIdx,-focusBaseDepth):buildVertFlags(nodes,idx,0); vFlags.forEach((hasSib,d)=>{ if(hasSib){ const vg=document.createElement('span'); vg.className='node-vguide'; vg.style.left=(d*32+0*editorScale+9)+'px'; row.appendChild(vg) } }) } } else { const prefix=focusActive?buildPrefix(nodes.slice(focusIdx,focusEnd),idx-focusIdx,treeIndentWidth,-focusBaseDepth):buildPrefix(nodes,idx,treeIndentWidth,0); const pfx=document.createElement('span'); pfx.className='node-prefix'; pfx.innerHTML=(prefix.vert?`<span>${esc(prefix.vert)}</span>`:'')+(prefix.conn?`<span class="node-conn">${esc(prefix.conn)}</span>`:''); row.appendChild(pfx) } if(hasChildren&&hideTreeLines){ const foldBtn=document.createElement('span'); foldBtn.className='fold-dot'+(folded?' is-folded':''); foldBtn.addEventListener('mouseenter',()=>{foldBtn.classList.add('is-hover'); foldBtn.textContent=folded?'+':'−'}); foldBtn.addEventListener('mouseleave',()=>{foldBtn.classList.remove('is-hover'); foldBtn.textContent=''}); foldBtn.addEventListener('mousedown',e=>{e.stopPropagation(); e.preventDefault(); armNodeDrag(e,row,node,()=>{if(e.shiftKey||e.ctrlKey||e.metaKey)selectRowFromPointer(node.id,e); else toggleCollapse(node.id)},true)}); row.appendChild(foldBtn) } else if(hasChildren){ const foldBtn=document.createElement('span'); foldBtn.className='fold-toggle'; foldBtn.textContent=folded?'▸':'▾'; foldBtn.dataset.tip=folded?'Expand subtree':'Collapse subtree'; foldBtn.addEventListener('mouseenter',()=>{foldBtn.classList.add('is-hover'); foldBtn.textContent=folded?'+':'−'}); foldBtn.addEventListener('mouseleave',()=>{foldBtn.classList.remove('is-hover'); foldBtn.textContent=folded?'▸':'▾'}); foldBtn.addEventListener('mousedown',e=>{e.stopPropagation(); e.preventDefault(); toggleCollapse(node.id)}); row.appendChild(foldBtn) } else if(hideTreeLines){ const dot=document.createElement('span'); dot.className='node-dot'; dot.addEventListener('mousedown',e=>{e.stopPropagation(); e.preventDefault(); armNodeDrag(e,row,node,()=>selectRowFromPointer(node.id,e),true)}); row.appendChild(dot) } if(numberStr){ const numEl=document.createElement('span'); numEl.className='node-number'; numEl.textContent=numberStr; row.appendChild(numEl) } if(node.id===editingId){
   const stCls=(node.styles.bold?' style-bold':'')+(node.styles.italic?' style-italic':'')+(node.styles.underline?' style-underline':'')+(node.styles.strike?' style-strike':'')+(node.styles.heading?' style-heading-'+node.styles.heading:'');
@@ -21852,7 +21922,7 @@ const aiOutlineBtn=document.getElementById('es-ai-outline-btn'); if(aiOutlineBtn
   // into a childless node, or every node deleted). Previously this only ran inside the normal-
   // tree branch, so an active filter's bar/chips could keep showing stale state — or simply
   // never get hidden — once the pane had no rows to filter in the first place.
-  applyTagFilterToPane(pane); if(editingId!==null){const input=getEditingInput(); if(input){autosizeNodeInput(input); input.focus(); setInputCaret(input,inputCaret??_preservedCaretOffset??-1); inputCaret=null}} else if(_pendingInlineFocus){ const pf=_pendingInlineFocus; _pendingInlineFocus=null; const target=pf.kind==='note'?document.querySelector(`.node-note-line[data-node-id="${pf.nodeId}"]`):(pf.kind==='threadComposer'?document.querySelector(`.thread-composer-input[data-node-id="${pf.nodeId}"]`):(pf.kind==='remarkText'?document.querySelector(`.node-remark-text-inline[data-remark-id="${pf.remarkId}"]`):(pf.kind==='qaQuestion'?document.querySelector(`.node-qa-question[data-qa-id="${pf.qaId}"]`):(pf.kind==='qaAnswer'?document.querySelector(`.node-qa-answer[data-qa-id="${pf.qaId}"]`):null)))); if(target){ target.focus(); if(pf.kind==='threadComposer'&&target.textContent){ const rg=document.createRange(); rg.selectNodeContents(target); rg.collapse(false); const sel=getSelection(); sel.removeAllRanges(); sel.addRange(rg); } } } const idx=getIndex(nodes,selectedId); const selectedDepth=idx>=0?nodes[idx].depth:null; if(el('sb-depth')){el('sb-depth').textContent=selectedDepth===null?'':`Depth ${selectedDepth}`; el('sb-depth').style.display=selectedDepth===null?'none':''; const dd=el('sb-depth-divider'); if(dd)dd.style.display=selectedDepth===null?'none':''} if(el('sb-wordcount')){const wc=nodes.reduce((sum,n)=>{const t=getNodePlainText(n).trim(); return sum+(t?t.split(/\s+/).length:0)},0); el('sb-wordcount').textContent=`Words ${wc}`} updateAuthorDisplay(); updateToolbarStates();
+  applyTagFilterToPane(pane); restoreRenderScrollAnchor(_scrollAnchor); if(editingId!==null){const input=getEditingInput(); if(input){autosizeNodeInput(input); input.focus(); setInputCaret(input,inputCaret??_preservedCaretOffset??-1); inputCaret=null}} else if(_pendingInlineFocus){ const pf=_pendingInlineFocus; _pendingInlineFocus=null; const target=pf.kind==='note'?document.querySelector(`.node-note-line[data-node-id="${pf.nodeId}"]`):(pf.kind==='threadComposer'?document.querySelector(`.thread-composer-input[data-node-id="${pf.nodeId}"]`):(pf.kind==='remarkText'?document.querySelector(`.node-remark-text-inline[data-remark-id="${pf.remarkId}"]`):(pf.kind==='qaQuestion'?document.querySelector(`.node-qa-question[data-qa-id="${pf.qaId}"]`):(pf.kind==='qaAnswer'?document.querySelector(`.node-qa-answer[data-qa-id="${pf.qaId}"]`):null)))); if(target){ target.focus(); if(pf.kind==='threadComposer'&&target.textContent){ const rg=document.createRange(); rg.selectNodeContents(target); rg.collapse(false); const sel=getSelection(); sel.removeAllRanges(); sel.addRange(rg); } } } const idx=getIndex(nodes,selectedId); const selectedDepth=idx>=0?nodes[idx].depth:null; if(el('sb-depth')){el('sb-depth').textContent=selectedDepth===null?'':`Depth ${selectedDepth}`; el('sb-depth').style.display=selectedDepth===null?'none':''; const dd=el('sb-depth-divider'); if(dd)dd.style.display=selectedDepth===null?'none':''} if(el('sb-wordcount')){const wc=nodes.reduce((sum,n)=>{const t=getNodePlainText(n).trim(); return sum+(t?t.split(/\s+/).length:0)},0); el('sb-wordcount').textContent=`Words ${wc}`} updateAuthorDisplay(); updateToolbarStates();
   updateDirtyIndicator(); updateMarkerSummary();
   document.querySelectorAll('#editor-pane .bl-link[data-r]').forEach(lnk=>{const target=findNodeByRowLinkId(lnk.dataset.r); lnk.classList.toggle('bl-unresolved',!target); lnk.dataset.tip=target?'Go to: '+(getNodePlainText(target).trim()||'(empty row)'):'The linked row no longer exists';});
 }
@@ -26826,7 +26896,11 @@ async function deleteFolderById(id){
 }
 function toggleFolder(id){
   const folders=loadFolders(); const f=folders.find(x=>x.id===id); if(!f)return;
+  // The folder row stays where it was clicked, also near the end of the list (see putRowBackInPlace).
+  const box=el('sidebar-scroll'); const rowOf=()=>box&&Array.from(box.querySelectorAll('.sfolder-row')).find(r=>r.dataset.folderId===String(id));
+  const before=rowOf(); const offset=before&&before.getBoundingClientRect().top-box.getBoundingClientRect().top;
   f.open = f.open===false?true:false; saveFolders(folders); renderSidebar();
+  const after=before&&rowOf(); if(after)putRowBackInPlace(box,box,after,offset);
 }
 function collapseAllFolders(){
   const folders=loadFolders(); if(!folders.length)return;
@@ -32066,7 +32140,13 @@ function todosHistorySummary(list) {
     body.innerHTML=html;
 
     const completedCollapseBtn=document.getElementById('todos-completed-collapse-btn');
-    if(completedCollapseBtn) completedCollapseBtn.addEventListener('click',()=>{ completedOpen=!completedOpen; renderTodos(); });
+    if(completedCollapseBtn) completedCollapseBtn.addEventListener('click',()=>{
+      // Hiding done tasks at the end of a scrolled list: the button stays where it was clicked.
+      const sc=(()=>{let n=completedCollapseBtn.parentElement; while(n&&n!==document.body&&!(n.scrollHeight>n.clientHeight&&/auto|scroll/.test(getComputedStyle(n).overflowY)))n=n.parentElement; return n&&n!==document.body?n:null})();
+      const offset=sc?completedCollapseBtn.getBoundingClientRect().top-sc.getBoundingClientRect().top:0;
+      completedOpen=!completedOpen; renderTodos();
+      const again=document.getElementById('todos-completed-collapse-btn'); if(sc&&again&&sc.contains(again))putRowBackInPlace(sc,body,again,offset);
+    });
 
     body.querySelectorAll('.todo-check').forEach(cb=>{
       cb.addEventListener('change',()=>toggleTodo(cb.getAttribute('data-id')));
