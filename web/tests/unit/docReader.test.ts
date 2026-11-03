@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   readerFolderPath,
+  readerSvgForScheme,
   readerDocList,
   readerVisibleRows,
   readerAncestorIds,
@@ -142,5 +143,26 @@ describe('readerOpenItems', () => {
   });
   it('is empty for an empty document', () => {
     expect(readerOpenItems([], null)).toEqual({ followups: [], questions: [], decisions: [] });
+  });
+});
+
+describe('readerSvgForScheme', () => {
+  const svg = '<svg xmlns="http://www.w3.org/2000/svg" style="color-scheme: light dark;"><rect fill="light-dark(#fff, #000)"/><text>Å</text></svg>';
+  const decode = (u: string) => decodeURIComponent(u.slice(u.indexOf(',') + 1));
+  it('pins a base64 draw.io export to the app theme, keeping non-ASCII text', () => {
+    const b64 = 'data:image/svg+xml;base64,' + btoa(String.fromCharCode(...new TextEncoder().encode(svg)));
+    const out = readerSvgForScheme(b64, 'light');
+    expect(decode(out)).toContain('color-scheme: light;');
+    expect(decode(out)).toContain('Å');
+    expect(decode(readerSvgForScheme(b64, 'dark'))).toContain('color-scheme: dark;');
+  });
+  it('pins a URL-encoded export too', () => {
+    expect(decode(readerSvgForScheme('data:image/svg+xml;utf8,' + encodeURIComponent(svg), 'light'))).toContain('color-scheme: light;');
+  });
+  it('leaves other pictures and broken data alone', () => {
+    const plain = 'data:image/svg+xml;utf8,' + encodeURIComponent('<svg/>');
+    expect(readerSvgForScheme(plain, 'light')).toBe(plain);
+    expect(readerSvgForScheme('data:image/png;base64,AAAA', 'light')).toBe('data:image/png;base64,AAAA');
+    expect(readerSvgForScheme('data:image/svg+xml;base64,%%%', 'light')).toBe('data:image/svg+xml;base64,%%%');
   });
 });
