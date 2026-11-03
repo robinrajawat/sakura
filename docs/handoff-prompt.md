@@ -169,7 +169,7 @@ keep only the last 3 entries, and delete older ones (git history and the PRs kee
 anything still unbuilt or undecided into "In progress / not built" or "Parked". If this section
 contradicts README.md or docs/feature-reference.md, trust them.)*
 
-**Open work:** none open; everything from 2026-11-03 is merged and deployed (#816–#825). Owner to confirm two live checks: one Google sign-in on the phone (hub.html CSP without 'unsafe-eval', #823) and one AI action in the app (the Worker was redeployed with wrangler 4, #825). Not built: the AI code still loads at startup inside index.html; split it out only if first load is measured as slow. Check `mcp__github__list_pull_requests` at session start.
+**Open work:** none open; everything from 2026-11-03 is merged and deployed (#816–#826). Owner confirmed live (2026-11-03): Google sign-in on the phone works without 'unsafe-eval' (#823), and AI rewrite works on the Worker redeployed with wrangler 4 (#825). Not built: the AI code still loads at startup inside index.html; split it out only if first load is measured as slow. Check `mcp__github__list_pull_requests` at session start.
 
 ### Latest changes
 
@@ -177,7 +177,7 @@ contradicts README.md or docs/feature-reference.md, trust them.)*
 
 - **File Explorer: plain + menu icons; empty Unfiled hidden (2026-11-03, owner).** New document uses the rows' page icon, New folder a plain folder. An empty Unfiled heading (`.sb-unfiled-empty`) shows only while a document is dragged (`#sidebar.sb-doc-drag-active`), as the drop target out of a folder. Decided: Trash stays the last item in the list, moving with it (as Apple Notes/Outlook), not pinned to the bottom. Test: explorer-new-menu.spec.ts.
 
-- **Phone page CSP without 'unsafe-eval' (2026-11-03, owner).** Nothing in hub.html uses eval()/new Function(); index.html already ran the same Firebase and Google sign-in scripts without it. Test: hub-csp.spec.ts (policy text + no violation on boot). Owner to confirm one live sign-in on the phone after deploy.
+- **Phone page CSP without 'unsafe-eval' (2026-11-03, owner).** Nothing in hub.html uses eval()/new Function(); index.html already ran the same Firebase and Google sign-in scripts without it. Test: hub-csp.spec.ts (policy text + no violation on boot). Owner confirmed live phone sign-in (2026-11-03).
 
 
 ### In progress / not built
