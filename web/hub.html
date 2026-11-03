@@ -439,16 +439,14 @@ body.reader-open{overflow:hidden}
 .rd-sep{color:var(--hint)}
 .rd-message{color:var(--hint);font-size:var(--fs-lg);padding:28px 0;text-align:center}
 #doc-reader-body{font-size:15.5px;line-height:1.5;color:var(--fg)}
-.rd-row{display:flex;align-items:flex-start;padding-left:calc(min(var(--rd-depth),6) * 16px);margin:1px 0}
+.rd-row{display:flex;align-items:flex-start;padding-left:calc(min(var(--rd-depth),6) * 18px);margin:1px 0}
+.rd-parent .rd-text[data-fold]{cursor:pointer}
 .rd-row.rd-flash .rd-text{background:color-mix(in srgb,var(--accent) 18%,transparent);border-radius:4px}
-.rd-fold,.rd-fold-space{flex:0 0 24px;width:24px;height:28px;margin-left:-6px}
-.rd-fold{border:none;background:none;color:var(--hint);display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0;border-radius:6px}
-.rd-fold svg{transform:rotate(90deg);transition:transform .12s ease}
-.rd-fold.is-folded svg{transform:none}
-.rd-fold:active{background:var(--hover)}
-.rd-dot{flex:0 0 16px;height:23px;display:flex;align-items:center;justify-content:center}
-.rd-dot::before{content:'';width:5px;height:5px;border-radius:50%;background:var(--muted)}
-.rd-cb{flex:0 0 16px;width:14px;height:14px;margin:5px 6px 0 1px;border:1.5px solid var(--muted);border-radius:3.5px;position:relative}
+.rd-dot{flex:0 0 18px;height:23px;display:flex;align-items:center;justify-content:center;border-radius:50%}
+.rd-dot[data-fold]{cursor:pointer}
+.rd-dot::before{content:'';width:0;height:0;border:2.5px solid var(--muted);border-radius:50%}
+.rd-dot.is-folded::before{box-shadow:0 0 0 4px var(--chip)}
+.rd-cb{flex:0 0 14px;width:14px;height:14px;margin:5px 4px 0 2px;border:1.5px solid var(--muted);border-radius:3.5px;position:relative}
 .rd-cb.is-checked{background:var(--muted)}
 .rd-cb.is-checked::after{content:'';position:absolute;left:3.5px;top:0.5px;width:4px;height:8px;border:solid var(--edit-bg);border-width:0 2px 2px 0;transform:rotate(45deg)}
 .rd-done .rd-text{color:var(--hint);text-decoration:line-through}
@@ -460,7 +458,6 @@ body.reader-open{overflow:hidden}
 .rd-h1 .rd-text{font-size:21px;line-height:1.3}
 .rd-h2 .rd-text{font-size:18.5px;line-height:1.3}
 .rd-h3 .rd-text{font-size:16.5px}
-.rd-h .rd-fold,.rd-h .rd-fold-space{height:calc(1.3em + 4px)}
 .rd-b{font-weight:600}.rd-i{font-style:italic}.rd-u{text-decoration:underline}.rd-s{text-decoration:line-through}
 .rd-text a,.rd-rich a{color:var(--accent);text-decoration:none}
 .rd-text .bl-link{color:var(--accent);cursor:pointer}
@@ -499,6 +496,54 @@ body.reader-open{overflow:hidden}
 .rd-diagram svg{color:var(--muted)}
 .rd-diagram-hint{color:var(--hint);font-size:var(--fs-sm)}
 body.theme-dark .hub-tab[aria-selected="true"]{background:var(--sel);box-shadow:none}
+/* Diagram pictures in the reader, and the full-screen viewer (pinch / double-tap to zoom). */
+.rd-dg-btn{display:block;width:100%;padding:8px;border:1px solid var(--border);border-radius:10px;background:var(--edit-bg);cursor:zoom-in}
+.rd-dg-btn img{display:block;max-width:100%;height:auto;margin:0 auto}
+#rd-viewer{position:fixed;inset:0;z-index:40;background:var(--bg);display:flex;flex-direction:column}
+#rd-viewer[hidden]{display:none}
+#rd-viewer-bar{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:calc(8px + env(safe-area-inset-top)) 12px 8px 18px;border-bottom:1px solid var(--border)}
+#rd-viewer-title{font:600 15px 'Inter',sans-serif;color:var(--fg);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#rd-viewer-close{width:34px;height:34px;flex-shrink:0;border:none;background:var(--chip);color:var(--muted);border-radius:50%;font-size:20px;line-height:1;cursor:pointer}
+#rd-viewer-box{flex:1;overflow:auto;-webkit-overflow-scrolling:touch;touch-action:pan-x pan-y;padding:16px;background:var(--edit-bg)}
+#rd-viewer-img{display:block;width:100%;height:auto;max-width:none}
+/* Open items under the title (as the desktop's summary): icons and numbers, tap for the list. */
+#doc-reader-oi{margin:-8px 0 16px}
+.rd-oi-btn{display:inline-flex;align-items:center;gap:6px;border:none;background:none;color:var(--muted);font:500 13px 'Inter',sans-serif;padding:4px 6px;margin-left:-6px;border-radius:8px;cursor:pointer;font-variant-numeric:tabular-nums}
+.rd-oi-btn.is-on{background:var(--chip);color:var(--fg)}
+.rd-oi-part{display:inline-flex;align-items:center;gap:4px}
+.rd-oi-followup{color:var(--fc-orange)}.rd-oi-question{color:var(--accent)}.rd-oi-decision{color:var(--muted)}
+.rd-oi-part span{color:var(--muted)}
+.rd-oi-list{padding:6px 4px}
+.rd-oi-head{font:600 11px 'Inter',sans-serif;letter-spacing:.04em;text-transform:uppercase;color:var(--hint);padding:8px 8px 4px}
+.rd-oi-item{display:flex;align-items:flex-start;gap:9px;width:100%;text-align:left;border:none;background:none;color:var(--fg);padding:7px 8px;border-radius:8px;cursor:pointer;font:400 14px/1.4 'Inter',sans-serif}
+.rd-oi-item:active{background:var(--hover)}
+.rd-oi-ico{display:inline-flex;margin-top:2px}
+.rd-oi-text{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px;overflow-wrap:anywhere}
+.rd-oi-sub{font-size:var(--fs-sm);color:var(--hint)}
+.rd-oi-age{font-size:var(--fs-sm);color:var(--hint);flex-shrink:0;margin-top:1px}
+/* Share menu in the reader's top bar. */
+#doc-reader-share-wrap{position:relative}
+#doc-reader-share{width:38px;height:38px;border:none;background:none;color:var(--muted);border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer}
+#doc-reader-share:active,#doc-reader-share[aria-expanded="true"]{background:var(--hover);color:var(--fg)}
+#doc-reader-share-menu{position:absolute;right:0;top:calc(100% + 6px);z-index:5;width:220px;background:var(--surface-raised);border:1px solid var(--border);border-radius:12px;box-shadow:0 12px 32px rgba(0,0,0,.16);padding:6px}
+#doc-reader-share-menu[hidden]{display:none}
+#doc-reader-share-menu button{display:flex;flex-direction:column;align-items:flex-start;gap:1px;width:100%;border:none;background:none;color:var(--fg);font:500 14px 'Inter',sans-serif;padding:9px 10px;border-radius:8px;cursor:pointer;text-align:left}
+#doc-reader-share-menu button span{font:400 12px 'Inter',sans-serif;color:var(--hint)}
+#doc-reader-share-menu button:active{background:var(--hover)}
+/* PDF (the phone's print screen): only the document, everything unfolded, light colours. */
+@media print{
+  body.reader-printing{overflow:visible;background:#fff}
+  body.reader-printing>*:not(#doc-reader){display:none!important}
+  body.reader-printing #doc-reader{position:static;display:block;background:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  body.reader-printing #doc-reader-bar,body.reader-printing .rd-ico,body.reader-printing .rd-more{display:none!important}
+  body.reader-printing #doc-reader-scroll{overflow:visible}
+  body.reader-printing #doc-reader-page{max-width:none;padding:0}
+  body.reader-printing .rd-panel,body.reader-printing .rd-dg-btn{break-inside:avoid}
+  body.reader-printing .rd-img{break-inside:avoid}
+  /* Print screens often drop backgrounds: the ticked box draws its tick in ink. */
+  body.reader-printing .rd-cb.is-checked{background:none}
+  body.reader-printing .rd-cb.is-checked::after{border-color:var(--muted)}
+}
 /* GENERATED:css-hub:END */
 </style>
 </head>
@@ -697,9 +742,8 @@ body.theme-dark .hub-tab[aria-selected="true"]{background:var(--sel);box-shadow:
   <div class="hub-modal compact">
     <div class="hub-modal-title" id="about-modal-title">Sakura</div>
     <p class="hub-modal-text about-version" id="about-version" data-version="__SAKURA_VERSION__" hidden></p>
-    <p class="hub-modal-text">Sakura on your phone: your To-Dos, and your documents to read. Documents are read only here, so nothing on the phone can change them. Write and edit them on a computer.</p>
-    <p class="hub-modal-text">Everything syncs through your account. No ads, no analytics, no tracking.</p>
-    <p class="hub-modal-text" style="margin-bottom:16px">© 2026 Robin Singh Rajawat. All rights reserved. <a href="https://github.com/robinrajawat/sakura" target="_blank" rel="noopener noreferrer">View source</a> · <a href="https://github.com/robinrajawat/sakura/blob/main/LICENSE" target="_blank" rel="noopener noreferrer">License</a></p>
+    <p class="hub-modal-text">An outliner for structured thinking: documents with tables, charts and diagrams, discussion threads, To-Dos and AI. On the phone: your To-Dos, and your documents to read.</p>
+    <p class="hub-modal-text" style="margin-bottom:16px">© 2026 Robin Singh Rajawat. All rights reserved.</p>
     <div class="hub-modal-actions">
       <button class="hub-modal-btn" id="about-modal-close" type="button">Close</button>
     </div>
@@ -723,6 +767,13 @@ body.theme-dark .hub-tab[aria-selected="true"]{background:var(--sel);box-shadow:
   <div id="doc-reader-bar">
     <button id="doc-reader-back" type="button" aria-label="Back to documents"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg><span>Documents</span></button>
     <div id="doc-reader-actions">
+      <div id="doc-reader-share-wrap">
+        <button id="doc-reader-share" type="button" aria-label="Share" aria-haspopup="menu" aria-expanded="false"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg></button>
+        <div id="doc-reader-share-menu" role="menu" hidden>
+          <button type="button" role="menuitem" id="doc-reader-share-pdf">PDF<span>Print, save or send</span></button>
+          <button type="button" role="menuitem" id="doc-reader-share-text">Text<span>The outline as plain text</span></button>
+        </div>
+      </div>
       <button id="doc-reader-expand" type="button" aria-label="Expand all"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="7 15 12 20 17 15"/><polyline points="7 9 12 4 17 9"/></svg></button>
     </div>
   </div>
@@ -731,10 +782,15 @@ body.theme-dark .hub-tab[aria-selected="true"]{background:var(--sel);box-shadow:
       <div id="doc-reader-path"></div>
       <h1 id="doc-reader-title"></h1>
       <div id="doc-reader-byline"></div>
+      <div id="doc-reader-oi"></div>
       <div id="doc-reader-body"></div>
     </article>
   </div>
 </section>
+<div id="rd-viewer" hidden role="dialog" aria-modal="true" aria-labelledby="rd-viewer-title">
+  <div id="rd-viewer-bar"><div id="rd-viewer-title"></div><button id="rd-viewer-close" type="button" aria-label="Close">×</button></div>
+  <div id="rd-viewer-box"><img id="rd-viewer-img" alt=""></div>
+</div>
 <div id="hub-toast"></div>
 
 <script>
@@ -3323,6 +3379,53 @@ function readerThread(entries, nodeId) {
         return { entry, nested, kind, open: kind === 'question' && questionState(entry, thread) === 'open' };
     });
 }
+function readerPlain(html) {
+    return String(html ?? '')
+        .replace(/<[^>]*>/g, ' ')
+        .replace(/&nbsp;|&#160;/gi, ' ')
+        .replace(/&amp;/g, '&')
+        .replace(/&lt;/g, '<')
+        .replace(/&gt;/g, '>')
+        .replace(/&quot;/g, '"')
+        .replace(/&#39;/g, "'")
+        .replace(/\s+/g, ' ')
+        .trim();
+}
+/**
+ * The desktop's open-items summary for the phone (owner, 2026-11-03): Follow-up rows, open
+ * questions and decisions, in document order, on rows of this document only.
+ */
+function readerOpenItems(nodes, entries) {
+    const list = Array.isArray(nodes) ? nodes : [];
+    const order = new Map(list.map((n, i) => [n.id, i]));
+    const rowText = (id) => {
+        const n = list.find((x) => x.id === id);
+        return n ? String(n.text || '').trim() || 'Untitled row' : '';
+    };
+    const byDoc = (a, b) => (order.get(a.nodeId) ?? 0) - (order.get(b.nodeId) ?? 0) || a.since - b.since;
+    const followups = list
+        .filter((n) => isFollowupRow(n))
+        .map((n) => ({ nodeId: n.id, text: rowText(n.id), sub: '', since: Number(n.markerAt) || 0 }));
+    const ids = new Set(list.map((n) => n.id));
+    const all = (Array.isArray(entries) ? entries : []);
+    const questions = allOpenQuestions(all, ids).map((q) => ({
+        nodeId: q.anchorNodeId,
+        entryId: q.id,
+        text: readerPlain(q.text),
+        sub: [rowText(q.anchorNodeId), String(q.person || '').trim()].filter(Boolean).join(' · '),
+        since: Number(q.createdAt) || 0
+    }));
+    const decisions = all
+        .filter((e) => e && e.decision && ids.has(e.anchorNodeId) && htmlHasVisibleText(e.text))
+        .map((e) => ({
+        nodeId: e.anchorNodeId,
+        entryId: e.id,
+        text: readerPlain(e.text),
+        sub: [rowText(e.anchorNodeId), String(e.person || '').trim()].filter(Boolean).join(' · '),
+        since: Number(e.createdAt) || 0
+    }));
+    return { followups: followups.sort(byDoc), questions: questions.sort(byDoc), decisions: decisions.sort(byDoc) };
+}
 
 /* GENERATED:hubDocReader:END */
 // A title's formatting from the desktop selection bar (same storage as a row's words). Links
@@ -3916,8 +4019,7 @@ var READER_ICONS={
   question:'<circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 2.5-3 4"/><line x1="12" y1="17" x2="12.01" y2="17"/>',
   decision:'<path d="M20 6 9 17l-5-5"/>',
   reply:'<polyline points="9 14 4 9 9 4"/><path d="M20 20v-7a4 4 0 0 0-4-4H4"/>',
-  diagram:'<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><path d="M10 6.5h4a2 2 0 0 1 2 2V14"/>',
-  chevron:'<polyline points="9 6 15 12 9 18"/>'
+  diagram:'<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><path d="M10 6.5h4a2 2 0 0 1 2 2V14"/>'
 };
 function readerIcon(name,size){ size=size||14; return '<svg width="'+size+'" height="'+size+'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+(READER_ICONS[name]||'')+'</svg>'; }
 
@@ -4105,8 +4207,15 @@ function openDocReader(id,fromHistory){
       if(readerDocId!==id)return;
       if(!snap.exists()){ if(!readerDoc)renderReaderMessage('This document hasn’t reached your account yet. Open it on your computer while signed in, then try again.'); return; }
       var data=snap.data();
-      readerCachePut(id,data);
-      if(!readerDoc||Number(readerDoc.updatedAt||0)!==Number(data.updatedAt||0))setReaderDoc(data,!!readerDoc);
+      var hasDiagrams=Array.isArray(data.diagrams)&&data.diagrams.length>0;
+      return (hasDiagrams?fetchReaderPreviews(id):Promise.resolve({})).then(function(pics){
+        if(readerDocId!==id)return;
+        data._hubPreviews=pics;
+        readerCachePut(id,data);
+        var newer=!readerDoc||Number(readerDoc.updatedAt||0)!==Number(data.updatedAt||0);
+        var picsChanged=!readerDoc||JSON.stringify(Object.keys(readerDoc._hubPreviews||{}))!==JSON.stringify(Object.keys(pics));
+        if(newer||picsChanged)setReaderDoc(data,!!readerDoc);
+      });
     }).catch(function(e){
       console.warn('[sakura hub] document fetch failed',e);
       if(readerDocId===id&&!readerDoc)renderReaderMessage(navigator.onLine?'Couldn’t open this document. Try again in a moment.':'You’re offline. Documents you opened before still open here.');
@@ -4127,6 +4236,8 @@ document.getElementById('doc-reader-back').addEventListener('click',function(){
   if(history.state&&history.state.hubDoc)history.back(); else closeDocReader();
 });
 window.addEventListener('popstate',function(e){
+  if(!(e.state&&e.state.hubDiagram))closeReaderDiagram();
+  if(e.state&&e.state.hubDiagram)return;
   if(e.state&&e.state.hubDoc)openDocReader(e.state.hubDoc,true);
   else if(readerDocId)closeDocReader();
 });
@@ -4169,22 +4280,23 @@ function renderReader(){
   if(d.docLinkedUrl&&readerSafeUrl(d.docLinkedUrl,false))by.push('<a href="'+esc(d.docLinkedUrl)+'" target="_blank" rel="noopener noreferrer">'+esc(d.docLinkedUrlLabel||'Link')+'</a>');
   if(d.updatedAt)by.push('Updated '+esc(readerDateLabel(d.updatedAt)));
   document.getElementById('doc-reader-byline').innerHTML=by.join('<span class="rd-sep"> · </span>');
+  renderReaderOpenItems();
   var body=document.getElementById('doc-reader-body');
   if(!nodes.length){ body.innerHTML='<div class="rd-message">This document is empty.</div>'; updateReaderExpandBtn(); return; }
   var remarks=Array.isArray(d.remarks)?d.remarks:[];
   var diagrams=Array.isArray(d.diagrams)?d.diagrams:[];
   readerImageMarks={};
-  var html=readerVisibleRows(nodes,readerCollapsed).map(function(r){
+  var html=readerVisibleRows(nodes,readerPrinting?new Set():readerCollapsed).map(function(r){
     var n=r.node, id=Number(n.id);
     var st=n.styles||{};
     var heading=Math.min(3,Math.max(0,parseInt(st.heading,10)||0));
     var cls='rd-row'+(heading?' rd-h rd-h'+heading:'')+(n.isCheckbox&&n.checked?' rd-done':'');
     var textCls='rd-text'+(st.bold?' rd-b':'')+(st.italic?' rd-i':'')+(st.underline?' rd-u':'')+(st.strike?' rd-s':'');
     var colour=st.color&&/^[a-z]+$/.test(st.color)?' style="color:var(--fc-'+st.color+')"':'';
-    var lead=r.hasChildren
-      ?'<button type="button" class="rd-fold'+(r.folded?' is-folded':'')+'" data-fold="'+id+'" aria-expanded="'+(!r.folded)+'" aria-label="'+(r.folded?'Unfold':'Fold')+'">'+readerIcon('chevron',14)+'</button>'
-      :'<span class="rd-fold-space"></span>';
-    var mark=n.isCheckbox?'<span class="rd-cb'+(n.checked?' is-checked':'')+'" role="img" aria-label="'+(n.checked?'Done':'Not done')+'"></span>':(heading?'':'<span class="rd-dot"></span>');
+    // Like the desktop outline: a bullet (or checkbox), '+N' on a folded row, no fold arrows.
+    // A parent row folds and unfolds with a tap on its words or its bullet.
+    var foldAttr=r.hasChildren?' data-fold="'+id+'" role="button" aria-expanded="'+(!r.folded)+'"':'';
+    var mark=n.isCheckbox?'<span class="rd-cb'+(n.checked?' is-checked':'')+'" role="img" aria-label="'+(n.checked?'Done':'Not done')+'"></span>':(heading?'':'<span class="rd-dot'+(r.folded?' is-folded':'')+'"'+foldAttr+'></span>');
     var extras='';
     var status=READER_STATUS[normalizeThreadStatus(n.marker)||''];
     if(status)extras+='<span class="rd-status rd-c-'+status.cls+'" title="'+status.label+'" aria-label="'+status.label+'">'+readerIcon(normalizeThreadStatus(n.marker),13)+'</span>';
@@ -4196,10 +4308,10 @@ function renderReader(){
     }
     if(r.folded)extras+='<button type="button" class="rd-more" data-fold="'+id+'">+'+r.hiddenCount+'</button>';
     var under='';
-    if(readerOpenNotes.has(id)&&readerHasNote(n)){
+    if((readerPrinting||readerOpenNotes.has(id))&&readerHasNote(n)){
       under+='<div class="rd-panel rd-note">'+(String(n.noteTitle||'').trim()?'<div class="rd-note-title">'+esc(n.noteTitle)+'</div>':'')+'<div class="rd-rich">'+readerSanitize(n.note)+'</div></div>';
     }
-    if(readerOpenThreads.has(id)&&thread.length){
+    if((readerPrinting||readerOpenThreads.has(id))&&thread.length){
       under+='<div class="rd-panel rd-thread">'+thread.map(readerEntryHtml).join('')+'</div>';
     }
     (Array.isArray(n.images)?n.images:[]).forEach(function(img,i){
@@ -4214,10 +4326,13 @@ function renderReader(){
       under+='<div class="rd-table rd-rich">'+readerSanitize(t)+'</div>';
     });
     diagrams.filter(function(dg){ return dg&&Number(dg.anchorNodeId)===id; }).forEach(function(dg){
+      var pic=readerPreviewFor(dg.id);
+      var name=String(dg.title||'').trim()||'Diagram';
+      if(pic){ under+='<figure class="rd-img rd-dg"><button type="button" class="rd-dg-btn" data-diagram="'+esc(String(dg.id))+'" aria-label="Open '+esc(name)+'"><img src="'+esc(pic)+'" alt="'+esc(name)+'" loading="lazy"></button><figcaption>'+esc(name)+'</figcaption></figure>'; return; }
       under+='<button type="button" class="rd-diagram">'+readerIcon('diagram',14)+'<span>'+esc(String(dg.title||'').trim()||'Diagram')+'</span><span class="rd-diagram-hint">opens on a computer</span></button>';
     });
-    return '<div class="'+cls+'" data-id="'+id+'" style="--rd-depth:'+r.depth+'">'+lead+mark+
-      '<div class="rd-main"><div class="rd-line"><span class="'+textCls+'"'+colour+'>'+(readerRowTextHtml(n)||'&nbsp;')+'</span>'+extras+'</div>'+under+'</div></div>';
+    return '<div class="'+cls+(r.hasChildren?' rd-parent':'')+'" data-id="'+id+'" style="--rd-depth:'+r.depth+'">'+mark+
+      '<div class="rd-main"><div class="rd-line"><span class="'+textCls+'"'+colour+foldAttr+'>'+(readerRowTextHtml(n)||'&nbsp;')+'</span>'+extras+'</div>'+under+'</div></div>';
   }).join('');
   body.innerHTML=html;
   body.querySelectorAll('img[data-marks]').forEach(function(img){
@@ -4246,6 +4361,138 @@ document.getElementById('doc-reader-expand').addEventListener('click',function()
   else readerCollapsed=new Set(readerVisibleRows(nodes,new Set()).filter(function(r){ return r.hasChildren&&r.depth===0; }).map(function(r){ return Number(r.node.id); }));
   renderReader();
 });
+// Diagram pictures (docs/{id}/previews, uploaded by the computer when it syncs; read only here).
+function fetchReaderPreviews(id){
+  return loadFirestoreMods().then(function(f){
+    return f.mod.getDocs(f.mod.collection(f.db,'users',currentUser.uid,'docs',id,'previews'));
+  }).then(function(snap){
+    var out={};
+    snap.forEach(function(d){ var v=d.data()||{}; if(typeof v.svg==='string'&&/^data:image\/svg\+xml[;,]/.test(v.svg))out[d.id]=v.svg; });
+    return out;
+  }).catch(function(e){ console.warn('[sakura hub] diagram pictures fetch failed',e); return (readerDoc&&readerDoc._hubPreviews)||{}; });
+}
+function readerPreviewFor(dgId){
+  var m=readerDoc&&readerDoc._hubPreviews; var v=m&&m[String(dgId)];
+  return typeof v==='string'&&/^data:image\/svg\+xml[;,]/.test(v)?v:'';
+}
+// Full-screen picture: pinch or double-tap to zoom, drag to look around, Back or x to close.
+var readerViewerScale=1;
+function openReaderDiagram(dgId){
+  var pic=readerPreviewFor(dgId); if(!pic)return;
+  var dg=(readerDoc&&Array.isArray(readerDoc.diagrams)?readerDoc.diagrams:[]).filter(function(d){ return d&&String(d.id)===String(dgId); })[0]||{};
+  var v=document.getElementById('rd-viewer');
+  document.getElementById('rd-viewer-title').textContent=String(dg.title||'').trim()||'Diagram';
+  var img=document.getElementById('rd-viewer-img'); img.src=pic;
+  readerViewerScale=1; img.style.width='100%';
+  v.hidden=false;
+  try{ history.pushState({hubDoc:readerDocId,hubDiagram:String(dgId)},''); }catch(e){}
+}
+function closeReaderDiagram(){ document.getElementById('rd-viewer').hidden=true; document.getElementById('rd-viewer-img').removeAttribute('src'); }
+function setReaderViewerScale(next,cx,cy){
+  var box=document.getElementById('rd-viewer-box'), img=document.getElementById('rd-viewer-img');
+  next=Math.max(1,Math.min(6,next));
+  var rect=box.getBoundingClientRect();
+  var px=(cx==null?rect.width/2:cx-rect.left)+box.scrollLeft, py=(cy==null?rect.height/2:cy-rect.top)+box.scrollTop;
+  var k=next/readerViewerScale; readerViewerScale=next;
+  img.style.width=(100*next)+'%';
+  box.scrollLeft=px*k-(cx==null?rect.width/2:cx-rect.left);
+  box.scrollTop=py*k-(cy==null?rect.height/2:cy-rect.top);
+}
+(function(){
+  var box=document.getElementById('rd-viewer-box');
+  var pinch=null, lastTap=0;
+  function dist(t){ var dx=t[0].clientX-t[1].clientX, dy=t[0].clientY-t[1].clientY; return Math.sqrt(dx*dx+dy*dy); }
+  box.addEventListener('touchstart',function(e){
+    if(e.touches.length===2){ pinch={d:dist(e.touches),s:readerViewerScale}; e.preventDefault(); return; }
+    var now=Date.now();
+    if(e.touches.length===1&&now-lastTap<300){ setReaderViewerScale(readerViewerScale>1?1:2.5,e.touches[0].clientX,e.touches[0].clientY); lastTap=0; e.preventDefault(); return; }
+    lastTap=now;
+  },{passive:false});
+  box.addEventListener('touchmove',function(e){
+    if(pinch&&e.touches.length===2){
+      var cx=(e.touches[0].clientX+e.touches[1].clientX)/2, cy=(e.touches[0].clientY+e.touches[1].clientY)/2;
+      setReaderViewerScale(pinch.s*dist(e.touches)/pinch.d,cx,cy); e.preventDefault();
+    }
+  },{passive:false});
+  box.addEventListener('touchend',function(e){ if(e.touches.length<2)pinch=null; });
+  box.addEventListener('dblclick',function(e){ setReaderViewerScale(readerViewerScale>1?1:2.5,e.clientX,e.clientY); });
+  document.getElementById('rd-viewer-close').addEventListener('click',function(){
+    if(history.state&&history.state.hubDiagram)history.back(); else closeReaderDiagram();
+  });
+})();
+// ---------- Open items (as the desktop's summary under the title) ----------
+var readerOiOpen=false, readerPrinting=false;
+var READER_OI_ICONS={followup:'followup',question:'question',decision:'decision'};
+function renderReaderOpenItems(){
+  var box=document.getElementById('doc-reader-oi');
+  var d=readerDoc||{};
+  var oi=readerOpenItems(readerNodes(),Array.isArray(d.remarks)?d.remarks:[]);
+  var parts=[['followup',oi.followups.length,'follow-up'],['question',oi.questions.length,'open question'],['decision',oi.decisions.length,'decision']].filter(function(p){ return p[1]>0; });
+  if(!parts.length){ box.innerHTML=''; return; }
+  var label=parts.map(function(p){ return p[1]+' '+p[2]+(p[1]===1?'':'s'); }).join(', ');
+  var html='<button type="button" class="rd-oi-btn'+(readerOiOpen?' is-on':'')+'" aria-expanded="'+(readerOiOpen||readerPrinting)+'" aria-label="Open items: '+esc(label)+'">'+
+    parts.map(function(p){ return '<span class="rd-oi-part rd-oi-'+p[0]+'">'+readerIcon(READER_OI_ICONS[p[0]],13)+'<span>'+p[1]+'</span></span>'; }).join('<span class="rd-sep">·</span>')+'</button>';
+  if(readerOiOpen||readerPrinting){
+    var group=function(key,heading,list){
+      if(!list.length)return '';
+      return '<div class="rd-oi-head">'+esc(heading)+' · '+list.length+'</div>'+list.map(function(it){
+        return '<button type="button" class="rd-oi-item" data-oi-node="'+it.nodeId+'"'+(it.entryId?' data-oi-entry="1"':'')+'><span class="rd-oi-ico rd-oi-'+key+'">'+readerIcon(READER_OI_ICONS[key],13)+'</span><span class="rd-oi-text"><span>'+esc(it.text||'Untitled')+'</span>'+(it.sub?'<span class="rd-oi-sub">'+esc(it.sub)+'</span>':'')+'</span>'+(it.since&&!readerPrinting?'<span class="rd-oi-age">'+esc(openItemAge(it.since,Date.now()))+'</span>':'')+'</button>';
+      }).join('');
+    };
+    html+='<div class="rd-panel rd-oi-list">'+group('followup','Follow-ups',oi.followups)+group('question','Open questions',oi.questions)+group('decision','Decisions',oi.decisions)+'</div>';
+  }
+  box.innerHTML=html;
+}
+document.getElementById('doc-reader-oi').addEventListener('click',function(e){
+  if(e.target.closest('.rd-oi-btn')){ readerOiOpen=!readerOiOpen; renderReaderOpenItems(); return; }
+  var it=e.target.closest('.rd-oi-item'); if(!it)return;
+  var nodeId=Number(it.getAttribute('data-oi-node'));
+  if(it.hasAttribute('data-oi-entry'))readerOpenThreads.add(nodeId);
+  readerOiOpen=false;
+  readerJumpToRow(nodeId);
+});
+
+// ---------- Share: PDF through the phone's print screen, or the outline as text ----------
+function closeReaderShareMenu(){ document.getElementById('doc-reader-share-menu').hidden=true; document.getElementById('doc-reader-share').setAttribute('aria-expanded','false'); }
+document.getElementById('doc-reader-share').addEventListener('click',function(e){
+  e.stopPropagation();
+  var m=document.getElementById('doc-reader-share-menu'); m.hidden=!m.hidden;
+  this.setAttribute('aria-expanded',String(!m.hidden));
+});
+document.addEventListener('click',function(e){ if(!e.target.closest('#doc-reader-share-wrap'))closeReaderShareMenu(); });
+function printReaderDoc(){
+  if(!readerDoc)return;
+  readerPrinting=true; document.body.classList.add('reader-printing');
+  // Paper is white: print with the light colours even when the phone is dark.
+  var wasDark=document.body.classList.contains('theme-dark');
+  if(wasDark){ document.body.classList.remove('theme-dark'); document.body.classList.add('theme-light'); }
+  var title=document.title; document.title=String(readerDoc.title||'').trim()||'Sakura document';
+  renderReader();
+  var done=function(){ window.removeEventListener('afterprint',done); readerPrinting=false; document.body.classList.remove('reader-printing'); if(wasDark){ document.body.classList.remove('theme-light'); document.body.classList.add('theme-dark'); } document.title=title; renderReader(); };
+  window.addEventListener('afterprint',done);
+  // Pictures and their mark-up draw once loaded; give them a moment before the print screen.
+  setTimeout(function(){ try{ window.print(); }catch(e){ done(); } },350);
+}
+function readerOutlineText(){
+  var d=readerDoc||{};
+  var lines=[String(d.title||'').trim()||'Untitled',''];
+  readerNodes().forEach(function(n){
+    var depth=Math.max(0,Number(n.depth)||0);
+    var box=n.isCheckbox?(n.checked?'[x] ':'[ ] '):'';
+    lines.push(new Array(depth+1).join('  ')+'- '+box+String(n.text||'').trim());
+  });
+  return lines.join('\n');
+}
+function shareReaderText(){
+  if(!readerDoc)return;
+  var text=readerOutlineText(), title=String(readerDoc.title||'').trim()||'Sakura document';
+  if(navigator.share){ navigator.share({title:title,text:text}).catch(function(){}); return; }
+  if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(text).then(function(){ showToast('Copied as text'); },function(){ showToast('Couldn\u2019t share here'); }); return; }
+  showToast('Couldn\u2019t share here');
+}
+document.getElementById('doc-reader-share-pdf').addEventListener('click',function(){ closeReaderShareMenu(); printReaderDoc(); });
+document.getElementById('doc-reader-share-text').addEventListener('click',function(){ closeReaderShareMenu(); shareReaderText(); });
+
 function readerJumpToRow(targetId){
   var nodes=readerNodes();
   if(!nodes.some(function(n){ return Number(n.id)===targetId; })){ showToast('That row is in another document'); return; }
@@ -4255,8 +4502,10 @@ function readerJumpToRow(targetId){
   if(row){ row.scrollIntoView({block:'center'}); row.classList.add('rd-flash'); setTimeout(function(){ row.classList.remove('rd-flash'); },1200); }
 }
 document.getElementById('doc-reader-body').addEventListener('click',function(e){
-  var t=e.target.closest('[data-fold],[data-note],[data-thread],.bl-link,.rd-diagram');
+  var t=e.target.closest('[data-fold],[data-note],[data-thread],.bl-link,.rd-diagram,[data-diagram]');
   if(!t)return;
+  if(t.hasAttribute('data-diagram')){ openReaderDiagram(t.getAttribute('data-diagram')); return; }
+  if(t.hasAttribute('data-fold')&&(e.target.closest('a')||String(window.getSelection&&window.getSelection()||'').length))return;
   if(t.classList.contains('rd-diagram')){ showToast('Diagrams open on a computer'); return; }
   if(t.classList.contains('bl-link')){ var r=Number(t.getAttribute('data-r')); if(Number.isFinite(r))readerJumpToRow(r); return; }
   var id;
