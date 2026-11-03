@@ -173,11 +173,11 @@ contradicts README.md or docs/feature-reference.md, trust them.)*
 
 ### Latest changes
 
+- **File Explorer + lines up with the folder counts (2026-11-03, owner).** `#sb-new-btn{margin-right:-9px}` (sidebar.css): a count ends 4px inside its row, the header has 8px right padding and the button 5px. Test in explorer-new-menu.spec.ts (within 1px).
+
 - **HTML cleaning: DOMPurify (2026-11-03, owner).** `sakuraSanitizeRichHtml` now runs DOMPurify 3.4.17 (pinned in web/package.json, copied into index.html by the generator's VENDOR_BLOCKS as `GENERATED:dompurify`; generate:verify checks it) plus `stripPastedColours`. Notes and tables are cleaned in `normalizeNode` (every load: this browser, sync, received copy, version restore) and in `importOpmlText`. New-tab links get rel=noopener. Test: html-cleaning.spec.ts. THIRD-PARTY-NOTICES updated.
 
 - **File Explorer: one + menu; .opml drop (2026-11-03, owner).** The Documents header's two icons (New folder, New document) became one `#sb-new-btn` whose menu (`sbNewMenuItems`) has New document (highlighted: + then Enter), New folder and Import (.opml)…; right-click on empty space keeps the same three. A .opml file dropped on the File Explorer or the editor imports as a new document (capture-phase drop handler ahead of the editor's picture drop). Help, tour and feature-reference updated. Test: explorer-new-menu.spec.ts. Owner declined "Email as text" in Share (2026-11-03).
-
-- **Phone: document status shown as on the computer (2026-11-03, owner).** The reader printed the stored value (`draft`); it now maps it to the computer's words (Draft, Review, Approved, Rejected; case-insensitive, unknown values hidden). hub-docs-reader.spec.ts now seeds the real lowercase value (it seeded `Draft`, which hid the bug).
 
 
 ### In progress / not built
