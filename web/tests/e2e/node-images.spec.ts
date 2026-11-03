@@ -152,7 +152,10 @@ test.describe('Images as node objects', () => {
     expect(result.n1Note).toContain('Intro text.');
     expect(result.n1Note).toMatch(/Look\s+here\./);
     expect(result.n1Note).not.toContain('data:image');
-    expect(result.n1Note).toContain('blob:https://x/gone'); // no usable src: left alone
+    // A dead blob: picture (from an old session) is not migrated; since HTML cleaning (DOMPurify,
+    // 2026-11-03) its unusable blob: address is dropped too, and the rest of the note stays.
+    expect(result.n1Note).not.toContain('blob:');
+    expect(result.n1Note).toContain('<p>Intro text.</p>');
     expect(result.n2Images).toBe(1);
     expect(result.n2Note).toBe('');
     expect(result.n3Images).toEqual([{ id: 'keep1', src: PNG_1x1, caption: 'Kept', width: 60, annotations: [{ id: 'm1', type: 'rect', x: 0.1, y: 0.2, w: 0.3, h: 0.4, color: '#e8384f', strokeWidth: 0.004 }], createdAt: 5 }]);

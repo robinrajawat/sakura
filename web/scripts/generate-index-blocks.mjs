@@ -35,6 +35,7 @@ import { execFileSync } from 'node:child_process';
 import { readFileSync, writeFileSync, mkdtempSync, rmSync, readdirSync, statSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
+import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -592,6 +593,20 @@ initHubTodosState({
  * file under src/styles/ must be listed exactly once (checked below), except src/styles/shared/,
  * which holds rules both pages use and is listed once per page.
  */
+// Third-party code copied in as-is (the app is one file, so there is no bundler and no CDN script).
+// The exact version is pinned in package.json; `generate:verify` fails if the copy in the page
+// differs from node_modules, so an upgrade is: bump the version, `npm install`, `npm run generate`.
+const VENDOR_BLOCKS = [
+  // HTML cleaning for notes, tables and threads (owner, 2026-11-03: replaces the hand-written
+  // cleaner's parsing; see sakuraSanitizeRichHtml). License: MPL-2.0 OR Apache-2.0.
+  { name: 'dompurify', vendorFile: 'dompurify/dist/purify.min.js' }
+];
+function readVendorBlock(block) {
+  const require = createRequire(import.meta.url);
+  const file = require.resolve(block.vendorFile);
+  return readFileSync(file, 'utf8').replace(/\n?\/\/# sourceMappingURL=.*\s*$/, '').trimEnd() + '\n';
+}
+
 const STYLE_BLOCKS = [
   {
     name: 'css-presetup',
@@ -715,6 +730,10 @@ function compileToPlainJs(sourceFile) {
 }
 
 function buildGeneratedBlock(block, compiled) {
+  if (block.vendorFile) {
+    const start = `/* GENERATED:${block.name}:START — DO NOT EDIT BY HAND. Copied from node_modules/${block.vendorFile} (version pinned in package.json) by scripts/generate-index-blocks.mjs; CI fails if it drifts. */`;
+    return `${start}\n${compiled}/* GENERATED:${block.name}:END */`;
+  }
   if (block.styleFiles) {
     // The CSS files end with their own newline, so the end marker starts a line.
     const start = `/* GENERATED:${block.name}:START — DO NOT EDIT BY HAND. Source of truth: ${block.styleFiles.join(', ')}. Regenerate with \`npm run generate\` after changing them; CI fails if this block drifts (see scripts/generate-index-blocks.mjs). */`;
@@ -805,7 +824,7 @@ function generate() {
   // runtime scope together).
   const byFile = new Map(); // targetFile -> block[]
   checkStyleFilesListed();
-  for (const block of [...BLOCKS, ...STYLE_BLOCKS]) {
+  for (const block of [...VENDOR_BLOCKS, ...BLOCKS, ...STYLE_BLOCKS]) {
     const targetFile = block.targetFile || 'index.html';
     if (!byFile.has(targetFile)) byFile.set(targetFile, []);
     byFile.get(targetFile).push(block);
@@ -820,9 +839,9 @@ function generate() {
     let html = readFileSync(filePath, 'utf8');
     const compiledByBlock = blocks.map((block) => ({
       name: block.name,
-      compiled: block.styleFiles ? readStyleBlock(block) : compileToPlainJs(block.sourceFile)
+      compiled: block.vendorFile ? readVendorBlock(block) : block.styleFiles ? readStyleBlock(block) : compileToPlainJs(block.sourceFile)
     }));
-    checkForCrossBlockNameCollisions(compiledByBlock.filter((_, i) => !blocks[i].styleFiles));
+    checkForCrossBlockNameCollisions(compiledByBlock.filter((_, i) => !blocks[i].styleFiles && !blocks[i].vendorFile));
     for (let i = 0; i < blocks.length; i++) {
       html = spliceBlock(html, blocks[i], compiledByBlock[i].compiled);
     }
