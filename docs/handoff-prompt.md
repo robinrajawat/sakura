@@ -169,7 +169,7 @@ keep only the last 3 entries, and delete older ones (git history and the PRs kee
 anything still unbuilt or undecided into "In progress / not built" or "Parked". If this section
 contradicts README.md or docs/feature-reference.md, trust them.)*
 
-**Open work:** round 2026-11-02 is done (version in About #783, AI rewrite prompt behind Edit #784, version history synced #787; draw.io already loads only when a diagram opens). Not built: the AI code still loads at startup inside index.html; split it out only if first load is measured as slow. Check `mcp__github__list_pull_requests` at session start.
+**Open work:** none open; everything from 2026-11-03 is merged and deployed (#816–#825). Owner to confirm two live checks: one Google sign-in on the phone (hub.html CSP without 'unsafe-eval', #823) and one AI action in the app (the Worker was redeployed with wrangler 4, #825). Not built: the AI code still loads at startup inside index.html; split it out only if first load is measured as slow. Check `mcp__github__list_pull_requests` at session start.
 
 ### Latest changes
 
@@ -177,11 +177,13 @@ contradicts README.md or docs/feature-reference.md, trust them.)*
 
 - **File Explorer: plain + menu icons; empty Unfiled hidden (2026-11-03, owner).** New document uses the rows' page icon, New folder a plain folder. An empty Unfiled heading (`.sb-unfiled-empty`) shows only while a document is dragged (`#sidebar.sb-doc-drag-active`), as the drop target out of a folder. Decided: Trash stays the last item in the list, moving with it (as Apple Notes/Outlook), not pinned to the bottom. Test: explorer-new-menu.spec.ts.
 
-- **Phone page CSP without 'unsafe-eval' (2026-11-03, owner).** Nothing in hub.html uses eval()/new Function(); index.html already ran the same Firebase and Google sign-in scripts without it. Test: hub-csp.spec.ts (policy text + no violation on boot). Owner to confirm one live sign-in on the phone after deploy. Remaining optional security item: dev-tool updates (`npm audit`: vite, vitest, esbuild, happy-dom and others; development only, never shipped).
+- **Phone page CSP without 'unsafe-eval' (2026-11-03, owner).** Nothing in hub.html uses eval()/new Function(); index.html already ran the same Firebase and Google sign-in scripts without it. Test: hub-csp.spec.ts (policy text + no violation on boot). Owner to confirm one live sign-in on the phone after deploy.
 
 
 ### In progress / not built
 
+- Security review (2026-11-03): done. Fixed: stored HTML cleaned with DOMPurify on every load and import (#821), phone CSP without 'unsafe-eval' (#823), dev tools updated (#825). Left on purpose: images from any https: address are allowed (opening a received document can reveal the reader's IP to its sender; blocking would break web images in notes); Send a copy has no rate limit (would need a server); 10 moderate `npm audit` items in eslint's minimatch until an eslint release uses minimatch 11.
+- PDF ideas offered 2026-11-03, not chosen: Contents shows no hierarchy (plain sections and H1s look the same; a wrapped entry's dotted leader shrinks to a stub); heading-size sections have more space below than plain ones. Declined: "min read" anywhere (also not in the editor: the status bar was removed on purpose, 2026-10-28) and all-caps for top-level headings.
 - Share stays as it is: Download PDF, Export (.opml), Send a copy (owner, 2026-11-03: "we have come a long way to simplify things"). Declined: email from Share (as text, or Send a copy also emailing the recipient) and public share links (anyone-with-the-link view). Don't re-propose unless the owner asks.
 - API documentation (2026-10-30): done — API request card + Copy as cURL, form editor, cURL paste (into the form or straight into a row) and per-card export. Owner decisions: no collection import, no document-wide export, nothing API-specific in Share. Live "Send" deliberately not built (CORS, secrets); "try it" = cURL or Postman. Next only if the owner asks.
 - Queue from 2026-10-29: done. Decided: the bottom-right focus-mode
@@ -206,6 +208,9 @@ contradicts README.md or docs/feature-reference.md, trust them.)*
 
 ### Standing lessons
 
+- Merging anything under `worker/` (package.json included) redeploys the live Worker (`deploy-worker.yml` on push to main): say so in the PR and let the owner merge on purpose.
+- npm 10.9 (this environment's) can crash with "Cannot read properties of null (reading 'edgesOut')" on peer-dependency upgrades; `npx npm@11.6.2 install` works, and npm 10's `npm ci` reads its lockfile. Don't delete node_modules to "fix" it: the crash stays and the install is gone (`git stash` + `npm ci` restores).
+- e2e: `undo-not-confirm.spec.ts` "Reset settings … Undo" reloads the page twice within a 30s budget and can time out under the full parallel suite; it passes alone. Rerun it alone before blaming a change.
 - Stored HTML (notes, tables, anything later rendered with innerHTML) must pass `sakuraSanitizeRichHtml` on the way in: add any new HTML field to `normalizeNode` (and to any import path that skips it). Never assign stored HTML to innerHTML raw, not even on a detached element: images in it still load and fire onerror.
 - e2e: opening the To-Dos panel focuses `#todos-input` 40ms later; wait for it before focusing anything else in the
   panel, or it takes the focus back (flaked once in CI, 2026-10-25).
