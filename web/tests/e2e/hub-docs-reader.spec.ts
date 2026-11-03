@@ -23,7 +23,7 @@ const cloud: Record<string, unknown> = {
   'users/u1/meta/folders': { value: [{ id: 'f1', name: 'Projects' }], updatedAt: now },
   'users/u1/meta/docFolderMap': { value: { d1: 'f1' }, updatedAt: now },
   'users/u1/docs/d1': {
-    title: 'Night delivery', author: 'Robin', docStatus: 'Draft', updatedAt: now - 3600e3, collapsed: [3],
+    title: 'Night delivery', author: 'Robin', docStatus: 'draft', updatedAt: now - 3600e3, collapsed: [3],
     nodes: [
       { id: 1, depth: 0, text: 'Goals', styles: { heading: 1 } },
       { id: 2, depth: 1, text: 'Cost under 4 EUR', marker: 'followup', note: '<p>Finance <b>first</b><img src="x" onerror="window.__pwned=1"></p><script>window.__pwned=1</script>' },
@@ -94,7 +94,8 @@ test('a document opens read only: folds, note, thread, row link; nothing is writ
   await page.click('.doc-item[data-doc-id="d1"]');
   const body = page.locator('#doc-reader-body');
   await expect(page.locator('#doc-reader-title')).toHaveText('Night delivery');
-  await expect(page.locator('#doc-reader-byline')).toContainText('Draft');
+  // Stored lowercase, as the computer saves it; shown with a capital, as on the computer.
+  await expect(page.locator('#doc-reader-byline .rd-doc-status')).toHaveText('Draft');
   // Saved folds come along: Rollout is folded with 2 rows under it.
   await expect(body.locator('.rd-row[data-id="4"]')).toHaveCount(0);
   await expect(body.locator('.rd-more')).toHaveText('+2');

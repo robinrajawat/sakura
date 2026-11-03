@@ -4809,7 +4809,9 @@ function renderReader(){
   document.getElementById('doc-reader-path').textContent=readerPath;
   document.getElementById('doc-reader-title').textContent=String(d.title||'').trim()||'Untitled';
   var by=[];
-  if(d.docStatus)by.push('<span class="rd-doc-status">'+esc(d.docStatus)+'</span>');
+  // Same words as the computer's status pill (docStatusLabel): the stored value is lowercase.
+  var stLabel={draft:'Draft',review:'Review',approved:'Approved',rejected:'Rejected'}[String(d.docStatus||'').toLowerCase()];
+  if(stLabel)by.push('<span class="rd-doc-status">'+stLabel+'</span>');
   if(String(d.author||'').trim())by.push(esc(String(d.author).trim()));
   if(d.docLinkedUrl&&readerSafeUrl(d.docLinkedUrl,false))by.push('<a href="'+esc(d.docLinkedUrl)+'" target="_blank" rel="noopener noreferrer">'+esc(d.docLinkedUrlLabel||'Link')+'</a>');
   if(d.updatedAt)by.push('Updated '+esc(readerDateLabel(d.updatedAt)));

@@ -173,11 +173,11 @@ contradicts README.md or docs/feature-reference.md, trust them.)*
 
 ### Latest changes
 
+- **Phone: document status shown as on the computer (2026-11-03, owner).** The reader printed the stored value (`draft`); it now maps it to the computer's words (Draft, Review, Approved, Rejected; case-insensitive, unknown values hidden). hub-docs-reader.spec.ts now seeds the real lowercase value (it seeded `Draft`, which hid the bug).
+
 - **PDF: Contents switch; layout follows settings only; no "min read" (2026-11-03, owner).** Settings → PDF: Contents (`contentsPageEnabled`, default on) next to Cover page. Off adds `pv-toc-hidden-auto` in exportPreviewAsPdf (the same state as a list under 2 entries, so page numbers, open-items placement and print CSS already handle it). Without a cover, Contents always sits under the title (`PDF_TOC_INLINE_MAX` = 8 removed: owner wants no length-based layout). "min read" removed from cover and header (screen convention; there is no on-screen preview, renderPreviewBody only feeds the PDF). Test: pdf-contents-setting.spec.ts (all four layouts).
 
 - **PDF: top-level headings keep the section line (2026-11-03, owner).** Every depth-0 row prints as a section (`.pv-section` plus its line); a heading format on it adds `pv-section-h pv-section-h{1-3}`, which sets the words' size and case instead of the small uppercase label. The line sits beside a short title and moves under a long one (flex-wrap, 48px minimum). Replaces #812's "heading at depth 0 drops the line". Contents entry is unchanged (heading, `top:true`). Tests: pdf-headings-footer.spec.ts, tables-pdf-bugs.spec.ts.
-
-- **Phone: tables as on the computer, row object icons (2026-11-03, owner: "unified standard behaviour across platforms").** Desktop `drawTableDisplay` (extracted from buildNodeTableObject's showDisplay) also feeds `tableSnapshotOf`; `pushTablePreviews` sends all copies to `docs/{id}/previews/_tables` {items:{tableSnapshotKey:{cls,html}}} after the doc save (and `backfillTablePreviews` on open). hub `readerTableHtml` shows a copy through `readerSanitizeSnapshot` (allowlist) or the plain table polished. Table CSS moved to `src/styles/shared/table-display.css`, spliced into both pages (generator allows shared files twice; sidebar.css split, rest in sidebar-objects.css, order unchanged). Phone row icons note/table/picture/diagram/thread; diagrams closed by default; Expand/Collapse all covers objects. Tests: hub-docs-reader.spec.ts, diagram-pictures-for-phone.spec.ts, tableSnapshot.test.ts.
 
 
 ### In progress / not built
