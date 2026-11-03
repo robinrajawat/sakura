@@ -7,7 +7,8 @@ const indexPath = path.resolve(__dirname, '../../index.html');
 
 // Owner, 2026-11-03: a heading on a top-level row made no difference in the PDF (every top-level
 // row printed as the same small section line), and a long document title squeezed the footer's
-// centred "Page x of y" onto two lines.
+// centred "Page x of y" onto two lines. Later the same day: a top-level heading keeps the section
+// line too; the heading only sets the size of its words.
 const DOC_ID = 'pdfheadfoot';
 const TITLE = 'Kumla WH — Reduce broken pallets in AGV area with a much longer title than fits';
 
@@ -24,7 +25,7 @@ test.beforeEach(async ({ page }) => {
   }, { docId: DOC_ID, title: TITLE });
 });
 
-test('PDF: a top-level heading prints as that heading; the footer is two one-line boxes', async ({ page }) => {
+test('PDF: a top-level heading prints on the section line at its heading size; the footer is two one-line boxes', async ({ page }) => {
   await page.goto('file://' + indexPath);
   await page.waitForFunction(() => typeof (window as any).exportPdfDirect === 'function');
   const r = await page.evaluate(async () => {
@@ -37,7 +38,7 @@ test('PDF: a top-level heading prints as that heading; the footer is two one-lin
     const css = document.getElementById('pv-print-override')?.textContent || '';
     return {
       plainIsSection: !!document.querySelector('#pv-anchor-1 .pv-section'),
-      topHeading: !!document.querySelector('#pv-anchor-3 .pv-heading-1'),
+      topHeading: !!document.querySelector('#pv-anchor-3 .pv-section.pv-section-h1'),
       topHeadingSection: !!document.querySelector('#pv-anchor-3 .pv-section'),
       nestedHeading: !!document.querySelector('#pv-anchor-5 .pv-heading-2'),
       left: (css.match(/@bottom-left\{[^}]*\}/) || [''])[0],
@@ -47,7 +48,7 @@ test('PDF: a top-level heading prints as that heading; the footer is two one-lin
   });
   expect(r.plainIsSection).toBe(true);
   expect(r.topHeading).toBe(true);
-  expect(r.topHeadingSection).toBe(false);
+  expect(r.topHeadingSection).toBe(true);
   expect(r.nestedHeading).toBe(true);
   expect(r.hasCenter).toBe(false);
   expect(r.left).toContain('white-space:nowrap');

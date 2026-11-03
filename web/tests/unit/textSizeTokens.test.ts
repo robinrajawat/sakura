@@ -4,14 +4,15 @@ import { describe, it, expect } from 'vitest';
 // Interface text uses six sizes (owner, 2026-10-24: "standard, unified and elegant"):
 // --fs-2xs 10 · --fs-xs 11 · --fs-sm 12 · --fs-md 13 · --fs-lg 14 · --fs-xl 16, in base.css.
 // A fixed px font-size is allowed only where it is not interface text: glyphs and icons sized
-// to their box, the heading menu's level previews, and the preview's document typography.
+// to their box, the heading menu's level previews, and the preview's document typography
+// (including top-level section headings, .pv-section-h1-3).
 // Text that scales with the user's text size (calc(… * var(--editor-scale))) and em sizes are
 // not px and so not checked.
 const SHEETS = import.meta.glob(['../../src/styles/index/*.css', '../../src/styles/hub/*.css'], { query: '?raw', import: 'default', eager: true }) as Record<string, string>;
 
 // hub.css (the phone app, 2026-10-25): its ×/− glyphs (#hub-search-close, .hub-sheet-close, .todo-subtask-remove),
 // and the phone's document reader (2026-11-03, #doc-reader-body/.rd-*): document typography, like the preview's.
-const NOT_UI_TEXT = /(#hub-search-close|#rd-viewer-close|\.hub-sheet-close|\.todo-subtask-remove|icon|dot\b|-dot|petal|blossom|avatar|badge|caret-btn|\.app-modal-close-btn|dismiss|heading-option|\.pv-(heading|text|bullet|toc|cap-head-dot)|#app-icon|stamp|#doc-reader-body|\.rd-)/i;
+const NOT_UI_TEXT = /(#hub-search-close|#rd-viewer-close|\.hub-sheet-close|\.todo-subtask-remove|icon|dot\b|-dot|petal|blossom|avatar|badge|caret-btn|\.app-modal-close-btn|dismiss|heading-option|\.pv-(heading|section|text|bullet|toc|cap-head-dot)|#app-icon|stamp|#doc-reader-body|\.rd-)/i;
 
 describe('interface text sizes come from the --fs-* scale', () => {
   it('no interface rule sets its own px font-size', () => {

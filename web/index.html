@@ -2464,6 +2464,15 @@ body{--pv-row-bcol:43px;--pv-heading-bcol:24px}
 #tour-replay-btn,#help-why-open-btn,#demo-open-btn,#cheatsheet-open-btn,#help-about-open-btn,#help-feedback-btn,#help-support-btn{appearance:none;border:none;background:none;color:var(--hint);font:500 11.5px 'Inter',sans-serif;padding:4px 2px;cursor:pointer;flex-shrink:0;transition:color .15s ease;display:inline-flex;flex-direction:row-reverse;align-items:center;gap:5px}
 #help-quick-links>div:hover>button{color:var(--accent)}
 #tour-replay-btn svg,#help-why-open-btn svg,#demo-open-btn svg,#cheatsheet-open-btn svg,#help-about-open-btn svg,#help-feedback-btn svg,#help-support-btn svg{flex-shrink:0}
+/* A top-level row with a heading keeps the section line; the heading sets the words' size. A short
+   title has the line beside it, on the middle of the text; a title too long to leave 48px for the
+   line wraps and the line moves under it (flex-wrap), so it never floats away from the words. */
+.pv-section.pv-section-h{flex-wrap:wrap;align-items:flex-end;gap:4px 14px;font-family:'Inter',sans-serif;font-weight:600;letter-spacing:normal;text-transform:none;color:var(--fg)}
+.pv-section-h .pv-section-text{flex:0 1 auto;min-width:0;word-break:break-word}
+.pv-section-h::after{flex:1 1 48px;margin-bottom:calc((1lh - 1px)/2)}
+.pv-section-h1{font-size:22px;line-height:1.3;letter-spacing:-.01em}
+.pv-section-h2{font-size:19px;line-height:1.32}
+.pv-section-h3{font-size:16.5px;line-height:1.36}
 /* === Pasted image resizing (inline notes) === */
 .node-note-line img{cursor:pointer}
 .node-note-line img.editor-img-selected{outline:2px solid var(--accent);outline-offset:2px;cursor:default}
@@ -28825,25 +28834,27 @@ function renderPreviewBody(){
     const depth=node.depth||0;
     const pvMainText=node.text||'';
     const headingLevel=node.styles.heading||0;
-    // A top-level row prints as a section line unless it has its own heading format: then it
-    // prints as that heading, as the editor shows it (a Heading 1 at depth 0 used to look like
-    // any other section).
-    const isSection=!headingLevel&&nodeIsSection(node,sectionMarkersDepthZero);
+    // A top-level row always prints with the section line. A heading format on it sets the size
+    // of the words on that line (owner, 2026-11-03: the line is what marks a main part; H1/H2/H3
+    // say how big it is). Without a heading it is the small uppercase label.
+    const isSection=nodeIsSection(node,sectionMarkersDepthZero);
     let mainEl,contentEl;
     if(isSection){
       const hrow=document.createElement('div'); hrow.className='pv-h-row pv-h-row-1'; hrow.id='pv-anchor-'+node.id;
       hrow.style.paddingLeft=depth===0?'0px':((Math.min(depth,7)-1)*18)+'px';
-      hrow.style.marginTop=(lastHeadingLevel==='section'?'8px':'18px');
+      hrow.style.marginTop=headingLevel?HEADING_GAP_LOOSE[headingLevel]:(lastHeadingLevel==='section'?'8px':'18px');
       lastHeadingLevel='section';
       hrow.appendChild(foldEl);
-      const div=document.createElement('div'); div.className='pv-section';
+      const div=document.createElement('div'); div.className='pv-section'+(headingLevel?' pv-section-h pv-section-h'+Math.min(headingLevel,3):'');
       // The section's name is the row's own text with its formatting (rowMarksToHtml), like any row.
-      const secText=document.createElement('span'); secText.className='pv-section-text';
+      const secText=document.createElement('span'); secText.className='pv-section-text'+(headingLevel?' '+previewStyleClasses(node):'');
+      if(headingLevel&&node.styles.color)secText.style.color='var(--fc-'+node.styles.color+')';
       secText.innerHTML=previewNodeInnerHtml(node,pvMainText);
       div.appendChild(secText);
       hrow.appendChild(div);
       mainEl=hrow; contentEl=div;
-      tocEntries.push({id:node.id,text:pvTocText(pvMainText)||'Untitled',level:1,kind:'section'});
+      if(headingLevel) tocEntries.push({id:node.id,text:pvTocText(pvMainText)||'Untitled',level:headingLevel,kind:'heading',top:true});
+      else tocEntries.push({id:node.id,text:pvTocText(pvMainText)||'Untitled',level:1,kind:'section'});
     } else if(headingLevel>0){
       const hrow=document.createElement('div'); hrow.className='pv-h-row pv-h-row-heading'; hrow.id='pv-anchor-'+node.id;
       hrow.style.paddingLeft=depth===0?'0px':((Math.min(depth,7)-1)*18)+'px';
