@@ -72,3 +72,18 @@ test('the + lines up with the folder counts on the right (owner, 2026-11-03)', a
   }));
   expect(Math.abs(r.plus - r.count)).toBeLessThanOrEqual(1);
 });
+
+test('the + menu uses plain icons; an empty Unfiled heading shows only while a document is dragged', async ({ page }) => {
+  await page.locator('#sb-new-btn').click();
+  const icons = await page.locator('#sb-new-menu .sb-context-item svg').evaluateAll((els) => els.map((e) => e.innerHTML));
+  expect(icons[0]).not.toContain('<line'); // New document: a page, no plus
+  expect(icons[1]).not.toContain('<line'); // New folder: a folder, no plus
+  await page.keyboard.press('Escape');
+  // @ts-expect-error -- bare globals from index.html
+  await page.evaluate(() => { saveFolders([{ id: 'fa', name: 'Projects', open: false, parentId: null }]); const m = loadDocFolderMap(); m[currentDocId] = 'fa'; localStorage.setItem('sakura_doc_folder_v1', JSON.stringify(m)); renderSidebar(); });
+  const unfiled = page.locator('.sb-unfiled-row');
+  await expect(unfiled).toHaveCount(1);
+  await expect(unfiled).toBeHidden();
+  await page.evaluate(() => document.getElementById('sidebar')!.classList.add('sb-doc-drag-active'));
+  await expect(unfiled).toBeVisible();
+});
