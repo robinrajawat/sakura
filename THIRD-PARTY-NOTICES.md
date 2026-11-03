@@ -1,8 +1,9 @@
 # Third-Party Notices
 
 Sakura is all-rights-reserved (see [LICENSE](LICENSE)), but it relies on a
-third-party open-source projects: draw.io, embedded for diagram editing, and
-the Inter typeface, which ships with the app — see their entries below. (Earlier versions also loaded
+third-party open-source projects: draw.io, embedded for diagram editing,
+DOMPurify, which ships inside the app to clean stored HTML, and the Inter
+typeface, which ships with the app — see their entries below. (Earlier versions also loaded
 CDN libraries for Word import/export, PowerPoint export, and Excel export;
 those features and libraries have been removed.)
 
@@ -24,6 +25,20 @@ Sakura's own code; it's a link to their hosted editor, not a library
 Sakura executes. Included here for accuracy and courtesy regardless.
 
 Copyright draw.io AG / draw.io Ltd (formerly JGraph Ltd).
+
+---
+
+## DOMPurify (HTML sanitizer)
+
+Used for: cleaning the HTML of notes, tables and threads before it is shown, so a document from
+another account, a file or sync can't run script inside Sakura.
+
+- Version: 3.4.17 (pinned in web/package.json; copied into web/index.html by
+  web/scripts/generate-index-blocks.mjs, with its license header kept)
+- License: Mozilla Public License 2.0 OR Apache License 2.0 (Sakura uses it under Apache 2.0)
+- Repository: https://github.com/cure53/DOMPurify
+
+Copyright Cure53 and other contributors.
 
 ---
 

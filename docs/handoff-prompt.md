@@ -173,11 +173,11 @@ contradicts README.md or docs/feature-reference.md, trust them.)*
 
 ### Latest changes
 
+- **HTML cleaning: DOMPurify (2026-11-03, owner).** `sakuraSanitizeRichHtml` now runs DOMPurify 3.4.17 (pinned in web/package.json, copied into index.html by the generator's VENDOR_BLOCKS as `GENERATED:dompurify`; generate:verify checks it) plus `stripPastedColours`. Notes and tables are cleaned in `normalizeNode` (every load: this browser, sync, received copy, version restore) and in `importOpmlText`. New-tab links get rel=noopener. Test: html-cleaning.spec.ts. THIRD-PARTY-NOTICES updated.
+
 - **File Explorer: one + menu; .opml drop (2026-11-03, owner).** The Documents header's two icons (New folder, New document) became one `#sb-new-btn` whose menu (`sbNewMenuItems`) has New document (highlighted: + then Enter), New folder and Import (.opml)…; right-click on empty space keeps the same three. A .opml file dropped on the File Explorer or the editor imports as a new document (capture-phase drop handler ahead of the editor's picture drop). Help, tour and feature-reference updated. Test: explorer-new-menu.spec.ts. Owner declined "Email as text" in Share (2026-11-03).
 
 - **Phone: document status shown as on the computer (2026-11-03, owner).** The reader printed the stored value (`draft`); it now maps it to the computer's words (Draft, Review, Approved, Rejected; case-insensitive, unknown values hidden). hub-docs-reader.spec.ts now seeds the real lowercase value (it seeded `Draft`, which hid the bug).
-
-- **PDF: Contents switch; layout follows settings only; no "min read" (2026-11-03, owner).** Settings → PDF: Contents (`contentsPageEnabled`, default on) next to Cover page. Off adds `pv-toc-hidden-auto` in exportPreviewAsPdf (the same state as a list under 2 entries, so page numbers, open-items placement and print CSS already handle it). Without a cover, Contents always sits under the title (`PDF_TOC_INLINE_MAX` = 8 removed: owner wants no length-based layout). "min read" removed from cover and header (screen convention; there is no on-screen preview, renderPreviewBody only feeds the PDF). Test: pdf-contents-setting.spec.ts (all four layouts).
 
 
 ### In progress / not built
@@ -206,6 +206,7 @@ contradicts README.md or docs/feature-reference.md, trust them.)*
 
 ### Standing lessons
 
+- Stored HTML (notes, tables, anything later rendered with innerHTML) must pass `sakuraSanitizeRichHtml` on the way in: add any new HTML field to `normalizeNode` (and to any import path that skips it). Never assign stored HTML to innerHTML raw, not even on a detached element: images in it still load and fire onerror.
 - e2e: opening the To-Dos panel focuses `#todos-input` 40ms later; wait for it before focusing anything else in the
   panel, or it takes the focus back (flaked once in CI, 2026-10-25).
 - e2e: seed `localStorage.sakura_welcome_seen` in an `addInitScript` before load (the welcome
