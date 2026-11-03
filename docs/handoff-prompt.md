@@ -173,6 +173,8 @@ contradicts README.md or docs/feature-reference.md, trust them.)*
 
 ### Latest changes
 
+- **Documents on the phone, read only (2026-11-03, owner).** hub.html has a To-Dos | Documents switch (`setHubView`, remembered in `sakura_hub_view_v1`). Documents lists synced docs (meta docsIndex/folders/docFolderMap, Trash left out, newest first, folder path, search) and opens a full-screen read-only outline (`openDocReader`/`renderReader`): saved folds, chevrons, +N, expand/collapse all, headings, checkboxes, row marks and row links (jump), status icons, note and thread in place, pictures with mark-up, tables, diagram chips. Owner rule: no way to corrupt documents. The reader only reads (getDoc), never writes; `hub-docs-reader.spec.ts` fails on any write; stored HTML goes through an allowlist sanitizer (`readerSanitize`). Offline: list in localStorage, last 15 docs in IndexedDB `sakura_hub_reader`, cleared on sign-out. Pure parts `src/utils/docReader.ts` (+ hubDiscussionStatus/hubNodeImages blocks).
+
 - **Polish: pressed popover buttons, To-Dos typing, plain tooltips (2026-11-02, owner).** Bell and account show the pressed look while their popover is open (calm-layout.css line with `:has(#notif-menu.open)`). Opening To-Dos focuses the task box at once, so keys typed straight after the click no longer go into the document. The rail magnifier says "Search (Ctrl/Cmd+K)" (it read "Browse by category"; `setQaOpen` switches the tip while the box is open). Zen button tip "Zen mode (Ctrl/Cmd+Shift+E)" / "Exit zen mode (Esc)" (was "Maximize editor (hide File Explorer & chrome)"). aria-labels on bell, account, New folder, New document. Tests in `panels-stay-open.spec.ts`.
 
 - **Menus open over panes; To-Dos remembered (2026-11-02, owner).** Account, Notifications, Share and Search no longer close Settings, Help, To-Dos or Documents: `closeTransientMenus()` (export/docs menus, palettes) replaces `closeAllPanelsExceptGlobalSearch` in `openSbMenuUnder` (src/ui/contextMenu.ts) and `setQaOpen`; account/notif toggles no longer close Settings/Help; the outside-click handler leaves Settings open for clicks in `#account-menu`/`#notif-menu`. Esc that closes a menu over To-Dos leaves To-Dos open (capture listener sets `e._popoverWasOpen`). To-Dos reopens after reload when it was open (`sakura_todos_open_v1`, wide windows only, no focus steal). Test: `panels-stay-open.spec.ts`.
@@ -187,8 +189,8 @@ contradicts README.md or docs/feature-reference.md, trust them.)*
   Also decided: the top line's folder path stays (owner: it's the "where am I" cue; Notion/Confluence do it).
 - Modularization as its own project is paused (owner, 2026-10-26): move code into `src/` only when that area is being
   changed anyway (e.g. lazy-loading draw.io/AI, or a To-Dos rework giving the panel explicit state).
-- Ideas offered 2026-10-26, not chosen yet: dark mode follows the system by default; the outliner on phones (read and
-  light edit).
+- Ideas offered 2026-10-26, not chosen yet: dark mode follows the system by default. (Phones: read-only documents
+  built 2026-11-03; light editing on the phone is not planned, since sync is whole-document last-write-wins.)
 - Grouping displays (lanes/stages) beyond Lanes by ‹column›: only if needed.
 - Suggested, not chosen: a "down is good" option so a falling change shows green.
 

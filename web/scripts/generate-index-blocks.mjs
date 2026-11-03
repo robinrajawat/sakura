@@ -536,6 +536,30 @@ initHubTodosState({
     footer: ''
   },
   {
+    // Reading documents on the phone (2026-11-03): threads read in the same order as on desktop.
+    name: 'hubDiscussionStatus',
+    sourceFile: 'src/utils/discussionStatus.ts',
+    testFile: 'tests/unit/discussionStatus.test.ts',
+    targetFile: 'hub.html',
+    footer: ''
+  },
+  {
+    // Picture mark-up (arrows, boxes, labels) drawn over pictures in the phone's document reader.
+    name: 'hubNodeImages',
+    sourceFile: 'src/utils/nodeImages.ts',
+    testFile: 'tests/unit/nodeImages.test.ts',
+    targetFile: 'hub.html',
+    footer: ''
+  },
+  {
+    // The phone's read-only document list and outline (which rows show, a row's thread).
+    name: 'hubDocReader',
+    sourceFile: 'src/utils/docReader.ts',
+    testFile: 'tests/unit/docReader.test.ts',
+    targetFile: 'hub.html',
+    footer: ''
+  },
+  {
     // Deleting rows: what goes with them (notes, tables, images, Q&A, remarks, diagrams) and the
     // confirmation wording, split into what Undo restores and what it can't (diagrams). Counting
     // and removing stay hand-written in index.html next to confirmDeleteIfNeeded.
