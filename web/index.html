@@ -20260,6 +20260,82 @@ function stripRowMarkChars(text, marks, ch) {
     }
     return { text: out, marks: fromCharFormats(kept) };
 }
+/** Markdown's inline formatting, in text pasted as plain Markdown (owner, 2026-11-03: paste
+ * Markdown the way Notion does): `**x**`/`__x__` bold, `*x*`/`_x_` italic, `~~x~~` strikethrough
+ * and `[words](https://…)` a web link become formatting, and their symbols go. `` `code` `` is
+ * kept as typed (rows have no code format) and nothing inside it is read; `\*` is a plain `*`.
+ * `_x_` needs a non-word character on each side, so snake_case names stay as they are; a `*`
+ * or `_` with a space after the opener or before the closer is plain text. */
+function markdownInlineToMarks(text) {
+    const src = String(text || '');
+    const isWord = (c) => !!c && /[\p{L}\p{N}_]/u.test(c);
+    const read = (s) => {
+        const out = [];
+        const add = (inner, f) => read(inner).forEach(c => out.push({ ch: c.ch, f: { ...f, ...c.f } }));
+        let i = 0;
+        while (i < s.length) {
+            const c = s[i];
+            if (c === '\\' && /[*_~`[\]()\\#]/.test(s[i + 1] || '')) {
+                out.push({ ch: s[i + 1], f: {} });
+                i += 2;
+                continue;
+            }
+            if (c === '`') {
+                const end = s.indexOf('`', i + 1);
+                if (end > i + 1) {
+                    for (let j = i; j <= end; j++)
+                        out.push({ ch: s[j], f: {} });
+                    i = end + 1;
+                    continue;
+                }
+            }
+            if (c === '[') {
+                const m = /^\[([^\]\n]+)\]\(\s*<?([^)\s>]+)>?(?:\s+"[^"]*")?\s*\)/.exec(s.slice(i));
+                if (m && /^(https?:\/\/|mailto:)/i.test(m[2]) && isRowLinkUrl(m[2])) {
+                    add(m[1], { a: m[2] });
+                    i += m[0].length;
+                    continue;
+                }
+            }
+            const pair = s.slice(i, i + 2);
+            if (pair === '**' || pair === '__' || pair === '~~') {
+                const end = s.indexOf(pair, i + 2);
+                if (end > i + 2 && !/\s/.test(s[i + 2]) && !/\s/.test(s[end - 1]) && (pair !== '__' || (!isWord(s[i - 1]) && !isWord(s[end + 2])))) {
+                    add(s.slice(i + 2, end), pair === '~~' ? { s: true } : { b: true });
+                    i = end + 2;
+                    continue;
+                }
+            }
+            if ((c === '*' || c === '_') && s[i + 1] !== c && s[i + 1] && !/\s/.test(s[i + 1]) && (c === '*' || !isWord(s[i - 1]))) {
+                let end = i + 1;
+                while ((end = s.indexOf(c, end + 1)) > 0) {
+                    if (s[end + 1] === c) {
+                        end++;
+                        continue;
+                    }
+                    if (!/\s/.test(s[end - 1]) && (c === '*' || !isWord(s[end + 1])))
+                        break;
+                }
+                if (end > i + 1) {
+                    add(s.slice(i + 1, end), { i: true });
+                    i = end + 1;
+                    continue;
+                }
+            }
+            out.push({ ch: c, f: {} });
+            i++;
+        }
+        return out;
+    };
+    const chars = read(src);
+    return { text: chars.map(c => c.ch).join(''), marks: fromCharFormats(chars.map(c => c.f)) };
+}
+/** Whether plain pasted text is written in Markdown: a `#` heading line, or bold, strikethrough
+ * or a `[words](address)` link somewhere. Italic alone doesn't count (a lone `*` is too common). */
+function looksLikeMarkdown(text) {
+    const s = String(text || '');
+    return /^\s{0,3}#{1,6}\s+\S/m.test(s) || /\*\*\S[^*\n]*?\S?\*\*/.test(s) || /~~\S[^~\n]*?~~/.test(s) || /\[[^\]\n]+\]\((https?:\/\/|mailto:)[^)\s]+\)/.test(s);
+}
 
 /* GENERATED:rowMarks:END */
 /* GENERATED:versionHistory:START — DO NOT EDIT BY HAND. Source of truth: src/utils/versionHistory.ts (tests: tests/unit/versionHistory.test.ts). Regenerate with `npm run generate` after changing the source; CI fails if this block drifts from what the generator produces (see .github/workflows/ci.yml and scripts/generate-index-blocks.mjs). */
@@ -22581,6 +22657,23 @@ function splitNodeAtCursorAndFocus(id,beforeText,afterText){
 // it when the caret is at its start, and between its two halves when it is mid-text (the words
 // after the caret become their own row after the pasted ones). An empty row takes the first line.
 // The cursor ends after the last pasted line.
+// One line of Markdown pasted while typing: its words go in at the caret with their formatting; a
+// "# " heading line pasted into an empty row makes that row a heading.
+function insertPastedMarkdownLine(p){
+  const input=getEditingInput(); const r=input?getEditableSelectionRange(input):null; const idx=editingId!==null?getIndex(nodes,editingId):-1;
+  if(!r||idx<0)return false;
+  const node=nodes[idx]; const read=readRowMarksFromDom(input); const s=Math.min(r.start,r.end), e=Math.max(r.start,r.end);
+  pushUndo();
+  let next=replaceRowMarkedRange(read.text,read.marks,s,e,p.text||'');
+  let marks=next.marks; for(const m of p.marks||[])marks=setRowMark(marks,next.text.length,s+m.s,s+m.e,m.k,m.v??true);
+  node.text=next.text; setRowMarksOn(node,marks);
+  if(!read.text.trim()&&p.styles&&p.styles.heading)node.styles=normalizeStyles({...node.styles,heading:p.styles.heading});
+  node.modifiedAt=Date.now();
+  input.innerHTML=rowEditorHtml(node); setInputCaret(input,s+(p.text||'').length);
+  if(!read.text.trim()&&p.styles&&p.styles.heading){ commitEdit(); beginEditAt(node.id,s+(p.text||'').length); }
+  markDirty(); scheduleAutoSave();
+  return true;
+}
 // "- [x] done" pasted from Markdown arrives ticked.
 function withPastedCheck(node,parsed){ if(parsed&&parsed.isCheckbox&&parsed.checked){ node.checked=true; node.completedAt=Date.now(); } return node; }
 function pasteLinesIntoRow(id,parsed){
@@ -22592,11 +22685,11 @@ function pasteLinesIntoRow(id,parsed){
   const before=text.slice(0,s), after=text.slice(e);
   pushUndo(); markDirty();
   const d0=parsed[0].depth||0;
-  const make=(n,base)=>withPastedCheck(makeNodeFromTyped(n.text||'',base+Math.max(0,(n.depth||0)-d0),null,n.styles||emptyStyles(),n.note||'',!!n.isCheckbox,n.tables),n);
+  const make=(n,base)=>withPastedMarks(withPastedCheck(makeNodeFromTyped(n.text||'',base+Math.max(0,(n.depth||0)-d0),null,n.styles||emptyStyles(),n.note||'',!!n.isCheckbox,n.tables),n),n);
   let pasted;
   if(!before&&!after){
     const [first,...rest]=parsed;
-    nodes[idx]=withPastedCheck({...node,text:first.text||'',styles:first.styles||node.styles,note:first.note||node.note,...(first.isCheckbox?{isCheckbox:true}:{})},first); setRowMarksOn(nodes[idx],[]);
+    nodes[idx]=withPastedCheck({...node,text:first.text||'',styles:first.styles||node.styles,note:first.note||node.note,...(first.isCheckbox?{isCheckbox:true}:{})},first); setRowMarksOn(nodes[idx],first.marks||[]);
     const made=rest.map(n=>make(n,node.depth)); nodes.splice(getSubtreeEnd(nodes,idx),0,...made);
     pasted=[nodes[idx],...made];
   } else if(!before){
@@ -22650,7 +22743,7 @@ function pasteParsedNodes(parsed,toastVerb='Pasted',clipExtras=null){if(!Array.i
   // point's own depth makes pasted content land as siblings of the node being edited, which
   // is what every other insertion path in this file already does.
   const offsetDepth=computePasteOffsetDepth(nodes,insertIdx);
-  const mapped=parsed.map(n=>withPastedCheck(makeNodeFromTyped(n.text||'',n.depth+offsetDepth,null,n.styles||emptyStyles(),n.note||'',!!n.isCheckbox,n.tables),n)); insertParsedNodesCore(nodes,insertIdx,mapped); rebuildParentIds();
+  const mapped=parsed.map(n=>withPastedMarks(withPastedCheck(makeNodeFromTyped(n.text||'',n.depth+offsetDepth,null,n.styles||emptyStyles(),n.note||'',!!n.isCheckbox,n.tables),n),n)); insertParsedNodesCore(nodes,insertIdx,mapped); rebuildParentIds();
   let dgAdded=0; let imgAdded=0; let qaAdded=0; let rmAdded=0;
   if(Array.isArray(clipExtras)&&clipExtras.length){
     clipExtras.forEach(ex=>{
@@ -22729,10 +22822,25 @@ function tabTextToTableHtml(text){
 }
 // Rows from a paste. A tree drawn with ├── └── │ is read from the plain text: the HTML copy of it
 // often drops the blank lines that separate one tree from the next.
+// Plain Markdown (no formatting in the copy, or none at all) is read as Markdown: "# " lines become
+// Heading 1-3 rows (#### and deeper are Heading 3) and **bold**, *italic*, ~~strike~~ and
+// [words](address) become formatting, their symbols gone (owner 2026-11-03, as Notion pastes).
 function pastedTreeNodes(html,text){
-  if(/[│┃├└┣┗]/.test(text)&&!extractSakuraClipPayload(html)){ const t=parseTextToTreeNodes(text); if(t.length)return t; }
+  const sakura=!!extractSakuraClipPayload(html);
+  if(/[│┃├└┣┗]/.test(text)&&!sakura){ const t=parseTextToTreeNodes(text); if(t.length)return pastedMarkdownNodes(t,text); }
+  if(!sakura&&looksLikeMarkdown(text)&&(!html.trim()||looksLikeMarkdown(clipboardHtmlToText(html)))){ const t=parseTextToTreeNodes(text); if(t.length)return pastedMarkdownNodes(t,text); }
   const parsed=parseTreeClipboardHtml(html); return parsed.length?parsed:parseTextToTreeNodes(text);
 }
+function pastedMarkdownNodes(parsed,text){
+  if(!looksLikeMarkdown(text))return parsed;
+  return parsed.map(n=>{
+    const h=/^(#{1,6})\s+(.*)$/.exec(n.text||''); const words=h?h[2].replace(/\s+#+\s*$/,''):(n.text||'');
+    const md=markdownInlineToMarks(words);
+    return {...n,text:md.text,marks:md.marks,styles:h?normalizeStyles({...(n.styles||emptyStyles()),heading:Math.min(3,h[1].length)}):n.styles};
+  });
+}
+// A pasted row carries its own formatting (marks) when it was read from Markdown.
+function withPastedMarks(node,parsed){ if(parsed&&Array.isArray(parsed.marks)){ node.text=parsed.text||''; setRowMarksOn(node,parsed.marks); } return node; }
 function parseTreeClipboardHtml(html){if(!html||!html.trim())return []; const text=clipboardHtmlToText(html).trim(); return text?parseTextToTreeNodes(text):[]}
 async function smartPasteFromClipboard(){
   // Returns true if it actually pasted something, false if the caller should
@@ -24093,6 +24201,7 @@ document.addEventListener('paste',e=>{
       if(Array.isArray(clipExtras)&&clipExtras.length){ commitEdit(); pasteParsedNodes(parsed,undefined,clipExtras); return }
       pasteLinesIntoRow(editingId,parsed); return
     }
+    if(parsed.length===1&&Array.isArray(parsed[0].marks)&&insertPastedMarkdownLine(parsed[0])){ e.preventDefault(); return }
     // One line copied with its line break ("one\n") goes in as the line alone; a row holds no line breaks.
     if(/[\r\n]/.test(text)&&trimmedText&&!/[\r\n]/.test(trimmedText)){ e.preventDefault(); document.execCommand('insertText',false,trimmedText); return }
     return; // single line (or nothing parseable) -- let the browser paste it normally into the active node
