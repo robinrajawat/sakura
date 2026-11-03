@@ -20703,8 +20703,8 @@ function anchorRowForTarget(t){
 function captureRenderScrollAnchor(){
   const sc=el('editor-pane'); if(!sc||!sc.clientHeight)return null;
   const box=sc.getBoundingClientRect(); const onScreen=r=>{const b=r.getBoundingClientRect(); return b.bottom>box.top&&b.top<box.bottom};
-  let row=null;
-  if(_scrollAnchorRowId!=null&&Date.now()-_scrollAnchorAt<5000){row=sc.querySelector(`.node-row[data-id="${_scrollAnchorRowId}"]`); if(row&&!onScreen(row))row=null}
+  let row=null, pressed=false;
+  if(_scrollAnchorRowId!=null&&Date.now()-_scrollAnchorAt<5000){row=sc.querySelector(`.node-row[data-id="${_scrollAnchorRowId}"]`); if(row&&!onScreen(row))row=null; pressed=!!row}
   if(!row){const cur=editingId??selectedId; if(cur!=null){row=sc.querySelector(`.node-row[data-id="${cur}"]`); if(row&&!onScreen(row))row=null}}
   if(!row)row=Array.from(sc.querySelectorAll('.node-row')).find(r=>r.getBoundingClientRect().bottom>box.top)||null;
   if(!row)return null;
@@ -20712,7 +20712,7 @@ function captureRenderScrollAnchor(){
   // row still shown takes its place.
   const ids=[row.dataset.id]; let n=nodes[getIndex(nodes,Number(row.dataset.id))]; const seen=new Set();
   while(n&&n.parentId!=null&&!seen.has(n.parentId)){seen.add(n.parentId); ids.push(String(n.parentId)); n=nodes[getIndex(nodes,n.parentId)]}
-  return {docId:currentDocId,focusId:focusedId,ids,offset:row.getBoundingClientRect().top-box.top};
+  return {docId:currentDocId,focusId:focusedId,ids,offset:row.getBoundingClientRect().top-box.top,objectLines:pressed?rowObjectLines(row).length:-1};
 }
 // Puts `row` back at `offset` px below the top of scroller `sc`. When the list has become too short
 // for that (a fold or close near its end), blank space goes at the end of `host` instead of the
@@ -20733,11 +20733,24 @@ document.addEventListener('scroll',e=>{
   const spare=sc.scrollHeight-sc.scrollTop-sc.clientHeight; if(spare<=0)return; // blank space below the screen
   const left=(parseFloat(sp.style.height)||0)-spare; if(left<1)sp.remove(); else sp.style.height=left+'px';
 },{capture:true,passive:true});
+// A row's note, diagram, thread, table and picture lines sit right after it, before the next row.
+function rowObjectLines(row){const out=[]; let n=row.nextElementSibling; while(n&&!n.classList.contains('node-row')&&!n.classList.contains('scroll-anchor-spacer')){out.push(n); n=n.nextElementSibling} return out}
+// Opening something on a row near the bottom of the screen: scroll just enough to show it (as
+// Notion and Dynalist do), never so far that the row itself leaves the top.
+function revealRowObjects(sc,row){
+  const lines=rowObjectLines(row); if(!lines.length)return;
+  const box=sc.getBoundingClientRect(); const pad=16;
+  const below=lines[lines.length-1].getBoundingClientRect().bottom-(box.bottom-pad);
+  const room=row.getBoundingClientRect().top-(box.top+pad);
+  const by=Math.min(below,room); if(by>=1)sc.scrollBy({top:by,behavior:'smooth'});
+}
 function restoreRenderScrollAnchor(a){
   if(!a||a.docId!==currentDocId||a.focusId!==focusedId)return;
   const inner=el('editor-pane-inner'); if(!inner)return;
   let row=null; for(const id of a.ids){row=inner.querySelector(`.node-row[data-id="${id}"]`); if(row)break}
-  if(row)putRowBackInPlace(el('editor-pane'),inner,row,a.offset);
+  if(!row)return;
+  putRowBackInPlace(el('editor-pane'),inner,row,a.offset);
+  if(a.objectLines>=0&&row.dataset.id===a.ids[0]&&rowObjectLines(row).length>a.objectLines)revealRowObjects(el('editor-pane'),row);
 }
 function beginEditAt(id,caretPos){if(id===null||getIndex(nodes,id)<0)return; setSingleSelection(id); editingId=id; inputCaret=caretPos; autoRewritePasteTainted=false; editSessionOriginalText=nodes[getIndex(nodes,id)].text; editSessionOriginalMarks=rowMarksOf(nodes[getIndex(nodes,id)]); render()}
 // Best-effort mapping from a click point to a character offset in the node's raw text. Walks the

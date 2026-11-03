@@ -79,3 +79,30 @@ test('the blank space added at the end goes away when scrolling up', async ({ pa
   await page.evaluate(`document.getElementById('editor-pane').scrollTop = 0`);
   await expect(page.locator('#editor-pane .scroll-anchor-spacer')).toHaveCount(0);
 });
+
+test('opening a thread on a row near the bottom of the screen scrolls just enough to show it', async ({ page }) => {
+  await seed(page);
+  // Parent 10 sits just above the bottom edge of the screen.
+  const id = await page.evaluate(`(() => {
+    const sc = document.getElementById('editor-pane'); const box = sc.getBoundingClientRect();
+    const row = [...document.querySelectorAll('.node-row')].find(r => r.textContent.startsWith('Parent 10'));
+    sc.scrollTop += row.getBoundingClientRect().bottom - (box.bottom - 30);
+    return +row.dataset.id;
+  })()`) as number;
+  const before = await top(page, id);
+  await press(page, `.node-row[data-id="${id}"] .node-remark-dot`);
+  // Scrolls smoothly: wait until the thread's last line is on screen.
+  await expect.poll(() => page.evaluate(`(() => {
+    const box = document.getElementById('editor-pane').getBoundingClientRect();
+    const lines = rowObjectLines(document.querySelector('.node-row[data-id="${id}"]'));
+    return lines.length > 0 && lines[lines.length - 1].getBoundingClientRect().bottom <= box.bottom;
+  })()`)).toBe(true);
+  const after = await top(page, id);
+  expect(after).toBeLessThan(before);
+  expect(after).toBeGreaterThan(await page.evaluate(`document.getElementById('editor-pane').getBoundingClientRect().top`) as number);
+  // Closing it again does not scroll.
+  await page.waitForTimeout(400);
+  const settled = await top(page, id);
+  await press(page, `.node-row[data-id="${id}"] .node-remark-dot`);
+  expect(await top(page, id)).toBe(settled);
+});
