@@ -552,6 +552,20 @@ initHubTodosState({
     footer: ''
   },
   {
+    // Tables on the phone as the computer draws them: the key that pairs a table with its copy.
+    name: 'tableSnapshot',
+    sourceFile: 'src/utils/tableSnapshot.ts',
+    testFile: 'tests/unit/tableSnapshot.test.ts',
+    footer: ''
+  },
+  {
+    name: 'hubTableSnapshot',
+    sourceFile: 'src/utils/tableSnapshot.ts',
+    testFile: 'tests/unit/tableSnapshot.test.ts',
+    targetFile: 'hub.html',
+    footer: ''
+  },
+  {
     // The phone's read-only document list and outline (which rows show, a row's thread).
     name: 'hubDocReader',
     sourceFile: 'src/utils/docReader.ts',
@@ -575,7 +589,8 @@ initHubTodosState({
  * the order listed, between `GENERATED:<name>:START`/`END` comments inside that <style> tag.
  * Plain concatenation, nothing compiled, so the page gets exactly the CSS the files hold. Order
  * matters (later rules win), so a new file goes in the list where its rules belong. Every .css
- * file under src/styles/ must be listed exactly once (checked below).
+ * file under src/styles/ must be listed exactly once (checked below), except src/styles/shared/,
+ * which holds rules both pages use and is listed once per page.
  */
 const STYLE_BLOCKS = [
   {
@@ -589,9 +604,9 @@ const STYLE_BLOCKS = [
     styleFiles: [
       'base', 'feature-activation', 'modal', 'welcome', 'settings-help-layout', 'fold',
       'outline-numbering', 'search-bar', 'action-bar', 'documents-menu', 'drag-drop',
-      'context-menu', 'sidebar', 'tags', 'guided-tour', 'preview', 'pasted-image',
-      'settings-help-rail', 'pdf-export-overlay', 'calm-layout'
-    ].map((n) => `src/styles/index/${n}.css`)
+      'context-menu', 'sidebar', '../shared/table-display', 'sidebar-objects', 'tags', 'guided-tour',
+      'preview', 'pasted-image', 'settings-help-rail', 'pdf-export-overlay', 'calm-layout'
+    ].map((n) => path.posix.normalize(`src/styles/index/${n}.css`))
   },
   {
     name: 'css-todos',
@@ -601,7 +616,8 @@ const STYLE_BLOCKS = [
   {
     name: 'css-hub',
     targetFile: 'hub.html',
-    styleFiles: ['src/styles/hub/hub.css']
+    // The phone shows tables exactly as the computer draws them (owner 2026-11-03).
+    styleFiles: ['src/styles/shared/table-display.css', 'src/styles/hub/hub.css']
   }
 ];
 
@@ -611,7 +627,7 @@ function readStyleBlock(block) {
 
 function checkStyleFilesListed() {
   const listed = STYLE_BLOCKS.flatMap((b) => b.styleFiles);
-  const dupes = listed.filter((f, i) => listed.indexOf(f) !== i);
+  const dupes = listed.filter((f, i) => listed.indexOf(f) !== i && !f.startsWith('src/styles/shared/'));
   if (dupes.length) throw new Error(`Stylesheet listed twice in STYLE_BLOCKS: ${dupes.join(', ')}`);
   const onDisk = [];
   const walk = (dir) => {

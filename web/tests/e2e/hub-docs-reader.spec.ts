@@ -10,6 +10,10 @@ const hubPath = path.resolve(__dirname, '../../hub.html');
 // Firestore below records every write, and these tests fail if the documents view makes one.
 
 const now = Date.now();
+const TABLE_WITH_COPY = '<table data-feature-chart="1" data-chart-type="cards"><tr><th>Metric</th><th>Value</th></tr><tr><td>Drops</td><td>1,240</td></tr><tr><td>On time</td><td>96%</td></tr></table>';
+const TABLE_WITHOUT_COPY = '<table><tr><th>City</th><th>Start</th></tr><tr><td>Bergen</td><td></td></tr></table>';
+// What the computer sends for TABLE_WITH_COPY, plus things the phone must strip.
+const COPY_HTML = '<div class="pv-table-cards-grid"><div class="pv-table-card" style="--card-color:var(--fc-blue)" onclick="window.__pwned=1"><span class="pv-table-card-label">Drops</span><span class="pv-table-card-value">1,240</span></div><img src="x" onerror="window.__pwned=1"><script>window.__pwned=1</script><svg><rect width="10" height="10" fill="url(https://evil.example/x)"/><a href="javascript:alert(1)"><text>x</text></a></svg></div>';
 const cloud: Record<string, unknown> = {
   'users/u1/meta/docsIndex': { value: [
     { id: 'd1', title: 'Night delivery', updatedAt: now - 3600e3 },
@@ -24,7 +28,7 @@ const cloud: Record<string, unknown> = {
       { id: 1, depth: 0, text: 'Goals', styles: { heading: 1 } },
       { id: 2, depth: 1, text: 'Cost under 4 EUR', marker: 'followup', note: '<p>Finance <b>first</b><img src="x" onerror="window.__pwned=1"></p><script>window.__pwned=1</script>' },
       { id: 3, depth: 0, text: 'Rollout' },
-      { id: 4, depth: 1, text: 'Oslo' },
+      { id: 4, depth: 1, text: 'Oslo', tables: [TABLE_WITH_COPY, TABLE_WITHOUT_COPY] },
       { id: 5, depth: 1, text: 'Bergen, see Goals', marks: [{ s: 12, e: 17, k: 'r', v: '2' }], marksText: 'Bergen, see Goals' },
       { id: 6, depth: 0, text: 'SMS at night', isCheckbox: true }
     ],
@@ -35,12 +39,15 @@ const cloud: Record<string, unknown> = {
   },
   // The picture the computer uploads for the phone; a non-SVG entry must be ignored.
   'users/u1/docs/d1/previews/g1': { svg: 'data:image/svg+xml;utf8,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" style="color-scheme: light dark;" width="40" height="20"><rect width="40" height="20" fill="#ccc"/></svg>') },
-  'users/u1/docs/d1/previews/g2': { svg: 'javascript:alert(1)' }
+  'users/u1/docs/d1/previews/g2': { svg: 'javascript:alert(1)' },
+  // Keyed by tableSnapshotKey(TABLE_WITH_COPY), filled in by openHub (the key is computed in the page).
+  'users/u1/docs/d1/previews/_tables': { items: {} }
 };
 
 async function openHub(page: Page) {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('file://' + hubPath);
+  await page.evaluate(([t, c]) => { (window as any).__tableWithCopy = t; (window as any).__copyHtml = c; }, [TABLE_WITH_COPY, COPY_HTML]);
   await page.evaluate((data) => {
     const w = window as any;
     w.__writes = [];
@@ -56,6 +63,8 @@ async function openHub(page: Page) {
       setDoc: rec('setDoc'), updateDoc: rec('updateDoc'), deleteDoc: rec('deleteDoc'), addDoc: rec('addDoc'),
       writeBatch: () => ({ set: rec('batch.set'), update: rec('batch.update'), delete: rec('batch.delete'), commit: () => Promise.resolve() })
     };
+    const copies = data['users/u1/docs/d1/previews/_tables'] as { items: Record<string, unknown> };
+    copies.items = { [w.tableSnapshotKey(w.__tableWithCopy)]: { cls: 'pv-table-chart-figure evil', html: w.__copyHtml } };
     w.__fakeMods = { mod, db: {} };
     document.getElementById('auth-gate')!.style.display = 'none';
     document.getElementById('hub-app')!.style.display = 'block';
@@ -136,7 +145,10 @@ test('open items, diagram pictures and Share, still without a single write', asy
   await expect(page.locator('.rd-oi-item')).toHaveCount(2);
   await page.locator('.rd-oi-item', { hasText: 'Consent needed?' }).click();
   await expect(body.locator('.rd-thread')).toContainText('Consent needed?');
-  // The uploaded picture shows; a diagram without a (valid) picture keeps the computer chip.
+  // Diagrams open from their row icon, as on the computer. The uploaded picture shows; a diagram
+  // without a (valid) picture keeps the computer chip.
+  await expect(body.locator('.rd-dg img')).toHaveCount(0);
+  await body.locator('[data-objs="diagrams"][data-id="6"]').click();
   await expect(body.locator('.rd-dg img')).toHaveCount(1);
   await expect(body.locator('.rd-dg img')).toHaveAttribute('src', /^data:image\/svg\+xml/);
   await expect(body).toContainText('opens on a computer');
@@ -158,5 +170,40 @@ test('open items, diagram pictures and Share, still without a single write', asy
   await page.locator('#doc-reader-share-menu button', { hasText: 'Text' }).click();
   await expect.poll(() => page.evaluate(() => (window as any).__shared)).toContain('  - Cost under 4 EUR');
   expect(await page.evaluate(() => (window as any).__shared)).toContain('- [ ] SMS at night');
+  expect(await page.evaluate(() => (window as any).__writes)).toEqual([]);
+});
+
+test('tables show as the computer drew them, cleaned; a table without a copy shows plain; icons fold them', async ({ page }) => {
+  await openHub(page);
+  await page.click('#hub-tab-docs');
+  await page.click('.doc-item[data-doc-id="d1"]');
+  const body = page.locator('#doc-reader-body');
+  await body.locator('.rd-dot[data-fold="3"]').click();
+  const figures = body.locator('.rd-row[data-id="4"] .rd-table');
+  await expect(figures).toHaveCount(2);
+  // The computer's copy: its own classes and styles, nothing that runs or loads.
+  await expect(figures.first()).toHaveClass(/pv-table-chart-figure/);
+  await expect(figures.first()).not.toHaveClass(/evil/);
+  await expect(figures.first().locator('.pv-table-card-value')).toHaveText('1,240');
+  const copy = await figures.first().innerHTML();
+  expect(copy).not.toMatch(/onclick|onerror|<script|<img|<a\b|javascript:|evil\.example/i);
+  expect(copy).toContain('--card-color');
+  expect(await page.evaluate(() => (window as any).__pwned)).toBeUndefined();
+  // No copy yet: the plain table with the quiet polished look.
+  await expect(figures.nth(1).locator('table.tbl-polished')).toHaveCount(1);
+  await expect(figures.nth(1).locator('td.tbl-empty')).toHaveCount(1);
+  // The table icon folds them away and back, as on the computer.
+  await body.locator('[data-objs="tables"][data-id="4"]').click();
+  await expect(figures).toHaveCount(0);
+  await body.locator('[data-objs="tables"][data-id="4"]').click();
+  await expect(figures).toHaveCount(2);
+  // Collapse all closes every object, Expand all opens them all.
+  await page.click('#doc-reader-expand');
+  await expect(page.locator('#doc-reader-expand')).toHaveAttribute('aria-label', 'Collapse all');
+  await page.click('#doc-reader-expand');
+  await expect(body.locator('.rd-table')).toHaveCount(0);
+  await page.click('#doc-reader-expand');
+  await expect(body.locator('.rd-table')).toHaveCount(2);
+  await expect(body.locator('.rd-note')).toHaveCount(1);
   expect(await page.evaluate(() => (window as any).__writes)).toEqual([]);
 });

@@ -231,7 +231,7 @@ window.addEventListener('unhandledrejection',e=>{
 /* GENERATED:css-presetup:END */
 </style>
 <style>
-/* GENERATED:css-app:START — DO NOT EDIT BY HAND. Source of truth: src/styles/index/base.css, src/styles/index/feature-activation.css, src/styles/index/modal.css, src/styles/index/welcome.css, src/styles/index/settings-help-layout.css, src/styles/index/fold.css, src/styles/index/outline-numbering.css, src/styles/index/search-bar.css, src/styles/index/action-bar.css, src/styles/index/documents-menu.css, src/styles/index/drag-drop.css, src/styles/index/context-menu.css, src/styles/index/sidebar.css, src/styles/index/tags.css, src/styles/index/guided-tour.css, src/styles/index/preview.css, src/styles/index/pasted-image.css, src/styles/index/settings-help-rail.css, src/styles/index/pdf-export-overlay.css, src/styles/index/calm-layout.css. Regenerate with `npm run generate` after changing them; CI fails if this block drifts (see scripts/generate-index-blocks.mjs). */
+/* GENERATED:css-app:START — DO NOT EDIT BY HAND. Source of truth: src/styles/index/base.css, src/styles/index/feature-activation.css, src/styles/index/modal.css, src/styles/index/welcome.css, src/styles/index/settings-help-layout.css, src/styles/index/fold.css, src/styles/index/outline-numbering.css, src/styles/index/search-bar.css, src/styles/index/action-bar.css, src/styles/index/documents-menu.css, src/styles/index/drag-drop.css, src/styles/index/context-menu.css, src/styles/index/sidebar.css, src/styles/shared/table-display.css, src/styles/index/sidebar-objects.css, src/styles/index/tags.css, src/styles/index/guided-tour.css, src/styles/index/preview.css, src/styles/index/pasted-image.css, src/styles/index/settings-help-rail.css, src/styles/index/pdf-export-overlay.css, src/styles/index/calm-layout.css. Regenerate with `npm run generate` after changing them; CI fails if this block drifts (see scripts/generate-index-blocks.mjs). */
 *{box-sizing:border-box;margin:0;padding:0} :root{--gap-row-marker:4px;--pad-menu:6px;--pad-menu-item:7px 10px;--gap-menu-item:8px;--pad-card:4px;--pad-card-item:5px 8px;--pad-pop:10px;--pad-dialog:20px;--fs-2xs:10px;--fs-xs:11px;--fs-sm:12px;--fs-md:13px;--fs-lg:14px;--fs-xl:16px;--radius-menu:12px;--radius-panel:12px;--radius-dialog:12px;--shadow-menu:0 10px 24px rgba(0,0,0,.14);--shadow-panel:0 14px 36px rgba(0,0,0,.14);--shadow-dialog:0 24px 48px rgba(0,0,0,.18),0 2px 8px rgba(0,0,0,.08);--editor-scale:1;--row-density:1} html,body{height:100%;overflow:hidden}
 ::-webkit-scrollbar-button{display:none;width:0;height:0}
 /* Native number-input spin buttons are OS-chrome, same category as native scrollbars — no
@@ -1361,6 +1361,9 @@ body:has(#diagram-viewer.open) .sb-context-menu,body:has(#node-image-viewer.open
 .sfmt-url{width:min(260px,62vw);border:1px solid var(--border);border-radius:6px;background:var(--edit-bg);color:var(--fg);font:13px 'Inter',sans-serif;padding:5px 8px;outline:none}
 .sfmt-url:focus{border-color:var(--accent)}
 .sfmt-menu-item.sfmt-url-ok{color:var(--accent);font-weight:600}
+/* Tables (plain, polished, and every Show as display) as the computer draws them. Shared by
+   index.html and the phone's reader (hub.html), which shows the computer's ready-made copy of each
+   table (owner 2026-11-03: the same look on every device). Listed in both pages' style blocks. */
 .pv-diagram-row{display:flex;flex-wrap:wrap;gap:14px;margin:10px 0 14px;align-items:stretch}
 .pv-diagram-figure{margin:0;flex:1 1 320px;min-width:0;display:flex;flex-direction:column}
 .pv-diagram-img{max-width:100%;max-height:var(--pv-diagram-max-h,70vh);display:block;margin:0 auto}
@@ -8085,6 +8088,61 @@ function apiStatusClass(status) {
 }
 
 /* GENERATED:apiRequest:END */
+/* GENERATED:tableSnapshot:START — DO NOT EDIT BY HAND. Source of truth: src/utils/tableSnapshot.ts (tests: tests/unit/tableSnapshot.test.ts). Regenerate with `npm run generate` after changing the source; CI fails if this block drifts from what the generator produces (see .github/workflows/ci.yml and scripts/generate-index-blocks.mjs). */
+/**
+ * Tables on the phone look the same as on the computer (owner, 2026-11-03: "unified standard
+ * behaviour across platforms; the only thing we need to avoid is corrupting the document").
+ *
+ * The computer draws each table (plain with its polish, or as cards, a chart, chips, progress
+ * bars, a timeline, a status board, pros & cons or an API request) with its own code and sends
+ * the result to a separate record, users/{uid}/docs/{id}/previews/tables, beside the diagram
+ * pictures. The document itself is never touched. The phone finds a table's copy by a key made
+ * from the table's stored HTML, so a table edited after the last copy simply has no copy yet and
+ * the phone shows it plain.
+ *
+ * Wired into index.html (block `tableSnapshot`) and hub.html (block `hubTableSnapshot`).
+ */
+/** Copies above this size stay on the computer (one Firestore record holds about 1 MB). */
+const TABLE_SNAPSHOT_MAX_CHARS = 900000;
+/** A short key for a table's stored HTML: its length plus two 32-bit hashes over every character. */
+function tableSnapshotKey(src) {
+    const s = String(src ?? '');
+    let a = 5381;
+    let b = 52711;
+    for (let i = 0; i < s.length; i++) {
+        const c = s.charCodeAt(i);
+        a = (Math.imul(a, 33) ^ c) >>> 0;
+        b = (Math.imul(b, 31) + c) >>> 0;
+    }
+    return 't' + s.length.toString(36) + '_' + a.toString(36) + '_' + b.toString(36);
+}
+/**
+ * The copies that fit in one record, smallest first, so one huge chart never pushes out the rest.
+ * Returns the kept items keyed as given.
+ */
+function fitTableSnapshots(items, maxChars = TABLE_SNAPSHOT_MAX_CHARS) {
+    const out = {};
+    let used = 0;
+    Object.keys(items || {})
+        .map((k) => ({ k, size: k.length + String(items[k].html || '').length + String(items[k].cls || '').length + 32 }))
+        .sort((x, y) => x.size - y.size || (x.k < y.k ? -1 : 1))
+        .forEach(({ k, size }) => {
+        if (used + size > maxChars)
+            return;
+        used += size;
+        out[k] = items[k];
+    });
+    return out;
+}
+/** Only the classes a copy may put on its figure. */
+function tableSnapshotClass(cls) {
+    return String(cls ?? '')
+        .split(/\s+/)
+        .filter((c) => c === 'pv-table-chart-figure' || c === 'pos-center')
+        .join(' ');
+}
+
+/* GENERATED:tableSnapshot:END */
 /* GENERATED:postmanCollection:START — DO NOT EDIT BY HAND. Source of truth: src/utils/postmanCollection.ts (tests: tests/unit/postmanCollection.test.ts). Regenerate with `npm run generate` after changing the source; CI fails if this block drifts from what the generator produces (see .github/workflows/ci.yml and scripts/generate-index-blocks.mjs). */
 /**
  * One API request as a Postman collection file (owner, 2026-10-30: API requests move one at a
@@ -9876,32 +9934,47 @@ function attachTableSelection(wrap,table,api){
   }
   return {layout,handleKey,menuItems,clear,has,detach};
 }
+// How a stored table shows when not being edited: a display (chart, Cards, chips, timeline...)
+// or the plain table with its polish. The outline draws with it, and so does the copy the phone
+// gets (tableSnapshotOf), so a table looks the same on every device.
+function drawTableDisplay(wrap,src){
+  const div=document.createElement('div'); div.innerHTML=tidyTableHtml(src||'');
+  const table=div.querySelector('table');
+  wrap.innerHTML='';
+  wrap.classList.remove('pv-table-chart-figure');
+  if(!table)return;
+  const centered=tableShowsCentered(table);
+  wrap.classList.toggle('pos-center',centered);
+  {
+    const svg=tableFeatureDisplayHtml(table);
+    if(svg){ wrap.classList.add('pv-table-chart-figure'); wrap.innerHTML=centered?centerChartSvg(svg):svg; return; }
+  }
+  const clone=table.cloneNode(true); clone.removeAttribute('data-feature-chart'); clone.removeAttribute('data-chart-type');
+  applyTableAutoAlign(clone);
+  applyTableHeatmap(clone);
+  applyTableStatusPills(clone);
+  applyTableCheckIcons(clone);
+  applyTablePersonChips(clone);
+  applyTableDisplayPolish(clone);
+  applyTableTotalRow(clone);
+  wrap.appendChild(clone);
+}
+function tableSnapshotOf(src){
+  try{
+    const wrap=document.createElement('div');
+    drawTableDisplay(wrap,src);
+    const html=wrap.innerHTML;
+    if(!html)return null;
+    return {cls:tableSnapshotClass(wrap.className),html};
+  }catch(e){ return null; }
+}
 function buildNodeTableObject(node,tIdx){
   const wrap=document.createElement('div');
   wrap.className='node-table-line pv-diagram-figure pv-table-figure';
   wrap.dataset.nodeId=String(node.id);
   function showDisplay(){
     wrap.classList.remove('editing','editing-chart-data');
-    const div=document.createElement('div'); div.innerHTML=tidyTableHtml(node.tables[tIdx]||'');
-    const table=div.querySelector('table');
-    wrap.innerHTML='';
-    wrap.classList.remove('pv-table-chart-figure');
-    if(!table)return;
-    const centered=tableShowsCentered(table);
-    wrap.classList.toggle('pos-center',centered);
-    {
-      const svg=tableFeatureDisplayHtml(table);
-      if(svg){ wrap.classList.add('pv-table-chart-figure'); wrap.innerHTML=centered?centerChartSvg(svg):svg; return; }
-    }
-    const clone=table.cloneNode(true); clone.removeAttribute('data-feature-chart'); clone.removeAttribute('data-chart-type');
-    applyTableAutoAlign(clone);
-    applyTableHeatmap(clone);
-    applyTableStatusPills(clone);
-    applyTableCheckIcons(clone);
-    applyTablePersonChips(clone);
-    applyTableDisplayPolish(clone);
-    applyTableTotalRow(clone);
-    wrap.appendChild(clone);
+    drawTableDisplay(wrap,node.tables[tIdx]||'');
   }
   function enterEdit(clickedCellFlatIdx,clickX,clickY,opts){
     const div=document.createElement('div'); div.innerHTML=tidyTableHtml(node.tables[tIdx]||'');
@@ -13335,6 +13408,7 @@ function loadDocFromStorage(id){
 // synchronous read (see loadDocFromStorage, which marks those _hydrated immediately) and never
 // reaches this function at all.
 async function hydrateDiagramBlobsForDoc(id){
+  backfillTablePreviews(id);
   const targets=diagrams.filter(dg=>dg&&!dg._hydrated);
   if(!targets.length){ regenerateMissingDiagramPreviews(); return; }
   let changed=false;
@@ -17018,6 +17092,7 @@ async function pushDocToCloud(mod,db,docId){
     // {merge:true}: fields this device doesn't keep locally (such as an old sharedWith map) stay as they are.
     await mod.setDoc(mod.doc(db,'users',ownerUid,'docs',docId),{...dataToSend,updatedAt:ts},{merge:true});
     if(previewItems.length)await pushDiagramPreviews(mod,db,ownerUid,docId,previewItems); // never throws
+    await pushTablePreviews(mod,db,ownerUid,docId,data.nodes); // never throws
     _docTooLargeToastShown.delete(docId); // clears the one-time-per-incident gate below, so a genuinely new occurrence (after this got fixed once) is reported again rather than staying silently suppressed forever
   }catch(e){
     // Firestore's 1MB-per-document limit still applies to EACH write above — the parent doc, and
@@ -17070,6 +17145,40 @@ async function pushDiagramPreviews(mod,db,ownerUid,docId,items){
     }catch(e){ console.warn('[sakura] diagram picture not synced (the phone shows its name instead):',docId,dg.id,e); }
   }
   if(changed){ try{ localStorage.setItem(DIAGRAM_PREVIEW_SYNC_KEY,JSON.stringify(sigs)); }catch(e){} }
+}
+// Tables for the phone (owner, 2026-11-03: the same look on every device). Each table is drawn
+// here with the outline's own code (tableSnapshotOf) and the copies go up together in one record,
+// docs/{id}/previews/_tables, beside the diagram pictures and never read back by the computer. The
+// phone pairs a table with its copy by tableSnapshotKey of the stored HTML, so an edited table
+// just shows plain until the next save sends its new copy. Best-effort: never throws, and skips
+// the write when nothing changed since the last one (signature in localStorage).
+const TABLE_PREVIEW_SYNC_KEY='sakura_table_preview_sync_v1';
+async function pushTablePreviews(mod,db,ownerUid,docId,docNodes){
+  try{
+    const items={};
+    (Array.isArray(docNodes)?docNodes:[]).forEach(n=>{
+      (Array.isArray(n&&n.tables)?n.tables:[]).forEach(src=>{
+        if(typeof src!=='string'||!src)return;
+        const k=tableSnapshotKey(src); if(items[k])return;
+        const snap=tableSnapshotOf(src); if(snap)items[k]=snap;
+      });
+    });
+    const kept=fitTableSnapshots(items);
+    const keys=Object.keys(kept).sort();
+    let sigs={}; try{ sigs=JSON.parse(localStorage.getItem(TABLE_PREVIEW_SYNC_KEY)||'{}')||{}; }catch(e){ sigs={}; }
+    const key=ownerUid+':'+docId;
+    if(!keys.length&&!sigs[key])return;
+    const sig=tableSnapshotKey(JSON.stringify(keys.map(k=>[k,kept[k].cls,kept[k].html])));
+    if(sigs[key]===sig)return;
+    await mod.setDoc(mod.doc(db,'users',ownerUid,'docs',docId,'previews','_tables'),{items:kept,updatedAt:Date.now()});
+    sigs[key]=sig;
+    try{ localStorage.setItem(TABLE_PREVIEW_SYNC_KEY,JSON.stringify(sigs)); }catch(e){}
+  }catch(e){ console.warn('[sakura] tables not sent to the phone (it shows them plain instead):',docId,e); }
+}
+// Tables saved before this existed go up the first time their document is opened here.
+async function backfillTablePreviews(docId){
+  if(!currentUser||currentDocId!==docId)return;
+  try{ const {mod,db}=await loadFirestoreMods(); if(currentDocId!==docId)return; await pushTablePreviews(mod,db,currentUser.uid,docId,nodes); }catch(e){}
 }
 // Pictures made before they were synced go up the first time their document is opened here.
 async function backfillDiagramPreviews(docId){

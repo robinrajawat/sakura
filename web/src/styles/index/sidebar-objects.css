@@ -1,0 +1,289 @@
+/* node.images -- a node's pictures/screenshots as their own per-node objects (see
+   buildNodeImageStrip): a compact, wrapping strip of thumbnails under the row (placed like
+   .node-table-line-wrap), each with its caption truncated beneath; click one for the viewer. */
+.node-image-line-wrap{position:relative;width:calc(100% - 16px);max-width:calc(100% - 16px);margin:2px 0 8px}
+.node-image-strip{display:flex;flex-wrap:wrap;gap:8px;align-items:flex-start;position:relative}
+.node-image-caption-input{position:absolute;z-index:3;box-sizing:border-box;margin-top:-23px;height:23px;padding:3px 7px;border:1px solid var(--accent);border-radius:0 0 8px 8px;font:500 11px 'Inter',sans-serif;color:var(--fg);background:var(--bg);outline:none;box-shadow:0 2px 8px rgba(0,0,0,.12)}
+.node-image-caption:hover{color:var(--fg);cursor:text}
+.node-image-thumb{all:unset;box-sizing:border-box;display:flex;flex-direction:column;width:calc(132px * var(--editor-scale));border:1px solid var(--border);border-radius:8px;overflow:hidden;cursor:zoom-in;background:color-mix(in srgb,var(--fg) 3%,var(--bg));transition:border-color .12s,box-shadow .12s}
+.node-image-thumb:hover,.node-image-thumb:focus-visible{border-color:var(--accent);outline:2px solid var(--accent);outline-offset:2px}
+.node-image-thumb img{display:block;width:100%;height:calc(82px * var(--editor-scale));object-fit:cover;object-position:top left;background:var(--bg)}
+.node-image-caption{display:block;padding:3px 7px 4px;font:500 11px 'Inter',sans-serif;line-height:1.35;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border-top:1px solid var(--border)}
+.node-image-thumb.dragging{opacity:.4}
+.node-image-thumb.drop-before{box-shadow:-3px 0 0 var(--accent)}
+.node-image-thumb.drop-after{box-shadow:3px 0 0 var(--accent)}
+.node-row.image-drop-target{outline:2px dashed var(--accent);outline-offset:-2px;border-radius:6px}
+/* Enlarged viewer (openNodeImageViewer). .niv-tools holds the markup editor's "Mark up" toggle;
+   .niv-annot-layer is the SVG overlay sized exactly to the picture that draws (and, while marking,
+   takes pointer input for) the image's annotations. */
+/* Diagram preview (owner, 2026-10-20: "a click should open a preview"): clicking an inline diagram opens
+   its saved SVG in a large window to zoom and pan; Edit goes on to draw.io. */
+/* draw.io exports with no border, so the sheet adds its own margin around the diagram (owner, 2026-10-20). */
+#diagram-viewer{--dv-pad:24px;position:fixed;inset:0;z-index:2550;display:none;background:rgba(20,18,15,.45);user-select:none;-webkit-user-select:none}
+#diagram-viewer.open{display:block}
+.dv-window{position:absolute;inset:28px;display:flex;flex-direction:column;background:var(--bg);border:1px solid var(--border);border-radius:12px;box-shadow:0 20px 60px rgba(0,0,0,.28);overflow:hidden}
+.dv-bar{flex:0 0 auto;display:flex;align-items:center;gap:8px;padding:8px 10px 8px 16px;border-bottom:1px solid var(--border);font-family:'Inter',sans-serif}
+.dv-title{min-width:0}
+/* The item's own name, first in both preview headers and edited in place: a picture's caption, a diagram's name. */
+.pv-name{all:unset;box-sizing:border-box;field-sizing:content;min-width:9ch;max-width:50%;height:30px;padding:0 8px;margin-left:-8px;border:1px solid transparent;border-radius:8px;font:600 14px 'Inter',sans-serif;color:var(--fg);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:text;flex:0 1 auto}
+.pv-name::placeholder{color:var(--hint);font-weight:500}
+.pv-name:hover{border-color:var(--border)}
+.pv-name:focus{border-color:var(--accent);background:var(--edit-bg,var(--bg));text-overflow:clip}
+.pv-name:disabled{color:var(--muted);cursor:default}
+/* The header both previews share (image and diagram): the item's own name (.pv-name) and count on
+   the left, then one right-aligned row in the same order for both: the item's action (Edit / Mark
+   up), zoom, Fit, Copy, Download, Delete, Close (owner, 2026-10-23: no row text, buttons aligned). */
+/* A long name gives way first (ellipsis); buttons never shrink or wrap their labels. On a narrow
+   window the name and count take their own line above the buttons. */
+.pv-spacer{flex:1 1 auto}
+.pv-head button,.pv-head .pv-zoom,.pv-head .niv-counter{flex-shrink:0;white-space:nowrap}
+.pv-head .niv-tools{flex:0 0 auto;display:flex}
+.pv-break{display:none}
+@media (max-width:900px){
+  .pv-head{flex-wrap:wrap;row-gap:6px}
+  .pv-head .pv-name{max-width:none;flex:0 1 auto}
+  .pv-break{display:block;flex-basis:100%;height:0}
+}
+.pv-zoom{display:flex;align-items:center;height:30px;box-sizing:border-box;border:1px solid var(--border);border-radius:8px;background:var(--bg)}
+.pv-zoom button{appearance:none;border:none;background:none;width:28px;height:28px;color:var(--muted);font-size:var(--fs-xl);cursor:pointer;border-radius:6px}
+.pv-zoom button:hover{color:var(--fg);background:var(--hover)}
+.pv-zoom .pv-level{width:auto;min-width:46px;text-align:center;font:500 12px 'Inter',sans-serif;color:var(--fg);font-variant-numeric:tabular-nums}
+.pv-fit{all:unset;box-sizing:border-box;display:inline-flex;align-items:center;height:30px;padding:0 11px;border:1px solid var(--border);border-radius:8px;font:500 12px 'Inter',sans-serif;color:var(--fg);cursor:pointer}
+.pv-fit:hover{background:var(--hover)}
+.pv-fit:focus-visible,.pv-zoom button:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.dv-body{flex:1 1 auto;display:flex;min-height:0}
+.dv-canvas .dv-nav{position:absolute;top:50%;transform:translateY(-50%);z-index:2}
+.dv-canvas .dv-prev{left:14px}.dv-canvas .dv-next{right:14px}
+.dv-single .dv-nav{display:none}
+.dv-nav:disabled{opacity:.3}
+.dv-canvas{position:relative;flex:1 1 auto;overflow:hidden;cursor:grab;touch-action:none;background-color:color-mix(in srgb,var(--bg) 96%,var(--fg));background-image:radial-gradient(color-mix(in srgb,var(--fg) 14%,transparent) 1px,transparent 1px);background-size:18px 18px}
+.dv-canvas.dragging{cursor:grabbing}
+.dv-canvas img{position:absolute;left:0;top:0;transform-origin:0 0;box-sizing:content-box;padding:var(--dv-pad);user-select:none;-webkit-user-drag:none;pointer-events:none;background:#fff;border-radius:4px;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.dv-hint{z-index:3;position:absolute;left:50%;bottom:14px;transform:translateX(-50%);font:400 12px 'Inter',sans-serif;color:var(--muted);background:color-mix(in srgb,var(--bg) 90%,transparent);border:1px solid var(--border);border-radius:12px;padding:5px 12px;pointer-events:none;white-space:nowrap;animation:dv-hint-out .4s ease 4s forwards}
+@keyframes dv-hint-out{to{opacity:0}}
+#node-image-viewer{position:fixed;inset:0;z-index:2600;display:none;align-items:center;justify-content:center;background:rgba(15,14,12,.72);padding:28px;box-sizing:border-box}
+#node-image-viewer.open{display:flex}
+/* One fixed window, as the diagram preview: stepping between pictures never moves the buttons. */
+.niv-panel{display:flex;flex-direction:column;width:100%;height:100%;background:var(--surface-raised);border:1px solid var(--border);border-radius:var(--radius-dialog);box-shadow:var(--shadow-dialog);overflow:hidden;--hover:var(--hover-raised)}
+.niv-head{display:flex;align-items:center;gap:8px;padding:8px 10px 8px 16px;border-bottom:1px solid var(--border)}
+.niv-counter{font:600 12px 'Inter',sans-serif;color:var(--muted);min-width:44px;padding-left:4px}
+.niv-tools{flex:1;display:flex;gap:4px;min-width:0}
+.niv-btn:focus-visible,.niv-nav:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.niv-btn{all:unset;display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:8px;color:var(--muted);cursor:pointer}
+.niv-btn:hover{background:var(--hover);color:var(--fg)}
+.niv-btn.is-copied{color:var(--fc-green)}
+.node-diagram-preview-thumb{position:relative}
+.copied-badge{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:999px;background:var(--edit-bg);color:var(--fc-green);border:1px solid color-mix(in srgb,var(--fc-green) 35%,var(--border));font:600 11px/1.4 'Inter',sans-serif;box-shadow:0 2px 8px rgba(0,0,0,.12);pointer-events:none;animation:copied-badge-in .12s ease-out}
+@keyframes copied-badge-in{from{opacity:0;transform:translate(-50%,-40%)}}
+.niv-delete:hover{color:var(--fc-red,#c0392b)}
+.niv-stage{position:relative;flex:1;min-height:0;display:flex;align-items:center;gap:8px;padding:14px 10px;background:color-mix(in srgb,var(--fg) 4%,var(--bg))}
+.niv-frame{flex:1;min-width:0;align-self:stretch;display:flex;align-items:center;justify-content:center;overflow:auto}
+.niv-figure{position:relative;line-height:0;max-width:100%;margin:auto}
+.niv-figure{transform-origin:0 0}
+#node-image-viewer.niv-zoomed .niv-frame{overflow:hidden}
+#node-image-viewer.niv-zoomed:not(.niv-marking) .niv-figure{cursor:grab}
+#node-image-viewer.niv-zoomed:not(.niv-marking) .niv-figure.niv-panning{cursor:grabbing}
+.niv-img{display:block;max-width:100%;max-height:calc(100vh - 210px);border-radius:4px;box-shadow:0 1px 4px rgba(0,0,0,.18)}
+.niv-figure:not(.niv-auto) .niv-img{width:100%;height:auto;max-height:none}
+.niv-annot-layer{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible}
+/* Markup editor (setNodeImageMarkupMode): the "Mark up" toggle lives in .niv-tools; marking mode
+   adds the .niv-markup-bar row and lets the overlay take pointer input (touch-action:none so a
+   finger/pen drag draws instead of scrolling). */
+.niv-markup-toggle{all:unset;display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 10px;box-sizing:border-box;border:1px solid var(--border);border-radius:8px;font:500 12px 'Inter',sans-serif;color:var(--fg);cursor:pointer}
+.niv-markup-toggle:hover{background:var(--hover)}
+.niv-markup-toggle.active{background:color-mix(in srgb,var(--accent) 16%,transparent);border-color:color-mix(in srgb,var(--accent) 45%,var(--border));color:var(--accent);font-weight:600}
+.niv-markup-toggle:focus-visible,.niv-mk-btn:focus-visible,.niv-mk-text-btn:focus-visible,.niv-mk-swatch:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.niv-markup-count:not(:empty){min-width:16px;height:16px;padding:0 4px;box-sizing:border-box;border-radius:8px;background:color-mix(in srgb,var(--fg) 10%,transparent);font:600 10px/16px 'Inter',sans-serif;text-align:center;color:var(--muted)}
+.niv-markup-bar{display:none;align-items:center;flex-wrap:wrap;gap:4px;padding:6px 10px;border-bottom:1px solid var(--border);background:color-mix(in srgb,var(--fg) 2.5%,var(--bg))}
+#node-image-viewer.niv-marking .niv-markup-bar{display:flex}
+.niv-mk-group{display:inline-flex;align-items:center;gap:2px}
+.niv-mk-sep{width:1px;height:20px;background:var(--border);margin:0 6px}
+.niv-mk-spacer{flex:1}
+.niv-mk-btn{all:unset;display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:8px;color:var(--fg);cursor:pointer}
+.niv-mk-btn:hover:not(:disabled){background:var(--hover)}
+.niv-mk-btn.active{background:color-mix(in srgb,var(--accent) 18%,transparent);color:var(--accent)}
+.niv-mk-btn:disabled{opacity:.35;cursor:default}
+.niv-mk-swatch{all:unset;box-sizing:border-box;width:20px;height:20px;margin:0 3px;border-radius:50%;cursor:pointer;box-shadow:0 0 0 1px color-mix(in srgb,var(--fg) 35%,transparent)}
+.niv-mk-swatch.active{outline:2px solid var(--accent);outline-offset:2px}
+.niv-mk-text-btn{all:unset;font:500 12px 'Inter',sans-serif;color:var(--fg);padding:6px 10px;border-radius:8px;cursor:pointer;white-space:nowrap}
+.niv-mk-text-btn:hover:not(:disabled){background:var(--hover)}
+.niv-mk-text-btn:disabled{opacity:.4;cursor:default}
+.niv-mk-done{background:var(--btn-primary-bg);color:var(--btn-primary-fg);font-weight:500;margin-left:4px}
+.niv-mk-done:hover{background:var(--btn-primary-hover)!important}
+.niv-mk-clear-wrap{display:inline-flex;align-items:center}
+.niv-mk-confirm{display:none;align-items:center;gap:2px}
+.niv-mk-clear-wrap.confirming .niv-mk-clear{display:none}
+.niv-mk-clear-wrap.confirming .niv-mk-confirm{display:inline-flex}
+.niv-mk-confirm-q{font:500 12px 'Inter',sans-serif;color:var(--muted);padding:0 4px}
+.niv-mk-clear-yes{color:var(--fc-red,#c0392b);font-weight:600}
+#node-image-viewer.niv-marking .niv-annot-layer{pointer-events:auto;cursor:crosshair;touch-action:none;user-select:none;-webkit-user-select:none}
+#node-image-viewer.niv-marking[data-tool="select"] .niv-annot-layer{cursor:default}
+#node-image-viewer.niv-marking[data-tool="select"] .niv-annot-layer [data-annot-id]{cursor:move}
+#node-image-viewer.niv-marking[data-tool="text"] .niv-annot-layer{cursor:text}
+.niv-annot-sel{fill:none;stroke:var(--accent);stroke-width:1.5;stroke-dasharray:5 4;pointer-events:none}
+.niv-mk-text-input{position:absolute;z-index:2;margin:0;padding:0 3px;border:1px dashed var(--accent);border-radius:3px;outline:none;font-family:Inter,system-ui,-apple-system,'Segoe UI',Arial,sans-serif;font-weight:700;line-height:1.15;background:color-mix(in srgb,var(--halo,#fff) 72%,transparent);box-sizing:content-box;min-width:3em;transform:translate(-3px,-1px)}
+.niv-mk-text-input::placeholder{color:inherit;opacity:.45}
+/* Marks over a thumbnail: same shapes, scaled down with the picture (preserveAspectRatio slice
+   mirrors the thumbnail's object-fit:cover anchored top-left). */
+.node-image-thumb{position:relative}
+.node-image-thumb-marks{position:absolute;left:0;top:0;width:100%;height:calc(82px * var(--editor-scale));pointer-events:none}
+.niv-nav{all:unset;flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;width:38px;height:38px;border-radius:50%;background:var(--bg);border:1px solid var(--border);color:var(--fg);cursor:pointer}
+.niv-nav:hover:not(:disabled){border-color:var(--accent);color:var(--accent)}
+.niv-nav:disabled{opacity:.3;cursor:default}
+.niv-single .niv-nav{visibility:hidden}
+/* PDF: one figure per picture, centred, at its chosen width (% of the content width). */
+.pv-node-images{display:flex;flex-direction:column;align-items:center;gap:14px;margin:6px 0 12px}
+.pv-node-image-figure{flex:none;max-width:100%;margin:0;break-inside:avoid;page-break-inside:avoid}
+.pv-node-image-figure .pv-node-image{width:100%;height:auto;max-height:none;object-fit:contain}
+.pv-node-image-auto .pv-node-image{width:auto;max-width:100%;max-height:var(--pv-diagram-max-h,70vh)}
+/* An image with marks: picture + SVG overlay in one positioned box, so the overlay covers exactly
+   the picture at its chosen width. Unmarked images keep the plain <img> output. */
+.pv-node-image-box{position:relative;line-height:0;max-width:100%}
+.pv-node-image-auto .pv-node-image-box{align-self:center}
+.pv-node-image-marks{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible}
+.node-note-line{display:block;position:relative;width:calc(100% - 16px);max-width:calc(100% - 16px);font-size:0.82em;line-height:1.4;font-family:var(--content-font);color:var(--muted);cursor:text;padding-top:1px;padding-bottom:3px;word-break:break-word;outline:none;background:transparent;border-radius:4px}
+.node-note-line:focus{color:var(--fg)}
+.node-note-line img{max-width:100%;border-radius:6px;margin:4px 0;display:block}
+.node-note-line ul,.node-note-line ol{margin:6px 0;padding-left:26px}
+.node-note-line li{margin:2px 0;padding-left:2px}
+.node-note-line li ul,.node-note-line li ol{margin:2px 0}
+.node-note-line a{color:var(--accent);text-decoration:underline;text-underline-offset:2px;cursor:pointer}
+.node-remark-text-inline a,.thread-composer-input a{color:var(--accent);text-decoration:underline;text-underline-offset:2px;cursor:pointer}
+.node-note-line table{border-collapse:collapse;margin:6px 0;font-size:var(--fs-sm);table-layout:fixed;max-width:none}
+/* height/box-sizing, not min-height: min-height is ignored on a cell with no line box of
+   its own, which a cell holding only .row-resize-handle's own absolutely-positioned div still
+   counts as, and plain height alone still omits padding/border from an empty cell's total. */
+.node-note-line table td,.node-note-line table th{border:1px solid var(--border);padding:5px 8px;min-width:32px;box-sizing:border-box;height:calc(1.4em + 10px + 2px);vertical-align:top;outline:none;overflow:hidden;word-break:normal;overflow-wrap:break-word;position:relative}
+.node-note-line table th{background:color-mix(in srgb,var(--accent) 10%,transparent);font-weight:600;color:var(--fg)}
+.node-note-line table td:focus,.node-note-line table th:focus{box-shadow:inset 0 0 0 2px color-mix(in srgb,var(--accent) 45%,transparent);border-color:var(--accent)}
+.node-note-line .pv-table-chart-figure svg{max-width:100%}
+.node-remark-line{position:relative;display:flex;align-items:flex-start;gap:4px;max-width:calc(100% - 16px);padding-top:2px;padding-bottom:4px;font-size:var(--fs-md);line-height:1.4}
+.node-remark-person-inline{color:var(--fg);font:600 1em 'Inter','Public Sans',sans-serif;font-family:var(--content-font);padding:0 2px;border-radius:4px;flex:0 0 auto;min-width:8px;outline:none;cursor:text}
+.node-remark-person-inline:empty::before{content:attr(data-placeholder);color:var(--hint);font-weight:400}
+.node-remark-person-inline:hover,.node-remark-person-inline:focus{background:var(--hover)}
+.node-remark-date-inline{flex:0 0 auto;color:var(--hint);cursor:pointer;padding:0 2px;border-radius:4px;white-space:nowrap;font:inherit;line-height:inherit;border:0;background:none;margin:0}
+.node-remark-date-inline:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.node-remark-date-inline:hover{background:var(--hover);color:var(--fg)}
+.node-remark-text-inline{flex:1;min-width:0;color:color-mix(in srgb,var(--fg) 65%,var(--muted) 35%);opacity:.9;cursor:text;white-space:pre-wrap;word-break:break-word;outline:none}
+.node-remark-text-inline.remark-text-input{width:auto;font:inherit;color:color-mix(in srgb,var(--fg) 65%,var(--muted) 35%);padding:0;border-left:none;border-radius:4px;min-height:0;margin-bottom:0}
+.node-remark-text-inline:hover{opacity:1}
+.node-remark-text-inline:focus{opacity:1;color:var(--fg)}
+/* Status pills (PDF) and the row thread's chips: Question, Yes / No, Answer, Follow-up, Resolved, Decision. */
+.pv-status-pill[data-state="open"],.pv-status-pill[data-state="followup"]{background:color-mix(in srgb,var(--fc-orange) 16%,transparent);color:color-mix(in srgb,var(--fc-orange) 70%,var(--fg))}
+.pv-status-pill[data-state="answered"],.pv-status-pill[data-state="resolved"],.pv-status-pill[data-state="decision"],.pv-status-pill[data-state="yes"],.pv-status-pill[data-state="answer"]{background:color-mix(in srgb,var(--fc-green) 14%,transparent);color:color-mix(in srgb,var(--fc-green) 75%,var(--fg))}
+.pv-status-pill[data-state="wont"]{background:var(--chip);color:var(--muted)}
+.pv-status-pill[data-state="question"]{background:color-mix(in srgb,var(--accent) 14%,transparent);color:color-mix(in srgb,var(--accent) 80%,var(--fg))}
+.pv-status-pill[data-state="issue"],.pv-status-pill[data-state="no"]{background:color-mix(in srgb,var(--fc-red) 12%,transparent);color:color-mix(in srgb,var(--fc-red) 78%,var(--fg))}
+/* The row thread: one flat list, each entry a meta line (avatar, author, time, chips) over its text. */
+.node-remark-line.thread-entry{display:block;padding-top:3px;padding-bottom:3px}
+/* A question and its replies read as one block (owner, 2026-10-27): more room before each top-level
+   entry, less inside the block. The day shows only where it changes; hover shows it again. */
+.node-remark-line.thread-entry:not(.is-nested){padding-top:8px}
+.node-remark-line.thread-entry.is-nested{padding-top:1px}
+.thread-time.is-same-day{opacity:0;transition:opacity .12s}
+.thread-entry:hover .thread-time.is-same-day,.thread-time.is-same-day:focus-visible{opacity:1}
+.node-remark-line.thread-head{align-items:center;gap:6px;padding-top:4px;padding-bottom:2px;color:var(--hint);font:500 12px 'Inter',sans-serif;cursor:pointer;user-select:none}
+.thread-head svg{flex:0 0 auto}
+.thread-head-more{border:0;background:transparent;padding:0 2px;margin-left:-2px;border-radius:4px;font:inherit;color:var(--hint);cursor:pointer}
+.thread-head-more:hover{color:var(--fg);background:var(--hover)}
+.thread-head-copy{display:inline-flex;align-items:center;border:0;background:transparent;padding:2px;border-radius:4px;color:var(--hint);cursor:pointer;opacity:0;transition:opacity .12s}
+.thread-head:hover .thread-head-copy,.thread-head-copy:focus-visible{opacity:1}
+.thread-head-copy:hover{color:var(--fg);background:var(--hover)}
+.thread-meta{display:flex;align-items:center;gap:5px;flex-wrap:wrap;min-height:18px}
+.thread-time{font-size:var(--fs-sm)}
+.thread-entry .node-remark-text-inline{display:block;margin-left:22px;min-height:1.4em}
+.thread-entry .node-remark-text-inline:empty::before{content:attr(data-placeholder);color:var(--hint)}
+.node-remark-line.thread-composer{display:block;padding-top:3px;padding-bottom:3px}
+.thread-author-btn{flex:0 0 auto;border:0;background:transparent;color:var(--fg);font:600 13px 'Inter',sans-serif;padding:0 3px;height:20px;border-radius:4px;cursor:pointer;white-space:nowrap}
+.thread-author-btn:hover{background:var(--hover)}
+.thread-author-edit{flex:0 0 auto;min-width:60px;font:600 13px 'Inter',sans-serif;padding:0 4px;border-radius:4px;background:var(--hover);outline:none}
+.thread-author-edit:empty::before{content:attr(data-placeholder);color:var(--hint)}
+/* The reply line types like any entry: no box, just the text under the author. */
+.thread-composer-input{display:block;margin-left:22px;min-height:1.4em;outline:none;cursor:text;white-space:pre-wrap;word-break:break-word;color:var(--fg)}
+.thread-composer-input:empty::before{content:attr(data-placeholder);color:var(--hint)}
+.thread-composer-input.remark-text-input,.thread-composer-input.remark-text-input:hover,.thread-composer-input.remark-text-input:focus{width:auto;padding:0;border:0;border-radius:0;background:transparent;color:var(--fg);font:inherit}
+.thread-composer-input.remark-text-input:empty::before{font-style:normal}
+/* "+ Add to thread" at the end of a thread: only while the thread is hovered. */
+.node-remark-line.thread-reply-link{padding-top:1px;padding-bottom:3px;color:var(--hint);font-size:var(--fs-md);cursor:pointer}
+/* Only the label fades: the line also carries the outline's depth guides, which must stay drawn. */
+.thread-reply-label{margin-left:22px;opacity:0;transition:opacity .12s}
+.thread-reply-link.thread-hover .thread-reply-label,.thread-reply-link:focus-within .thread-reply-label{opacity:1}
+/* Touch screens have no hover: "+ Add to thread" is always there. */
+@media (hover: none){.thread-reply-label{opacity:1}}
+.thread-reply-link:hover .thread-reply-label{color:var(--fg)}
+/* A Follow-up's owner typed in place, right after the row's status badge. */
+/* Kind icon in place of the avatar (threadKindIcon), same 16px box so the joining line still meets it. Names carry the person's colour. */
+.thread-kind{position:relative;z-index:1;flex:0 0 auto;width:15px;height:15px;display:inline-flex;align-items:center;justify-content:center;margin-top:1px;border-radius:50%;background:color-mix(in srgb,currentColor 15%,var(--bg))}
+/* Owner (2026-10-15): every kind sits in the same light tinted circle, so the column keeps the even rhythm the avatars had. */
+.thread-kind.is-clickable{cursor:pointer}.thread-kind.is-clickable:hover{background:color-mix(in srgb,currentColor 28%,var(--bg))}
+.thread-kind svg{width:11px;height:11px;stroke-width:2.6}
+.pv-remark-kind{grid-row:1 / span 2;width:15px;height:15px;display:inline-flex;align-items:center;justify-content:center;margin-top:0;border-radius:50%;background:color-mix(in srgb,currentColor 15%,#fff);-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.pv-remark-kind svg{width:11px;height:11px;stroke-width:2.6}
+
+/* Replies read under their entry (owner, 2026-10-27), one step in (renderNodeThread's placeThread). */
+/* Reply on an entry: on hover only (owner, 2026-10-27). */
+.thread-reply-btn{margin-left:6px;padding:0 4px;border:none;background:none;color:var(--muted);font:500 var(--fs-xs) 'Inter',sans-serif;cursor:pointer;border-radius:4px;opacity:0}
+.thread-entry:hover .thread-reply-btn,.thread-reply-btn:focus-visible{opacity:1}
+.thread-reply-btn:hover{color:var(--fg);background:var(--hover)}
+.thread-entry.is-moved{animation:thread-moved 1.6s ease-out}
+@keyframes thread-moved{0%,30%{background:var(--hover)}100%{background:transparent}}
+/* "N earlier entries" fold line (buildInlineFoldLine). */
+.node-remark-resolved-toggle{display:inline-flex;align-items:center;gap:6px;height:22px;padding:0 6px;border:0;border-radius:6px;background:transparent;color:var(--muted);font:400 12.5px 'Inter',sans-serif;cursor:pointer}
+.node-remark-resolved-toggle:hover{background:var(--hover)}
+.node-remark-resolved-toggle .nrr-caret{color:var(--hint)}
+.node-note-dot.has-open-count{width:auto;min-width:18px;gap:2px;padding:0 3px;opacity:.85}
+.node-dot-count{font:700 10px 'Inter',sans-serif;font-variant-numeric:tabular-nums}
+
+.pv-status-pill{display:inline-flex;align-items:center;gap:3px;height:16px;padding:0 6px;margin-left:8px;border-radius:999px;font:600 9.5px 'Inter',sans-serif;vertical-align:middle;white-space:nowrap}
+
+.node-qa-question{flex:1;min-width:0;color:var(--fg);cursor:text;white-space:pre-wrap;word-break:break-word;outline:none}
+.node-qa-answer{flex:1;min-width:0;color:color-mix(in srgb,var(--fg) 65%,var(--muted) 35%);opacity:.9;cursor:text;white-space:pre-wrap;word-break:break-word;outline:none}
+.node-diagram-line{position:relative;max-width:calc(100% - 16px);padding-top:4px;padding-bottom:8px}
+.node-diagram-preview-card{display:block;max-width:100%}
+/* Shows the real diagram at its own natural size (not a tiny thumbnail — illegible for anything
+   but the simplest diagram) up to generous caps so one huge diagram can't take over the whole
+   pane. Only the empty/placeholder state (nothing to size from yet) gets a fixed small box. */
+.node-diagram-preview-thumb{display:inline-block;max-width:100%;box-sizing:border-box;padding:12px;border-radius:8px;border:1px solid var(--border);background:var(--canvas-bg);overflow:hidden;color:var(--hint);cursor:pointer;line-height:0}
+.node-diagram-preview-thumb:hover{border-color:var(--accent)}
+.node-diagram-preview-thumb.has-export-border{padding:0}
+.node-diagram-preview-thumb img{display:block;max-width:100%;max-height:70vh;width:auto;height:auto}
+.node-diagram-preview-thumb.node-diagram-preview-empty{padding:0;width:240px;height:150px;display:flex;align-items:center;justify-content:center}
+.node-diagram-preview-meta{display:flex;align-items:center;gap:6px;font:500 11px 'Inter',sans-serif;line-height:1.35;color:var(--muted);margin-top:4px}
+/* Like a picture's caption: nothing shows until the diagram has a name (Rename shows the field). */
+.node-diagram-preview-meta.is-empty:not(.renaming){display:none}
+.node-diagram-preview-title{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;outline:none;cursor:text;border-radius:4px;padding:0 2px}
+.node-diagram-preview-title:empty::before{content:attr(data-placeholder);color:var(--hint)}
+.node-diagram-preview-title:hover{color:var(--fg)}
+.node-diagram-preview-title:focus{color:var(--fg);background:var(--hover);overflow:visible;white-space:normal}
+.node-qa-answer:hover,.node-qa-question:hover{opacity:1}
+.node-qa-answer:focus{opacity:1;color:var(--fg)}
+.node-qa-answer:empty::before{content:attr(data-placeholder);color:var(--hint);font-style:italic}
+.node-arw-dot{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;flex:0 0 auto;margin-left:var(--gap-row-marker);color:var(--accent);opacity:.7;cursor:pointer;border-radius:4px;align-self:flex-start;margin-top:calc((var(--row-line-base) - 16px) / 2)}
+.node-arw-dot:hover{opacity:1}
+.node-row.selected .node-arw-dot,.node-row.primary-selection .node-arw-dot{opacity:.85}
+
+/* The row-end indicators (note, thread, diagram, table, image, To-Do and Q&A dots, marker badges, tags,
+   checkbox progress) grow with Settings → Text size like the text does. zoom scales their margins too,
+   which is why their offsets use --row-line-base. */
+.node-row :is(.node-note-dot,.node-qa-dot,.node-arw-dot,.node-marker-badge,.node-tag-chip,.cb-progress){zoom:var(--editor-scale)}
+/* Note indicator dot on node rows */
+.node-note-dot{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;flex:0 0 auto;margin-left:var(--gap-row-marker);opacity:.55;font-size:10px;cursor:pointer;border-radius:4px}
+.node-note-dot:hover{opacity:1}
+/* Scoped to .node-row (not the bare class) -- this same class is reused inside Preview mode's
+   inline text flow (contentEl.appendChild), where it's not a flex sibling of a wrapping label
+   and this offset would just misalign it against the surrounding text baseline instead. */
+.node-row .node-note-dot{align-self:flex-start;margin-top:calc((var(--row-line-base) - 18px) / 2)}
+.node-marker-badge{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;flex:0 0 auto;margin-left:var(--gap-row-marker);font-size:10px;cursor:pointer;border-radius:4px;background:color-mix(in srgb,var(--fc-gray) 16%,transparent);color:var(--fc-gray);align-self:flex-start;margin-top:calc((var(--row-line-base) - 18px) / 2)}
+.node-marker-badge:hover{background:color-mix(in srgb,var(--fc-gray) 26%,transparent)}
+/* Row icons are grey; colour is kept for what is still open (a Follow-up, open questions) so it stands out (owner, 2026-10-22). */
+.node-marker-badge[data-color="green"]{background:color-mix(in srgb,var(--fc-green) 16%,transparent);color:var(--muted)}
+.node-marker-badge[data-color="green"]:hover{background:color-mix(in srgb,var(--fc-green) 26%,transparent)}
+.node-marker-badge[data-color="red"]{background:color-mix(in srgb,var(--fc-red) 16%,transparent);color:var(--fc-red)}
+.node-marker-badge[data-color="red"]:hover{background:color-mix(in srgb,var(--fc-red) 26%,transparent)}
+.node-marker-badge[data-color="orange"]{background:color-mix(in srgb,var(--fc-orange) 16%,transparent);color:var(--fc-orange)}
+.node-marker-badge[data-color="orange"]:hover{background:color-mix(in srgb,var(--fc-orange) 26%,transparent)}
+.node-marker-badge.marker-active-filter{box-shadow:0 0 0 1.5px currentColor}
+/* At rest a marker is a plain coloured icon like the other row icons; the tint shows on hover only (owner, 2026-10-20). */
+.node-marker-badge,.node-marker-badge[data-color]{background:none}
+.node-row.selected .node-note-dot,.node-row.primary-selection .node-note-dot{opacity:.75}
+

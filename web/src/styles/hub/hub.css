@@ -433,10 +433,6 @@ body.reader-open{overflow:hidden}
 .rd-img-box img{display:block;max-width:100%;height:auto;border-radius:8px;border:1px solid var(--border)}
 .rd-img-marks{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
 .rd-img figcaption{font-size:var(--fs-sm);color:var(--muted);margin-top:4px}
-.rd-table{overflow-x:auto;margin:6px 0 8px;-webkit-overflow-scrolling:touch}
-.rd-table table{border-collapse:collapse;font-size:13.5px;min-width:100%}
-.rd-table th,.rd-table td{border:1px solid var(--border);padding:5px 8px;text-align:left;vertical-align:top}
-.rd-table th{background:var(--chip);font-weight:600}
 .rd-diagram{display:inline-flex;align-items:center;gap:7px;margin:6px 0 8px;padding:7px 11px;border:1px solid var(--border);border-radius:10px;background:var(--surface-raised);color:var(--fg);font:500 13px 'Inter',sans-serif;cursor:pointer}
 .rd-diagram svg{color:var(--muted)}
 .rd-diagram-hint{color:var(--hint);font-size:var(--fs-sm)}
@@ -489,3 +485,8 @@ body.theme-dark .hub-tab[aria-selected="true"]{background:var(--sel);box-shadow:
   body.reader-printing .rd-cb.is-checked{background:none}
   body.reader-printing .rd-cb.is-checked::after{border-color:var(--muted)}
 }
+/* Tables use the computer's own table styles (src/styles/shared/table-display.css). The reader
+   gives them the page colour and a 1x scale, and lets a wide table scroll sideways in its box. */
+#doc-reader{--canvas-bg:var(--edit-bg);--editor-scale:1}
+.rd-table{margin:6px 0 10px;width:100%;max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;cursor:default}
+.rd-table.pv-table-chart-figure svg{cursor:default}

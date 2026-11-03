@@ -52,7 +52,324 @@
   from here: the full editor genuinely isn't designed for a phone-sized screen.
 -->
 <style>
-/* GENERATED:css-hub:START — DO NOT EDIT BY HAND. Source of truth: src/styles/hub/hub.css. Regenerate with `npm run generate` after changing them; CI fails if this block drifts (see scripts/generate-index-blocks.mjs). */
+/* GENERATED:css-hub:START — DO NOT EDIT BY HAND. Source of truth: src/styles/shared/table-display.css, src/styles/hub/hub.css. Regenerate with `npm run generate` after changing them; CI fails if this block drifts (see scripts/generate-index-blocks.mjs). */
+/* Tables (plain, polished, and every Show as display) as the computer draws them. Shared by
+   index.html and the phone's reader (hub.html), which shows the computer's ready-made copy of each
+   table (owner 2026-11-03: the same look on every device). Listed in both pages' style blocks. */
+.pv-diagram-row{display:flex;flex-wrap:wrap;gap:14px;margin:10px 0 14px;align-items:stretch}
+.pv-diagram-figure{margin:0;flex:1 1 320px;min-width:0;display:flex;flex-direction:column}
+.pv-diagram-img{max-width:100%;max-height:var(--pv-diagram-max-h,70vh);display:block;margin:0 auto}
+.pv-diagram-row-multi .pv-diagram-img{max-height:var(--pv-diagram-max-h-multi,42vh)}
+.pv-diagram-caption{font:500 12px 'Inter',sans-serif;color:var(--muted);text-align:center;margin-top:auto;padding-top:6px}
+.pv-table-figure{flex:1 1 100%}
+/* Position › Center (tableShowsCentered): the object sits in the middle of its column, outline and PDF. */
+.pv-table-figure.pos-center>table{margin-left:auto;margin-right:auto}
+.pv-table-figure.pos-center>svg.pv-table-chart-svg{display:block;margin-left:auto;margin-right:auto}
+.pv-table-figure.pos-center .pv-table-chips{justify-content:center}
+.pv-table-figure.pos-center .pv-table-inline{text-align:center;margin-left:auto;margin-right:auto}
+.pv-table-figure.pos-center .pv-timeline{width:max-content;max-width:100%;margin-left:auto;margin-right:auto}
+.pv-table-figure table{width:100%;border-collapse:collapse;font:400 14px 'Inter',sans-serif;color:var(--fg)}
+.pv-table-figure td,.pv-table-figure th{border:1px solid var(--border);padding:7px 12px;text-align:left;position:relative}
+.pv-table-figure th{background:color-mix(in srgb,var(--accent) 8%,transparent);font-weight:600;font-size:.82em;letter-spacing:.03em;text-transform:uppercase}
+/* Display polish (applyTableDisplayPolish, display copies only): horizontal rules only -- the
+   vertical ones turn transparent rather than going, and header text is styled the same in both,
+   so nothing moves on entering edit mode -- a quiet header, and a faint dash in blank cells. */
+.pv-table-figure table.tbl-polished td,.pv-table-figure table.tbl-polished th{border-left-color:transparent;border-right-color:transparent;border-top-color:transparent;border-bottom-color:color-mix(in srgb,var(--border) 70%,transparent)}
+.pv-table-figure table.tbl-polished th{background:transparent;color:var(--muted);border-bottom-color:color-mix(in srgb,var(--fg) 22%,var(--border))}
+.pv-table-figure table.tbl-polished td.tbl-empty::after{content:'\2013';color:var(--hint)}
+.pv-table-figure table.tbl-grouped tr.tbl-group-start>td{border-top:1.5px solid var(--border)}
+.pv-table-figure table.tbl-grouped td.tbl-group-cell{vertical-align:top}
+.pv-table-figure .tbl-grp-code{display:block;font-weight:600}
+.pv-table-figure .tbl-grp-name{display:block;color:var(--muted);font-size:.92em}
+.pv-table-figure .tbl-grp-count{display:block;margin-top:3px;color:var(--hint);font-size:.8em}
+/* Per-column alignment: data-align is stored on each cell of the column (cell menu -> Align column);
+   data-auto-align is the render-time marker for numeric columns (applyTableAutoAlign), never saved.
+   Same rules in the outline, while editing, in a chart's Edit data view and in the PDF. */
+.pv-table-figure td[data-auto-align="right"],.pv-table-figure th[data-auto-align="right"]{text-align:right;font-variant-numeric:tabular-nums}
+.pv-table-figure td[data-align="left"],.pv-table-figure th[data-align="left"]{text-align:left}
+.pv-table-figure td[data-align="center"],.pv-table-figure th[data-align="center"]{text-align:center}
+.pv-table-figure td[data-align="right"],.pv-table-figure th[data-align="right"]{text-align:right}
+.pv-table-chart-figure{flex:1 1 100%}
+.pv-table-chart-figure svg{width:100%;height:auto;max-height:340px;display:block;cursor:context-menu}
+.pv-table-chart-figure svg.pv-chart-size-full{max-height:none}
+.pv-table-chartable table{cursor:context-menu}
+.pv-table-progress{display:grid;grid-template-columns:minmax(0,max-content) minmax(120px,1fr) auto;column-gap:12px;row-gap:9px;align-items:center;width:100%;cursor:context-menu}
+.pv-progress-row{display:contents}
+.pv-progress-label{font:500 13px 'Inter',sans-serif;color:var(--fg);max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pv-progress-track{position:relative;height:10px;border-radius:999px;background:color-mix(in srgb,var(--fg) 9%,var(--bg));overflow:hidden}
+.pv-progress-fill{position:absolute;left:0;top:0;bottom:0;border-radius:999px;background:var(--accent);-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.pv-progress-fill.done{background:var(--fc-green)}
+.pv-progress-value{font:600 12px 'Inter',sans-serif;color:var(--muted);font-variant-numeric:tabular-nums;text-align:right;min-width:36px}
+.pv-timeline{display:grid;grid-template-columns:auto 18px minmax(0,1fr);column-gap:12px;width:100%;cursor:context-menu}
+.pv-tl-item{display:contents}
+.pv-tl-date{font:600 12px 'Inter',sans-serif;color:var(--muted);text-align:right;padding:2px 0 16px;white-space:nowrap;font-variant-numeric:tabular-nums}
+.pv-tl-rail{position:relative;display:flex;justify-content:center}
+.pv-tl-rail::before{content:'';position:absolute;top:0;bottom:0;left:50%;width:2px;margin-left:-1px;background:var(--border)}
+.pv-tl-item:first-child .pv-tl-rail::before{top:7px}
+.pv-tl-item:last-child .pv-tl-rail::before{bottom:auto;height:7px}
+.pv-tl-dot{position:relative;z-index:1;width:10px;height:10px;margin-top:3px;border-radius:50%;box-sizing:border-box;border:2px solid var(--hint);background:var(--bg);-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.pv-tl-item.done .pv-tl-dot{background:var(--accent);border-color:var(--accent)}
+.pv-tl-item.next .pv-tl-dot{width:12px;height:12px;margin-top:2px;border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 22%,transparent)}
+.pv-tl-body{padding:0 0 16px;min-width:0}
+.pv-tl-event{font:500 13.5px 'Inter',sans-serif;color:var(--fg);line-height:1.35}
+.pv-tl-item.done .pv-tl-event{color:var(--muted)}
+.pv-tl-detail{font:400 12px 'Inter',sans-serif;color:var(--muted);margin-top:2px;line-height:1.4}
+.pv-tl-next{display:inline-block;margin-left:8px;padding:1px 7px;border-radius:999px;font:700 9.5px 'Inter',sans-serif;letter-spacing:.06em;text-transform:uppercase;color:var(--accent);background:color-mix(in srgb,var(--accent) 13%,transparent);vertical-align:1px;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.pv-timeline.horizontal{grid-template-columns:repeat(var(--tl-cols,4),minmax(0,1fr));grid-template-rows:auto 14px auto;grid-auto-flow:column;column-gap:0;text-align:center;break-inside:avoid;page-break-inside:avoid}
+.pv-timeline.horizontal .pv-tl-date{text-align:center;white-space:normal;align-self:end;padding:0 6px 8px}
+.pv-timeline.horizontal .pv-tl-rail{height:14px;align-items:center}
+.pv-timeline.horizontal .pv-tl-rail::before{top:50%;bottom:auto;left:0;right:0;width:auto;height:2px;margin:-1px 0 0}
+.pv-timeline.horizontal .pv-tl-item:first-child .pv-tl-rail::before{left:50%}
+.pv-timeline.horizontal .pv-tl-item:last-child .pv-tl-rail::before{right:50%;height:2px}
+.pv-timeline.horizontal .pv-tl-item:only-child .pv-tl-rail::before{display:none}
+.pv-timeline.horizontal .pv-tl-dot,.pv-timeline.horizontal .pv-tl-item.next .pv-tl-dot{margin-top:0}
+.pv-timeline.horizontal .pv-tl-body{padding:8px 6px 0;min-width:0}
+.pv-timeline.horizontal .pv-tl-next{display:table;margin:4px auto 0}
+.pv-board{display:grid;grid-template-columns:repeat(var(--board-cols,4),minmax(0,1fr));gap:12px;width:100%;align-items:start;cursor:context-menu;--lane:var(--fc-gray)}
+.pv-board-lane{display:flex;flex-direction:column;gap:8px;min-width:0;padding:10px;border-radius:12px;background:color-mix(in srgb,var(--fg) 3.5%,var(--bg));-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.pv-board-lane[data-group="progress"]{--lane:var(--fc-orange)}
+.pv-board-lane[data-group="blocked"]{--lane:var(--fc-red)}
+.pv-board-lane[data-group="done"]{--lane:var(--fc-green)}
+.pv-board-lane[data-group="other"]{--lane:var(--fc-purple)}
+/* Lanes by a column (not statuses): neutral, so they don't read as a status. */
+.pv-board-lane[data-group="lane"]{--lane:var(--fc-gray)}
+.pv-board-head{display:flex;align-items:center;gap:7px;font:600 12px 'Inter',sans-serif;color:var(--fg);padding:0 2px 2px}
+.pv-board-dot{width:8px;height:8px;border-radius:50%;background:var(--lane);flex:none;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.pv-board-label{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pv-board-count{margin-left:auto;font:600 11px 'Inter',sans-serif;color:var(--muted);font-variant-numeric:tabular-nums}
+.pv-board-card{padding:8px 10px;border-radius:8px;background:var(--bg);border:1px solid var(--border);border-left:3px solid var(--lane);break-inside:avoid;page-break-inside:avoid;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.pv-board-item{font:500 13px 'Inter',sans-serif;color:var(--fg);line-height:1.35;overflow-wrap:anywhere}
+.pv-board-lane[data-group="done"] .pv-board-item{color:var(--muted)}
+.pv-board-meta{display:flex;flex-wrap:wrap;gap:4px 10px;margin-top:4px;font:500 11.5px 'Inter',sans-serif;color:var(--muted)}
+.pv-board-due{font-variant-numeric:tabular-nums}
+.pv-board-due.overdue{color:var(--fc-red);font-weight:600}
+.pv-board-note{font:400 12px 'Inter',sans-serif;color:var(--muted);margin-top:3px;line-height:1.4;overflow-wrap:anywhere}
+@media (max-width:640px){.pv-board{grid-template-columns:minmax(0,1fr)}}
+@media print{.pv-board.many{display:block}.pv-board.many .pv-board-lane{margin-bottom:10px;break-inside:auto;page-break-inside:auto}}
+/* Layout-neutral on purpose (no padding, same weight): the pill is drawn with a spread box-shadow so
+   the cell keeps exactly the size it has in edit mode, where the pill isn't shown. */
+.tbl-status-pill{border-radius:999px;color:var(--pill,var(--fc-gray));background:color-mix(in srgb,var(--pill,var(--fc-gray)) 14%,transparent);box-shadow:0 0 0 4px color-mix(in srgb,var(--pill,var(--fc-gray)) 14%,transparent);-webkit-box-decoration-break:clone;box-decoration-break:clone;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.tbl-status-pill[data-group="progress"]{--pill:var(--fc-orange)}
+.tbl-status-pill[data-group="blocked"]{--pill:var(--fc-red)}
+.tbl-status-pill[data-group="done"]{--pill:var(--fc-green)}
+.node-table-line.editing{position:relative}
+.tbl-grips{position:absolute;inset:0;pointer-events:none;z-index:2}
+.tbl-grip{position:absolute;pointer-events:auto;appearance:none;border:none;padding:0;margin:0;background:transparent;cursor:pointer;opacity:0;transition:opacity .12s}
+.tbl-grip::after{content:'';position:absolute;border-radius:3px;background:var(--hint)}
+.tbl-grip-row{width:12px}.tbl-grip-row::after{left:4px;top:50%;width:4px;height:16px;margin-top:-8px}
+.tbl-grip-col{height:10px}.tbl-grip-col::after{top:3px;left:50%;height:4px;width:16px;margin-left:-8px}
+.tbl-grip.hot{opacity:.55}.tbl-grip:hover{opacity:1}
+.tbl-grip.sel{opacity:1}.tbl-grip.sel::after{background:var(--accent)}
+.node-table-line td.tbl-sel,.node-table-line th.tbl-sel{background:color-mix(in srgb,var(--accent) 13%,transparent)!important;box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--accent) 45%,transparent)}
+.node-table-line.tbl-has-sel td,.node-table-line.tbl-has-sel th{caret-color:transparent}
+.pv-rowcards-box{width:100%;container-type:inline-size}
+.pv-rowcards{display:grid;grid-template-columns:repeat(var(--rc-cols,3),minmax(0,1fr));gap:12px;width:100%;align-items:stretch;cursor:context-menu}
+.pv-rowcards[data-cols="1"]{--rc-cols:1}.pv-rowcards[data-cols="2"]{--rc-cols:2}.pv-rowcards[data-cols="3"]{--rc-cols:3}.pv-rowcards[data-cols="4"]{--rc-cols:4}
+@container (max-width:1000px){.pv-rowcards[data-cols="4"]{--rc-cols:2}}
+@container (max-width:720px){.pv-rowcards[data-cols="3"]{--rc-cols:2}}
+@container (max-width:480px){.pv-rowcards{--rc-cols:1}}
+.pv-rc-card{border:1px solid var(--border);border-radius:12px;padding:12px 14px 13px;background:var(--bg);min-width:0;display:flex;flex-direction:column;gap:9px;break-inside:avoid;page-break-inside:avoid}
+.pv-rc-head{display:flex;flex-direction:column;gap:2px;padding-bottom:9px;border-bottom:1px solid var(--border)}
+.pv-rc-title{font:600 14px/1.35 'Inter',sans-serif;color:var(--fg);overflow-wrap:anywhere}
+.pv-rc-sub{font:500 12.5px/1.35 'Inter',sans-serif;color:var(--accent);overflow-wrap:anywhere}
+.pv-rc-label{font:600 10.5px 'Inter',sans-serif;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);margin-bottom:2px}
+.pv-rc-value{font:400 13px/1.45 'Inter',sans-serif;color:var(--fg);overflow-wrap:anywhere}
+.pv-rc-value b,.pv-rc-value strong{font-weight:600}
+.pv-proscons{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;width:100%;align-items:start;cursor:context-menu;break-inside:avoid;page-break-inside:avoid}
+.pv-pc-col{--pc:var(--fc-green);border:1px solid color-mix(in srgb,var(--pc) 30%,var(--border));border-top:3px solid var(--pc);border-radius:12px;padding:10px 12px 12px;background:color-mix(in srgb,var(--pc) 5%,var(--bg));min-width:0;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.pv-pc-col.cons{--pc:var(--fc-red)}
+.pv-pc-head{display:flex;align-items:center;gap:8px;font:600 13px 'Inter',sans-serif;color:var(--fg);margin-bottom:6px}
+.pv-pc-badge{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;color:#fff;background:var(--pc);flex:none;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.pv-pc-count{margin-left:auto;font:600 11px 'Inter',sans-serif;color:var(--muted);font-variant-numeric:tabular-nums}
+.pv-pc-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.pv-pc-list li{display:flex;gap:8px;align-items:flex-start;font:400 13px 'Inter',sans-serif;color:var(--fg);line-height:1.4;overflow-wrap:anywhere}
+.pv-pc-mark{color:var(--pc);flex:none;margin-top:2px;display:inline-flex}
+@media (max-width:640px){.pv-proscons{grid-template-columns:minmax(0,1fr)}}
+/* API request card (data-table-display="api"): method + URL, then query, headers, body, response.
+   Method colours follow the common convention (GET green, POST blue, PUT/PATCH orange, DELETE red). */
+.pv-api{--mc:var(--fc-gray);width:100%;border:1px solid var(--border);border-radius:8px;background:var(--bg);padding:10px 12px;display:flex;flex-direction:column;gap:10px;min-width:0;cursor:context-menu;break-inside:avoid;page-break-inside:avoid;font:400 var(--fs-md) 'Inter',sans-serif;color:var(--fg)}
+.pv-api[data-method="get"]{--mc:var(--fc-green)}.pv-api[data-method="post"]{--mc:var(--fc-blue)}.pv-api[data-method="put"],.pv-api[data-method="patch"]{--mc:var(--fc-orange)}.pv-api[data-method="delete"]{--mc:var(--fc-red)}
+.pv-api-line{display:flex;align-items:flex-start;gap:8px;min-width:0}
+.pv-api-line .pv-api-method{line-height:24px}.pv-api-line .pv-api-url{line-height:1.5;padding-top:2px}.pv-api-seg{display:inline-block;max-width:100%}
+.pv-api-method{flex:none;font:700 var(--fs-xs) 'Fira Code',Consolas,monospace;letter-spacing:.04em;color:var(--mc);-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.pv-api-url{flex:1;min-width:0;font:400 var(--fs-sm) 'Fira Code',Consolas,monospace;color:var(--fg);overflow-wrap:break-word;background:none;padding:0}
+.pv-api-curl{flex:none;display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;padding:0;border:1px solid transparent;border-radius:6px;background:none;color:var(--muted);cursor:pointer}
+.pv-api-curl:hover{background:var(--hover);color:var(--fg)}.pv-api-curl:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.pv-api-curl.copied{color:var(--fc-green)}
+.pv-api-var{color:var(--accent);-webkit-print-color-adjust:exact;print-color-adjust:exact}.pv-api-curl svg{flex:none;width:14px;height:14px}
+.pv-api-desc{color:var(--muted);line-height:1.45}
+.pv-api-sec{display:flex;flex-direction:column;gap:4px;min-width:0}
+.pv-api-label{display:flex;align-items:center;gap:8px;font:600 var(--fs-2xs) 'Inter',sans-serif;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.pv-api-pairs{display:flex;flex-direction:column;gap:2px}
+.pv-api-pair{font:400 var(--fs-sm) 'Fira Code',Consolas,monospace;line-height:1.5;overflow-wrap:anywhere}
+.pv-api-param{display:flex;flex-wrap:wrap;align-items:baseline;column-gap:8px;font:400 var(--fs-sm) 'Fira Code',Consolas,monospace;line-height:1.5;overflow-wrap:anywhere}
+.pv-api-in{font:500 var(--fs-2xs) 'Inter',sans-serif;color:var(--hint);border:1px solid var(--border);border-radius:4px;padding:0 4px;line-height:1.5}
+.pv-api-note{flex-basis:100%;padding-left:12px;font:400 var(--fs-sm) 'Inter',sans-serif;color:var(--muted);line-height:1.45}
+.pv-api-authval{font:400 var(--fs-sm) 'Inter',sans-serif;color:var(--fg);line-height:1.45}
+.pv-api-key{color:var(--fg)}.pv-api-sep{color:var(--muted);margin:0 4px 0 1px}.pv-api-val{color:var(--muted)}
+.pv-api-code{margin:0;padding:8px 10px;border-radius:6px;background:var(--hover);font:400 var(--fs-sm)/1.5 'Fira Code',Consolas,monospace;color:var(--fg);white-space:pre-wrap;overflow-wrap:anywhere}
+.pv-api-status{font:600 var(--fs-2xs) 'Fira Code',Consolas,monospace;letter-spacing:0;text-transform:none;color:var(--muted)}
+.pv-api-status.ok{color:var(--fc-green)}.pv-api-status.err{color:var(--fc-red)}
+@media print{.pv-api-curl{display:none}}
+/* API request editor: the card itself turns into this form (Edit request…), at the page's full
+   width. Standard 32px fields with 8px corners; body and response boxes grow with their text. */
+.api-ed{box-sizing:border-box;width:100%;min-width:0;border:1px solid var(--border);border-radius:8px;background:var(--edit-bg);padding:8px 12px 14px;display:flex;flex-direction:column;gap:10px;cursor:auto}
+.api-ed-bar{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.api-ed-bar .api-ed-hint{margin-left:auto}
+.api-ed-body{display:flex;flex-direction:column;gap:12px}.api-ed-body>*{flex-shrink:0}
+.api-ed-line{display:flex;gap:8px;min-width:0}
+.api-ed-input{box-sizing:border-box;height:32px;padding:0 10px;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--fg);font:400 var(--fs-md) 'Inter',sans-serif;min-width:0;width:100%}
+.api-ed-input:focus{outline:none;border-color:var(--accent)}
+.api-ed-input.invalid{border-color:var(--fc-red)}
+.api-ed-mono{font:400 var(--fs-sm) 'Fira Code',Consolas,monospace}
+.api-ed-method{flex:0 0 112px;height:32px;padding:0 8px;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--fg);font:700 var(--fs-sm) 'Fira Code',Consolas,monospace;cursor:pointer}
+.api-ed-method:focus{outline:none;border-color:var(--accent)}
+.api-ed-line .api-ed-input{flex:1}
+.api-ed-sec{display:flex;flex-direction:column;gap:6px}
+.api-ed-label{display:flex;align-items:center;gap:8px;font:600 var(--fs-2xs) 'Inter',sans-serif;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.api-ed-pairs{display:flex;flex-direction:column;gap:6px}
+.api-ed-pairs:empty{display:none}
+.api-ed-pair{display:flex;align-items:center;gap:6px}
+.api-ed-pair .api-ed-k{flex:0 0 38%}
+.api-ed-pair .api-ed-v{flex:1}
+.api-ed-sep{color:var(--muted);font:400 var(--fs-sm) 'Fira Code',Consolas,monospace}
+.api-ed-remove{flex:none;width:28px;height:28px;display:inline-flex;align-items:center;justify-content:center;border:none;border-radius:6px;background:none;color:var(--hint);cursor:pointer}
+.api-ed-remove:hover{background:var(--hover);color:var(--fg)}
+.api-ed-add,.api-ed-format{align-self:flex-start;border:none;background:none;padding:2px 0;color:var(--muted);font:500 var(--fs-sm) 'Inter',sans-serif;cursor:pointer}
+.api-ed-add:hover,.api-ed-format:hover{color:var(--fg)}
+.api-ed-format{margin-left:auto;letter-spacing:0;text-transform:none;font-weight:500;font-size:var(--fs-xs)}
+.api-ed-area{height:auto;min-height:72px;padding:8px 10px;line-height:1.5;resize:none;white-space:pre-wrap;overflow-wrap:anywhere;overflow:hidden}
+.api-ed-status{width:240px;max-width:60%;flex:none}
+#api-ed-query .api-ed-k{flex:0 0 24%}#api-ed-query .api-ed-v{flex:1 1 0;min-width:0}.api-ed-note{flex:1.3 1 0;min-width:0}
+.api-ed-pathrow{min-height:32px}
+.api-ed-pname{flex:0 0 24%;box-sizing:border-box;padding:0 6px 0 10px;display:flex;align-items:center;gap:6px;min-width:0}
+.api-ed-pname-t{min-width:0;font:400 var(--fs-sm) 'Fira Code',Consolas,monospace;color:var(--fg);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.api-ed-pname .api-ed-in{margin-left:auto}.api-ed-sep-blank{visibility:hidden}
+.api-ed-in{flex:none;font:500 var(--fs-2xs) 'Inter',sans-serif;color:var(--hint);border:1px solid var(--border);border-radius:4px;padding:0 4px;line-height:1.5}
+.api-ed-pathrow .api-ed-note{margin-right:34px}
+.api-ed-resps{display:flex;flex-direction:column;gap:10px}.api-ed-resps:empty{display:none}
+.api-ed-resp{display:flex;flex-direction:column;gap:6px}
+.api-ed-resp-head{display:flex;align-items:center;gap:6px}.api-ed-resp-head .api-ed-format{margin-left:auto;align-self:center}
+.api-ed-err{font:400 var(--fs-xs) 'Inter',sans-serif;color:var(--fc-red);margin-top:-6px}
+.api-ed-curl{min-height:72px}
+.api-ed-sec[hidden]{display:none}
+.api-ed-hint{font:400 var(--fs-xs) 'Inter',sans-serif;color:var(--hint)}
+@media (max-width:560px){.api-ed-hint{display:none}.api-ed-line{flex-wrap:wrap}.api-ed-method{flex-basis:100%}#api-ed-query .api-ed-pair{flex-wrap:wrap}#api-ed-query .api-ed-note{flex-basis:calc(100% - 34px)}}
+/* Names are one neutral grey for everyone (owner 2026-11-02: colour is for meaning, and a colour per person meant nothing). */
+.tbl-person{border-radius:999px;background:color-mix(in srgb,var(--fg) 7%,transparent);box-shadow:0 0 0 3px color-mix(in srgb,var(--fg) 7%,transparent);color:var(--fg);-webkit-box-decoration-break:clone;box-decoration-break:clone;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.tbl-person.with-av{display:inline-flex;align-items:center;gap:5px;max-width:100%;margin:1px 4px 1px 0;padding:1px 8px 1px 2px;box-shadow:none;color:var(--fg);font-size:.92em;line-height:1.45;white-space:nowrap;vertical-align:middle}
+.tbl-person-av{display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;padding:0 3px;box-sizing:border-box;border-radius:999px;background:color-mix(in srgb,var(--fg) 14%,transparent);color:var(--fg);font:700 9.5px 'Inter',sans-serif;letter-spacing:.02em;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.pv-board-owner .tbl-person{font-size:var(--fs-sm);margin:0}
+.tbl-picker-person{border:0;background:transparent;padding:0;margin:2px;cursor:pointer;font:500 12px 'Inter',sans-serif}
+.tbl-picker-person.current .tbl-person{outline:2px solid var(--muted);outline-offset:1px}
+.tbl-check{display:inline-flex;vertical-align:-2px;color:var(--fc-gray);-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.tbl-check[data-check="yes"]{color:var(--fc-green)}
+.tbl-check[data-check="no"]{color:var(--fc-red)}
+.tbl-check[data-check="partial"]{color:var(--fc-orange)}
+.tbl-cell-picker{position:absolute;z-index:30;display:flex;flex-wrap:wrap;align-items:center;gap:6px;max-width:320px;padding:var(--pad-pop);border-radius:var(--radius-menu);background:var(--surface-raised);border:1px solid var(--border);box-shadow:var(--shadow-menu);font:500 12px 'Inter',sans-serif;cursor:default;--hover:var(--hover-raised)}
+.tbl-picker-status{border:0;cursor:pointer;font:600 12px 'Inter',sans-serif;padding:0;margin:4px}
+.tbl-picker-status.current{outline:2px solid var(--pill,var(--fc-gray));outline-offset:4px}
+.tbl-picker-date{font:500 12px 'Inter',sans-serif;color:var(--fg);background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:3px 6px}
+.tbl-picker-btn{font:500 12px 'Inter',sans-serif;color:var(--fg);background:transparent;border:1px solid var(--border);border-radius:6px;padding:3px 9px;cursor:pointer}
+.tbl-picker-btn:hover{background:var(--hover)}
+.tbl-currency-picker{position:fixed;flex-direction:column;align-items:stretch;flex-wrap:nowrap;width:280px;max-width:calc(100vw - 16px);gap:6px}
+.tbl-currency-search{font:500 13px 'Inter',sans-serif;color:var(--fg);background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:6px 8px;outline:none}
+.tbl-currency-search:focus{border-color:var(--accent)}
+.tbl-currency-list{max-height:260px;overflow-y:auto;display:flex;flex-direction:column}
+.tbl-currency-row{display:flex;align-items:center;gap:8px;padding:5px 8px;border-radius:6px;cursor:pointer;font:400 12.5px 'Inter',sans-serif;color:var(--fg)}
+.tbl-currency-row b{font-weight:600;min-width:34px;font-variant-numeric:tabular-nums}
+.tbl-currency-name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--muted)}
+.tbl-currency-sym{color:var(--muted);font-weight:500}
+.tbl-currency-row.active{background:var(--hover)}
+.tbl-currency-row.current b::after{content:' \2713';color:var(--accent)}
+.tbl-currency-empty{padding:8px;color:var(--muted);font:400 12px 'Inter',sans-serif}
+table [data-heat]{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+table [data-heat="1"]{background:color-mix(in srgb,var(--accent) 7%,transparent)}
+table [data-heat="2"]{background:color-mix(in srgb,var(--accent) 15%,transparent)}
+table [data-heat="3"]{background:color-mix(in srgb,var(--accent) 25%,transparent)}
+table [data-heat="4"]{background:color-mix(in srgb,var(--accent) 37%,transparent)}
+table [data-heat="5"]{background:color-mix(in srgb,var(--accent) 50%,transparent)}
+.pv-table-chips{display:flex;flex-wrap:wrap;gap:8px;width:100%;cursor:context-menu}
+/* Owner-picked "Option A": codes look like codes (small monospace, accent colour), descriptions muted
+   and a size below row text, so the line reads as a code list rather than more of the row. */
+.pv-table-inline{margin:0;font:400 13px/1.8 'Inter',sans-serif;color:var(--muted);cursor:context-menu;max-width:80ch}
+.pv-table-inline-item{white-space:normal}
+.pv-table-inline-item code{font:600 12px 'Fira Code',Consolas,'Courier New',monospace;color:var(--accent);margin-right:1px}
+.pv-table-inline-sep{color:var(--hint)}
+.pv-table-chip{display:inline-flex;align-items:center;gap:8px;max-width:100%;padding:5px 12px 5px 5px;border-radius:999px;background:color-mix(in srgb,var(--fg) 4%,var(--bg));border:1px solid var(--border);font:400 13px 'Inter',sans-serif;color:var(--fg);line-height:1.3}
+.pv-table-chip-key{display:inline-flex;align-items:center;justify-content:center;min-width:28px;padding:2px 8px;border-radius:999px;background:color-mix(in srgb,var(--accent) 14%,var(--bg));color:var(--accent);font:700 12px 'Inter',sans-serif;letter-spacing:.02em;white-space:nowrap}
+.pv-table-chip-desc{overflow-wrap:anywhere}
+.pv-table-cards-grid{display:grid;grid-template-columns:repeat(var(--cards-cols,3),minmax(0,1fr));gap:12px;width:100%;cursor:context-menu}
+@media (max-width:640px){.pv-table-cards-grid{grid-template-columns:repeat(var(--cards-cols-narrow,2),minmax(0,1fr))}}
+.pv-table-card-change{font:600 11.5px 'Inter',sans-serif;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap;padding:2px 7px;border-radius:999px;background:color-mix(in srgb,currentColor 12%,transparent);-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.pv-table-card-change.up{color:var(--fc-green)}
+.pv-table-card-change.down{color:var(--fc-red)}
+.pv-table-chart-title{flex:1 1 100%;font:600 13px 'Inter',sans-serif;color:var(--fg);margin:0 0 8px}
+.pv-table-card{display:flex;flex-direction:column;gap:6px;min-width:0;padding:14px 16px;border-radius:12px;background:var(--canvas-bg);border:1px solid var(--border)}
+.pv-table-card-label{display:flex;align-items:flex-start;gap:7px;min-width:0;font:500 12.5px/16px 'Inter',sans-serif;color:var(--muted)}
+.pv-table-card-label-text{min-width:0;overflow-wrap:break-word}
+.pv-table-card-swatch{flex:0 0 auto;width:8px;height:8px;margin-top:4px;border-radius:2px;background:var(--card-color);-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.pv-table-card-icon{display:inline-flex;align-items:center;flex:0 0 auto;height:16px;color:var(--card-color)}
+.pv-table-card-main{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 10px;margin-top:auto}
+.pv-table-card-value{min-width:0;font:600 26px 'Inter',sans-serif;letter-spacing:-.01em;color:var(--fg);line-height:1.1;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.pv-table-card-details{display:flex;flex-direction:column;gap:2px;min-width:0;padding-top:6px;border-top:1px solid var(--border);font:400 12.5px/17px 'Inter',sans-serif;color:var(--muted);overflow-wrap:break-word}
+.pv-table-card-detail-label{font-weight:600;color:var(--fg);margin-right:4px}
+/* With detail lines, each card spans three rows of the grid (label · value · details) so values and
+   details line up along a row of cards even when one card's label or note wraps further. */
+.pv-table-cards-grid.has-details .pv-table-card{display:grid;grid-row:span 3;grid-template-rows:subgrid;row-gap:6px;align-content:start}
+.pv-table-cards-grid.has-details .pv-table-card-main{margin-top:0}
+.pv-table-cards-grid.has-details .pv-table-card-details{align-self:start}
+.pv-table-cards-total{display:flex;align-items:baseline;flex-wrap:wrap;gap:4px 12px;margin-top:12px;padding:12px 16px;border-radius:12px;background:color-mix(in srgb,var(--accent) 8%,var(--canvas-bg));border:1px solid color-mix(in srgb,var(--accent) 30%,var(--border));-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.pv-table-cards-total-label{display:inline-flex;align-items:center;gap:6px;font:600 12.5px 'Inter',sans-serif;color:var(--accent)}
+.pv-table-cards-total-label::before{content:'\03A3';font:700 13px 'Inter',sans-serif}
+.pv-table-cards-total-value{font:700 26px 'Inter',sans-serif;letter-spacing:-.01em;line-height:1.1;color:var(--fg);font-variant-numeric:tabular-nums}
+/* Total row (typed or calculated) on a plain table: bold, a firmer rule above, no rule below. */
+table tr.tbl-total>td,table tr.tbl-total>th{font-weight:700;border-top:1.5px solid color-mix(in srgb,var(--fg) 35%,transparent) !important;border-bottom-color:transparent !important}
+.tbl-total-hint{display:inline-block;margin-left:8px;padding:1px 6px;border-radius:999px;font:600 10.5px 'Inter',sans-serif;color:var(--fc-orange);background:color-mix(in srgb,var(--fc-orange) 13%,transparent);vertical-align:1px;white-space:nowrap}
+
+/* A table/chart/Cards object on node.tables -- a sibling of the note, not embedded inside it (see
+   buildNodeTableObject/migrateNoteTablesToNode) -- reuses .pv-table-figure/.pv-table-chart-figure
+   for its actual table/chart styling (border, header shading, SVG sizing), same as Preview/PDF
+   already get for free; these two classes just place it correctly in the outline's own layout. */
+.node-table-line-wrap{position:relative;width:calc(100% - 16px);max-width:calc(100% - 16px);margin:2px 0 8px}
+.node-table-line{cursor:pointer;border-radius:6px;max-width:100%}
+.node-table-line:not(.editing){overflow-x:auto}
+/* Objects keep inside the page margins (owner 2026-10-29): a table wider than the page scrolls
+   sideways in its own box, and so does a code block in a note. */
+.node-note-line pre{max-width:100%;overflow-x:auto}
+.node-table-line:has(td[contenteditable="true"],th[contenteditable="true"]){cursor:text}
+/* .pv-table-figure table's own font/padding (14px, 7px/12px) is a fine, deliberately fixed size for
+   a static Preview/PDF export, but the live outline editor scales everything else in a row off
+   --editor-scale (see #editor-pane's own font-size) -- left unscaled here, the table (and the text
+   caret sitting in it, which takes its height from the cell's own font-size) stayed pinned at that
+   literal export size regardless of the user's actual editor scale, reading as too small/misaligned
+   next to the rest of an already-scaled-up row, almost like a leftover fragment of some other
+   (smaller, fixed-size) editor surface rather than this table's own. */
+.node-table-line table{font-size:calc(14px * var(--editor-scale))}
+.node-table-line td,.node-table-line th{padding:calc(7px * var(--editor-scale)) calc(12px * var(--editor-scale))}
+/* .pv-table-figure table's own width:100% is right for Preview/PDF (a static export always wants
+   the table to use the full column it's given), but in the live editor it silently neutered column
+   resizing: with the table pinned to 100% regardless of what the colgroup's own widths said, the
+   browser's layout algorithm redistributed the "missing" width across columns on every drag (most
+   visibly the last one, which just absorbed whatever was left) rather than actually shrinking or
+   growing the table's own footprint the way _attachTableResizeHandles' own drag logic intends.
+   table-layout:fixed with width:auto sizes the table to the real sum of its <col> widths instead,
+   capped by max-width so an intentionally wide table still can't overflow past the editor itself. */
+.node-table-line table{width:auto;max-width:100%;table-layout:fixed}
+/* overflow-wrap:break-word, not word-break:break-word -- the latter also shrinks a cell's min-content
+   width below its longest word, so the column layout could squeeze a header like "Workstream" into
+   "Workstr/eam". overflow-wrap only breaks a word that can't fit on a line of its own (a column the
+   person dragged narrower than it). */
+.node-table-line td,.node-table-line th{overflow:hidden;word-break:normal;overflow-wrap:break-word}
+/* .node-table-line itself inherits .pv-diagram-figure's own display:flex;flex-direction:column --
+   fine for a chart's SVG or a Cards grid (both want to fill the figure), but for a PLAIN table its
+   default cross-axis align-items:stretch was overriding the table's own width:auto/table-layout:fixed
+   sizing above, stretching it to the wrap's full width regardless of what the colgroup said -- the
+   classic flex-stretch problem.
+   Scoped off :not(.pv-table-chart-figure), the class a chart OR Cards grid always carries (see
+   buildNodeTableObject/buildNoteTableFigure), so neither of those is affected. */
+.node-table-line:not(.pv-table-chart-figure){align-items:flex-start}
+.node-table-line.editing-chart-data::before{content:'Chart data \2014  Esc or click outside to show the chart';font:500 11px 'Inter',sans-serif;color:var(--muted);margin:0 0 4px}
 :root{--radius:14px;--fs-2xs:10px;--fs-xs:11px;--fs-sm:12px;--fs-md:13px;--fs-lg:14px;--fs-xl:16px}
 *{box-sizing:border-box}
 /* --surface-raised: menus, the quick-add bar and sheets sit one step lighter than the page in
@@ -488,10 +805,6 @@ body.reader-open{overflow:hidden}
 .rd-img-box img{display:block;max-width:100%;height:auto;border-radius:8px;border:1px solid var(--border)}
 .rd-img-marks{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
 .rd-img figcaption{font-size:var(--fs-sm);color:var(--muted);margin-top:4px}
-.rd-table{overflow-x:auto;margin:6px 0 8px;-webkit-overflow-scrolling:touch}
-.rd-table table{border-collapse:collapse;font-size:13.5px;min-width:100%}
-.rd-table th,.rd-table td{border:1px solid var(--border);padding:5px 8px;text-align:left;vertical-align:top}
-.rd-table th{background:var(--chip);font-weight:600}
 .rd-diagram{display:inline-flex;align-items:center;gap:7px;margin:6px 0 8px;padding:7px 11px;border:1px solid var(--border);border-radius:10px;background:var(--surface-raised);color:var(--fg);font:500 13px 'Inter',sans-serif;cursor:pointer}
 .rd-diagram svg{color:var(--muted)}
 .rd-diagram-hint{color:var(--hint);font-size:var(--fs-sm)}
@@ -544,6 +857,11 @@ body.theme-dark .hub-tab[aria-selected="true"]{background:var(--sel);box-shadow:
   body.reader-printing .rd-cb.is-checked{background:none}
   body.reader-printing .rd-cb.is-checked::after{border-color:var(--muted)}
 }
+/* Tables use the computer's own table styles (src/styles/shared/table-display.css). The reader
+   gives them the page colour and a 1x scale, and lets a wide table scroll sideways in its box. */
+#doc-reader{--canvas-bg:var(--edit-bg);--editor-scale:1}
+.rd-table{margin:6px 0 10px;width:100%;max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;cursor:default}
+.rd-table.pv-table-chart-figure svg{cursor:default}
 /* GENERATED:css-hub:END */
 </style>
 </head>
@@ -3533,6 +3851,61 @@ function readerSvgForScheme(dataUrl, scheme) {
 }
 
 /* GENERATED:hubDocReader:END */
+/* GENERATED:hubTableSnapshot:START — DO NOT EDIT BY HAND. Source of truth: src/utils/tableSnapshot.ts (tests: tests/unit/tableSnapshot.test.ts). Regenerate with `npm run generate` after changing the source; CI fails if this block drifts from what the generator produces (see .github/workflows/ci.yml and scripts/generate-index-blocks.mjs). */
+/**
+ * Tables on the phone look the same as on the computer (owner, 2026-11-03: "unified standard
+ * behaviour across platforms; the only thing we need to avoid is corrupting the document").
+ *
+ * The computer draws each table (plain with its polish, or as cards, a chart, chips, progress
+ * bars, a timeline, a status board, pros & cons or an API request) with its own code and sends
+ * the result to a separate record, users/{uid}/docs/{id}/previews/tables, beside the diagram
+ * pictures. The document itself is never touched. The phone finds a table's copy by a key made
+ * from the table's stored HTML, so a table edited after the last copy simply has no copy yet and
+ * the phone shows it plain.
+ *
+ * Wired into index.html (block `tableSnapshot`) and hub.html (block `hubTableSnapshot`).
+ */
+/** Copies above this size stay on the computer (one Firestore record holds about 1 MB). */
+const TABLE_SNAPSHOT_MAX_CHARS = 900000;
+/** A short key for a table's stored HTML: its length plus two 32-bit hashes over every character. */
+function tableSnapshotKey(src) {
+    const s = String(src ?? '');
+    let a = 5381;
+    let b = 52711;
+    for (let i = 0; i < s.length; i++) {
+        const c = s.charCodeAt(i);
+        a = (Math.imul(a, 33) ^ c) >>> 0;
+        b = (Math.imul(b, 31) + c) >>> 0;
+    }
+    return 't' + s.length.toString(36) + '_' + a.toString(36) + '_' + b.toString(36);
+}
+/**
+ * The copies that fit in one record, smallest first, so one huge chart never pushes out the rest.
+ * Returns the kept items keyed as given.
+ */
+function fitTableSnapshots(items, maxChars = TABLE_SNAPSHOT_MAX_CHARS) {
+    const out = {};
+    let used = 0;
+    Object.keys(items || {})
+        .map((k) => ({ k, size: k.length + String(items[k].html || '').length + String(items[k].cls || '').length + 32 }))
+        .sort((x, y) => x.size - y.size || (x.k < y.k ? -1 : 1))
+        .forEach(({ k, size }) => {
+        if (used + size > maxChars)
+            return;
+        used += size;
+        out[k] = items[k];
+    });
+    return out;
+}
+/** Only the classes a copy may put on its figure. */
+function tableSnapshotClass(cls) {
+    return String(cls ?? '')
+        .split(/\s+/)
+        .filter((c) => c === 'pv-table-chart-figure' || c === 'pos-center')
+        .join(' ');
+}
+
+/* GENERATED:hubTableSnapshot:END */
 // A title's formatting from the desktop selection bar (same storage as a row's words). Links
 // show as plain words here: tapping a task opens it, it doesn't follow a link.
 function todoTitleHtml(t){
@@ -4112,7 +4485,7 @@ var docsListData=null;
 var docsListState='idle'; // idle | loading | error
 var docsListFetchedAt=0;
 var readerDocId=null, readerDoc=null, readerPath='';
-var readerCollapsed=new Set(), readerOpenNotes=new Set(), readerOpenThreads=new Set();
+var readerCollapsed=new Set(), readerOpenNotes=new Set(), readerOpenThreads=new Set(), readerOpenDiagrams=new Set(), readerClosedTables=new Set(), readerClosedImages=new Set();
 var readerImageMarks={};
 var READER_STATUS={confirmed:{label:'Agreed',cls:'green'},followup:{label:'Follow-up',cls:'orange'},parked:{label:'Out of scope',cls:'gray'}};
 var READER_ICONS={
@@ -4124,7 +4497,9 @@ var READER_ICONS={
   question:'<circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 2.5-3 4"/><line x1="12" y1="17" x2="12.01" y2="17"/>',
   decision:'<path d="M20 6 9 17l-5-5"/>',
   reply:'<polyline points="9 14 4 9 9 4"/><path d="M20 20v-7a4 4 0 0 0-4-4H4"/>',
-  diagram:'<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><path d="M10 6.5h4a2 2 0 0 1 2 2V14"/>'
+  diagram:'<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><path d="M10 6.5h4a2 2 0 0 1 2 2V14"/>',
+  table:'<rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="12" y1="3" x2="12" y2="21"/>',
+  image:'<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9.5" r="1.5"/><path d="M21 16l-5-5-9 9"/>'
 };
 function readerIcon(name,size){ size=size||14; return '<svg width="'+size+'" height="'+size+'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+(READER_ICONS[name]||'')+'</svg>'; }
 
@@ -4282,6 +4657,53 @@ function readerSanitize(html){
   return doc.body.innerHTML;
 }
 
+// ---------- Tables as the computer draws them ----------
+// The computer sends a ready-made copy of each table (docs/{id}/previews/_tables, see
+// tableSnapshot.ts). It is shown only after this allowlist: layout tags, the chart's SVG shapes,
+// classes, data-* and inline styles without url()/expressions. No scripts, handlers, links or
+// outside requests can come through, and nothing is ever written back.
+var SNAP_HTML_TAGS={div:1,span:1,p:1,b:1,strong:1,i:1,em:1,u:1,s:1,code:1,br:1,small:1,sup:1,sub:1,mark:1,table:1,thead:1,tbody:1,tfoot:1,tr:1,td:1,th:1,colgroup:1,col:1,caption:1,ul:1,ol:1,li:1,pre:1};
+var SNAP_SVG_TAGS={svg:1,g:1,path:1,rect:1,circle:1,ellipse:1,line:1,polyline:1,polygon:1,text:1,tspan:1,title:1,defs:1,lineargradient:1,stop:1,clippath:1};
+var SNAP_ATTRS={'class':1,style:1,colspan:1,rowspan:1,title:1,role:1,width:1,height:1,viewbox:1,preserveaspectratio:1,x:1,y:1,x1:1,y1:1,x2:1,y2:1,cx:1,cy:1,r:1,rx:1,ry:1,d:1,points:1,fill:1,stroke:1,'stroke-width':1,'stroke-linecap':1,'stroke-linejoin':1,'stroke-dasharray':1,opacity:1,'fill-opacity':1,'stroke-opacity':1,transform:1,'text-anchor':1,'dominant-baseline':1,'font-size':1,'font-weight':1,'font-family':1,dx:1,dy:1,offset:1,'stop-color':1,'stop-opacity':1,gradientunits:1,gradienttransform:1,'clip-path':1,id:1,xmlns:1,'vector-effect':1,'paint-order':1};
+function snapSafeValue(name,v){
+  v=String(v||'');
+  if(/javascript:|expression\s*\(|@import|behavior\s*:|-moz-binding/i.test(v))return false;
+  if(/url\s*\(/i.test(v))return /^(fill|stroke|clip-path)$/.test(name)&&/^\s*url\(\s*#[\w-]+\s*\)\s*$/.test(v);
+  return true;
+}
+function readerSanitizeSnapshot(html){
+  if(!html)return '';
+  var doc;
+  try{ doc=new DOMParser().parseFromString('<body>'+String(html)+'</body>','text/html'); }catch(e){ return ''; }
+  (function walk(parent){
+    Array.prototype.slice.call(parent.childNodes).forEach(function(n){
+      if(n.nodeType===3)return;
+      if(n.nodeType!==1){ n.remove(); return; }
+      var tag=String(n.localName||'').toLowerCase();
+      if(!SNAP_HTML_TAGS[tag]&&!SNAP_SVG_TAGS[tag]){ n.remove(); return; }
+      walk(n);
+      Array.prototype.slice.call(n.attributes).forEach(function(a){
+        var name=a.name.toLowerCase();
+        var keep=(SNAP_ATTRS[name]||/^data-[\w-]+$/.test(name)||/^aria-[\w-]+$/.test(name))&&snapSafeValue(name,a.value);
+        if(!keep)n.removeAttribute(a.name);
+      });
+    });
+  })(doc.body);
+  return doc.body.innerHTML;
+}
+function readerTableHtml(src){
+  var snaps=readerDoc&&readerDoc._hubTables;
+  var snap=snaps&&snaps[tableSnapshotKey(src)];
+  var clean=snap?readerSanitizeSnapshot(snap.html):'';
+  if(clean)return '<div class="rd-table node-table-line pv-diagram-figure pv-table-figure '+tableSnapshotClass(snap.cls)+'">'+clean+'</div>';
+  // No copy yet (edited since the computer last saved, or never synced): the plain table, with
+  // the same quiet look as a plain table on the computer.
+  var box=document.createElement('div'); box.innerHTML=readerSanitize(src);
+  box.querySelectorAll('table').forEach(function(t){ t.classList.add('tbl-polished'); });
+  box.querySelectorAll('td,th').forEach(function(c){ if(!String(c.textContent||'').trim()&&!c.querySelector('img'))c.classList.add('tbl-empty'); });
+  return '<div class="rd-table node-table-line pv-diagram-figure pv-table-figure">'+box.innerHTML+'</div>';
+}
+
 // ---------- The reader ----------
 function readerFindPath(id){
   var d=docsListData; if(!d)return '';
@@ -4293,7 +4715,7 @@ function openDocReader(id,fromHistory){
   var sameDoc=readerDocId===id&&readerDoc;
   readerDocId=id;
   readerPath=readerFindPath(id);
-  if(!sameDoc){ readerDoc=null; readerOpenNotes=new Set(); readerOpenThreads=new Set(); }
+  if(!sameDoc){ readerDoc=null; readerOpenNotes=new Set(); readerOpenThreads=new Set(); readerOpenDiagrams=new Set(); readerClosedTables=new Set(); readerClosedImages=new Set(); }
   var el=document.getElementById('doc-reader');
   el.hidden=false; document.body.classList.add('reader-open');
   if(!fromHistory){ try{ history.pushState({hubDoc:id},''); }catch(e){} }
@@ -4313,13 +4735,14 @@ function openDocReader(id,fromHistory){
       if(!snap.exists()){ if(!readerDoc)renderReaderMessage('This document hasn’t reached your account yet. Open it on your computer while signed in, then try again.'); return; }
       var data=snap.data();
       var hasDiagrams=Array.isArray(data.diagrams)&&data.diagrams.length>0;
-      return (hasDiagrams?fetchReaderPreviews(id):Promise.resolve({})).then(function(pics){
+      var hasTables=(Array.isArray(data.nodes)?data.nodes:[]).some(function(n){ return n&&Array.isArray(n.tables)&&n.tables.length; });
+      return (hasDiagrams||hasTables?fetchReaderPreviews(id):Promise.resolve({pics:{},tables:{}})).then(function(got){
         if(readerDocId!==id)return;
-        data._hubPreviews=pics;
+        data._hubPreviews=got.pics; data._hubTables=got.tables;
         readerCachePut(id,data);
         var newer=!readerDoc||Number(readerDoc.updatedAt||0)!==Number(data.updatedAt||0);
-        var picsChanged=!readerDoc||JSON.stringify(Object.keys(readerDoc._hubPreviews||{}))!==JSON.stringify(Object.keys(pics));
-        if(newer||picsChanged)setReaderDoc(data,!!readerDoc);
+        var sig=function(d){ return JSON.stringify([Object.keys(d._hubPreviews||{}),Object.keys(d._hubTables||{})]); };
+        if(newer||!readerDoc||sig(readerDoc)!==sig(data))setReaderDoc(data,!!readerDoc);
       });
     }).catch(function(e){
       console.warn('[sakura hub] document fetch failed',e);
@@ -4329,7 +4752,13 @@ function openDocReader(id,fromHistory){
 }
 function setReaderDoc(data,keepFolds){
   readerDoc=data||{};
-  if(!keepFolds)readerCollapsed=new Set((Array.isArray(readerDoc.collapsed)?readerDoc.collapsed:[]).map(Number));
+  if(!keepFolds){
+    var ids=function(v){ return new Set((Array.isArray(v)?v:[]).map(Number)); };
+    readerCollapsed=ids(readerDoc.collapsed);
+    // Tables and pictures start as they were left on the computer (folded away or shown).
+    readerClosedTables=ids(readerDoc.collapsedTables);
+    readerClosedImages=ids(readerDoc.collapsedImages);
+  }
   renderReader();
 }
 function closeDocReader(){
@@ -4406,6 +4835,16 @@ function renderReader(){
     var status=READER_STATUS[normalizeThreadStatus(n.marker)||''];
     if(status)extras+='<span class="rd-status rd-c-'+status.cls+'" title="'+status.label+'" aria-label="'+status.label+'">'+readerIcon(normalizeThreadStatus(n.marker),13)+'</span>';
     if(readerHasNote(n))extras+='<button type="button" class="rd-ico'+(readerOpenNotes.has(id)?' is-on':'')+'" data-note="'+id+'" aria-label="Note" aria-expanded="'+readerOpenNotes.has(id)+'">'+readerIcon('note',14)+'</button>';
+    // Tables, pictures and diagrams have an icon each, as on the computer: tables and pictures
+    // show unless folded away there, diagrams open on a tap.
+    var tables=(Array.isArray(n.tables)?n.tables:[]).filter(function(t){ return typeof t==='string'&&t; });
+    var images=(Array.isArray(n.images)?n.images:[]).filter(function(img){ return img&&isUsableImageSrc(img.src)&&readerSafeUrl(img.src,true); });
+    var rowDiagrams=diagrams.filter(function(dg){ return dg&&Number(dg.anchorNodeId)===id; });
+    var showTables=readerPrinting||!readerClosedTables.has(id), showImages=readerPrinting||!readerClosedImages.has(id), showDiagrams=readerPrinting||readerOpenDiagrams.has(id);
+    var objIcon=function(kind,icon,label,on){ return '<button type="button" class="rd-ico'+(on?' is-on':'')+'" data-objs="'+kind+'" data-id="'+id+'" aria-label="'+label+'" aria-expanded="'+on+'">'+readerIcon(icon,14)+'</button>'; };
+    if(tables.length)extras+=objIcon('tables','table',tables.length===1?'Table':tables.length+' tables',showTables);
+    if(images.length)extras+=objIcon('images','image',images.length===1?'Picture':images.length+' pictures',showImages);
+    if(rowDiagrams.length)extras+=objIcon('diagrams','diagram',rowDiagrams.length===1?'Diagram':rowDiagrams.length+' diagrams',showDiagrams);
     var thread=readerThread(remarks,id);
     if(thread.length){
       var openQ=thread.filter(function(t){ return t.open; }).length;
@@ -4416,26 +4855,24 @@ function renderReader(){
     if((readerPrinting||readerOpenNotes.has(id))&&readerHasNote(n)){
       under+='<div class="rd-panel rd-note">'+(String(n.noteTitle||'').trim()?'<div class="rd-note-title">'+esc(n.noteTitle)+'</div>':'')+'<div class="rd-rich">'+readerSanitize(n.note)+'</div></div>';
     }
-    if((readerPrinting||readerOpenThreads.has(id))&&thread.length){
-      under+='<div class="rd-panel rd-thread">'+thread.map(readerEntryHtml).join('')+'</div>';
-    }
-    (Array.isArray(n.images)?n.images:[]).forEach(function(img,i){
+    // Under a row, as on the computer: note, tables, pictures, diagrams, then the thread.
+    if(showTables)tables.forEach(function(t){ under+=readerTableHtml(t); });
+    if(showImages)(Array.isArray(n.images)?n.images:[]).forEach(function(img,i){
       if(!img||!isUsableImageSrc(img.src)||!readerSafeUrl(img.src,true))return;
       var key=id+':'+i;
       if(Array.isArray(img.annotations)&&img.annotations.length)readerImageMarks[key]=img.annotations;
       var w=Number(img.width)>0?' style="max-width:min(100%,'+Math.round(Number(img.width))+'px)"':'';
       under+='<figure class="rd-img"'+w+'><span class="rd-img-box"><img src="'+esc(img.src)+'" alt="'+esc(img.caption||'')+'" loading="lazy" data-marks="'+esc(key)+'"><svg class="rd-img-marks" aria-hidden="true"></svg></span>'+(String(img.caption||'').trim()?'<figcaption>'+esc(img.caption)+'</figcaption>':'')+'</figure>';
     });
-    (Array.isArray(n.tables)?n.tables:[]).forEach(function(t){
-      if(typeof t!=='string')return;
-      under+='<div class="rd-table rd-rich">'+readerSanitize(t)+'</div>';
-    });
-    diagrams.filter(function(dg){ return dg&&Number(dg.anchorNodeId)===id; }).forEach(function(dg){
+    if(showDiagrams)rowDiagrams.forEach(function(dg){
       var pic=readerPreviewFor(dg.id);
       var name=String(dg.title||'').trim()||'Diagram';
       if(pic){ under+='<figure class="rd-img rd-dg"><button type="button" class="rd-dg-btn" data-diagram="'+esc(String(dg.id))+'" aria-label="Open '+esc(name)+'"><img src="'+esc(pic)+'" alt="'+esc(name)+'" loading="lazy"></button><figcaption>'+esc(name)+'</figcaption></figure>'; return; }
       under+='<button type="button" class="rd-diagram">'+readerIcon('diagram',14)+'<span>'+esc(String(dg.title||'').trim()||'Diagram')+'</span><span class="rd-diagram-hint">opens on a computer</span></button>';
     });
+    if((readerPrinting||readerOpenThreads.has(id))&&thread.length){
+      under+='<div class="rd-panel rd-thread">'+thread.map(readerEntryHtml).join('')+'</div>';
+    }
     return '<div class="'+cls+(r.hasChildren?' rd-parent':'')+'" data-id="'+id+'" style="--rd-depth:'+r.depth+'">'+mark+
       '<div class="rd-main"><div class="rd-line"><span class="'+textCls+'"'+colour+foldAttr+'>'+(readerRowTextHtml(n)||'&nbsp;')+'</span>'+extras+'</div>'+under+'</div></div>';
   }).join('');
@@ -4452,18 +4889,46 @@ function renderReader(){
   });
   updateReaderExpandBtn();
 }
+// Expand all / Collapse all, as on the computer: rows and every note, thread, table, picture and diagram.
+function readerObjectIds(){
+  var d=readerDoc||{}, o={notes:[],threads:[],tables:[],images:[],diagrams:[]};
+  var remarks=Array.isArray(d.remarks)?d.remarks:[];
+  var dgIds=new Set((Array.isArray(d.diagrams)?d.diagrams:[]).map(function(dg){ return dg&&Number(dg.anchorNodeId); }));
+  readerNodes().forEach(function(n){
+    var id=Number(n.id);
+    if(readerHasNote(n))o.notes.push(id);
+    if(readerThread(remarks,id).length)o.threads.push(id);
+    if(Array.isArray(n.tables)&&n.tables.length)o.tables.push(id);
+    if(Array.isArray(n.images)&&n.images.length)o.images.push(id);
+    if(dgIds.has(id))o.diagrams.push(id);
+  });
+  return o;
+}
+function readerAnythingClosed(){
+  if(readerVisibleRows(readerNodes(),readerCollapsed).some(function(r){ return r.folded; }))return true;
+  var o=readerObjectIds();
+  return o.notes.some(function(id){ return !readerOpenNotes.has(id); })||o.threads.some(function(id){ return !readerOpenThreads.has(id); })||
+    o.diagrams.some(function(id){ return !readerOpenDiagrams.has(id); })||o.tables.some(function(id){ return readerClosedTables.has(id); })||
+    o.images.some(function(id){ return readerClosedImages.has(id); });
+}
 function updateReaderExpandBtn(){
   var b=document.getElementById('doc-reader-expand');
-  var anyFolded=readerVisibleRows(readerNodes(),readerCollapsed).some(function(r){ return r.folded; });
-  b.setAttribute('aria-label',anyFolded?'Expand all':'Collapse all');
-  b.title=anyFolded?'Expand all':'Collapse all';
-  b.classList.toggle('is-collapse',!anyFolded);
+  var closed=readerAnythingClosed();
+  b.setAttribute('aria-label',closed?'Expand all':'Collapse all');
+  b.title=closed?'Expand all':'Collapse all';
+  b.classList.toggle('is-collapse',!closed);
 }
 document.getElementById('doc-reader-expand').addEventListener('click',function(){
-  var nodes=readerNodes();
-  var anyFolded=readerVisibleRows(nodes,readerCollapsed).some(function(r){ return r.folded; });
-  if(anyFolded)readerCollapsed=new Set();
-  else readerCollapsed=new Set(readerVisibleRows(nodes,new Set()).filter(function(r){ return r.hasChildren&&r.depth===0; }).map(function(r){ return Number(r.node.id); }));
+  var nodes=readerNodes(), o=readerObjectIds();
+  if(readerAnythingClosed()){
+    readerCollapsed=new Set();
+    readerOpenNotes=new Set(o.notes); readerOpenThreads=new Set(o.threads); readerOpenDiagrams=new Set(o.diagrams);
+    readerClosedTables=new Set(); readerClosedImages=new Set();
+  }else{
+    readerCollapsed=new Set(readerVisibleRows(nodes,new Set()).filter(function(r){ return r.hasChildren&&r.depth===0; }).map(function(r){ return Number(r.node.id); }));
+    readerOpenNotes=new Set(); readerOpenThreads=new Set(); readerOpenDiagrams=new Set();
+    readerClosedTables=new Set(o.tables); readerClosedImages=new Set(o.images);
+  }
   renderReader();
 });
 // Diagram pictures (docs/{id}/previews, uploaded by the computer when it syncs; read only here).
@@ -4471,10 +4936,16 @@ function fetchReaderPreviews(id){
   return loadFirestoreMods().then(function(f){
     return f.mod.getDocs(f.mod.collection(f.db,'users',currentUser.uid,'docs',id,'previews'));
   }).then(function(snap){
-    var out={};
-    snap.forEach(function(d){ var v=d.data()||{}; if(typeof v.svg==='string'&&/^data:image\/svg\+xml[;,]/.test(v.svg))out[d.id]=v.svg; });
-    return out;
-  }).catch(function(e){ console.warn('[sakura hub] diagram pictures fetch failed',e); return (readerDoc&&readerDoc._hubPreviews)||{}; });
+    var pics={}, tables={};
+    snap.forEach(function(d){
+      var v=d.data()||{};
+      if(d.id==='_tables'){
+        var items=v.items&&typeof v.items==='object'?v.items:{};
+        Object.keys(items).forEach(function(k){ var it=items[k]; if(it&&typeof it.html==='string')tables[k]={cls:tableSnapshotClass(it.cls),html:it.html}; });
+      }else if(typeof v.svg==='string'&&/^data:image\/svg\+xml[;,]/.test(v.svg))pics[d.id]=v.svg;
+    });
+    return {pics:pics,tables:tables};
+  }).catch(function(e){ console.warn('[sakura hub] diagram pictures and tables fetch failed',e); return {pics:(readerDoc&&readerDoc._hubPreviews)||{},tables:(readerDoc&&readerDoc._hubTables)||{}}; });
 }
 function readerPreviewFor(dgId){
   var m=readerDoc&&readerDoc._hubPreviews; var v=m&&m[String(dgId)];
@@ -4609,7 +5080,7 @@ function readerJumpToRow(targetId){
   if(row){ row.scrollIntoView({block:'center'}); row.classList.add('rd-flash'); setTimeout(function(){ row.classList.remove('rd-flash'); },1200); }
 }
 document.getElementById('doc-reader-body').addEventListener('click',function(e){
-  var t=e.target.closest('[data-fold],[data-note],[data-thread],.bl-link,.rd-diagram,[data-diagram]');
+  var t=e.target.closest('[data-fold],[data-note],[data-thread],[data-objs],.bl-link,.rd-diagram,[data-diagram]');
   if(!t)return;
   if(t.hasAttribute('data-diagram')){ openReaderDiagram(t.getAttribute('data-diagram')); return; }
   if(t.hasAttribute('data-fold')&&(e.target.closest('a')||String(window.getSelection&&window.getSelection()||'').length))return;
@@ -4617,6 +5088,13 @@ document.getElementById('doc-reader-body').addEventListener('click',function(e){
   if(t.classList.contains('bl-link')){ var r=Number(t.getAttribute('data-r')); if(Number.isFinite(r))readerJumpToRow(r); return; }
   var id;
   if(t.hasAttribute('data-fold')){ id=Number(t.getAttribute('data-fold')); if(readerCollapsed.has(id))readerCollapsed.delete(id); else readerCollapsed.add(id); }
+  else if(t.hasAttribute('data-objs')){
+    // Tables, pictures and diagrams open and close from their icon, as on the computer.
+    id=Number(t.getAttribute('data-id'));
+    var kind=t.getAttribute('data-objs');
+    if(kind==='diagrams'){ if(readerOpenDiagrams.has(id))readerOpenDiagrams.delete(id); else readerOpenDiagrams.add(id); }
+    else { var closed=kind==='tables'?readerClosedTables:readerClosedImages; if(closed.has(id))closed.delete(id); else closed.add(id); }
+  }
   else if(t.hasAttribute('data-note')){ id=Number(t.getAttribute('data-note')); if(readerOpenNotes.has(id))readerOpenNotes.delete(id); else readerOpenNotes.add(id); }
   else { id=Number(t.getAttribute('data-thread')); if(readerOpenThreads.has(id))readerOpenThreads.delete(id); else readerOpenThreads.add(id); }
   renderReader();
