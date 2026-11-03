@@ -118,7 +118,7 @@ One task list for everything, separate from any document, on the rail on the lef
 - Each task has a due date, a repeat (daily, weekdays or weekly) or subtasks, a pin, and **waiting for**: who or what you're waiting on, and since when.
 - A task can **link** to a document, a row or a web address. Tasks made from a follow-up say where they came from.
 - Titles are written for real work items: long text, formatting and links all work.
-- On a phone, Sakura opens a dedicated To-Dos page that you can add to your home screen. On Android, you can share a link or text from another app straight into a new task.
+- On a phone, Sakura opens a dedicated page that you can add to your home screen: your To-Dos, and a **Documents** tab to read your synced documents (fold and unfold, notes, threads, pictures, tables). Documents are read only on the phone, so it can never overwrite your work. On Android, you can share a link or text from another app straight into a new task.
 
 ## PDF
 
@@ -195,7 +195,7 @@ Settings → Shortcuts lists every shortcut; click one to change it.
 
 **What runs where**
 
-- The app is two static pages: `index.html` (the full editor) and `hub.html` (the phone To-Dos page). They are built with Vite and served by GitHub Pages at `www.sakura-notes.com`. There is no application server: the editor, the PDF renderer, diagram editing and storage all run in the browser.
+- The app is two static pages: `index.html` (the full editor) and `hub.html` (the phone page: To-Dos and reading documents). They are built with Vite and served by GitHub Pages at `www.sakura-notes.com`. There is no application server: the editor, the PDF renderer, diagram editing and storage all run in the browser.
 - **Storage:** browser `localStorage`, with a service worker for offline use and installing as an app (PWA).
 - **Accounts and sync:** Firebase Authentication (Google, email) and Cloud Firestore, one document per item under `users/{uid}`, newer copy wins. Access rules are in `firebase/firestore.rules`.
 - **Hosted AI:** a Cloudflare Worker (`worker/`) holds the provider keys, enforces the daily quota per account and tries the providers in order. Bring-your-own-key requests go straight from the browser to the provider. A Content-Security-Policy allowlist limits which hosts the page can talk to.
@@ -207,7 +207,7 @@ Settings → Shortcuts lists every shortcut; click one to change it.
 ```
 web/            the app
   index.html    the editor page (markup, styles and script)
-  hub.html      the phone To-Dos page
+  hub.html      the phone page (To-Dos, read-only documents)
   src/          typed, tested logic and the CSS, spliced into the pages at build time
   tests/        unit tests (Vitest) and end-to-end tests (Playwright)
   public/       icons, manifests, service worker, social card

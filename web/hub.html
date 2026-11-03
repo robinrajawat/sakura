@@ -417,6 +417,101 @@ mark.row-hl{color:inherit;padding:0 2px;margin:0 -1px}
 .signin-privacy[open] summary svg{transform:rotate(180deg)}
 .signin-privacy ul{text-align:left;margin:8px 0 0;padding-left:18px}
 .signin-privacy li{margin:3px 0}
+
+/* ---------- To-Dos | Documents (2026-11-03) ---------- */
+#hub-tabs{display:flex;gap:4px;max-width:640px;margin:0 auto;padding:0 16px 10px}
+.hub-tab{flex:1;border:none;background:none;color:var(--muted);font:600 13.5px 'Inter',sans-serif;padding:8px 0;border-radius:10px;cursor:pointer}
+.hub-tab[aria-selected="true"]{background:var(--chip);color:var(--fg)}
+.hub-tab:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+body.hub-view-docs #todo-fab{display:none}
+#docs-head{margin:20px 4px 16px}
+#docs-head-title{font:700 26px 'Inter',sans-serif;letter-spacing:-.02em;color:var(--fg)}
+#docs-head-sub{font-size:var(--fs-md);color:var(--muted);margin-top:2px}
+.docs-card{background:var(--edit-bg);border-radius:18px;overflow:hidden;box-shadow:0 1px 2px rgba(0,0,0,.04),0 8px 20px -10px rgba(0,0,0,.14)}
+.doc-item{display:flex;flex-direction:column;gap:3px;width:100%;text-align:left;border:none;background:none;color:var(--fg);padding:13px 18px;cursor:pointer;border-top:1px solid var(--border)}
+.doc-item:first-child{border-top:none}
+.doc-item:active{background:var(--hover)}
+.doc-item-title{font:500 15px/1.35 'Inter',sans-serif;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.doc-item-meta{font:500 12px 'Inter',sans-serif;color:var(--hint);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* ---------- Document reader: a read-only outline ---------- */
+body.reader-open{overflow:hidden}
+#doc-reader{position:fixed;inset:0;z-index:30;background:var(--bg);display:flex;flex-direction:column}
+#doc-reader[hidden]{display:none}
+#doc-reader-bar{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:calc(8px + env(safe-area-inset-top)) 8px 8px;border-bottom:1px solid var(--border)}
+#doc-reader-back{display:flex;align-items:center;gap:2px;border:none;background:none;color:var(--fg);font:500 15px 'Inter',sans-serif;padding:8px 10px 8px 4px;border-radius:10px;cursor:pointer}
+#doc-reader-back:active,#doc-reader-expand:active{background:var(--hover)}
+#doc-reader-actions{display:flex;align-items:center}
+#doc-reader-expand{width:38px;height:38px;border:none;background:none;color:var(--muted);border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer}
+#doc-reader-expand.is-collapse svg{transform:rotate(180deg) scaleY(-1)}
+#doc-reader-scroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
+#doc-reader-page{max-width:720px;margin:0 auto;padding:20px 18px calc(56px + env(safe-area-inset-bottom))}
+#doc-reader-path{font:500 12px 'Inter',sans-serif;color:var(--hint);min-height:16px}
+#doc-reader-title{font:600 26px/1.25 'Inter',sans-serif;letter-spacing:-.015em;color:var(--fg);margin:4px 0 6px;overflow-wrap:anywhere}
+#doc-reader-byline{font:500 12.5px 'Inter',sans-serif;color:var(--muted);margin-bottom:18px}
+#doc-reader-byline a{color:var(--accent);text-decoration:none}
+.rd-sep{color:var(--hint)}
+.rd-message{color:var(--hint);font-size:var(--fs-lg);padding:28px 0;text-align:center}
+#doc-reader-body{font-size:15.5px;line-height:1.5;color:var(--fg)}
+.rd-row{display:flex;align-items:flex-start;padding-left:calc(min(var(--rd-depth),6) * 16px);margin:1px 0}
+.rd-row.rd-flash .rd-text{background:color-mix(in srgb,var(--accent) 18%,transparent);border-radius:4px}
+.rd-fold,.rd-fold-space{flex:0 0 24px;width:24px;height:28px;margin-left:-6px}
+.rd-fold{border:none;background:none;color:var(--hint);display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0;border-radius:6px}
+.rd-fold svg{transform:rotate(90deg);transition:transform .12s ease}
+.rd-fold.is-folded svg{transform:none}
+.rd-fold:active{background:var(--hover)}
+.rd-dot{flex:0 0 16px;height:23px;display:flex;align-items:center;justify-content:center}
+.rd-dot::before{content:'';width:5px;height:5px;border-radius:50%;background:var(--muted)}
+.rd-cb{flex:0 0 16px;width:14px;height:14px;margin:5px 6px 0 1px;border:1.5px solid var(--muted);border-radius:3.5px;position:relative}
+.rd-cb.is-checked{background:var(--muted)}
+.rd-cb.is-checked::after{content:'';position:absolute;left:3.5px;top:0.5px;width:4px;height:8px;border:solid var(--edit-bg);border-width:0 2px 2px 0;transform:rotate(45deg)}
+.rd-done .rd-text{color:var(--hint);text-decoration:line-through}
+.rd-main{flex:1;min-width:0;padding-left:4px}
+.rd-line{overflow-wrap:anywhere}
+.rd-text{margin-right:2px}
+.rd-h{margin-top:14px}
+.rd-h .rd-text{font-weight:600}
+.rd-h1 .rd-text{font-size:21px;line-height:1.3}
+.rd-h2 .rd-text{font-size:18.5px;line-height:1.3}
+.rd-h3 .rd-text{font-size:16.5px}
+.rd-h .rd-fold,.rd-h .rd-fold-space{height:calc(1.3em + 4px)}
+.rd-b{font-weight:600}.rd-i{font-style:italic}.rd-u{text-decoration:underline}.rd-s{text-decoration:line-through}
+.rd-text a,.rd-rich a{color:var(--accent);text-decoration:none}
+.rd-text .bl-link{color:var(--accent);cursor:pointer}
+.rd-status{display:inline-flex;vertical-align:-2px;margin-left:5px}
+.rd-c-green{color:var(--fc-green)}.rd-c-orange{color:var(--fc-orange)}.rd-c-gray{color:var(--fc-gray)}
+.rd-ico{display:inline-flex;align-items:center;vertical-align:-3px;gap:3px;border:none;background:none;color:var(--hint);padding:3px 4px;margin:-3px 0 -3px 3px;border-radius:6px;cursor:pointer;font:600 11.5px 'Inter',sans-serif}
+.rd-ico.has-open{color:var(--accent)}
+.rd-ico.is-on{background:var(--chip);color:var(--fg)}
+.rd-more{vertical-align:1px;margin-left:5px;border:none;background:var(--chip);color:var(--muted);font:600 11.5px 'Inter',sans-serif;padding:1px 7px;border-radius:999px;cursor:pointer}
+.rd-panel{margin:6px 0 8px;padding:10px 12px;border-radius:10px;background:var(--surface-raised);border:1px solid var(--border);font-size:14.5px}
+.rd-note-title{font-weight:600;margin-bottom:4px}
+.rd-rich>:first-child{margin-top:0}.rd-rich>:last-child{margin-bottom:0}
+.rd-rich p{margin:0 0 6px}
+.rd-rich ul,.rd-rich ol{margin:4px 0;padding-left:22px}
+.rd-rich img{max-width:100%;height:auto;border-radius:6px}
+.rd-rich pre,.rd-rich code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13px}
+.rd-rich pre{white-space:pre-wrap;background:var(--chip);padding:8px 10px;border-radius:8px}
+.rd-rich blockquote{margin:4px 0;padding-left:10px;border-left:2px solid var(--border);color:var(--muted)}
+.rd-entry{padding:6px 0}
+.rd-entry+.rd-entry:not(.is-nested){border-top:1px solid var(--border);margin-top:4px;padding-top:10px}
+.rd-entry.is-nested{margin-left:22px;padding-top:4px}
+.rd-entry-head{display:flex;align-items:center;gap:7px;font:500 12px 'Inter',sans-serif;color:var(--hint);margin-bottom:2px}
+.rd-entry-kind{display:inline-flex;color:var(--hint)}
+.rd-entry-kind.is-open{color:var(--accent)}
+.rd-entry-who{font-weight:600;color:var(--fg)}
+.rd-img{margin:6px 0 8px}
+.rd-img-box{position:relative;display:block}
+.rd-img-box img{display:block;max-width:100%;height:auto;border-radius:8px;border:1px solid var(--border)}
+.rd-img-marks{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.rd-img figcaption{font-size:var(--fs-sm);color:var(--muted);margin-top:4px}
+.rd-table{overflow-x:auto;margin:6px 0 8px;-webkit-overflow-scrolling:touch}
+.rd-table table{border-collapse:collapse;font-size:13.5px;min-width:100%}
+.rd-table th,.rd-table td{border:1px solid var(--border);padding:5px 8px;text-align:left;vertical-align:top}
+.rd-table th{background:var(--chip);font-weight:600}
+.rd-diagram{display:inline-flex;align-items:center;gap:7px;margin:6px 0 8px;padding:7px 11px;border:1px solid var(--border);border-radius:10px;background:var(--surface-raised);color:var(--fg);font:500 13px 'Inter',sans-serif;cursor:pointer}
+.rd-diagram svg{color:var(--muted)}
+.rd-diagram-hint{color:var(--hint);font-size:var(--fs-sm)}
 /* GENERATED:css-hub:END */
 </style>
 </head>
@@ -426,8 +521,8 @@ mark.row-hl{color:inherit;padding:0 2px;margin:0 -1px}
   <div id="auth-card">
     <div id="auth-logo"><img src="flower-glyph.svg" alt="Sakura" width="52" height="52"></div>
     <div id="auth-title">Sign in to Sakura Hub</div>
-    <div id="auth-sub">This page needs your account to find your To-Dos — they live on your other device until you sign in here too.</div>
-    <div id="auth-desktop-note"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg><span>For documents and everything else — open Sakura on a computer. This page is a lighter To-Dos companion for your phone.</span></div>
+    <div id="auth-sub">This page needs your account to find your To-Dos and documents — they live on your other device until you sign in here too.</div>
+    <div id="auth-desktop-note"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg><span>Read your documents and manage To-Dos here. Writing and editing documents happens on a computer.</span></div>
     <button id="auth-google-btn" type="button">
       <svg width="16" height="16" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
       Sign in with Google
@@ -511,6 +606,10 @@ mark.row-hl{color:inherit;padding:0 2px;margin:0 -1px}
   </div>
   </div>
 </div>
+<div id="hub-tabs" role="tablist" aria-label="Show">
+  <button type="button" role="tab" class="hub-tab" id="hub-tab-todos" data-view="todos" aria-selected="true">To-Dos</button>
+  <button type="button" role="tab" class="hub-tab" id="hub-tab-docs" data-view="docs" aria-selected="false">Documents</button>
+</div>
 <div id="hub-offline-banner">
   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="1" y1="1" x2="23" y2="23"/><path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55"/><path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39"/><path d="M10.71 5.05A16 16 0 0 1 22.58 9"/><path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>
   You're offline — changes will sync once you're back
@@ -538,6 +637,18 @@ mark.row-hl{color:inherit;padding:0 2px;margin:0 -1px}
     <span id="todo-completed-count"></span>
   </button>
   <div id="todo-completed-list" class="swipe-list"></div>
+  </div>
+  <div id="docs-view" hidden>
+    <div id="docs-head">
+      <div id="docs-head-title">Documents</div>
+      <div id="docs-head-sub"></div>
+    </div>
+    <div id="docs-list"></div>
+    <div id="docs-empty" class="hub-empty" hidden>
+      <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/></svg>
+      <div class="hub-empty-title" id="docs-empty-title">No documents yet</div>
+      <div id="docs-empty-msg">Documents you write on a computer show up here to read.</div>
+    </div>
   </div>
 </main>
 
@@ -628,6 +739,22 @@ mark.row-hl{color:inherit;padding:0 2px;margin:0 -1px}
     </div>
   </div>
 </div>
+<section id="doc-reader" hidden aria-label="Document">
+  <div id="doc-reader-bar">
+    <button id="doc-reader-back" type="button" aria-label="Back to documents"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg><span>Documents</span></button>
+    <div id="doc-reader-actions">
+      <button id="doc-reader-expand" type="button" aria-label="Expand all"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="7 15 12 20 17 15"/><polyline points="7 9 12 4 17 9"/></svg></button>
+    </div>
+  </div>
+  <div id="doc-reader-scroll">
+    <article id="doc-reader-page">
+      <div id="doc-reader-path"></div>
+      <h1 id="doc-reader-title"></h1>
+      <div id="doc-reader-byline"></div>
+      <div id="doc-reader-body"></div>
+    </article>
+  </div>
+</section>
 <div id="hub-toast"></div>
 
 <script>
@@ -1124,6 +1251,8 @@ document.getElementById('signout-confirm-ok').addEventListener('click',function(
   loadFirebaseMods().then(function(f){ return f.authMod.signOut(f.auth); }).catch(function(){}).finally(function(){
     try{ localStorage.removeItem('sakura_account_active'); }catch(e){}
     currentUser=null;
+    closeDocReader();
+    clearReaderCaches();
     document.getElementById('hub-app').style.display='none';
     document.getElementById('auth-gate').style.display='flex';
     setAuthStatus('Signed out.');
@@ -1431,14 +1560,14 @@ function toggleHubSearch(open){
   }else{
     document.getElementById('hub-search-input').value='';
     hubSearchQuery='';
-    renderTodos();
+    if(hubView==='docs')renderDocsList(); else renderTodos();
   }
 }
 document.getElementById('hub-search-toggle').addEventListener('click',function(){ toggleHubSearch(); });
 document.getElementById('hub-search-close').addEventListener('click',function(){ toggleHubSearch(false); });
 document.getElementById('hub-search-input').addEventListener('input',function(e){
   hubSearchQuery=e.target.value.trim().toLowerCase();
-  renderTodos();
+  if(hubView==='docs')renderDocsList(); else renderTodos();
 });
 
 // ---------- Offline banner ----------
@@ -2153,6 +2282,1067 @@ function waitingCandidates(todos) {
 }
 
 /* GENERATED:hubTodoModel:END */
+/* GENERATED:hubDiscussionStatus:START — DO NOT EDIT BY HAND. Source of truth: src/utils/discussionStatus.ts (tests: tests/unit/discussionStatus.test.ts). Regenerate with `npm run generate` after changing the source; CI fails if this block drifts from what the generator produces (see .github/workflows/ci.yml and scripts/generate-index-blocks.mjs). */
+/**
+ * A row's thread, the conversation about one node, and the row's own status.
+ *
+ * Owner design (2026-10-14): each node has at most one thread, a flat list of entries in time
+ * order. An entry has an author, a time (`createdAt`) and text; it is a comment, a question
+ * (`type: 'question'`) or a decision (`decision: true`). Any entry takes replies (`answerTo`), one
+ * level deep; a reply to a question is its answer.
+ *
+ * Owner decision (2026-10-27, "simpler"): a question is open or answered, nothing else. No Yes/No
+ * on answers (the answer's text says it), no "won't answer" (a reply saying so answers it), and the
+ * time is stored once (`createdAt`; the older `date` string is folded into it).
+ * `migrateThreadSimplify` converts older entries.
+ *
+ * Owner decision (2026-10-27): rows say what, threads say why. A row has at most one status,
+ * stored on the row: Agreed ('confirmed'), Follow-up ('followup') or Out of scope ('parked'), with
+ * when it was set (`markerAt`, showing how old a follow-up is). No names (owner, 2026-10-27): a
+ * follow-up is always your own. Setting a status adds nothing to the thread. A decision is
+ * no status: it marks the entry where something was decided and leaves the row alone. Older values
+ * read as their successor: Resolved / Decision → Agreed, Issue → Follow-up, N/A → Out of scope.
+ *
+ * Entries are stored in the document's `remarks` array (the key older documents already use);
+ * `migrateDiscussionToThread` converts the older remark / Q&A / discussion-item shapes, and
+ * `migrateStatusToRows` moves statuses that older threads held on their entries onto the row.
+ *
+ * Wired into index.html via scripts/generate-index-blocks.mjs's `discussionStatus` block.
+ */
+/** The row markers, in menu order: Agreed, Follow-up, Out of scope. */
+const THREAD_STATUSES = ['confirmed', 'followup', 'parked'];
+/** A stored status or marker in today's terms (older values read as their successor); unknown → none. */
+function normalizeThreadStatus(s) {
+    if (s === 'resolved' || s === 'decision')
+        return 'confirmed';
+    if (s === 'issue')
+        return 'followup';
+    if (s === 'na')
+        return 'parked';
+    return THREAD_STATUSES.includes(s) ? s : null;
+}
+/** True when an HTML fragment has any visible text (tags, &nbsp; and whitespace don't count). */
+function htmlHasVisibleText(html) {
+    const text = String(html ?? '')
+        .replace(/<[^>]*>/g, '')
+        .replace(/&nbsp;|&#160;| /gi, ' ');
+    return text.trim().length > 0;
+}
+/** A Q&A entry's state (unlinked Q&A, which stays in the Q&A list). */
+function qaState(item) {
+    if (htmlHasVisibleText(item.answer))
+        return 'answered';
+    if (item.wontAnswer)
+        return 'wont';
+    return 'open';
+}
+/** A Q&A entry that is a real question (not a section heading) with question text. */
+function isCountableQuestion(item) {
+    return item.type !== 'section' && htmlHasVisibleText(item.question);
+}
+// ── One thread ───────────────────────────────────────────────────────────────────────────────
+/** A node's entries in time order (stable for equal times). */
+function threadEntries(entries, nodeId) {
+    return (entries || []).filter((e) => e && e.anchorNodeId === nodeId)
+        .map((e, i) => [e, i])
+        .sort((a, b) => (a[0].createdAt || 0) - (b[0].createdAt || 0) || a[1] - b[1])
+        .map(([e]) => e);
+}
+function isQuestion(e) {
+    return e.type === 'question';
+}
+/** A question's state in its thread: answered once a reply with text exists, else open. */
+function questionState(q, thread) {
+    return (thread || []).some((e) => e.answerTo != null && e.answerTo === q.id && htmlHasVisibleText(e.text)) ? 'answered' : 'open';
+}
+/** Open questions (with question text) in a thread, oldest first. */
+function openQuestions(thread) {
+    return (thread || []).filter((e) => isQuestion(e) && htmlHasVisibleText(e.text) && questionState(e, thread) === 'open');
+}
+/**
+ * The entry a reply sits under (owner decision 2026-10-27: any entry can take replies, one level
+ * deep, as in Slack or Google Docs). `answerTo` holds the link (the key older answers already use);
+ * a reply to a reply sits under that reply's own entry. Null for an entry that is no reply, or whose
+ * entry isn't in the thread.
+ */
+function threadReplyParent(r, thread) {
+    if (r.answerTo == null)
+        return null;
+    const byId = new Map(thread.map((e) => [e.id, e]));
+    let p = byId.get(r.answerTo);
+    for (let hops = 0; p && p.answerTo != null && byId.has(p.answerTo) && hops < 8; hops++)
+        p = byId.get(p.answerTo);
+    return p && p !== r ? p : null;
+}
+/**
+ * A thread in reading order: entries by time, each followed by its replies (oldest first,
+ * `nested`), which keep their own dates.
+ */
+function threadReadingOrder(thread) {
+    const replies = new Map();
+    const isReply = new Set();
+    thread.forEach((e) => { const p = threadReplyParent(e, thread); if (p) {
+        isReply.add(e);
+        const l = replies.get(p) || [];
+        l.push(e);
+        replies.set(p, l);
+    } });
+    const out = [];
+    thread.forEach((e) => {
+        if (isReply.has(e))
+            return;
+        out.push({ entry: e, nested: false });
+        (replies.get(e) || []).forEach((a) => out.push({ entry: a, nested: true }));
+    });
+    return out;
+}
+/** The question an answer added now (or marked at `before`) answers: the latest open question
+ * before that point, or null. */
+function questionToAnswer(thread, before) {
+    const end = before ? thread.indexOf(before) : thread.length;
+    const open = openQuestions(thread.slice(0, end < 0 ? thread.length : end));
+    return open.length ? open[open.length - 1] : null;
+}
+// ── Migration ────────────────────────────────────────────────────────────────────────────────
+/** True when any entry still has a field the simpler model dropped (`date`, `verdict`, `wontAnswer`). */
+function needsThreadSimplify(entries) {
+    return (entries || []).some((e) => e && (e.date != null || e.verdict != null || e.wontAnswer != null || (e.type === 'question' && !!e.decision)));
+}
+function localMidnight(day) {
+    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(day || '');
+    if (!m)
+        return null;
+    const t = new Date(+m[1], +m[2] - 1, +m[3]).getTime();
+    return Number.isFinite(t) ? t : null;
+}
+/**
+ * The simpler thread (owner decision 2026-10-27). The day (`date`) folds into `createdAt` (same
+ * time of day on that day). A Yes / No answer says it in its text: "Yes" alone, or "Yes. " before
+ * text that doesn't already start with it. A question closed without an answer gets a reply
+ * "Won't answer" by its author, so it reads as answered. An entry is one kind: one that was both a
+ * question and a decision stays a decision. Idempotent.
+ */
+function migrateThreadSimplify(entries) {
+    if (!needsThreadSimplify(entries))
+        return { entries, changed: false };
+    const ids = new Set((entries || []).map((e) => e && e.id));
+    const out = [];
+    for (const src of entries || []) {
+        if (!src)
+            continue;
+        const e = { ...src };
+        if (e.date != null) {
+            const mid = localMidnight(e.date);
+            if (mid != null) {
+                const ofDay = e.createdAt ? e.createdAt - localMidnight(localDateStr(e.createdAt)) : 12 * 3600000;
+                if (!e.createdAt || localDateStr(e.createdAt) !== e.date)
+                    e.createdAt = mid + ofDay;
+            }
+            delete e.date;
+        }
+        if (e.verdict === 'yes' || e.verdict === 'no') {
+            const word = e.verdict === 'yes' ? 'Yes' : 'No';
+            const text = String(e.text || '');
+            const plain = text.replace(/<[^>]*>/g, '').trim();
+            if (!htmlHasVisibleText(text))
+                e.text = word;
+            else if (!new RegExp('^' + word + '\\b', 'i').test(plain))
+                e.text = word + '. ' + text;
+        }
+        delete e.verdict;
+        // One kind per entry: an entry that was both a question and a decision reads as the decision.
+        if (e.type === 'question' && e.decision)
+            delete e.type;
+        const wont = e.wontAnswer;
+        delete e.wontAnswer;
+        out.push(e);
+        if (wont && isQuestion(e) && !(entries || []).some((x) => x && x.answerTo === e.id && htmlHasVisibleText(x.text))) {
+            let id = (e.id || 'r') + '-w';
+            while (ids.has(id))
+                id += 'w';
+            ids.add(id);
+            out.push({ id, anchorNodeId: e.anchorNodeId, person: e.person || '', text: 'Won\u2019t answer', context: '', createdAt: (e.createdAt || 0) + 1, answerTo: e.id });
+        }
+    }
+    return { entries: out, changed: true };
+}
+function localDateStr(ms) {
+    const d = new Date(ms);
+    const p = (n) => String(n).padStart(2, '0');
+    return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate());
+}
+/** True when any entry still has an older shape (remark follow-up, discussion kind, inline answer). */
+function needsThreadMigration(entries) {
+    return (entries || []).some((r) => r && (r.followUp != null || r.resolvedAt != null || r.kind != null || r.answer != null || (r.status != null && r.status !== normalizeThreadStatus(r.status))));
+}
+/**
+ * Converts older remarks and discussion items to thread entries: a follow-up remark becomes a
+ * Follow-up (or Resolved) status chip, a decision item a Decision chip, and a question item's
+ * inline answer / Yes-No becomes its own answer entry right after it (no author: the old shape
+ * didn't store one). Idempotent: converted entries carry none of the old fields.
+ */
+function migrateDiscussionToThread(entries) {
+    if (!needsThreadMigration(entries))
+        return { entries, changed: false };
+    const out = [];
+    const ids = new Set((entries || []).map((r) => r && r.id));
+    for (const src of entries || []) {
+        if (!src)
+            continue;
+        const r = { ...src };
+        const kind = r.kind;
+        const answer = r.answer;
+        const verdict = r.verdict;
+        if (r.followUp)
+            r.status = r.resolvedAt ? 'confirmed' : 'followup';
+        if (kind === 'decision' || r.status === 'decision') {
+            r.status = 'confirmed';
+            r.decision = true;
+        }
+        if (r.status)
+            r.status = normalizeThreadStatus(r.status) || undefined;
+        if (!r.status)
+            delete r.status;
+        if (kind === 'question')
+            r.type = 'question';
+        delete r.followUp;
+        delete r.resolvedAt;
+        delete r.kind;
+        delete r.answer;
+        if (kind === 'question')
+            delete r.verdict;
+        out.push(r);
+        if (kind === 'question' && (htmlHasVisibleText(answer) || verdict === 'yes' || verdict === 'no')) {
+            let id = (r.id || 'r') + '-a';
+            while (ids.has(id))
+                id += 'a';
+            ids.add(id);
+            const a = { id, anchorNodeId: r.anchorNodeId, person: '', text: answer || '', date: r.date || '', context: '', createdAt: (r.createdAt || 0) + 1, answerTo: r.id };
+            if (verdict === 'yes' || verdict === 'no')
+                a.verdict = verdict;
+            out.push(a);
+            delete r.wontAnswer;
+        }
+    }
+    return { entries: out, changed: true };
+}
+/**
+ * Moves every Q&A entry linked to a row into the row's thread: the question (no author, since Q&A
+ * never stored one; dated from when it was asked) and, when answered, an answer entry after it.
+ * Section headings and unlinked entries stay in `qaItems`. Idempotent: a question whose entry
+ * already exists (id `r` + its id) is just dropped from `qaItems`.
+ */
+function migrateQaToRemarks(qaItems, remarks) {
+    const kept = [];
+    const out = (remarks || []).slice();
+    const ids = new Set(out.map((r) => r.id));
+    let moved = 0;
+    for (const q of qaItems || []) {
+        if (!q || q.type === 'section' || q.sourceNodeId == null) {
+            if (q)
+                kept.push(q);
+            continue;
+        }
+        const id = 'r' + q.id;
+        if (!ids.has(id)) {
+            const created = Number.isFinite(q.createdAt) ? q.createdAt : 0;
+            const date = created ? localDateStr(created) : '';
+            const item = { id, type: 'question', person: '', text: q.question || '', date, context: '', anchorNodeId: q.sourceNodeId, createdAt: created };
+            const verdict = q.verdict;
+            const yesNo = verdict === 'yes' || verdict === 'no' ? verdict : undefined;
+            const answered = htmlHasVisibleText(q.answer) || !!yesNo;
+            if (q.wontAnswer && !answered)
+                item.wontAnswer = true;
+            out.push(item);
+            ids.add(id);
+            if (answered) {
+                const answer = { id: id + '-a', person: '', text: q.answer || '', date, context: '', anchorNodeId: q.sourceNodeId, createdAt: created + 1, answerTo: id };
+                if (yesNo)
+                    answer.verdict = yesNo;
+                out.push(answer);
+                ids.add(id + '-a');
+            }
+        }
+        moved++;
+    }
+    return { qaItems: kept, remarks: out, moved };
+}
+/** True when any entry still holds a status (from before statuses moved onto the row). */
+function needsStatusMigration(entries) {
+    return (entries || []).some((e) => e && (e.status != null || e.owner != null || e.done != null || e.doneAt != null));
+}
+/**
+ * Moves statuses off thread entries onto their rows (owner decision 2026-10-27). The row takes the
+ * status its thread showed -- the latest open Follow-up (one not marked done and not settled by a
+ * later Agreed / Out of scope), else the latest Agreed / Out of scope -- with that entry's author,
+ * time and, for a Follow-up, owner. A thread with no status leaves the row's marker as it is.
+ * Entries lose their status fields; one that said nothing else (no text, Yes/No, question, answer
+ * or decision) is removed. Returns the new entries and the row changes (node id → status).
+ */
+function migrateStatusToRows(nodes, entries) {
+    const rows = new Map();
+    if (!needsStatusMigration(entries))
+        return { entries, rows, changed: false };
+    const ids = new Set((nodes || []).map((n) => n.id));
+    const byNode = new Map();
+    for (const e of entries || []) {
+        if (!e || e.anchorNodeId == null || !ids.has(e.anchorNodeId))
+            continue;
+        const list = byNode.get(e.anchorNodeId) || [];
+        list.push(e);
+        byNode.set(e.anchorNodeId, list);
+    }
+    byNode.forEach((list, id) => {
+        const thread = threadEntries(list, id);
+        const st = (e) => normalizeThreadStatus(e.status);
+        let holder = null;
+        thread.forEach((e, i) => {
+            if (st(e) !== 'followup' || e.done)
+                return;
+            if (thread.some((x, k) => k > i && st(x) && st(x) !== 'followup'))
+                return;
+            holder = e;
+        });
+        if (!holder)
+            for (let i = thread.length - 1; i >= 0 && !holder; i--)
+                if (st(thread[i]) && st(thread[i]) !== 'followup')
+                    holder = thread[i];
+        if (!holder)
+            return;
+        const h = holder;
+        const row = { marker: st(h) };
+        if (h.createdAt)
+            row.markerAt = h.createdAt;
+        rows.set(id, row);
+    });
+    const out = [];
+    for (const src of entries || []) {
+        if (!src)
+            continue;
+        if (src.status == null && src.owner == null && src.done == null && src.doneAt == null) {
+            out.push(src);
+            continue;
+        }
+        const e = { ...src };
+        delete e.status;
+        delete e.owner;
+        delete e.done;
+        delete e.doneAt;
+        if (htmlHasVisibleText(e.text) || e.verdict || isQuestion(e) || e.answerTo != null || e.decision)
+            out.push(e);
+    }
+    return { entries: out, rows, changed: true };
+}
+// ── Open items ───────────────────────────────────────────────────────────────────────────────
+function groupByNode(entries, ids) {
+    const m = new Map();
+    for (const e of entries || []) {
+        if (!e || e.anchorNodeId == null || (ids && !ids.has(e.anchorNodeId)))
+            continue;
+        const list = m.get(e.anchorNodeId) || [];
+        list.push(e);
+        m.set(e.anchorNodeId, list);
+    }
+    return m;
+}
+/** Every open question of the document's threads (rows in `nodeIds` only, when given). */
+function allOpenQuestions(entries, nodeIds) {
+    const out = [];
+    groupByNode(entries, nodeIds).forEach((list, id) => out.push(...openQuestions(threadEntries(list, id))));
+    return out;
+}
+/** Every answered question (rows in `nodeIds` only, when given). */
+function allSettledQuestions(entries, nodeIds) {
+    const out = [];
+    groupByNode(entries, nodeIds).forEach((list, id) => {
+        const thread = threadEntries(list, id);
+        out.push(...thread.filter((e) => isQuestion(e) && htmlHasVisibleText(e.text) && questionState(e, thread) !== 'open'));
+    });
+    return out;
+}
+function normalizeDiscussionFilter(v) {
+    return v === 'openQa' || v === 'openItems' ? v : null;
+}
+/** Ids of the nodes with an open question; for openItems also the Follow-up rows. */
+function nodesWithOpenItems(filter, entries, nodes = []) {
+    const ids = new Set();
+    for (const q of allOpenQuestions(entries))
+        ids.add(q.anchorNodeId);
+    if (filter === 'openItems')
+        for (const n of nodes || [])
+            if (isFollowupRow(n))
+                ids.add(n.id);
+    return ids;
+}
+/** A row marked Follow-up: one open item. */
+function isFollowupRow(n) {
+    return !!n && normalizeThreadStatus(n.marker) === 'followup';
+}
+/** "1 open question", "2 open follow-ups" — the label for a count. */
+function openCountLabel(n, kind) {
+    return n + ' open ' + kind + (n === 1 ? '' : 's');
+}
+/**
+ * The toolbar summary's counts. Row statuses: Follow-up needs attention, Out of scope is set
+ * aside, Agreed is settled; questions count open or settled, when on a row of this document;
+ * unlinked Q&A entries count too.
+ */
+function documentProgress(nodes, qaItems, entries) {
+    const p = { followups: 0, parked: 0, questions: 0, settled: 0, total: 0 };
+    const ids = new Set();
+    for (const n of nodes || []) {
+        ids.add(n.id);
+        const m = normalizeThreadStatus(n.marker);
+        if (m === 'followup')
+            p.followups++;
+        else if (m === 'parked')
+            p.parked++;
+        else if (m === 'confirmed')
+            p.settled++;
+    }
+    for (const q of qaItems || []) {
+        if (q.sourceNodeId == null || !ids.has(q.sourceNodeId) || !isCountableQuestion(q))
+            continue;
+        if (qaState(q) === 'open')
+            p.questions++;
+        else
+            p.settled++;
+    }
+    p.questions += allOpenQuestions(entries, ids).length;
+    p.settled += allSettledQuestions(entries, ids).length;
+    p.total = p.followups + p.questions + p.settled;
+    return p;
+}
+const ATTENTION_WORDS = {
+    followup: ['follow-up', 'follow-ups'],
+    question: ['question', 'questions']
+};
+/** What still needs attention, most urgent first, leaving out kinds with nothing open. */
+function attentionParts(p) {
+    const counts = [['followup', p.followups], ['question', p.questions]];
+    return counts.filter(([, n]) => n > 0).map(([key, n]) => ({ key, n, label: n + ' ' + ATTENTION_WORDS[key][n === 1 ? 0 : 1] }));
+}
+/** The summary's tooltip / accessible name: "Needs attention: 1 follow-up, 2 open questions." */
+function progressSummaryText(p) {
+    const parts = attentionParts(p).map((a) => (a.key === 'question' ? openCountLabel(a.n, 'question') : a.label));
+    // No "N of M settled" (owner, 2026-10-15): a follow-up closed by removing its marker drops out of
+    // the count instead of counting as settled, so the ratio didn't measure progress.
+    return parts.length ? 'Needs attention: ' + parts.join(', ') + '.' : 'Nothing needs attention.';
+}
+/**
+ * How long an open item has been open, short enough for the Open items list: "today", "3d" (under
+ * two weeks), "5w" (under two months), then "4mo". Empty when the time is unknown.
+ */
+function openItemAge(createdAt, now) {
+    if (!createdAt || !Number.isFinite(createdAt))
+        return '';
+    const days = Math.floor(Math.max(0, now - createdAt) / 86400000);
+    if (days < 1)
+        return 'today';
+    if (days < 14)
+        return days + 'd';
+    if (days < 60)
+        return Math.floor(days / 7) + 'w';
+    return Math.floor(days / 30) + 'mo';
+}
+
+/* GENERATED:hubDiscussionStatus:END */
+/* GENERATED:hubNodeImages:START — DO NOT EDIT BY HAND. Source of truth: src/utils/nodeImages.ts (tests: tests/unit/nodeImages.test.ts). Regenerate with `npm run generate` after changing the source; CI fails if this block drifts from what the generator produces (see .github/workflows/ci.yml and scripts/generate-index-blocks.mjs). */
+/**
+ * Pure helpers for `node.images` — screenshots/pictures attached to an outline node as their own
+ * per-node objects (siblings of `node.note`/`node.tables`, never embedded in note HTML).
+ *
+ * Shape of one entry: `{ id, src, caption, width?, annotations: [], createdAt }`.
+ * - `src` is a data URL (or, for a migrated legacy note image, possibly an http(s) URL) stored
+ *   in the document itself — no external storage.
+ * - `width` is an optional display size, as a percentage (10–100) of the available width, used
+ *   by the enlarged viewer and the PDF. Absent means "Auto" (natural size, capped at 100%). The
+ *   viewer offers Small/Medium/Full presets (see IMAGE_WIDTH_PRESETS) but any integer in range
+ *   round-trips, so a later slider can reuse the field unchanged.
+ * - `annotations` holds the markup editor's marks (rectangles, arrows, highlighter boxes, text
+ *   labels) as plain shapes over the picture — the picture itself (`src`) is never modified.
+ *   Every coordinate is relative to the image (0–1 of its natural width/height), and stroke
+ *   width / text size are relative to the image's width, so marks stay aligned and in proportion
+ *   at any display size. See ImageAnnotation / normalizeImageAnnotations / annotationsToSvg.
+ *
+ * Wired into index.html via scripts/generate-index-blocks.mjs's `nodeImages` block. Everything
+ * DOM/canvas-specific (decoding, drawing, toDataURL, note-HTML parsing for the migration) stays
+ * hand-written in index.html; only the decisions live here so they can be unit tested.
+ */
+/** Hard cap on marks per image — far beyond any real screenshot markup, small enough that a
+ * corrupt or hostile document can't make rendering crawl. Extra entries are dropped. */
+const MAX_IMAGE_ANNOTATIONS = 200;
+/** A text label is a short callout, not a paragraph. */
+const ANNOTATION_TEXT_MAX = 200;
+/** Highlighter fill opacity (marker-style: the picture stays readable underneath). */
+const HIGHLIGHT_OPACITY = 0.35;
+const DEFAULT_ANNOTATION_STROKE = 0.004;
+const DEFAULT_ANNOTATION_TEXT_SIZE = 0.025;
+const STROKE_MIN = 0.0005;
+const STROKE_MAX = 0.05;
+const TEXT_SIZE_MIN = 0.004;
+const TEXT_SIZE_MAX = 0.25;
+/** Fixed palette, picked to read on both light and dark screenshots (saturated mid-tones, plus
+ * black and white for the cases where colour would clash). First entry is the default. */
+const ANNOTATION_COLORS = [
+    { key: 'red', label: 'Red', hex: '#e8384f' },
+    { key: 'yellow', label: 'Yellow', hex: '#f5b800' },
+    { key: 'green', label: 'Green', hex: '#2fb344' },
+    { key: 'blue', label: 'Blue', hex: '#2f7cf6' },
+    { key: 'black', label: 'Black', hex: '#1b1b1f' },
+    { key: 'white', label: 'White', hex: '#ffffff' }
+];
+const DEFAULT_ANNOTATION_COLOR = ANNOTATION_COLORS[0].hex;
+const round4 = (n) => Math.round(n * 10000) / 10000;
+function finite(v) {
+    return typeof v === 'number' && Number.isFinite(v);
+}
+function clamp01(n) {
+    return Math.min(1, Math.max(0, n));
+}
+/** A colour is kept only as a #rgb/#rrggbb hex (lower-cased, expanded) — it's written straight
+ * into SVG attributes, so nothing else gets through. Anything else falls back to the default. */
+function normalizeAnnotationColor(c) {
+    if (typeof c !== 'string')
+        return DEFAULT_ANNOTATION_COLOR;
+    const t = c.trim().toLowerCase();
+    if (/^#[0-9a-f]{6}$/.test(t))
+        return t;
+    if (/^#[0-9a-f]{3}$/.test(t))
+        return '#' + t[1] + t[1] + t[2] + t[2] + t[3] + t[3];
+    return DEFAULT_ANNOTATION_COLOR;
+}
+function normalizeStroke(v) {
+    if (!finite(v) || v <= 0)
+        return DEFAULT_ANNOTATION_STROKE;
+    return round4(Math.min(STROKE_MAX, Math.max(STROKE_MIN, v)));
+}
+function normalizeTextSize(v) {
+    if (!finite(v) || v <= 0)
+        return DEFAULT_ANNOTATION_TEXT_SIZE;
+    return round4(Math.min(TEXT_SIZE_MAX, Math.max(TEXT_SIZE_MIN, v)));
+}
+/** Label text: single line, trimmed, capped. */
+function normalizeAnnotationText(t) {
+    if (typeof t !== 'string')
+        return '';
+    return t.replace(/[\r\n\t]+/g, ' ').trim().slice(0, ANNOTATION_TEXT_MAX);
+}
+/** Box (rect/highlight) from any two corner points, clamped inside the image. */
+function boxFromPoints(ax, ay, bx, by) {
+    const x1 = clamp01(Math.min(ax, bx));
+    const y1 = clamp01(Math.min(ay, by));
+    const x2 = clamp01(Math.max(ax, bx));
+    const y2 = clamp01(Math.max(ay, by));
+    return { x: round4(x1), y: round4(y1), w: round4(x2 - x1), h: round4(y2 - y1) };
+}
+/** One stored mark → a clean ImageAnnotation, or null if it's malformed (unknown type, missing
+ * or non-numeric coordinates, zero size, empty text). Coordinates are clamped to the image,
+ * a negative width/height is flipped, numbers are rounded to 4 decimals (sub-pixel at 1600px). */
+function normalizeImageAnnotation(raw, makeId) {
+    if (!raw || typeof raw !== 'object' || Array.isArray(raw))
+        return null;
+    const e = raw;
+    const a = normalizeAnnotationShape(e);
+    if (!a)
+        return null;
+    return { ...a, id: typeof e.id === 'string' && e.id ? e.id.slice(0, 64) : makeId() };
+}
+function normalizeAnnotationShape(e) {
+    const id = '';
+    const color = normalizeAnnotationColor(e.color);
+    if (e.type === 'rect' || e.type === 'highlight') {
+        if (!finite(e.x) || !finite(e.y) || !finite(e.w) || !finite(e.h))
+            return null;
+        const b = boxFromPoints(e.x, e.y, e.x + e.w, e.y + e.h);
+        if (b.w <= 0 || b.h <= 0)
+            return null;
+        if (e.type === 'highlight')
+            return { id, type: 'highlight', ...b, color };
+        return { id, type: 'rect', ...b, color, strokeWidth: normalizeStroke(e.strokeWidth) };
+    }
+    if (e.type === 'arrow') {
+        if (!finite(e.x1) || !finite(e.y1) || !finite(e.x2) || !finite(e.y2))
+            return null;
+        const a = {
+            id,
+            type: 'arrow',
+            x1: round4(clamp01(e.x1)),
+            y1: round4(clamp01(e.y1)),
+            x2: round4(clamp01(e.x2)),
+            y2: round4(clamp01(e.y2)),
+            color,
+            strokeWidth: normalizeStroke(e.strokeWidth)
+        };
+        if (a.x1 === a.x2 && a.y1 === a.y2)
+            return null;
+        return a;
+    }
+    if (e.type === 'text') {
+        if (!finite(e.x) || !finite(e.y))
+            return null;
+        const text = normalizeAnnotationText(e.text);
+        if (!text)
+            return null;
+        return { id, type: 'text', x: round4(clamp01(e.x)), y: round4(clamp01(e.y)), text, size: normalizeTextSize(e.size), color };
+    }
+    return null;
+}
+/** Whatever was stored in `image.annotations` → a clean list: malformed entries dropped,
+ * duplicate/missing ids replaced, at most MAX_IMAGE_ANNOTATIONS kept (the oldest ones — later
+ * marks are drawn on top, and the cap only ever bites on corrupt data). */
+function normalizeImageAnnotations(raw, makeId) {
+    if (!Array.isArray(raw))
+        return [];
+    const out = [];
+    const seen = new Set();
+    for (const entry of raw) {
+        if (out.length >= MAX_IMAGE_ANNOTATIONS)
+            break;
+        const a = normalizeImageAnnotation(entry, makeId);
+        if (!a)
+            continue;
+        if (seen.has(a.id))
+            a.id = makeId();
+        seen.add(a.id);
+        out.push(a);
+    }
+    return out;
+}
+/** Moves a mark by (dx, dy) image fractions, stopping at the image's edges so the whole shape
+ * (or, for text, its anchor point) stays inside. Returns a new object. */
+function translateAnnotation(a, dx, dy) {
+    if (a.type === 'arrow') {
+        const minX = Math.min(a.x1, a.x2), maxX = Math.max(a.x1, a.x2);
+        const minY = Math.min(a.y1, a.y2), maxY = Math.max(a.y1, a.y2);
+        const ddx = Math.min(1 - maxX, Math.max(-minX, dx));
+        const ddy = Math.min(1 - maxY, Math.max(-minY, dy));
+        return { ...a, x1: round4(a.x1 + ddx), y1: round4(a.y1 + ddy), x2: round4(a.x2 + ddx), y2: round4(a.y2 + ddy) };
+    }
+    if (a.type === 'text') {
+        return { ...a, x: round4(clamp01(a.x + dx)), y: round4(clamp01(a.y + dy)) };
+    }
+    const b = a;
+    const ddx = Math.min(1 - (b.x + b.w), Math.max(-b.x, dx));
+    const ddy = Math.min(1 - (b.y + b.h), Math.max(-b.y, dy));
+    return { ...a, x: round4(b.x + ddx), y: round4(b.y + ddy) };
+}
+/** Arrowhead triangle for an arrow from (x1,y1) to (x2,y2) in pixel space with stroke width
+ * `stroke`: the tip sits exactly at (x2,y2); `base` is where the shaft should stop so the line's
+ * thick end never pokes out past the head. The head shrinks on very short arrows. */
+function arrowGeometry(x1, y1, x2, y2, stroke) {
+    const dx = x2 - x1;
+    const dy = y2 - y1;
+    const len = Math.hypot(dx, dy) || 1;
+    const ux = dx / len;
+    const uy = dy / len;
+    const headLen = Math.min(Math.max(stroke * 4, 6), len * 0.6);
+    const halfW = headLen * 0.55;
+    const bx = x2 - ux * headLen;
+    const by = y2 - uy * headLen;
+    const r = (n) => Math.round(n * 100) / 100;
+    return {
+        base: [r(x2 - ux * headLen * 0.7), r(y2 - uy * headLen * 0.7)],
+        points: [
+            [r(x2), r(y2)],
+            [r(bx - uy * halfW), r(by + ux * halfW)],
+            [r(bx + uy * halfW), r(by - ux * halfW)]
+        ]
+    };
+}
+/** Relative luminance (0 = black, 1 = white) of a #rrggbb colour. */
+function colorLuminance(hex) {
+    const h = normalizeAnnotationColor(hex);
+    const ch = (i) => {
+        const v = parseInt(h.slice(i, i + 2), 16) / 255;
+        return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+    };
+    return 0.2126 * ch(1) + 0.7152 * ch(3) + 0.0722 * ch(5);
+}
+/** Halo/outline drawn behind a text label so it stays legible on any background: dark behind
+ * light text (white, yellow), white behind everything else. */
+function annotationHaloColor(hex) {
+    return colorLuminance(hex) > 0.4 ? '#1b1b1f' : '#ffffff';
+}
+function escXml(s) {
+    return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+/** SVG inner markup for `annotations` drawn over an image of `width` x `height` pixels — the
+ * caller puts it in an <svg viewBox="0 0 width height"> laid exactly over the picture. Each mark
+ * is a <g data-annot-id="…" data-annot-type="…">. Input is normalized first, so stored garbage
+ * can never reach the markup. */
+function annotationsToSvg(annotations, width, height, opts = {}) {
+    const W = finite(width) && width > 0 ? width : 1;
+    const H = finite(height) && height > 0 ? height : 1;
+    let n = 0;
+    const list = normalizeImageAnnotations(annotations, () => 'a' + ++n);
+    const r = (v) => Math.round(v * 100) / 100;
+    const minStroke = finite(opts.minStroke) && opts.minStroke > 0 ? opts.minStroke : 0;
+    const hitW = Math.max(W, H) * 0.012;
+    const parts = [];
+    for (const a of list) {
+        const open = '<g data-annot-id="' + escXml(a.id) + '" data-annot-type="' + a.type + '">';
+        if (a.type === 'rect' || a.type === 'highlight') {
+            const x = r(a.x * W), y = r(a.y * H), w = r(a.w * W), h = r(a.h * H);
+            if (a.type === 'highlight') {
+                parts.push(open + '<rect x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '" fill="' + a.color + '" fill-opacity="' + HIGHLIGHT_OPACITY + '"' + (opts.hitAreas ? ' pointer-events="all"' : '') + '/></g>');
+            }
+            else {
+                const sw = r(Math.max(minStroke, (a.strokeWidth ?? DEFAULT_ANNOTATION_STROKE) * W));
+                const rx = r(Math.min(sw * 1.5, w / 4, h / 4));
+                let g = open + '<rect x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '" rx="' + rx + '" fill="none" stroke="' + a.color + '" stroke-width="' + sw + '" stroke-linejoin="round"/>';
+                if (opts.hitAreas)
+                    g += '<rect class="annot-hit" x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '" fill="none" stroke="transparent" stroke-width="' + r(Math.max(sw, hitW)) + '" pointer-events="stroke"/>';
+                parts.push(g + '</g>');
+            }
+        }
+        else if (a.type === 'arrow') {
+            const sw = Math.max(minStroke, a.strokeWidth * W);
+            const x1 = a.x1 * W, y1 = a.y1 * H, x2 = a.x2 * W, y2 = a.y2 * H;
+            const geo = arrowGeometry(x1, y1, x2, y2, sw);
+            let g = open + '<line x1="' + r(x1) + '" y1="' + r(y1) + '" x2="' + geo.base[0] + '" y2="' + geo.base[1] + '" stroke="' + a.color + '" stroke-width="' + r(sw) + '" stroke-linecap="round"/>' +
+                '<polygon points="' + geo.points.map((p) => p[0] + ',' + p[1]).join(' ') + '" fill="' + a.color + '" stroke="' + a.color + '" stroke-width="' + r(sw * 0.5) + '" stroke-linejoin="round"/>';
+            if (opts.hitAreas)
+                g += '<line class="annot-hit" x1="' + r(x1) + '" y1="' + r(y1) + '" x2="' + r(x2) + '" y2="' + r(y2) + '" stroke="transparent" stroke-width="' + r(Math.max(sw * 3, hitW)) + '" pointer-events="stroke"/>';
+            parts.push(g + '</g>');
+        }
+        else if (a.type === 'text') {
+            const fs = a.size * W;
+            const halo = annotationHaloColor(a.color);
+            // Baseline ~0.8em below the stored top edge, so (x,y) is where the label's top-left sits.
+            parts.push(open + '<text x="' + r(a.x * W) + '" y="' + r(a.y * H + fs * 0.8) + '" font-size="' + r(fs) + '" font-family="Inter, system-ui, -apple-system, Segoe UI, Arial, sans-serif" font-weight="700" fill="' + a.color + '" stroke="' + halo + '" stroke-width="' + r(fs * 0.2) + '" stroke-linejoin="round" paint-order="stroke"' + (opts.hitAreas ? ' pointer-events="all"' : '') + ' xml:space="preserve">' + escXml(a.text) + '</text></g>');
+        }
+    }
+    return parts.join('');
+}
+/** Longest side, in pixels, a newly added image is downscaled to. */
+const NODE_IMAGE_MAX_LONG_SIDE = 1600;
+/** Lossy encode quality used for WebP (and the JPEG fallback). */
+const NODE_IMAGE_ENCODE_QUALITY = 0.8;
+/** Caption length cap — a caption is a label, not a note. */
+const NODE_IMAGE_CAPTION_MAX = 500;
+const IMAGE_WIDTH_PRESETS = [
+    { key: 'auto', label: 'Auto', value: undefined },
+    { key: 'small', label: 'Small', value: 35 },
+    { key: 'medium', label: 'Medium', value: 60 },
+    { key: 'full', label: 'Full', value: 100 }
+];
+/** A src worth moving out of a note / keeping as an image object: an inline data:image URL or
+ * an absolute http(s) URL. blob:, file:, relative and empty srcs are not (they don't survive a
+ * reload or another device), so a legacy note image with one of those is left where it is. */
+function isUsableImageSrc(src) {
+    if (typeof src !== 'string')
+        return false;
+    const s = src.trim();
+    return /^data:image\/[a-z0-9.+-]+(?:;[^,]*)?,./i.test(s) || /^https?:\/\/\S+$/i.test(s);
+}
+/** Clamps a stored display width to an integer percentage in [10, 100]; anything else
+ * (missing, non-numeric, non-finite) means "Auto" and comes back undefined. */
+function normalizeImageWidth(width) {
+    if (typeof width !== 'number' || !Number.isFinite(width))
+        return undefined;
+    return Math.min(100, Math.max(10, Math.round(width)));
+}
+/** Which preset (if any) a stored width corresponds to — Auto for undefined. */
+function imageWidthPresetKey(width) {
+    const hit = IMAGE_WIDTH_PRESETS.find((p) => p.value === width);
+    return hit ? hit.key : null;
+}
+function normalizeCaption(caption) {
+    if (typeof caption !== 'string')
+        return '';
+    return caption.replace(/[\r\n\t]+/g, ' ').slice(0, NODE_IMAGE_CAPTION_MAX);
+}
+/** Normalizes whatever was stored in `node.images` into a clean array. Entries without a
+ * non-empty string src are dropped (nothing to show); everything else is kept. A missing or
+ * duplicate id is replaced via `makeId`; `annotations` goes through normalizeImageAnnotations
+ * (malformed marks dropped, coordinates clamped, capped at MAX_IMAGE_ANNOTATIONS). */
+function normalizeNodeImages(raw, now, makeId) {
+    if (!Array.isArray(raw))
+        return [];
+    const seen = new Set();
+    const out = [];
+    for (const entry of raw) {
+        if (!entry || typeof entry !== 'object')
+            continue;
+        const e = entry;
+        if (typeof e.src !== 'string' || !e.src.trim())
+            continue;
+        let id = typeof e.id === 'string' && e.id ? e.id : '';
+        if (!id || seen.has(id))
+            id = makeId();
+        seen.add(id);
+        const img = {
+            id,
+            src: e.src,
+            caption: normalizeCaption(e.caption),
+            annotations: normalizeImageAnnotations(e.annotations, makeId),
+            createdAt: typeof e.createdAt === 'number' && Number.isFinite(e.createdAt) && e.createdAt > 0 ? e.createdAt : now
+        };
+        const w = normalizeImageWidth(e.width);
+        if (w !== undefined)
+            img.width = w;
+        out.push(img);
+    }
+    return out;
+}
+/** Deep copy for duplicating/copy-pasting a node: same pictures, captions, widths and
+ * annotations, but fresh ids so the copies are independent objects. */
+function cloneNodeImagesWithNewIds(images, now, makeId) {
+    const normalized = normalizeNodeImages(images, now, makeId);
+    return normalized.map((img) => {
+        const copy = {
+            ...img,
+            id: makeId(),
+            annotations: JSON.parse(JSON.stringify(img.annotations))
+        };
+        return copy;
+    });
+}
+/** Size to draw a `width` x `height` picture at so its long side is at most `maxLongSide`,
+ * keeping aspect ratio; `scaled` is false when it already fits. Degenerate input (zero/NaN)
+ * comes back unscaled at 1x1 minimum so a caller never builds a 0-size canvas. */
+function computeImageTargetSize(width, height, maxLongSide = NODE_IMAGE_MAX_LONG_SIDE) {
+    const w = Number.isFinite(width) && width > 0 ? Math.round(width) : 1;
+    const h = Number.isFinite(height) && height > 0 ? Math.round(height) : 1;
+    const long = Math.max(w, h);
+    if (long <= maxLongSide)
+        return { width: w, height: h, scaled: false };
+    const k = maxLongSide / long;
+    return { width: Math.max(1, Math.round(w * k)), height: Math.max(1, Math.round(h * k)), scaled: true };
+}
+/** True for a GIF with more than one frame. Walks the block structure (header, logical screen
+ * descriptor, optional global colour table, then extension/image blocks) counting image
+ * descriptors; stops as soon as a second frame is seen. Malformed/truncated data counts as
+ * whatever frames were found before the damage. */
+function isAnimatedGif(bytes) {
+    if (!bytes || bytes.length < 13)
+        return false;
+    const sig = String.fromCharCode(bytes[0], bytes[1], bytes[2]);
+    if (sig !== 'GIF')
+        return false;
+    let p = 13;
+    const lsdFlags = bytes[10];
+    if (lsdFlags & 0x80)
+        p += 3 * (1 << ((lsdFlags & 0x07) + 1));
+    let frames = 0;
+    const skipSubBlocks = () => {
+        while (p < bytes.length) {
+            const size = bytes[p];
+            p += 1;
+            if (size === 0)
+                return true;
+            p += size;
+        }
+        return false;
+    };
+    while (p < bytes.length) {
+        const b = bytes[p];
+        if (b === 0x3b)
+            break; // trailer
+        if (b === 0x21) {
+            p += 2; // introducer + label
+            if (!skipSubBlocks())
+                break;
+        }
+        else if (b === 0x2c) {
+            frames += 1;
+            if (frames > 1)
+                return true;
+            if (p + 10 > bytes.length)
+                break;
+            const flags = bytes[p + 9];
+            p += 10;
+            if (flags & 0x80)
+                p += 3 * (1 << ((flags & 0x07) + 1));
+            p += 1; // LZW minimum code size
+            if (!skipSubBlocks())
+                break;
+        }
+        else {
+            break;
+        }
+    }
+    return false;
+}
+/** Whether a newly added file of this MIME type should be downscaled/re-encoded at all. SVG is
+ * vector (rasterising it would lose that) and an animated GIF would lose its animation, so both
+ * are kept byte-for-byte; every other image/* type is re-encoded. */
+function shouldReencodeImage(mime, animatedGif) {
+    const m = String(mime || '').toLowerCase();
+    if (!m.startsWith('image/'))
+        return false;
+    if (m === 'image/svg+xml')
+        return false;
+    if (m === 'image/gif' && animatedGif)
+        return false;
+    return true;
+}
+/** Decoded byte size of a data URL's payload (base64 or percent-encoded). 0 for non-data URLs. */
+function dataUrlByteLength(dataUrl) {
+    if (typeof dataUrl !== 'string' || !dataUrl.startsWith('data:'))
+        return 0;
+    const comma = dataUrl.indexOf(',');
+    if (comma < 0)
+        return 0;
+    const meta = dataUrl.slice(5, comma);
+    const payload = dataUrl.slice(comma + 1);
+    if (/;base64$/i.test(meta)) {
+        const clean = payload.replace(/\s+/g, '');
+        const pad = clean.endsWith('==') ? 2 : clean.endsWith('=') ? 1 : 0;
+        return Math.max(0, Math.floor((clean.length * 3) / 4) - pad);
+    }
+    try {
+        return decodeURIComponent(payload).length;
+    }
+    catch {
+        return payload.length;
+    }
+}
+/** The MIME type a data URL actually carries (lower-cased), or '' if it isn't one. Used to check
+ * that `canvas.toDataURL('image/webp')` really produced WebP — browsers that can't encode it
+ * silently return PNG instead. */
+function dataUrlMime(dataUrl) {
+    const m = /^data:([^;,]+)[;,]/i.exec(String(dataUrl || ''));
+    return m ? m[1].toLowerCase() : '';
+}
+/** Picks between the original file and the re-encoded (WebP, or JPEG fallback) version. When
+ * the picture had to be downscaled the re-encoded one always wins (the original is too big by
+ * definition). Otherwise the original is kept only if it is a web-safe raster type
+ * (PNG/JPEG/WebP) and already no larger than the re-encode — e.g. a tiny flat-colour PNG. */
+function pickEncodedImage(original, encoded, scaled) {
+    if (!encoded || !encoded.bytes)
+        return 'original';
+    if (scaled)
+        return 'encoded';
+    const keepable = ['image/png', 'image/jpeg', 'image/webp'].includes(String(original.mime).toLowerCase());
+    if (keepable && original.bytes > 0 && original.bytes <= encoded.bytes)
+        return 'original';
+    return 'encoded';
+}
+/** Caption for a picture moved out of a legacy note: its alt text, trimmed — unless that's
+ * empty or just a file name (what most paste paths put there), which isn't a caption. */
+function captionFromLegacyAlt(alt) {
+    if (typeof alt !== 'string')
+        return '';
+    const t = alt.trim();
+    if (!t)
+        return '';
+    if (/^[\w\-. ]+\.(png|jpe?g|gif|webp|bmp|svg|avif|heic)$/i.test(t))
+        return '';
+    return normalizeCaption(t);
+}
+
+/* GENERATED:hubNodeImages:END */
+/* GENERATED:hubDocReader:START — DO NOT EDIT BY HAND. Source of truth: src/utils/docReader.ts (tests: tests/unit/docReader.test.ts). Regenerate with `npm run generate` after changing the source; CI fails if this block drifts from what the generator produces (see .github/workflows/ci.yml and scripts/generate-index-blocks.mjs). */
+/**
+ * Reading documents on a phone (owner, 2026-11-03): hub.html lists the account's synced documents
+ * and opens one as a read-only outline (fold and unfold, notes and threads read in place). Nothing
+ * is written back, so a phone can never overwrite work done on a computer.
+ *
+ * This module holds the pure decisions: which documents the list shows and in what order, the
+ * folder path under each name, which rows are visible under the current folds, what a row carries
+ * (note, thread, pictures, tables, diagrams) and a thread in reading order. Fetching, caching and
+ * the DOM stay hand-written in hub.html.
+ *
+ * Wired into hub.html via scripts/generate-index-blocks.mjs's `hubDocReader` block, after the
+ * `hubDiscussionStatus` block whose functions the value import below resolves to (the generator
+ * strips import lines; every block shares hub.html's one script scope).
+ */
+/** A folder's path from the top, joined with ' › ' (as on the desktop top line). '' outside any folder. */
+function readerFolderPath(folderId, folders) {
+    if (!folderId)
+        return '';
+    const byId = new Map((Array.isArray(folders) ? folders : []).filter((f) => f && f.id).map((f) => [f.id, f]));
+    const names = [];
+    let f = byId.get(folderId);
+    for (let hops = 0; f && hops < 32; hops++) {
+        names.unshift(String(f.name || 'Untitled folder'));
+        f = f.parentId ? byId.get(f.parentId) : undefined;
+    }
+    return names.join(' › ');
+}
+/**
+ * The documents the phone lists: not in Trash, most recently changed first, each with its folder
+ * path. A query keeps the ones whose name or folder path contains every typed word.
+ */
+function readerDocList(index, folders, docFolderMap, query = '') {
+    const list = Array.isArray(index) ? index : [];
+    const fl = Array.isArray(folders) ? folders : [];
+    const map = docFolderMap && typeof docFolderMap === 'object' ? docFolderMap : {};
+    const words = String(query || '').toLowerCase().split(/\s+/).filter(Boolean);
+    return list
+        .filter((d) => d && typeof d.id === 'string' && !d.trashedAt)
+        .map((d) => ({
+        id: d.id,
+        title: String(d.title || '').trim() || 'Untitled',
+        path: readerFolderPath(map[d.id], fl),
+        updatedAt: Number(d.updatedAt) || 0
+    }))
+        .filter((d) => {
+        if (!words.length)
+            return true;
+        const hay = (d.title + ' ' + d.path).toLowerCase();
+        return words.every((w) => hay.includes(w));
+    })
+        .sort((a, b) => b.updatedAt - a.updatedAt);
+}
+/** The rows on screen: every row whose ancestors are all unfolded. */
+function readerVisibleRows(nodes, collapsed) {
+    const list = Array.isArray(nodes) ? nodes : [];
+    const out = [];
+    let skipDepth = null;
+    for (let i = 0; i < list.length; i++) {
+        const node = list[i];
+        const depth = Math.max(0, Number(node.depth) || 0);
+        if (skipDepth !== null) {
+            if (depth > skipDepth)
+                continue;
+            skipDepth = null;
+        }
+        let end = i + 1;
+        while (end < list.length && (Number(list[end].depth) || 0) > depth)
+            end++;
+        const hasChildren = end > i + 1;
+        const folded = hasChildren && collapsed.has(node.id);
+        if (folded)
+            skipDepth = depth;
+        out.push({ node, index: i, depth, hasChildren, folded, hiddenCount: folded ? end - i - 1 : 0 });
+    }
+    return out;
+}
+/** Ids of the rows above `id` (nearest first), so a row link can unfold the way to its row. */
+function readerAncestorIds(nodes, id) {
+    const list = Array.isArray(nodes) ? nodes : [];
+    const idx = list.findIndex((n) => n.id === id);
+    if (idx < 0)
+        return [];
+    const out = [];
+    let depth = Number(list[idx].depth) || 0;
+    for (let i = idx - 1; i >= 0 && depth > 0; i--) {
+        const d = Number(list[i].depth) || 0;
+        if (d < depth) {
+            out.push(list[i].id);
+            depth = d;
+        }
+    }
+    return out;
+}
+/** True when the row has a note worth opening (a title or visible text, or a picture inside it). */
+function readerHasNote(node) {
+    const note = String(node.note || '');
+    return !!String(node.noteTitle || '').trim() || htmlHasVisibleText(note) || /<(img|table)\b/i.test(note);
+}
+/** A row's thread in reading order (entries by time, replies under their entry), empty entries left out. */
+function readerThread(entries, nodeId) {
+    const thread = threadEntries((Array.isArray(entries) ? entries : []), nodeId).filter((e) => htmlHasVisibleText(e.text));
+    return threadReadingOrder(thread).map(({ entry, nested }) => {
+        const kind = entry.decision ? 'decision' : isQuestion(entry) ? 'question' : nested ? 'reply' : 'comment';
+        return { entry, nested, kind, open: kind === 'question' && questionState(entry, thread) === 'open' };
+    });
+}
+
+/* GENERATED:hubDocReader:END */
 // A title's formatting from the desktop selection bar (same storage as a row's words). Links
 // show as plain words here: tapping a task opens it, it doesn't follow a link.
 function todoTitleHtml(t){
@@ -2726,6 +3916,385 @@ document.addEventListener('keydown',function(e){
 // ============================================================================
 // Sign-in → pull → render
 // ============================================================================
+// ============================================================================
+// Documents, read only (owner, 2026-11-03). The Documents tab lists the account's synced
+// documents (users/{uid}/meta docsIndex/folders/docFolderMap) and opens one as an outline to
+// read: fold and unfold, notes and threads open in place, pictures, tables. Nothing is written
+// back, so the phone can never overwrite work done on a computer. Pure parts: src/utils/docReader.ts.
+// The list is cached in localStorage and recently opened documents in IndexedDB, so both still
+// open offline; signing out clears both.
+// ============================================================================
+var DOCS_LIST_CACHE_KEY='sakura_hub_docs_list_v1';
+var HUB_VIEW_KEY='sakura_hub_view_v1';
+var READER_IDB_NAME='sakura_hub_reader';
+var READER_CACHE_MAX=15;
+var hubView='todos';
+var docsListData=null;
+var docsListState='idle'; // idle | loading | error
+var docsListFetchedAt=0;
+var readerDocId=null, readerDoc=null, readerPath='';
+var readerCollapsed=new Set(), readerOpenNotes=new Set(), readerOpenThreads=new Set();
+var readerImageMarks={};
+var READER_STATUS={confirmed:{label:'Agreed',cls:'green'},followup:{label:'Follow-up',cls:'orange'},parked:{label:'Out of scope',cls:'gray'}};
+var READER_ICONS={
+  confirmed:'<polyline points="20 6 9 17 4 12"/>',
+  followup:'<path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/>',
+  parked:'<circle cx="12" cy="12" r="9"/><line x1="5.6" y1="5.6" x2="18.4" y2="18.4"/>',
+  note:'<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="13" y2="17"/>',
+  thread:'<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>',
+  question:'<circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 2.5-3 4"/><line x1="12" y1="17" x2="12.01" y2="17"/>',
+  decision:'<path d="M20 6 9 17l-5-5"/>',
+  reply:'<polyline points="9 14 4 9 9 4"/><path d="M20 20v-7a4 4 0 0 0-4-4H4"/>',
+  diagram:'<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><path d="M10 6.5h4a2 2 0 0 1 2 2V14"/>',
+  chevron:'<polyline points="9 6 15 12 9 18"/>'
+};
+function readerIcon(name,size){ size=size||14; return '<svg width="'+size+'" height="'+size+'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+(READER_ICONS[name]||'')+'</svg>'; }
+
+// ---------- Small IndexedDB cache of opened documents ----------
+var _readerDbPromise=null;
+function readerDb(){
+  if(_readerDbPromise)return _readerDbPromise;
+  _readerDbPromise=new Promise(function(resolve,reject){
+    if(!window.indexedDB){ reject(new Error('no indexedDB')); return; }
+    var req=indexedDB.open(READER_IDB_NAME,1);
+    req.onupgradeneeded=function(){ req.result.createObjectStore('docs'); };
+    req.onsuccess=function(){ resolve(req.result); };
+    req.onerror=function(){ reject(req.error); };
+  }).catch(function(e){ _readerDbPromise=null; throw e; });
+  return _readerDbPromise;
+}
+function readerCacheGet(id){
+  return readerDb().then(function(db){ return new Promise(function(resolve){
+    var r=db.transaction('docs','readonly').objectStore('docs').get(id);
+    r.onsuccess=function(){ resolve(r.result||null); }; r.onerror=function(){ resolve(null); };
+  }); }).catch(function(){ return null; });
+}
+function readerCachePut(id,data){
+  return readerDb().then(function(db){ return new Promise(function(resolve){
+    var tx=db.transaction('docs','readwrite'); var store=tx.objectStore('docs');
+    store.put({data:data,savedAt:Date.now()},id);
+    var all=store.getAll(); var keys=store.getAllKeys();
+    tx.oncomplete=function(){
+      // Keep only the most recently opened few.
+      var rows=(keys.result||[]).map(function(k,i){ return {k:k,t:(all.result[i]||{}).savedAt||0}; }).sort(function(a,b){ return b.t-a.t; });
+      var extra=rows.slice(READER_CACHE_MAX);
+      if(extra.length){ var tx2=db.transaction('docs','readwrite'); extra.forEach(function(x){ tx2.objectStore('docs').delete(x.k); }); }
+      resolve();
+    };
+    tx.onerror=function(){ resolve(); };
+  }); }).catch(function(){});
+}
+function clearReaderCaches(){
+  try{ localStorage.removeItem(DOCS_LIST_CACHE_KEY); }catch(e){}
+  docsListData=null; docsListFetchedAt=0;
+  try{ if(window.indexedDB){ _readerDbPromise=null; indexedDB.deleteDatabase(READER_IDB_NAME); } }catch(e){}
+}
+
+// ---------- Tabs ----------
+function setHubView(view,opts){
+  hubView=view==='docs'?'docs':'todos';
+  try{ localStorage.setItem(HUB_VIEW_KEY,hubView); }catch(e){}
+  var docs=hubView==='docs';
+  document.body.classList.toggle('hub-view-docs',docs);
+  document.getElementById('todos-view').hidden=docs;
+  document.getElementById('todo-greeting').hidden=docs;
+  document.getElementById('docs-view').hidden=!docs;
+  ['todos','docs'].forEach(function(v){ document.getElementById('hub-tab-'+v).setAttribute('aria-selected',String(v===hubView)); });
+  document.getElementById('hub-search-input').placeholder=docs?'Search documents':'Search';
+  if(docs){
+    renderDocsList();
+    if(!(opts&&opts.noFetch)&&currentUser&&Date.now()-docsListFetchedAt>15000)refreshDocsList();
+  }else{
+    renderTodos();
+  }
+}
+document.getElementById('hub-tab-todos').addEventListener('click',function(){ setHubView('todos'); });
+document.getElementById('hub-tab-docs').addEventListener('click',function(){ setHubView('docs'); });
+function savedHubView(){ try{ return localStorage.getItem(HUB_VIEW_KEY)==='docs'?'docs':'todos'; }catch(e){ return 'todos'; } }
+
+// ---------- Documents list ----------
+function fetchMetaValue(key){
+  return loadFirestoreMods().then(function(f){
+    return f.mod.getDoc(f.mod.doc(f.db,'users',currentUser.uid,'meta',key));
+  }).then(function(snap){ return snap.exists()?snap.data().value:undefined; });
+}
+function refreshDocsList(){
+  if(!currentUser)return Promise.resolve();
+  if(!docsListData){ try{ var c=localStorage.getItem(DOCS_LIST_CACHE_KEY); if(c)docsListData=JSON.parse(c); }catch(e){} }
+  docsListState='loading'; renderDocsList();
+  return Promise.all([fetchMetaValue('docsIndex'),fetchMetaValue('folders'),fetchMetaValue('docFolderMap')]).then(function(r){
+    docsListData={index:Array.isArray(r[0])?r[0]:[],folders:Array.isArray(r[1])?r[1]:[],map:(r[2]&&typeof r[2]==='object')?r[2]:{}};
+    docsListFetchedAt=Date.now();
+    docsListState='idle';
+    try{ localStorage.setItem(DOCS_LIST_CACHE_KEY,JSON.stringify(docsListData)); }catch(e){}
+  }).catch(function(e){
+    console.warn('[sakura hub] documents list fetch failed',e);
+    docsListState='error';
+  }).finally(function(){ renderDocsList(); });
+}
+function readerDateLabel(ts){
+  if(!ts)return '';
+  var d=new Date(ts), now=new Date();
+  if(d.toDateString()===now.toDateString())return d.toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'});
+  var y=new Date(now); y.setDate(now.getDate()-1);
+  if(d.toDateString()===y.toDateString())return 'Yesterday';
+  return d.toLocaleDateString(undefined,d.getFullYear()===now.getFullYear()?{month:'short',day:'numeric'}:{month:'short',day:'numeric',year:'numeric'});
+}
+function renderDocsList(){
+  var listEl=document.getElementById('docs-list');
+  var emptyEl=document.getElementById('docs-empty');
+  var subEl=document.getElementById('docs-head-sub');
+  if(!listEl)return;
+  if(!docsListData){ try{ var c=localStorage.getItem(DOCS_LIST_CACHE_KEY); if(c)docsListData=JSON.parse(c); }catch(e){} }
+  var d=docsListData||{index:[],folders:[],map:{}};
+  var all=readerDocList(d.index,d.folders,d.map,'');
+  var items=hubSearchQuery?readerDocList(d.index,d.folders,d.map,hubSearchQuery):all;
+  if(!docsListData&&docsListState==='loading'){ subEl.textContent='Loading…'; listEl.innerHTML=''; emptyEl.hidden=true; return; }
+  subEl.textContent=docsListState==='error'&&!docsListData?'Couldn’t load your documents. Check your connection.':(all.length+' document'+(all.length===1?'':'s')+' · read only');
+  if(!items.length){
+    listEl.innerHTML='';
+    emptyEl.hidden=!(docsListData||docsListState!=='loading');
+    document.getElementById('docs-empty-title').textContent=hubSearchQuery?'No matches':'No documents yet';
+    document.getElementById('docs-empty-msg').textContent=hubSearchQuery?'Try another word.':'Documents you write on a computer show up here to read.';
+    return;
+  }
+  emptyEl.hidden=true;
+  listEl.innerHTML='<div class="docs-card">'+items.map(function(it){
+    var meta=[it.path,readerDateLabel(it.updatedAt)].filter(Boolean).map(esc).join(' · ');
+    return '<button type="button" class="doc-item" data-doc-id="'+esc(it.id)+'"><span class="doc-item-title">'+esc(it.title)+'</span>'+(meta?'<span class="doc-item-meta">'+meta+'</span>':'')+'</button>';
+  }).join('')+'</div>';
+}
+document.getElementById('docs-list').addEventListener('click',function(e){
+  var b=e.target.closest('.doc-item'); if(!b)return;
+  openDocReader(b.getAttribute('data-doc-id'));
+});
+
+// ---------- Sanitizing stored rich text (notes, tables, thread entries) ----------
+var READER_ALLOWED_TAGS={P:1,DIV:1,SPAN:1,BR:1,B:1,STRONG:1,I:1,EM:1,U:1,S:1,STRIKE:1,DEL:1,INS:1,MARK:1,CODE:1,PRE:1,BLOCKQUOTE:1,UL:1,OL:1,LI:1,H1:1,H2:1,H3:1,H4:1,H5:1,H6:1,TABLE:1,THEAD:1,TBODY:1,TFOOT:1,TR:1,TH:1,TD:1,CAPTION:1,COLGROUP:1,COL:1,A:1,IMG:1,HR:1,SUB:1,SUP:1,SMALL:1,FIGURE:1,FIGCAPTION:1};
+var READER_DROP_TAGS={SCRIPT:1,STYLE:1,IFRAME:1,OBJECT:1,EMBED:1,FORM:1,INPUT:1,BUTTON:1,SELECT:1,TEXTAREA:1,LINK:1,META:1,BASE:1,SVG:1,MATH:1,TEMPLATE:1,NOSCRIPT:1,VIDEO:1,AUDIO:1,SOURCE:1,CANVAS:1};
+function readerSafeUrl(v,forImg){
+  var s=String(v||'').replace(/[\x00-\x20]/g,'');
+  if(forImg)return /^data:image\/(png|jpe?g|gif|webp);/i.test(s)||/^https:\/\//i.test(s);
+  return /^(https?:|mailto:|tel:)/i.test(s);
+}
+function readerSanitize(html){
+  if(!html)return '';
+  var doc;
+  try{ doc=new DOMParser().parseFromString('<body>'+String(html)+'</body>','text/html'); }catch(e){ return ''; }
+  (function walk(parent){
+    Array.prototype.slice.call(parent.childNodes).forEach(function(n){
+      if(n.nodeType===3)return;
+      if(n.nodeType!==1){ n.remove(); return; }
+      var tag=n.tagName.toUpperCase();
+      if(READER_DROP_TAGS[tag]){ n.remove(); return; }
+      walk(n);
+      if(!READER_ALLOWED_TAGS[tag]){ while(n.firstChild)parent.insertBefore(n.firstChild,n); n.remove(); return; }
+      Array.prototype.slice.call(n.attributes).forEach(function(a){
+        var name=a.name.toLowerCase();
+        var keep=(name==='colspan'||name==='rowspan'||name==='alt'||name==='title')||
+          (name==='href'&&tag==='A'&&readerSafeUrl(a.value,false))||
+          (name==='src'&&tag==='IMG'&&readerSafeUrl(a.value,true))||
+          (name==='class'&&tag==='MARK');
+        if(!keep)n.removeAttribute(a.name);
+      });
+      if(tag==='A'&&n.getAttribute('href')){ n.setAttribute('target','_blank'); n.setAttribute('rel','noopener noreferrer'); }
+      if(tag==='IMG'&&!n.getAttribute('src'))n.remove();
+    });
+  })(doc.body);
+  return doc.body.innerHTML;
+}
+
+// ---------- The reader ----------
+function readerFindPath(id){
+  var d=docsListData; if(!d)return '';
+  var it=readerDocList(d.index,d.folders,d.map,'').filter(function(x){ return x.id===id; })[0];
+  return it?it.path:'';
+}
+function openDocReader(id,fromHistory){
+  if(!id)return;
+  var sameDoc=readerDocId===id&&readerDoc;
+  readerDocId=id;
+  readerPath=readerFindPath(id);
+  if(!sameDoc){ readerDoc=null; readerOpenNotes=new Set(); readerOpenThreads=new Set(); }
+  var el=document.getElementById('doc-reader');
+  el.hidden=false; document.body.classList.add('reader-open');
+  if(!fromHistory){ try{ history.pushState({hubDoc:id},''); }catch(e){} }
+  if(!sameDoc){
+    var listed=(docsListData?readerDocList(docsListData.index,docsListData.folders,docsListData.map,''):[]).filter(function(x){ return x.id===id; })[0];
+    renderReaderShell(listed?listed.title:'',true);
+    document.getElementById('doc-reader-scroll').scrollTop=0;
+  }
+  readerCacheGet(id).then(function(cached){
+    if(readerDocId!==id)return;
+    if(cached&&cached.data&&!readerDoc)setReaderDoc(cached.data,true);
+    if(!currentUser)return;
+    return loadFirestoreMods().then(function(f){
+      return f.mod.getDoc(f.mod.doc(f.db,'users',currentUser.uid,'docs',id));
+    }).then(function(snap){
+      if(readerDocId!==id)return;
+      if(!snap.exists()){ if(!readerDoc)renderReaderMessage('This document hasn’t reached your account yet. Open it on your computer while signed in, then try again.'); return; }
+      var data=snap.data();
+      readerCachePut(id,data);
+      if(!readerDoc||Number(readerDoc.updatedAt||0)!==Number(data.updatedAt||0))setReaderDoc(data,!!readerDoc);
+    }).catch(function(e){
+      console.warn('[sakura hub] document fetch failed',e);
+      if(readerDocId===id&&!readerDoc)renderReaderMessage(navigator.onLine?'Couldn’t open this document. Try again in a moment.':'You’re offline. Documents you opened before still open here.');
+    });
+  });
+}
+function setReaderDoc(data,keepFolds){
+  readerDoc=data||{};
+  if(!keepFolds)readerCollapsed=new Set((Array.isArray(readerDoc.collapsed)?readerDoc.collapsed:[]).map(Number));
+  renderReader();
+}
+function closeDocReader(){
+  document.getElementById('doc-reader').hidden=true;
+  document.body.classList.remove('reader-open');
+  readerDocId=null;
+}
+document.getElementById('doc-reader-back').addEventListener('click',function(){
+  if(history.state&&history.state.hubDoc)history.back(); else closeDocReader();
+});
+window.addEventListener('popstate',function(e){
+  if(e.state&&e.state.hubDoc)openDocReader(e.state.hubDoc,true);
+  else if(readerDocId)closeDocReader();
+});
+function renderReaderShell(title,loading){
+  document.getElementById('doc-reader-path').textContent=readerPath;
+  document.getElementById('doc-reader-title').textContent=title||'Untitled';
+  document.getElementById('doc-reader-byline').innerHTML='';
+  document.getElementById('doc-reader-body').innerHTML=loading?'<div class="rd-message">Loading…</div>':'';
+}
+function renderReaderMessage(msg){
+  document.getElementById('doc-reader-body').innerHTML='<div class="rd-message">'+esc(msg)+'</div>';
+}
+function readerNodes(){ return (readerDoc&&Array.isArray(readerDoc.nodes)?readerDoc.nodes:[]).filter(function(n){ return n&&Number.isFinite(Number(n.id)); }); }
+function readerRowTextHtml(n){
+  // rowMarksOf may tidy marks on the node it is given; a copy keeps the fetched document as stored.
+  return rowMarksToHtml(String(n.text||''),rowMarksOf(Object.assign({},n)),esc,function(h,f){
+    var g=Object.assign({},f);
+    if(g.a&&!readerSafeUrl(g.a,false))delete g.a;
+    return rowMarkTags(h,g);
+  });
+}
+function readerEntryHtml(t){
+  var e=t.entry;
+  var kindIcon=t.kind==='question'?'question':t.kind==='decision'?'decision':t.kind==='reply'?'reply':'thread';
+  var kindTip=t.kind==='question'?(t.open?'Open question':'Question, answered'):t.kind==='decision'?'Decision':t.kind==='reply'?'Reply':'Comment';
+  var who=String(e.person||'').trim();
+  var head='<div class="rd-entry-head"><span class="rd-entry-kind rd-kind-'+t.kind+(t.open?' is-open':'')+'" title="'+esc(kindTip)+'" aria-label="'+esc(kindTip)+'">'+readerIcon(kindIcon,13)+'</span>'+
+    (who?'<span class="rd-entry-who">'+esc(who)+'</span>':'')+
+    (e.createdAt?'<span class="rd-entry-day">'+esc(readerDateLabel(e.createdAt))+'</span>':'')+'</div>';
+  return '<div class="rd-entry'+(t.nested?' is-nested':'')+'">'+head+'<div class="rd-entry-text rd-rich">'+readerSanitize(e.text)+'</div></div>';
+}
+function renderReader(){
+  var d=readerDoc||{};
+  var nodes=readerNodes();
+  document.getElementById('doc-reader-path').textContent=readerPath;
+  document.getElementById('doc-reader-title').textContent=String(d.title||'').trim()||'Untitled';
+  var by=[];
+  if(d.docStatus)by.push('<span class="rd-doc-status">'+esc(d.docStatus)+'</span>');
+  if(String(d.author||'').trim())by.push(esc(String(d.author).trim()));
+  if(d.docLinkedUrl&&readerSafeUrl(d.docLinkedUrl,false))by.push('<a href="'+esc(d.docLinkedUrl)+'" target="_blank" rel="noopener noreferrer">'+esc(d.docLinkedUrlLabel||'Link')+'</a>');
+  if(d.updatedAt)by.push('Updated '+esc(readerDateLabel(d.updatedAt)));
+  document.getElementById('doc-reader-byline').innerHTML=by.join('<span class="rd-sep"> · </span>');
+  var body=document.getElementById('doc-reader-body');
+  if(!nodes.length){ body.innerHTML='<div class="rd-message">This document is empty.</div>'; updateReaderExpandBtn(); return; }
+  var remarks=Array.isArray(d.remarks)?d.remarks:[];
+  var diagrams=Array.isArray(d.diagrams)?d.diagrams:[];
+  readerImageMarks={};
+  var html=readerVisibleRows(nodes,readerCollapsed).map(function(r){
+    var n=r.node, id=Number(n.id);
+    var st=n.styles||{};
+    var heading=Math.min(3,Math.max(0,parseInt(st.heading,10)||0));
+    var cls='rd-row'+(heading?' rd-h rd-h'+heading:'')+(n.isCheckbox&&n.checked?' rd-done':'');
+    var textCls='rd-text'+(st.bold?' rd-b':'')+(st.italic?' rd-i':'')+(st.underline?' rd-u':'')+(st.strike?' rd-s':'');
+    var colour=st.color&&/^[a-z]+$/.test(st.color)?' style="color:var(--fc-'+st.color+')"':'';
+    var lead=r.hasChildren
+      ?'<button type="button" class="rd-fold'+(r.folded?' is-folded':'')+'" data-fold="'+id+'" aria-expanded="'+(!r.folded)+'" aria-label="'+(r.folded?'Unfold':'Fold')+'">'+readerIcon('chevron',14)+'</button>'
+      :'<span class="rd-fold-space"></span>';
+    var mark=n.isCheckbox?'<span class="rd-cb'+(n.checked?' is-checked':'')+'" role="img" aria-label="'+(n.checked?'Done':'Not done')+'"></span>':(heading?'':'<span class="rd-dot"></span>');
+    var extras='';
+    var status=READER_STATUS[normalizeThreadStatus(n.marker)||''];
+    if(status)extras+='<span class="rd-status rd-c-'+status.cls+'" title="'+status.label+'" aria-label="'+status.label+'">'+readerIcon(normalizeThreadStatus(n.marker),13)+'</span>';
+    if(readerHasNote(n))extras+='<button type="button" class="rd-ico'+(readerOpenNotes.has(id)?' is-on':'')+'" data-note="'+id+'" aria-label="Note" aria-expanded="'+readerOpenNotes.has(id)+'">'+readerIcon('note',14)+'</button>';
+    var thread=readerThread(remarks,id);
+    if(thread.length){
+      var openQ=thread.filter(function(t){ return t.open; }).length;
+      extras+='<button type="button" class="rd-ico'+(openQ?' has-open':'')+(readerOpenThreads.has(id)?' is-on':'')+'" data-thread="'+id+'" aria-label="Thread'+(openQ?', '+openQ+' open question'+(openQ===1?'':'s'):'')+'" aria-expanded="'+readerOpenThreads.has(id)+'">'+readerIcon('thread',14)+(openQ?'<span class="rd-count">'+openQ+'</span>':'')+'</button>';
+    }
+    if(r.folded)extras+='<button type="button" class="rd-more" data-fold="'+id+'">+'+r.hiddenCount+'</button>';
+    var under='';
+    if(readerOpenNotes.has(id)&&readerHasNote(n)){
+      under+='<div class="rd-panel rd-note">'+(String(n.noteTitle||'').trim()?'<div class="rd-note-title">'+esc(n.noteTitle)+'</div>':'')+'<div class="rd-rich">'+readerSanitize(n.note)+'</div></div>';
+    }
+    if(readerOpenThreads.has(id)&&thread.length){
+      under+='<div class="rd-panel rd-thread">'+thread.map(readerEntryHtml).join('')+'</div>';
+    }
+    (Array.isArray(n.images)?n.images:[]).forEach(function(img,i){
+      if(!img||!isUsableImageSrc(img.src)||!readerSafeUrl(img.src,true))return;
+      var key=id+':'+i;
+      if(Array.isArray(img.annotations)&&img.annotations.length)readerImageMarks[key]=img.annotations;
+      var w=Number(img.width)>0?' style="max-width:min(100%,'+Math.round(Number(img.width))+'px)"':'';
+      under+='<figure class="rd-img"'+w+'><span class="rd-img-box"><img src="'+esc(img.src)+'" alt="'+esc(img.caption||'')+'" loading="lazy" data-marks="'+esc(key)+'"><svg class="rd-img-marks" aria-hidden="true"></svg></span>'+(String(img.caption||'').trim()?'<figcaption>'+esc(img.caption)+'</figcaption>':'')+'</figure>';
+    });
+    (Array.isArray(n.tables)?n.tables:[]).forEach(function(t){
+      if(typeof t!=='string')return;
+      under+='<div class="rd-table rd-rich">'+readerSanitize(t)+'</div>';
+    });
+    diagrams.filter(function(dg){ return dg&&Number(dg.anchorNodeId)===id; }).forEach(function(dg){
+      under+='<button type="button" class="rd-diagram">'+readerIcon('diagram',14)+'<span>'+esc(String(dg.title||'').trim()||'Diagram')+'</span><span class="rd-diagram-hint">opens on a computer</span></button>';
+    });
+    return '<div class="'+cls+'" data-id="'+id+'" style="--rd-depth:'+r.depth+'">'+lead+mark+
+      '<div class="rd-main"><div class="rd-line"><span class="'+textCls+'"'+colour+'>'+(readerRowTextHtml(n)||'&nbsp;')+'</span>'+extras+'</div>'+under+'</div></div>';
+  }).join('');
+  body.innerHTML=html;
+  body.querySelectorAll('img[data-marks]').forEach(function(img){
+    var marks=readerImageMarks[img.getAttribute('data-marks')]; if(!marks)return;
+    function draw(){
+      var w=img.naturalWidth||1, h=img.naturalHeight||1;
+      var svg=img.nextElementSibling;
+      svg.setAttribute('viewBox','0 0 '+w+' '+h);
+      svg.innerHTML=annotationsToSvg(marks,w,h,{minStroke:Math.max(w,h)/220});
+    }
+    if(img.complete&&img.naturalWidth)draw(); else img.addEventListener('load',draw,{once:true});
+  });
+  updateReaderExpandBtn();
+}
+function updateReaderExpandBtn(){
+  var b=document.getElementById('doc-reader-expand');
+  var anyFolded=readerVisibleRows(readerNodes(),readerCollapsed).some(function(r){ return r.folded; });
+  b.setAttribute('aria-label',anyFolded?'Expand all':'Collapse all');
+  b.title=anyFolded?'Expand all':'Collapse all';
+  b.classList.toggle('is-collapse',!anyFolded);
+}
+document.getElementById('doc-reader-expand').addEventListener('click',function(){
+  var nodes=readerNodes();
+  var anyFolded=readerVisibleRows(nodes,readerCollapsed).some(function(r){ return r.folded; });
+  if(anyFolded)readerCollapsed=new Set();
+  else readerCollapsed=new Set(readerVisibleRows(nodes,new Set()).filter(function(r){ return r.hasChildren&&r.depth===0; }).map(function(r){ return Number(r.node.id); }));
+  renderReader();
+});
+function readerJumpToRow(targetId){
+  var nodes=readerNodes();
+  if(!nodes.some(function(n){ return Number(n.id)===targetId; })){ showToast('That row is in another document'); return; }
+  readerAncestorIds(nodes,targetId).forEach(function(a){ readerCollapsed.delete(Number(a)); });
+  renderReader();
+  var row=document.querySelector('#doc-reader-body .rd-row[data-id="'+targetId+'"]');
+  if(row){ row.scrollIntoView({block:'center'}); row.classList.add('rd-flash'); setTimeout(function(){ row.classList.remove('rd-flash'); },1200); }
+}
+document.getElementById('doc-reader-body').addEventListener('click',function(e){
+  var t=e.target.closest('[data-fold],[data-note],[data-thread],.bl-link,.rd-diagram');
+  if(!t)return;
+  if(t.classList.contains('rd-diagram')){ showToast('Diagrams open on a computer'); return; }
+  if(t.classList.contains('bl-link')){ var r=Number(t.getAttribute('data-r')); if(Number.isFinite(r))readerJumpToRow(r); return; }
+  var id;
+  if(t.hasAttribute('data-fold')){ id=Number(t.getAttribute('data-fold')); if(readerCollapsed.has(id))readerCollapsed.delete(id); else readerCollapsed.add(id); }
+  else if(t.hasAttribute('data-note')){ id=Number(t.getAttribute('data-note')); if(readerOpenNotes.has(id))readerOpenNotes.delete(id); else readerOpenNotes.add(id); }
+  else { id=Number(t.getAttribute('data-thread')); if(readerOpenThreads.has(id))readerOpenThreads.delete(id); else readerOpenThreads.add(id); }
+  renderReader();
+});
+
 function pullAndMergeCloudData(){
   return Promise.all([
     pullMetaFromCloud('todos').then(function(cloudTodos){
@@ -2752,7 +4321,7 @@ function onSignedIn(user){
   }).finally(function(){
     renderTodos();
     hideHubLoading();
-    nudgeFirstRowOnce();
+    if(savedHubView()==='docs')setHubView('docs'); else nudgeFirstRowOnce();
     handleIncomingShare();
   });
 }
@@ -2771,6 +4340,8 @@ document.addEventListener('visibilitychange',function(){
   if(document.visibilityState!=='visible'||!currentUser)return;
   if(Date.now()-_lastForegroundPullAt<5000)return; // debounce rapid foreground flips
   _lastForegroundPullAt=Date.now();
+  if(hubView==='docs')refreshDocsList();
+  if(readerDocId)openDocReader(readerDocId,true);
   pullAndMergeCloudData().then(function(){
     renderTodos();
   }).catch(function(e){
