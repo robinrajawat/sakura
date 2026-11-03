@@ -226,3 +226,12 @@ body{--pv-row-bcol:43px;--pv-heading-bcol:24px}
 #tour-replay-btn,#help-why-open-btn,#demo-open-btn,#cheatsheet-open-btn,#help-about-open-btn,#help-feedback-btn,#help-support-btn{appearance:none;border:none;background:none;color:var(--hint);font:500 11.5px 'Inter',sans-serif;padding:4px 2px;cursor:pointer;flex-shrink:0;transition:color .15s ease;display:inline-flex;flex-direction:row-reverse;align-items:center;gap:5px}
 #help-quick-links>div:hover>button{color:var(--accent)}
 #tour-replay-btn svg,#help-why-open-btn svg,#demo-open-btn svg,#cheatsheet-open-btn svg,#help-about-open-btn svg,#help-feedback-btn svg,#help-support-btn svg{flex-shrink:0}
+/* A top-level row with a heading keeps the section line; the heading sets the words' size. A short
+   title has the line beside it, on the middle of the text; a title too long to leave 48px for the
+   line wraps and the line moves under it (flex-wrap), so it never floats away from the words. */
+.pv-section.pv-section-h{flex-wrap:wrap;align-items:flex-end;gap:4px 14px;font-family:'Inter',sans-serif;font-weight:600;letter-spacing:normal;text-transform:none;color:var(--fg)}
+.pv-section-h .pv-section-text{flex:0 1 auto;min-width:0;word-break:break-word}
+.pv-section-h::after{flex:1 1 48px;margin-bottom:calc((1lh - 1px)/2)}
+.pv-section-h1{font-size:22px;line-height:1.3;letter-spacing:-.01em}
+.pv-section-h2{font-size:19px;line-height:1.32}
+.pv-section-h3{font-size:16.5px;line-height:1.36}
