@@ -30,8 +30,12 @@ const cloud: Record<string, unknown> = {
     ],
     remarks: [
       { id: 'q', anchorNodeId: 6, person: 'Kristoffer', text: 'Consent needed?', type: 'question', createdAt: now - 86400e3 }
-    ]
-  }
+    ],
+    diagrams: [{ id: 'g1', title: 'Route map', anchorNodeId: 6 }, { id: 'g2', title: 'Depot flow', anchorNodeId: 6 }]
+  },
+  // The picture the computer uploads for the phone; a non-SVG entry must be ignored.
+  'users/u1/docs/d1/previews/g1': { svg: 'data:image/svg+xml;utf8,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="40" height="20"><rect width="40" height="20" fill="#ccc"/></svg>') },
+  'users/u1/docs/d1/previews/g2': { svg: 'javascript:alert(1)' }
 };
 
 async function openHub(page: Page) {
@@ -45,6 +49,10 @@ async function openHub(page: Page) {
       doc: (_db: unknown, ...parts: string[]) => parts.join('/'),
       collection: (_db: unknown, ...parts: string[]) => parts.join('/'),
       getDoc: (p: string) => Promise.resolve({ exists: () => p in data, data: () => JSON.parse(JSON.stringify(data[p])) }),
+      getDocs: (p: string) => Promise.resolve({
+        forEach: (fn: (d: unknown) => void) => Object.keys(data).filter((k) => k.startsWith(p + '/')).forEach((k) =>
+          fn({ id: k.slice(p.length + 1), data: () => JSON.parse(JSON.stringify(data[k])) }))
+      }),
       setDoc: rec('setDoc'), updateDoc: rec('updateDoc'), deleteDoc: rec('deleteDoc'), addDoc: rec('addDoc'),
       writeBatch: () => ({ set: rec('batch.set'), update: rec('batch.update'), delete: rec('batch.delete'), commit: () => Promise.resolve() })
     };
@@ -81,7 +89,9 @@ test('a document opens read only: folds, note, thread, row link; nothing is writ
   // Saved folds come along: Rollout is folded with 2 rows under it.
   await expect(body.locator('.rd-row[data-id="4"]')).toHaveCount(0);
   await expect(body.locator('.rd-more')).toHaveText('+2');
-  await body.locator('.rd-fold[data-fold="3"]').click();
+  // Tapping a folded row's dot unfolds it (no fold arrows).
+  await expect(body.locator('.rd-dot[data-fold="3"]')).toHaveClass(/is-folded/);
+  await body.locator('.rd-dot[data-fold="3"]').click();
   await expect(body.locator('.rd-row[data-id="4"]')).toBeVisible();
   // Note opens in place, sanitized (no script, no onerror).
   await body.locator('[data-note="2"]').click();
@@ -93,7 +103,8 @@ test('a document opens read only: folds, note, thread, row link; nothing is writ
   await body.locator('[data-thread="6"]').click();
   await expect(body.locator('.rd-thread')).toContainText('Consent needed?');
   // A row link unfolds and jumps to its row.
-  await body.locator('[data-fold="1"]').click();
+  // Tapping a parent row's words folds it.
+  await body.locator('.rd-text[data-fold="1"]').click();
   await expect(body.locator('.rd-row[data-id="2"]')).toHaveCount(0);
   await body.locator('.bl-link').click();
   await expect(body.locator('.rd-row[data-id="2"]')).toBeVisible();
@@ -111,5 +122,39 @@ test('a document missing from the account says so instead of showing an empty pa
   await page.click('#hub-tab-docs');
   await page.click('.doc-item[data-doc-id="d2"]');
   await expect(page.locator('#doc-reader-body .rd-message')).toContainText('hasn’t reached your account');
+  expect(await page.evaluate(() => (window as any).__writes)).toEqual([]);
+});
+
+test('open items, diagram pictures and Share, still without a single write', async ({ page }) => {
+  await openHub(page);
+  await page.click('#hub-tab-docs');
+  await page.click('.doc-item[data-doc-id="d1"]');
+  const body = page.locator('#doc-reader-body');
+  // Open items under the title: one follow-up and one open question; tap an item to jump to it.
+  await expect(page.locator('.rd-oi-btn')).toHaveAttribute('aria-label', /1 follow-up.*1 open question/);
+  await page.click('.rd-oi-btn');
+  await expect(page.locator('.rd-oi-item')).toHaveCount(2);
+  await page.locator('.rd-oi-item', { hasText: 'Consent needed?' }).click();
+  await expect(body.locator('.rd-thread')).toContainText('Consent needed?');
+  // The uploaded picture shows; a diagram without a (valid) picture keeps the computer chip.
+  await expect(body.locator('.rd-dg img')).toHaveCount(1);
+  await expect(body.locator('.rd-dg img')).toHaveAttribute('src', /^data:image\/svg\+xml/);
+  await expect(body).toContainText('opens on a computer');
+  // Tap opens it full screen; x closes it.
+  await body.locator('[data-diagram="g1"]').click();
+  await expect(page.locator('#rd-viewer')).toBeVisible();
+  await page.click('#rd-viewer-close');
+  await expect(page.locator('#rd-viewer')).toBeHidden();
+  // Share > Text hands the outline over (clipboard where the share sheet is missing).
+  await page.evaluate(() => {
+    const w = window as any;
+    w.__shared = '';
+    Object.defineProperty(navigator, 'share', { value: undefined, configurable: true });
+    Object.defineProperty(navigator, 'clipboard', { value: { writeText: (t: string) => { w.__shared = t; return Promise.resolve(); } }, configurable: true });
+  });
+  await page.click('#doc-reader-share');
+  await page.locator('#doc-reader-share-menu button', { hasText: 'Text' }).click();
+  await expect.poll(() => page.evaluate(() => (window as any).__shared)).toContain('  - Cost under 4 EUR');
+  expect(await page.evaluate(() => (window as any).__shared)).toContain('- [ ] SMS at night');
   expect(await page.evaluate(() => (window as any).__writes)).toEqual([]);
 });

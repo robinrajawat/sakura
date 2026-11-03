@@ -5,7 +5,8 @@ import {
   readerVisibleRows,
   readerAncestorIds,
   readerHasNote,
-  readerThread
+  readerThread,
+  readerOpenItems
 } from '../../src/utils/docReader';
 
 const folders = [
@@ -117,5 +118,29 @@ describe('readerThread', () => {
       ['d', 'decision', false, false],
       ['q2', 'question', false, true]
     ]);
+  });
+});
+
+describe('readerOpenItems', () => {
+  const rows = [
+    { id: 1, depth: 0, text: 'Cost', marker: 'followup', markerAt: 50 },
+    { id: 2, depth: 0, text: 'SMS' },
+    { id: 3, depth: 0, text: 'Old', marker: 'issue' }
+  ];
+  const entries = [
+    { id: 'q1', anchorNodeId: 2, type: 'question' as const, text: '<p>Consent&nbsp;needed?</p>', person: 'Kristoffer', createdAt: 10 },
+    { id: 'q2', anchorNodeId: 2, type: 'question' as const, text: 'Answered?', createdAt: 11 },
+    { id: 'a2', anchorNodeId: 2, text: 'Yes', createdAt: 12, answerTo: 'q2' },
+    { id: 'd1', anchorNodeId: 1, text: 'Budget <b>4 EUR</b>', person: 'Chandana', decision: true, createdAt: 5 },
+    { id: 'gone', anchorNodeId: 99, type: 'question' as const, text: 'Row deleted', createdAt: 1 }
+  ];
+  it('lists follow-ups, open questions and decisions in document order', () => {
+    const r = readerOpenItems(rows, entries);
+    expect(r.followups.map((f) => [f.nodeId, f.text, f.since])).toEqual([[1, 'Cost', 50], [3, 'Old', 0]]);
+    expect(r.questions).toEqual([{ nodeId: 2, entryId: 'q1', text: 'Consent needed?', sub: 'SMS · Kristoffer', since: 10 }]);
+    expect(r.decisions).toEqual([{ nodeId: 1, entryId: 'd1', text: 'Budget 4 EUR', sub: 'Cost · Chandana', since: 5 }]);
+  });
+  it('is empty for an empty document', () => {
+    expect(readerOpenItems([], null)).toEqual({ followups: [], questions: [], decisions: [] });
   });
 });

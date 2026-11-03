@@ -13361,6 +13361,7 @@ async function hydrateDiagramBlobsForDoc(id){
   }
   if(changed&&currentDocId===id){ render(); }
   if(currentDocId===id)regenerateMissingDiagramPreviews();
+  if(currentDocId===id)backfillDiagramPreviews(id);
 }
 // Re-attempts a single diagram's read after hydrateDiagramBlobsForDoc's own retries above already
 // gave up on it — called from the "Retry" state openDiagramEditor shows instead of silently
@@ -16988,7 +16989,10 @@ async function pushDocToCloud(mod,db,docId){
   // the actual expensive part, size-wise) and the app already has a clean, calm fallback for "xml
   // present, no cached thumbnail yet" (the inline diagram preview's placeholder icon) rather than needing pre-rendered
   // images to cross the wire, now doubly so since a diagram's own subcollection doc still has its
-  // own 1MB ceiling.
+  // own 1MB ceiling. (Since 2026-11-03 the rendered picture also goes up, separately and
+  // best-effort, for the phone's read-only view only: see pushDiagramPreviews. The computer's own
+  // pull still ignores it and re-renders, as before.)
+  let previewItems=[];
   try{
     let diagrams=Array.isArray(data.diagrams)?data.diagrams:[];
     if(diagrams.length){
@@ -16996,10 +17000,11 @@ async function pushDocToCloud(mod,db,docId){
         if(dg.xml!==undefined)return dg; // saveToStorage's own pre-first-sync safety-net copy — already has it
         try{
           const blob=await idbGet('diagblob:'+docId+':'+dg.id);
-          return blob&&blob.xml?{...dg,xml:blob.xml}:dg;
+          return blob&&blob.xml?{...dg,xml:blob.xml,previewSvg:blob.previewSvg||dg.previewSvg||''}:dg;
         }catch(e){ return dg; } // best-effort — a diagram whose blob can't be read here pushes with whatever xml it already had (usually none), not a hard failure for the rest of the document
       }));
       await pushDocBlobSubcollection(mod,db,ownerUid,docId,'diagrams',hydrated,['xml']);
+      previewItems=hydrated;
       diagrams=hydrated.map(({xml,previewSvg,pageSvgs,...meta})=>meta);
     }
     // A pre-cutdown local copy may still carry a stale `attachments` array (with inline
@@ -17009,6 +17014,7 @@ async function pushDocToCloud(mod,db,docId){
     const dataToSend={...dataWithoutAttachments,diagrams};
     // {merge:true}: fields this device doesn't keep locally (such as an old sharedWith map) stay as they are.
     await mod.setDoc(mod.doc(db,'users',ownerUid,'docs',docId),{...dataToSend,updatedAt:ts},{merge:true});
+    if(previewItems.length)await pushDiagramPreviews(mod,db,ownerUid,docId,previewItems); // never throws
     _docTooLargeToastShown.delete(docId); // clears the one-time-per-incident gate below, so a genuinely new occurrence (after this got fixed once) is reported again rather than staying silently suppressed forever
   }catch(e){
     // Firestore's 1MB-per-document limit still applies to EACH write above — the parent doc, and
@@ -17038,6 +17044,37 @@ async function pushDocToCloud(mod,db,docId){
 // per item regardless of what actually changed. A single
 // writeBatch (atomic, same as a lone setDoc would have been) rather than sequential awaits, so a
 // mid-loop failure can't leave some items pushed and others not.
+// Each diagram's rendered picture (its previewSvg, an svg data URL) also goes up, to its own
+// docs/{docId}/previews/{diagramId} record, so the phone's read-only document view can show it
+// (owner, 2026-11-03). Kept apart from the diagram's source so a big picture can never make the
+// source's write fail, and best-effort per diagram: a picture over Firestore's 1 MB record limit,
+// or any failed write, is skipped and the phone shows the diagram's name instead. A signature per
+// diagram (persisted, so a reload doesn't re-upload) skips pictures that haven't changed.
+const DIAGRAM_PREVIEW_SYNC_KEY='sakura_preview_sync_v1';
+const DIAGRAM_PREVIEW_MAX_CHARS=900000;
+function diagramPreviewSig(svg){ let h=5381; for(let i=0;i<svg.length;i+=7)h=((h*33)^svg.charCodeAt(i))>>>0; return svg.length+':'+h; }
+async function pushDiagramPreviews(mod,db,ownerUid,docId,items){
+  let sigs={}; try{ sigs=JSON.parse(localStorage.getItem(DIAGRAM_PREVIEW_SYNC_KEY)||'{}')||{}; }catch(e){ sigs={}; }
+  let changed=false;
+  for(const dg of (Array.isArray(items)?items:[])){
+    const svg=String(dg&&dg.previewSvg||'');
+    if(!dg||!dg.id||!svg.startsWith('data:image/svg+xml')||svg.length>DIAGRAM_PREVIEW_MAX_CHARS)continue;
+    const key=ownerUid+':'+docId+':'+dg.id, sig=diagramPreviewSig(svg);
+    if(sigs[key]===sig)continue;
+    try{
+      await mod.setDoc(mod.doc(db,'users',ownerUid,'docs',docId,'previews',String(dg.id)),{svg,updatedAt:Date.now()});
+      sigs[key]=sig; changed=true;
+    }catch(e){ console.warn('[sakura] diagram picture not synced (the phone shows its name instead):',docId,dg.id,e); }
+  }
+  if(changed){ try{ localStorage.setItem(DIAGRAM_PREVIEW_SYNC_KEY,JSON.stringify(sigs)); }catch(e){} }
+}
+// Pictures made before they were synced go up the first time their document is opened here.
+async function backfillDiagramPreviews(docId){
+  if(!currentUser||currentDocId!==docId)return;
+  const withPictures=diagrams.filter(d=>d&&d._hydrated&&d.previewSvg);
+  if(!withPictures.length)return;
+  try{ const {mod,db}=await loadFirestoreMods(); await pushDiagramPreviews(mod,db,currentUser.uid,docId,withPictures); }catch(e){}
+}
 async function pushDocBlobSubcollection(mod,db,ownerUid,docId,subcolName,items,blobFields){
   const batch=mod.writeBatch(db);
   let hasWrites=false;
@@ -17074,7 +17111,7 @@ async function deleteDocFromCloud(docId){
     // the parent delete below: each subcollection is listed then batch-deleted, and a failure on
     // either just means this device's next sign-in retries the whole thing (deleteDocFromCloud
     // always runs again for anything still locally marked for deletion), not silent data loss.
-    for(const subcol of ['diagrams','attachments','versions']){
+    for(const subcol of ['diagrams','previews','attachments','versions']){
       try{
         const snap=await mod.getDocs(mod.collection(db,'users',currentUser.uid,'docs',docId,subcol));
         if(snap.empty)continue;
