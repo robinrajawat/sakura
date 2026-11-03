@@ -1212,6 +1212,9 @@ body.theme-light .segmented-btn.active{background:color-mix(in srgb,var(--accent
 .sfolder-name-input{flex:1;min-width:0;font:500 12px 'Inter',sans-serif;color:var(--fg);background:var(--edit-bg);border:1px solid var(--accent);border-radius:4px;padding:2px 5px;margin:2px 2px 2px 0;outline:none;box-shadow:none}
 /* The Documents header's + sits on the folder counts' right edge (owner, 2026-11-03): a count ends 4px
    inside its row, the header has 8px right padding and the button 5px, so the button moves 8+5-4=9px. */
+/* An empty Unfiled heading only appears while a document is dragged, as the place to drop it out of a folder. */
+.sb-unfiled-row.sb-unfiled-empty{display:none}
+#sidebar.sb-doc-drag-active .sb-unfiled-row.sb-unfiled-empty{display:flex}
 #sb-new-btn{margin-right:-9px}
 .sfolder-count{font:400 10px 'Inter',sans-serif;color:var(--hint);margin-right:4px;flex-shrink:0}
 .sfolder-row:hover .sfolder-count{display:none}
@@ -26016,8 +26019,9 @@ function makeDocItem(d, allFolders, filterActive){
     try{e.dataTransfer.setData('text/sakura-doc-id', String(d.id));}catch(err){}
     sbDragDocId = d.id;
     item.classList.add('sdoc-dragging');
+    el('sidebar')?.classList.add('sb-doc-drag-active');
   });
-  item.addEventListener('dragend',()=>{ sbDragDocId=null; item.classList.remove('sdoc-dragging'); clearSbDropTargets(); });
+  item.addEventListener('dragend',()=>{ sbDragDocId=null; item.classList.remove('sdoc-dragging'); el('sidebar')?.classList.remove('sb-doc-drag-active'); clearSbDropTargets(); });
   item.addEventListener('contextmenu',e=>{
     e.preventDefault(); e.stopPropagation();
     showSbContextMenu(e.clientX,e.clientY, sbDocContextItems(d, allFolders));
@@ -27078,8 +27082,9 @@ function renderSidebarDocs(){
     }
     unassigned.forEach(d=> { sbRenderedDocOrder.push(d.id); wrap.appendChild(makeDocItem(d, folders, !!q)); });
   } else if(folders.length && !q){
-    // Still provide a drop target to unfile docs even when there are currently no unfiled docs
-    const lbl=document.createElement('div'); lbl.className='sb-unfiled-row';
+    // Still a drop target to take a document out of its folder, but only shown while a document is
+    // being dragged (owner, 2026-11-03: an empty "Unfiled" heading read as a mistake).
+    const lbl=document.createElement('div'); lbl.className='sb-unfiled-row sb-unfiled-empty';
     const lblText=document.createElement('span'); lblText.textContent='Unfiled'; lblText.style.flex='1';
     lbl.appendChild(lblText);
     wireSbDropTarget(lbl, null);
@@ -27296,8 +27301,8 @@ function sbNewMenuItems(){ return [
   {label:'New folder', icon:SB_NEW_FOLDER_ICON, onClick:()=>createFolder()},
   {label:'Import (.opml)…', icon:SB_IMPORT_ICON, onClick:()=>triggerOpmlImport()}
 ]; }
-const SB_NEW_DOC_ICON='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="12" x2="12" y2="18"/><line x1="9" y1="15" x2="15" y2="15"/></svg>';
-const SB_NEW_FOLDER_ICON='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/><line x1="12" y1="11" x2="12" y2="17"/><line x1="9" y1="14" x2="15" y2="14"/></svg>';
+const SB_NEW_DOC_ICON='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>'; // the document rows' own page icon
+const SB_NEW_FOLDER_ICON='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>'; // a plain folder: the menu already says New
 // A .opml file dropped on the File Explorer or the editor becomes a new document, like Import.
 function _opmlFilesFrom(files){ return [...(files||[])].filter(f=>/\.(opml)$/i.test(f.name||'')||f.type==='text/x-opml'); }
 function _dropInImportArea(t){ return !!(t&&t.closest&&t.closest('#sidebar, #editor-pane')); }
