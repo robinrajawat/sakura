@@ -22517,7 +22517,7 @@ function deleteSelected(){
   rebuildParentIds(); const fallbackIdx=Math.min(roots[0],Math.max(0,nodes.length-1)); selectedId=nodes[fallbackIdx]?.id??nodes[nodes.length-1]?.id??null; editingId=null; clearMultiSelection(); selectionAnchorId=selectedId; flashNodeId=null; render(); showToast(`Deleted ${count} row${count===1?'':'s'}`+(goneWith?` with ${goneWith}`:''));
 }
 function duplicateSelected(){const roots=getSelectionRootIndexes(); if(!roots.length)return; pushUndo(); markDirty(); let firstNewId=null; for(let r=roots.length-1;r>=0;r--){const idx=roots[r]; const end=getSubtreeEnd(nodes,idx); const originals=nodes.slice(idx,end); const clones=originals.map(n=>makeNode(n.text,n.depth,null,n.styles,n.note||'',false,n.tables,n.images,rowMarksOf(n))); nodes.splice(end,0,...clones); originals.forEach((n,k)=>{ const {qas,rms}=nodeDiscussionCopies(n.id); attachDiscussionCopies(clones[k].id,qas,rms); copyNodeDiagrams(n.id,clones[k].id); if(n.marker)Object.assign(clones[k],{marker:n.marker},normalizeRowStatusMeta(n)); }); firstNewId=clones[0]?.id??firstNewId} rebuildParentIds(); if(firstNewId!==null){setSingleSelection(firstNewId); flashNode(firstNewId)} render()}
-function parseTextToTreeNodes(text){const rawLines=String(text||'').replace(/\r/g,'').split('\n'); const bulletRe=/^(?:[-*+•●◦▪▫■□‣⁃◉○→➜➝➞]|(?:\d+|[A-Za-z]|[ivxlcdmIVXLCDM]+)[.)])\s+/; const sepRe=/^[\s\-–—_=~•●▪▫■□⋯·.]{3,}$/; const treeConnectorRe=/[│┃├└┣┗┠┝┞┢┡┟─━]/; const branchCharRe=/[├└┣┗┠┝┞┢┡┟]/; const hasTreeConnectors=rawLines.some(l=>treeConnectorRe.test(l)); const noPrefixRe=/^[\t \u00a0\u2000-\u200b\u202f\u205f\u3000│┃├└┣┗┠┝┞┢┡┟─━]/; const out=[]; const rows=[]; let pendingIndentWidth=null; for(const raw of rawLines){if(!raw||!raw.trim())continue; let line=raw.replace(/\u00a0/g,' ').replace(/[\u2000-\u200b\u202f\u205f\u3000]/g,' '); const isNoPrefixLine=!noPrefixRe.test(line); if(hasTreeConnectors&&rows.length&&isNoPrefixLine&&!bulletRe.test(line.trim())&&!/^(?:\[(?: |x|X)\]|☐|☑|✅|✓)\s+/.test(line.trim())){if(pendingIndentWidth!==null){const label=line.trim(); if(label){rows.push({text:label,indentWidth:pendingIndentWidth,hadBullet:false})} pendingIndentWidth=null; continue} rows[rows.length-1].text=(rows[rows.length-1].text+' '+line.trim()).trim(); continue} const strippedForBranch=line; line=line.replace(/[│┃]/g,'  ').replace(/[├└┣┗┠┝┞┢┡┟]/g,' ').replace(/[─━]/g,' '); if(sepRe.test(line.trim())){pendingIndentWidth=null; continue} const m=line.match(/^[\t ]*/); const indentRaw=(m?m[0]:'').replace(/\t/g,'  '); const indentWidth=indentRaw.length; let label=line.slice((m?m[0]:'').length).trim(); const hadBullet=bulletRe.test(label); label=label.replace(bulletRe,'').trim(); label=label.replace(/^\[(?: |x|X)\]\s+/,'').replace(/^(?:☐|☑|✅|✓)\s+/,'').trim(); if(!label){pendingIndentWidth=branchCharRe.test(strippedForBranch)?indentWidth+1:null; continue} pendingIndentWidth=null; rows.push({text:label,indentWidth,hadBullet})} if(!rows.length)return []; const stack=[{width:-1,depth:-1}]; rows.forEach(row=>{while(stack.length>1&&row.indentWidth<=stack[stack.length-1].width)stack.pop(); const depth=stack[stack.length-1].depth+1; stack.push({width:row.indentWidth,depth}); out.push({text:row.text,depth,styles:emptyStyles(),parentId:null})}); const minDepth=Math.min(...out.map(n=>n.depth)); return out.map(n=>({text:n.text,depth:n.depth-minDepth,styles:normalizeStyles(n.styles),parentId:null}))}
+function parseTextToTreeNodes(text){const rawLines=String(text||'').replace(/\r/g,'').split('\n'); const bulletRe=/^(?:[-*+•●◦▪▫■□‣⁃◉○→➜➝➞]|(?:\d+|[A-Za-z]|[ivxlcdmIVXLCDM]+)[.)])\s+/; const sepRe=/^[\s\-–—_=~•●▪▫■□⋯·.]{3,}$/; const treeConnectorRe=/[│┃├└┣┗┠┝┞┢┡┟─━]/; const branchCharRe=/[├└┣┗┠┝┞┢┡┟]/; const hasTreeConnectors=rawLines.some(l=>treeConnectorRe.test(l)); const noPrefixRe=/^[\t \u00a0\u2000-\u200b\u202f\u205f\u3000│┃├└┣┗┠┝┞┢┡┟─━]/; const out=[]; const rows=[]; let pendingIndentWidth=null; let afterBlank=false; for(const raw of rawLines){if(!raw||!raw.trim()){afterBlank=true; continue} const blankBefore=afterBlank; afterBlank=false; let line=raw.replace(/\u00a0/g,' ').replace(/[\u2000-\u200b\u202f\u205f\u3000]/g,' '); const isNoPrefixLine=!noPrefixRe.test(line); if(hasTreeConnectors&&rows.length&&isNoPrefixLine&&!blankBefore&&!bulletRe.test(line.trim())&&!/^(?:\[(?: |x|X)\]|☐|☑|✅|✓)\s+/.test(line.trim())){if(pendingIndentWidth!==null){const label=line.trim(); if(label){rows.push({text:label,indentWidth:pendingIndentWidth,hadBullet:false})} pendingIndentWidth=null; continue} rows[rows.length-1].text=(rows[rows.length-1].text+' '+line.trim()).trim(); continue} const strippedForBranch=line; line=line.replace(/[│┃]/g,'  ').replace(/[├└┣┗┠┝┞┢┡┟]/g,' ').replace(/[─━]/g,' '); if(sepRe.test(line.trim())){pendingIndentWidth=null; continue} const m=line.match(/^[\t ]*/); const indentRaw=(m?m[0]:'').replace(/\t/g,'  '); const indentWidth=indentRaw.length; let label=line.slice((m?m[0]:'').length).trim(); const hadBullet=bulletRe.test(label); label=label.replace(bulletRe,'').trim(); label=label.replace(/^\[(?: |x|X)\]\s+/,'').replace(/^(?:☐|☑|✅|✓)\s+/,'').trim(); if(!label){pendingIndentWidth=branchCharRe.test(strippedForBranch)?indentWidth+1:null; continue} pendingIndentWidth=null; rows.push({text:label,indentWidth,hadBullet})} if(!rows.length)return []; const stack=[{width:-1,depth:-1}]; rows.forEach(row=>{while(stack.length>1&&row.indentWidth<=stack[stack.length-1].width)stack.pop(); const depth=stack[stack.length-1].depth+1; stack.push({width:row.indentWidth,depth}); out.push({text:row.text,depth,styles:emptyStyles(),parentId:null})}); const minDepth=Math.min(...out.map(n=>n.depth)); return out.map(n=>({text:n.text,depth:n.depth-minDepth,styles:normalizeStyles(n.styles),parentId:null}))}
 function pasteParsedNodes(parsed,toastVerb='Pasted',clipExtras=null){if(!Array.isArray(parsed)||!parsed.length)return; pushUndo(); markDirty(); const insertIdx=getIndex(nodes,selectedId);
   // parseTextToTreeNodes (and friends) always normalize the parsed block's own top-level
   // items to depth 0, relative to the copied content itself -- correct in isolation, but
@@ -22588,6 +22588,23 @@ function clipboardHtmlToText(html){
   };
   if(doc.body)walk(doc.body,false);
   return out.replace(/\u00a0/g,' ').split('\n').map(l=>/^\s*$/.test(l)?'':l.replace(/\s+$/,'')).join('\n');
+}
+// Tab-separated lines (a table copied as plain text, from Excel, a chat app or a text file) as a
+// table's HTML, or '' when the text isn't one: at least two lines, and every line has a tab between
+// its words (leading tabs are indentation, not columns). Short lines are padded to the widest.
+function tabTextToTableHtml(text){
+  const lines=String(text||'').replace(/\r/g,'').split('\n').filter(l=>l.trim());
+  if(lines.length<2||!lines.every(l=>/\t/.test(l.replace(/^[\t ]+/,''))))return '';
+  const rows=lines.map(l=>l.replace(/^[\t ]+/,'').split('\t').map(c=>c.trim()));
+  while(rows.every(r=>r.length>1&&r[r.length-1]===''))rows.forEach(r=>r.pop());
+  const w=Math.max(...rows.map(r=>r.length)); if(w<2)return '';
+  return '<table>'+rows.map(r=>'<tr>'+Array.from({length:w},(_,i)=>'<td>'+esc(r[i]||'')+'</td>').join('')+'</tr>').join('')+'</table>';
+}
+// Rows from a paste. A tree drawn with ├── └── │ is read from the plain text: the HTML copy of it
+// often drops the blank lines that separate one tree from the next.
+function pastedTreeNodes(html,text){
+  if(/[│┃├└┣┗]/.test(text)&&!extractSakuraClipPayload(html)){ const t=parseTextToTreeNodes(text); if(t.length)return t; }
+  const parsed=parseTreeClipboardHtml(html); return parsed.length?parsed:parseTextToTreeNodes(text);
 }
 function parseTreeClipboardHtml(html){if(!html||!html.trim())return []; const text=clipboardHtmlToText(html).trim(); return text?parseTextToTreeNodes(text):[]}
 async function smartPasteFromClipboard(){
@@ -23940,7 +23957,8 @@ document.addEventListener('paste',e=>{
       if(opmlParsed.length>1){ e.preventDefault(); commitEdit(); pasteParsedNodes(opmlParsed,'Imported'); return }
     }
     if(/<table[\s>]/i.test(html)&&!extractSakuraClipPayload(html)&&pasteTableIntoNode(e,editingId,html))return;
-    const parsedHtml=parseTreeClipboardHtml(html); const parsed=parsedHtml.length?parsedHtml:parseTextToTreeNodes(text);
+    if(!extractSakuraClipPayload(html)&&tabTextToTableHtml(text)&&pasteTableIntoNode(e,editingId,tabTextToTableHtml(text)))return;
+    const parsed=pastedTreeNodes(html,text);
     if(parsed.length>1){
       e.preventDefault(); const clipExtras=extractSakuraClipPayload(html);
       // Rows copied from Sakura (with their threads, images…) go in whole, after this row; plain lines
@@ -23958,7 +23976,8 @@ document.addEventListener('paste',e=>{
   // parseTextToTreeNodes below, which would otherwise shred its tab/newline-separated cell text
   // into one sibling node per row, with no real table at all.
   if(/<table[\s>]/i.test(html)&&selectedId!==null&&!multiSelectedIds.length&&pasteTableIntoNode(e,selectedId,html))return;
-  const parsed=parseTreeClipboardHtml(html); const fallback=parsed.length?parsed:parseTextToTreeNodes(text); if(!fallback.length)return; e.preventDefault(); const clipExtras=extractSakuraClipPayload(html); pasteParsedNodes(fallback,undefined,clipExtras)});
+  if(selectedId!==null&&!multiSelectedIds.length&&!extractSakuraClipPayload(html)&&tabTextToTableHtml(text)&&pasteTableIntoNode(e,selectedId,tabTextToTableHtml(text)))return;
+  const fallback=pastedTreeNodes(html,text); if(!fallback.length)return; e.preventDefault(); const clipExtras=extractSakuraClipPayload(html); pasteParsedNodes(fallback,undefined,clipExtras)});
 el('editor-pane').addEventListener('contextmenu',e=>{if(e.target.closest('.node-row'))return; hideContextMenu(); e.preventDefault(); showSbContextMenu(e.clientX,e.clientY,chromeContextItems())});
 // The top line and the title area: empty space gets the same menu as the page; words in the title,
 // buttons, links and menus keep their own.

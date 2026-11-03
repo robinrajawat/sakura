@@ -173,11 +173,11 @@ contradicts README.md or docs/feature-reference.md, trust them.)*
 
 ### Latest changes
 
+- **Paste: tab-separated tables and ├── trees (2026-11-03, owner).** Tab-separated plain text (2+ lines, a tab between words on every line) pasted into a row, or onto a selected row, becomes a table on that row (`tabTextToTableHtml`, then the usual `pasteTableIntoNode`). Several ├── └── trees separated by blank lines keep their shape: in `parseTextToTreeNodes` a blank line ends the "unprefixed line continues the previous row" rule, so each tree's heading is a new depth-0 row; `pastedTreeNodes` reads trees from the plain text because the HTML copy often loses the blank lines. Test: `paste-tab-table-and-trees.spec.ts`.
+
 - **Phone diagrams follow the app theme (2026-11-03, owner).** Robin saw dark diagrams in the light phone app. draw.io SVG exports declare `color-scheme: light dark` + light-dark() colours, so the picture followed the phone's system setting (Safari does this even inside `<img>`). `readerSvgForScheme` (docReader.ts) rewrites the declared scheme to the app theme in `readerPreviewFor`; `applyTheme` re-renders an open reader.
 
 - **PDF headings, footer, Help search (2026-11-03, owner).** A top-level row with a heading format now prints as that heading (it used to print as a plain section line, so H1/H2/H3 at depth 0 looked the same); top-level headings of any level are in Contents. Footer is two one-line boxes: title · status left (cut at 60 chars), date · Page x of y right (a long title had squeezed a centred page number onto two lines). Help's search box is always shown like Settings (no magnifier toggle that turned into a second accent X).
-
-- **Phone reader round 2 (2026-11-03, owner).** Diagram pictures: desktop `pushDiagramPreviews` (index.html) writes each diagram's previewSvg to `docs/{id}/previews/{dgId}` after the doc save (try/catch per item, SVG data URL only, ≤900k chars, signature in `sakura_preview_sync_v1`; `backfillDiagramPreviews` on open; deleted with the doc). hub reads them with getDocs (`fetchReaderPreviews`, kept as `_hubPreviews` in the cache), shows `<img>` + full-screen viewer `#rd-viewer` (pinch/double-tap). No fold arrows: tap row words or dot (`data-fold`), ringed dot when folded. Open items under the byline (`readerOpenItems` in docReader.ts). Share: PDF = `printReaderDoc` (unfolded, light theme, print CSS) and Text = `readerOutlineText` via navigator.share/clipboard. About = desktop text, no View source/License. Tests: `hub-docs-reader.spec.ts` (still asserts no writes), `diagram-pictures-for-phone.spec.ts`.
 
 
 ### In progress / not built
