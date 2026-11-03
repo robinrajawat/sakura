@@ -810,6 +810,7 @@ function applyTheme(){
   try{ pref=localStorage.getItem(THEME_KEY)||'system'; }catch(e){}
   var theme=resolveTheme(pref);
   document.body.className='theme-'+theme;
+  if(typeof readerDoc!=='undefined'&&readerDoc&&typeof renderReader==='function')renderReader();
   var mc=document.querySelector('meta[name="theme-color"]');
   if(mc)mc.setAttribute('content', theme==='dark' ? '#121212' : '#f8f8f6');
   document.querySelectorAll('.account-theme-btn').forEach(function(b){ b.classList.toggle('sel', b.dataset.theme===pref); });
@@ -3426,6 +3427,34 @@ function readerOpenItems(nodes, entries) {
     }));
     return { followups: followups.sort(byDoc), questions: questions.sort(byDoc), decisions: decisions.sort(byDoc) };
 }
+/**
+ * A draw.io picture follows the app's theme, not the phone's (owner, 2026-11-03). draw.io exports
+ * declare `color-scheme: light dark` and colour with light-dark(), so the picture follows the
+ * system setting. Safari does this even inside an <img> on a light page, which gave dark diagrams
+ * in a light app. Pin the declared scheme to the app's theme. Anything that isn't an SVG data URL
+ * comes back unchanged.
+ */
+function readerSvgForScheme(dataUrl, scheme) {
+    const url = String(dataUrl || '');
+    const m = /^data:image\/svg\+xml([^,]*),/i.exec(url);
+    if (!m)
+        return url;
+    const body = url.slice(m[0].length);
+    let text;
+    try {
+        text = /;base64$/i.test(m[1])
+            ? new TextDecoder().decode(Uint8Array.from(atob(body), (c) => c.charCodeAt(0)))
+            : decodeURIComponent(body);
+    }
+    catch {
+        return url;
+    }
+    const re = /color-scheme\s*:\s*(light\s+dark|dark\s+light|normal)/gi;
+    const pinned = text.replace(re, 'color-scheme: ' + scheme);
+    if (pinned === text)
+        return url;
+    return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(pinned);
+}
 
 /* GENERATED:hubDocReader:END */
 // A title's formatting from the desktop selection bar (same storage as a row's words). Links
@@ -4373,7 +4402,9 @@ function fetchReaderPreviews(id){
 }
 function readerPreviewFor(dgId){
   var m=readerDoc&&readerDoc._hubPreviews; var v=m&&m[String(dgId)];
-  return typeof v==='string'&&/^data:image\/svg\+xml[;,]/.test(v)?v:'';
+  if(typeof v!=='string'||!/^data:image\/svg\+xml[;,]/.test(v))return '';
+  // Follow the app's Light/Dark, not the phone's (draw.io pictures otherwise follow the system).
+  return readerSvgForScheme(v, document.body.classList.contains('theme-dark')?'dark':'light');
 }
 // Full-screen picture: pinch or double-tap to zoom, drag to look around, Back or x to close.
 var readerViewerScale=1;

@@ -230,3 +230,29 @@ export function readerOpenItems(
     }));
   return { followups: followups.sort(byDoc), questions: questions.sort(byDoc), decisions: decisions.sort(byDoc) };
 }
+
+/**
+ * A draw.io picture follows the app's theme, not the phone's (owner, 2026-11-03). draw.io exports
+ * declare `color-scheme: light dark` and colour with light-dark(), so the picture follows the
+ * system setting. Safari does this even inside an <img> on a light page, which gave dark diagrams
+ * in a light app. Pin the declared scheme to the app's theme. Anything that isn't an SVG data URL
+ * comes back unchanged.
+ */
+export function readerSvgForScheme(dataUrl: string, scheme: 'light' | 'dark'): string {
+  const url = String(dataUrl || '');
+  const m = /^data:image\/svg\+xml([^,]*),/i.exec(url);
+  if (!m) return url;
+  const body = url.slice(m[0].length);
+  let text: string;
+  try {
+    text = /;base64$/i.test(m[1])
+      ? new TextDecoder().decode(Uint8Array.from(atob(body), (c) => c.charCodeAt(0)))
+      : decodeURIComponent(body);
+  } catch {
+    return url;
+  }
+  const re = /color-scheme\s*:\s*(light\s+dark|dark\s+light|normal)/gi;
+  const pinned = text.replace(re, 'color-scheme: ' + scheme);
+  if (pinned === text) return url;
+  return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(pinned);
+}

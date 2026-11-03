@@ -34,7 +34,7 @@ const cloud: Record<string, unknown> = {
     diagrams: [{ id: 'g1', title: 'Route map', anchorNodeId: 6 }, { id: 'g2', title: 'Depot flow', anchorNodeId: 6 }]
   },
   // The picture the computer uploads for the phone; a non-SVG entry must be ignored.
-  'users/u1/docs/d1/previews/g1': { svg: 'data:image/svg+xml;utf8,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="40" height="20"><rect width="40" height="20" fill="#ccc"/></svg>') },
+  'users/u1/docs/d1/previews/g1': { svg: 'data:image/svg+xml;utf8,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" style="color-scheme: light dark;" width="40" height="20"><rect width="40" height="20" fill="#ccc"/></svg>') },
   'users/u1/docs/d1/previews/g2': { svg: 'javascript:alert(1)' }
 };
 
@@ -140,6 +140,8 @@ test('open items, diagram pictures and Share, still without a single write', asy
   await expect(body.locator('.rd-dg img')).toHaveCount(1);
   await expect(body.locator('.rd-dg img')).toHaveAttribute('src', /^data:image\/svg\+xml/);
   await expect(body).toContainText('opens on a computer');
+  // draw.io pictures follow the system's dark setting; the reader pins them to the app's theme.
+  expect(decodeURIComponent((await body.locator('.rd-dg img').getAttribute('src'))!)).toContain('color-scheme: light;');
   // Tap opens it full screen; x closes it.
   await body.locator('[data-diagram="g1"]').click();
   await expect(page.locator('#rd-viewer')).toBeVisible();
