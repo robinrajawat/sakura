@@ -384,16 +384,14 @@ body.reader-open{overflow:hidden}
 .rd-sep{color:var(--hint)}
 .rd-message{color:var(--hint);font-size:var(--fs-lg);padding:28px 0;text-align:center}
 #doc-reader-body{font-size:15.5px;line-height:1.5;color:var(--fg)}
-.rd-row{display:flex;align-items:flex-start;padding-left:calc(min(var(--rd-depth),6) * 16px);margin:1px 0}
+.rd-row{display:flex;align-items:flex-start;padding-left:calc(min(var(--rd-depth),6) * 18px);margin:1px 0}
+.rd-parent .rd-text[data-fold]{cursor:pointer}
 .rd-row.rd-flash .rd-text{background:color-mix(in srgb,var(--accent) 18%,transparent);border-radius:4px}
-.rd-fold,.rd-fold-space{flex:0 0 24px;width:24px;height:28px;margin-left:-6px}
-.rd-fold{border:none;background:none;color:var(--hint);display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0;border-radius:6px}
-.rd-fold svg{transform:rotate(90deg);transition:transform .12s ease}
-.rd-fold.is-folded svg{transform:none}
-.rd-fold:active{background:var(--hover)}
-.rd-dot{flex:0 0 16px;height:23px;display:flex;align-items:center;justify-content:center}
-.rd-dot::before{content:'';width:5px;height:5px;border-radius:50%;background:var(--muted)}
-.rd-cb{flex:0 0 16px;width:14px;height:14px;margin:5px 6px 0 1px;border:1.5px solid var(--muted);border-radius:3.5px;position:relative}
+.rd-dot{flex:0 0 18px;height:23px;display:flex;align-items:center;justify-content:center;border-radius:50%}
+.rd-dot[data-fold]{cursor:pointer}
+.rd-dot::before{content:'';width:0;height:0;border:2.5px solid var(--muted);border-radius:50%}
+.rd-dot.is-folded::before{box-shadow:0 0 0 4px var(--chip)}
+.rd-cb{flex:0 0 14px;width:14px;height:14px;margin:5px 4px 0 2px;border:1.5px solid var(--muted);border-radius:3.5px;position:relative}
 .rd-cb.is-checked{background:var(--muted)}
 .rd-cb.is-checked::after{content:'';position:absolute;left:3.5px;top:0.5px;width:4px;height:8px;border:solid var(--edit-bg);border-width:0 2px 2px 0;transform:rotate(45deg)}
 .rd-done .rd-text{color:var(--hint);text-decoration:line-through}
@@ -405,7 +403,6 @@ body.reader-open{overflow:hidden}
 .rd-h1 .rd-text{font-size:21px;line-height:1.3}
 .rd-h2 .rd-text{font-size:18.5px;line-height:1.3}
 .rd-h3 .rd-text{font-size:16.5px}
-.rd-h .rd-fold,.rd-h .rd-fold-space{height:calc(1.3em + 4px)}
 .rd-b{font-weight:600}.rd-i{font-style:italic}.rd-u{text-decoration:underline}.rd-s{text-decoration:line-through}
 .rd-text a,.rd-rich a{color:var(--accent);text-decoration:none}
 .rd-text .bl-link{color:var(--accent);cursor:pointer}
@@ -444,3 +441,51 @@ body.reader-open{overflow:hidden}
 .rd-diagram svg{color:var(--muted)}
 .rd-diagram-hint{color:var(--hint);font-size:var(--fs-sm)}
 body.theme-dark .hub-tab[aria-selected="true"]{background:var(--sel);box-shadow:none}
+/* Diagram pictures in the reader, and the full-screen viewer (pinch / double-tap to zoom). */
+.rd-dg-btn{display:block;width:100%;padding:8px;border:1px solid var(--border);border-radius:10px;background:var(--edit-bg);cursor:zoom-in}
+.rd-dg-btn img{display:block;max-width:100%;height:auto;margin:0 auto}
+#rd-viewer{position:fixed;inset:0;z-index:40;background:var(--bg);display:flex;flex-direction:column}
+#rd-viewer[hidden]{display:none}
+#rd-viewer-bar{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:calc(8px + env(safe-area-inset-top)) 12px 8px 18px;border-bottom:1px solid var(--border)}
+#rd-viewer-title{font:600 15px 'Inter',sans-serif;color:var(--fg);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#rd-viewer-close{width:34px;height:34px;flex-shrink:0;border:none;background:var(--chip);color:var(--muted);border-radius:50%;font-size:20px;line-height:1;cursor:pointer}
+#rd-viewer-box{flex:1;overflow:auto;-webkit-overflow-scrolling:touch;touch-action:pan-x pan-y;padding:16px;background:var(--edit-bg)}
+#rd-viewer-img{display:block;width:100%;height:auto;max-width:none}
+/* Open items under the title (as the desktop's summary): icons and numbers, tap for the list. */
+#doc-reader-oi{margin:-8px 0 16px}
+.rd-oi-btn{display:inline-flex;align-items:center;gap:6px;border:none;background:none;color:var(--muted);font:500 13px 'Inter',sans-serif;padding:4px 6px;margin-left:-6px;border-radius:8px;cursor:pointer;font-variant-numeric:tabular-nums}
+.rd-oi-btn.is-on{background:var(--chip);color:var(--fg)}
+.rd-oi-part{display:inline-flex;align-items:center;gap:4px}
+.rd-oi-followup{color:var(--fc-orange)}.rd-oi-question{color:var(--accent)}.rd-oi-decision{color:var(--muted)}
+.rd-oi-part span{color:var(--muted)}
+.rd-oi-list{padding:6px 4px}
+.rd-oi-head{font:600 11px 'Inter',sans-serif;letter-spacing:.04em;text-transform:uppercase;color:var(--hint);padding:8px 8px 4px}
+.rd-oi-item{display:flex;align-items:flex-start;gap:9px;width:100%;text-align:left;border:none;background:none;color:var(--fg);padding:7px 8px;border-radius:8px;cursor:pointer;font:400 14px/1.4 'Inter',sans-serif}
+.rd-oi-item:active{background:var(--hover)}
+.rd-oi-ico{display:inline-flex;margin-top:2px}
+.rd-oi-text{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px;overflow-wrap:anywhere}
+.rd-oi-sub{font-size:var(--fs-sm);color:var(--hint)}
+.rd-oi-age{font-size:var(--fs-sm);color:var(--hint);flex-shrink:0;margin-top:1px}
+/* Share menu in the reader's top bar. */
+#doc-reader-share-wrap{position:relative}
+#doc-reader-share{width:38px;height:38px;border:none;background:none;color:var(--muted);border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer}
+#doc-reader-share:active,#doc-reader-share[aria-expanded="true"]{background:var(--hover);color:var(--fg)}
+#doc-reader-share-menu{position:absolute;right:0;top:calc(100% + 6px);z-index:5;width:220px;background:var(--surface-raised);border:1px solid var(--border);border-radius:12px;box-shadow:0 12px 32px rgba(0,0,0,.16);padding:6px}
+#doc-reader-share-menu[hidden]{display:none}
+#doc-reader-share-menu button{display:flex;flex-direction:column;align-items:flex-start;gap:1px;width:100%;border:none;background:none;color:var(--fg);font:500 14px 'Inter',sans-serif;padding:9px 10px;border-radius:8px;cursor:pointer;text-align:left}
+#doc-reader-share-menu button span{font:400 12px 'Inter',sans-serif;color:var(--hint)}
+#doc-reader-share-menu button:active{background:var(--hover)}
+/* PDF (the phone's print screen): only the document, everything unfolded, light colours. */
+@media print{
+  body.reader-printing{overflow:visible;background:#fff}
+  body.reader-printing>*:not(#doc-reader){display:none!important}
+  body.reader-printing #doc-reader{position:static;display:block;background:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  body.reader-printing #doc-reader-bar,body.reader-printing .rd-ico,body.reader-printing .rd-more{display:none!important}
+  body.reader-printing #doc-reader-scroll{overflow:visible}
+  body.reader-printing #doc-reader-page{max-width:none;padding:0}
+  body.reader-printing .rd-panel,body.reader-printing .rd-dg-btn{break-inside:avoid}
+  body.reader-printing .rd-img{break-inside:avoid}
+  /* Print screens often drop backgrounds: the ticked box draws its tick in ink. */
+  body.reader-printing .rd-cb.is-checked{background:none}
+  body.reader-printing .rd-cb.is-checked::after{border-color:var(--muted)}
+}

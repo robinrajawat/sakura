@@ -12,7 +12,7 @@
  * `hubDiscussionStatus` block whose functions the value import below resolves to (the generator
  * strips import lines; every block shares hub.html's one script scope).
  */
-import { htmlHasVisibleText, isQuestion, questionState, threadEntries, threadReadingOrder, type ThreadEntry } from './discussionStatus';
+import { allOpenQuestions, htmlHasVisibleText, isFollowupRow, isQuestion, questionState, threadEntries, threadReadingOrder, type ThreadEntry } from './discussionStatus';
 
 export interface ReaderIndexEntry {
   id: string;
@@ -161,3 +161,72 @@ export function readerThread<T extends ThreadEntry>(entries: unknown, nodeId: nu
   });
 }
 
+
+export interface ReaderOpenItem {
+  nodeId: number;
+  /** The thread entry, for a question or a decision. */
+  entryId?: string;
+  text: string;
+  /** Grey second line: the row (for an entry) and who. */
+  sub: string;
+  /** When it was set or asked (epoch ms), 0 when unknown. */
+  since: number;
+}
+
+export interface ReaderOpenItems {
+  followups: ReaderOpenItem[];
+  questions: ReaderOpenItem[];
+  decisions: ReaderOpenItem[];
+}
+
+function readerPlain(html: unknown): string {
+  return String(html ?? '')
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/&nbsp;|&#160;/gi, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+/**
+ * The desktop's open-items summary for the phone (owner, 2026-11-03): Follow-up rows, open
+ * questions and decisions, in document order, on rows of this document only.
+ */
+export function readerOpenItems(
+  nodes: Array<ReaderNode & { marker?: string | null; markerAt?: number }>,
+  entries: unknown
+): ReaderOpenItems {
+  const list = Array.isArray(nodes) ? nodes : [];
+  const order = new Map(list.map((n, i) => [n.id, i]));
+  const rowText = (id: unknown) => {
+    const n = list.find((x) => x.id === id);
+    return n ? String(n.text || '').trim() || 'Untitled row' : '';
+  };
+  const byDoc = (a: ReaderOpenItem, b: ReaderOpenItem) => (order.get(a.nodeId) ?? 0) - (order.get(b.nodeId) ?? 0) || a.since - b.since;
+  const followups = list
+    .filter((n) => isFollowupRow(n))
+    .map((n) => ({ nodeId: n.id, text: rowText(n.id), sub: '', since: Number(n.markerAt) || 0 }));
+  const ids = new Set(list.map((n) => n.id));
+  const all = (Array.isArray(entries) ? entries : []) as ThreadEntry[];
+  const questions = allOpenQuestions(all, ids).map((q) => ({
+    nodeId: q.anchorNodeId as number,
+    entryId: q.id,
+    text: readerPlain(q.text),
+    sub: [rowText(q.anchorNodeId), String(q.person || '').trim()].filter(Boolean).join(' · '),
+    since: Number(q.createdAt) || 0
+  }));
+  const decisions = all
+    .filter((e) => e && e.decision && ids.has(e.anchorNodeId as number) && htmlHasVisibleText(e.text))
+    .map((e) => ({
+      nodeId: e.anchorNodeId as number,
+      entryId: e.id,
+      text: readerPlain(e.text),
+      sub: [rowText(e.anchorNodeId), String(e.person || '').trim()].filter(Boolean).join(' · '),
+      since: Number(e.createdAt) || 0
+    }));
+  return { followups: followups.sort(byDoc), questions: questions.sort(byDoc), decisions: decisions.sort(byDoc) };
+}

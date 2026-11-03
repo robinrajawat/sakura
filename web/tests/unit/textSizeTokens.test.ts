@@ -11,7 +11,7 @@ const SHEETS = import.meta.glob(['../../src/styles/index/*.css', '../../src/styl
 
 // hub.css (the phone app, 2026-10-25): its ×/− glyphs (#hub-search-close, .hub-sheet-close, .todo-subtask-remove),
 // and the phone's document reader (2026-11-03, #doc-reader-body/.rd-*): document typography, like the preview's.
-const NOT_UI_TEXT = /(#hub-search-close|\.hub-sheet-close|\.todo-subtask-remove|icon|dot\b|-dot|petal|blossom|avatar|badge|caret-btn|\.app-modal-close-btn|dismiss|heading-option|\.pv-(heading|text|bullet|toc|cap-head-dot)|#app-icon|stamp|#doc-reader-body|\.rd-)/i;
+const NOT_UI_TEXT = /(#hub-search-close|#rd-viewer-close|\.hub-sheet-close|\.todo-subtask-remove|icon|dot\b|-dot|petal|blossom|avatar|badge|caret-btn|\.app-modal-close-btn|dismiss|heading-option|\.pv-(heading|text|bullet|toc|cap-head-dot)|#app-icon|stamp|#doc-reader-body|\.rd-)/i;
 
 describe('interface text sizes come from the --fs-* scale', () => {
   it('no interface rule sets its own px font-size', () => {
