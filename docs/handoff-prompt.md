@@ -173,11 +173,11 @@ contradicts README.md or docs/feature-reference.md, trust them.)*
 
 ### Latest changes
 
+- **Account menu shows above Settings below 860px (2026-11-04, owner bug).** An old app-bar rule (`#appbar{overflow:hidden}` under 860px, welcome.css) clipped the menu inside the 52px rail, so it hid under Settings. The menu is now `position:fixed` beside its button (z-index 1200, like the bell menu). Test: account-menu-layout.spec.ts.
+
 - **Dev tools updated; CI on Node 22 (2026-11-03, owner).** `npm audit` 25 -> 10 (0 critical, 0 high): vite ^8.3.4 (8.3.5 installed), vitest ^4.1.12 (web and worker), happy-dom ^21.0.3, wrangler 4.151.2 and @cloudflare/workers-types 5.20261019.1 (both pinned exact: their caret ranges pulled same-day releases). Node 20 is end of life and wrangler 4 needs Node 22, so all four workflows use node-version '22'. Left: 10 moderate in eslint's minimatch (DoS via crafted glob patterns, <11.0.1); no eslint release uses minimatch 11 yet, and our patterns are our own. npm 10.9 crashes resolving these peers (`edgesOut` of null); the lockfile was written with `npx npm@11.6.2 install`, and npm 10's `npm ci` reads it fine.
 
 - **File Explorer: plain + menu icons; empty Unfiled hidden (2026-11-03, owner).** New document uses the rows' page icon, New folder a plain folder. An empty Unfiled heading (`.sb-unfiled-empty`) shows only while a document is dragged (`#sidebar.sb-doc-drag-active`), as the drop target out of a folder. Decided: Trash stays the last item in the list, moving with it (as Apple Notes/Outlook), not pinned to the bottom. Test: explorer-new-menu.spec.ts.
-
-- **Phone page CSP without 'unsafe-eval' (2026-11-03, owner).** Nothing in hub.html uses eval()/new Function(); index.html already ran the same Firebase and Google sign-in scripts without it. Test: hub-csp.spec.ts (policy text + no violation on boot). Owner confirmed live phone sign-in (2026-11-03).
 
 
 ### In progress / not built
