@@ -2591,7 +2591,9 @@ html.calm-layout #account-toggle-label{display:none}
 html.calm-layout #account-toggle:not(:has(#account-toggle-avatar-wrap[style*="inline"]))::before{content:'';width:18px;height:18px;background:currentColor;-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Ccircle cx='12' cy='10' r='3'/%3E%3Cpath d='M7 20.7a7 7 0 0 1 10 0'/%3E%3C/svg%3E") center/contain no-repeat;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Ccircle cx='12' cy='10' r='3'/%3E%3Cpath d='M7 20.7a7 7 0 0 1 10 0'/%3E%3C/svg%3E") center/contain no-repeat}
 /* Rail menus open to the right of their button (the bottom one upwards). */
 html.calm-layout #header-actions .export-menu{top:0;left:calc(100% + 8px);right:auto}
-html.calm-layout #account-wrap .export-menu{top:auto;bottom:0}
+/* The account menu is fixed like the bell menu, so the rail never clips it (the old app bar's overflow:hidden below 860px
+   hid it under Settings, owner bug 2026-11-04), and it floats above every side pane. Same place as before: beside the button. */
+html.calm-layout #account-wrap .export-menu{position:fixed;top:auto;bottom:10px;left:52px;right:auto;z-index:1200}
 /* Panels belong to the frame: everything the rail opens sits beside it, full height. To-Dos
    takes the File Explorer's place (one at a time) and moves the page over; Settings and Help
    sit in the same slot (see the end of this file). */

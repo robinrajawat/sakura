@@ -92,3 +92,23 @@ test('Help → About Sakura opens Settings → About', async ({ page }) => {
   await expect(page.locator('#settings-panel .settings-rail-btn[data-cat="about"]')).toHaveClass(/active/);
   await expect(page.locator('#settings-section-about')).toBeVisible();
 });
+
+// Below 860px the old app bar rule (overflow:hidden) clipped the menu inside the 52px rail, so with
+// Settings open it showed under Settings (owner bug 2026-11-04). It is fixed beside its button now.
+for (const width of [1440, 800, 500]) {
+  test(`account menu shows above Settings at ${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 800 });
+    await showSignedIn(page);
+    await page.click('#rail-settings-btn');
+    await expect(page.locator('#settings-panel')).toHaveClass(/open/);
+    await page.click('#account-toggle');
+    await expect(page.locator('#account-menu')).toHaveClass(/open/);
+    const onTop = await page.evaluate(() => {
+      const m = document.getElementById('account-menu')!;
+      const r = m.getBoundingClientRect();
+      const pts = [[r.left + 12, r.top + 12], [r.left + r.width / 2, r.top + r.height / 2], [r.right - 12, r.bottom - 12]];
+      return r.width > 150 && pts.every(([x, y]) => m.contains(document.elementFromPoint(x, y)));
+    });
+    expect(onTop).toBe(true);
+  });
+}
