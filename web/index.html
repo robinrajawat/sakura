@@ -23186,6 +23186,41 @@ function downloadFileBlob(filename,blob){
 // exportPreviewAsPdf (no cover page, no branding, no configurable margin) since none of these
 // three panels have asked for that yet — can grow into sharing more of exportPreviewAsPdf's
 // machinery later if that changes.
+// Safari skips window.print() without a word while the page still has a request open (WebKit
+// defers the print "until the page finishes loading", and that never comes). A signed-in page
+// always has Firestore's live connection open, so Download PDF did nothing in Safari on the Mac
+// (owner bug 2026-11-04). In Safari the print target is copied into a fresh hidden iframe,
+// which has nothing loading once its fonts and images are in, and the iframe prints instead.
+// Chrome and Firefox print the page itself, as before. The copy is independent of the page, so
+// the caller's afterprint cleanup runs as soon as the print has been handed to Safari.
+const PRINT_VIA_FRAME=/AppleWebKit/.test(navigator.userAgent)&&!/Chrome|Chromium|CriOS|Edg|Android/.test(navigator.userAgent);
+function sakuraPrint(target){
+  if(!(PRINT_VIA_FRAME||window.__sakuraPrintViaFrame)||!target){ window.print(); return; }
+  document.getElementById('sakura-print-frame')?.remove();
+  const frame=document.createElement('iframe');
+  frame.id='sakura-print-frame'; frame.setAttribute('aria-hidden','true'); frame.tabIndex=-1;
+  frame.style.cssText='position:fixed;left:-20000px;top:0;width:800px;height:600px;border:0;pointer-events:none';
+  document.body.appendChild(frame);
+  const css=[...document.querySelectorAll('style')].map(st=>st.textContent).join('\n').replace(/<\/style/gi,'<\\/style');
+  const links=[...document.querySelectorAll('link[rel="stylesheet"]')].map(l=>l.outerHTML).join('');
+  const attr=(n,a)=>escapeHtml(n.getAttribute(a)||'');
+  const d=frame.contentDocument;
+  d.open();
+  d.write(`<!doctype html><html class="${attr(document.documentElement,'class')}" style="${attr(document.documentElement,'style')}"><head><meta charset="utf-8"><title>${escapeHtml(document.title)}</title>${links}<style>${css}</style></head>`
+    +`<body class="${attr(document.body,'class')}" style="${attr(document.body,'style')}">${target.outerHTML}</body></html>`);
+  d.close();
+  const w=frame.contentWindow;
+  const ready=Promise.race([
+    Promise.all([d.fonts?d.fonts.ready:Promise.resolve(),_pdfWaitForImages(d.body,4000)]),
+    new Promise(r=>setTimeout(r,5000))
+  ]);
+  ready.then(()=>new Promise(r=>setTimeout(r,50))).then(()=>{
+    try{ w.focus(); w.print(); }
+    catch(e){ console.warn('[sakura] print frame failed, printing the page:',e); window.print(); }
+    window.dispatchEvent(new Event('afterprint'));
+    // Safari's print sheet keeps reading the frame while it is open; it goes with the next print.
+  });
+}
 let _genericPrintActive=false;
 function printHtmlAsPdf(filenameTitle,titleHtml,bodyHtml,onDone){
   if(_genericPrintActive)return; // re-entrancy guard — a second export mid-print would corrupt the first's overlay
@@ -23217,7 +23252,7 @@ function printHtmlAsPdf(filenameTitle,titleHtml,bodyHtml,onDone){
   const mqHandler=e=>{ if(!e.matches) cleanup(); };
   mq?.addEventListener?.('change',mqHandler);
   setTimeout(cleanup,15000);
-  requestAnimationFrame(()=>{ requestAnimationFrame(()=>{ window.print(); }); });
+  requestAnimationFrame(()=>{ requestAnimationFrame(()=>{ sakuraPrint(overlay); }); });
 }
 // Diagrams live in their own per-document array (keyed by anchorNodeId),
 // not on the node object itself — so a plain text/HTML clipboard copy never carried them.
@@ -29683,7 +29718,7 @@ function exportPreviewAsPdf(onDone){
   _pdfWaitForImages(el('preview-overlay'))
     .then(()=>fillPdfTocPageNumbers(paper).catch(e=>console.warn('[sakura] Contents page numbers skipped:',e)))
     .then(()=>{
-      requestAnimationFrame(()=>{ requestAnimationFrame(()=>{ window.print(); }); });
+      requestAnimationFrame(()=>{ requestAnimationFrame(()=>{ sakuraPrint(el('preview-overlay')); }); });
     });
 }
 const PDF_PAGE_MARGIN_MM=20;
