@@ -87,3 +87,37 @@ test('signed out: prints the page as before, nothing sent', async ({ page }) => 
   expect(printed).toBe(true);
   expect(called).toBe(false);
 });
+
+test('server limit reached: says why, then opens print', async ({ page }) => {
+  await page.route('https://ai.sakura-notes.com/pdf', (route) =>
+    route.fulfill({ status: 429, contentType: 'application/json', headers: { 'Access-Control-Allow-Origin': '*' }, body: '{"error":"Daily PDF limit reached"}' }));
+  await page.evaluate(() => (window as any).exportPdfDirect());
+  await expect(page.locator('#toast')).toContainText("Today's PDF limit is reached, opening print instead");
+});
+
+test('a second click while the PDF is being made does nothing', async ({ page }) => {
+  let requests = 0;
+  let release: () => void = () => {};
+  const held = new Promise<void>((r) => { release = r; });
+  await page.route('https://ai.sakura-notes.com/pdf', async (route) => {
+    requests++;
+    await held;
+    await route.fulfill({ status: 200, contentType: 'application/pdf', headers: { 'Access-Control-Allow-Origin': '*' }, body: '%PDF-1.7 test' });
+  });
+  await page.evaluate(() => (window as any).exportPdfDirect());
+  await expect(page.locator('#toast')).toContainText('Making PDF');
+  await page.evaluate(() => (window as any).exportPdfDirect());
+  const download = page.waitForEvent('download');
+  release();
+  await download;
+  expect(requests).toBe(1);
+});
+
+test('To-Dos PDF takes the same path and is named To-Dos.pdf', async ({ page }) => {
+  await page.route('https://ai.sakura-notes.com/pdf', (route) =>
+    route.fulfill({ status: 200, contentType: 'application/pdf', headers: { 'Access-Control-Allow-Origin': '*' }, body: '%PDF-1.7 test' }));
+  const download = page.waitForEvent('download');
+  await page.evaluate(() => (window as any).printHtmlAsPdf('To-Dos', 'To-Dos', '<div class="gpe-empty">(none)</div>'));
+  expect((await download).suggestedFilename()).toBe('To-Dos.pdf');
+  expect(await page.evaluate(() => !!document.getElementById('gpe-overlay'))).toBe(false);
+});
