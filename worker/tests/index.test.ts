@@ -79,6 +79,8 @@ function makeEnv(kv: FakeKv, overrides: Partial<Env> = {}): Env {
     FIREBASE_PROJECT_ID: PROJECT_ID,
     VAULT_KEK: kekBase64,
     ADMIN_UID,
+    // Only POST /pdf touches the browser binding; its handler is tested in pdf.test.ts.
+    BROWSER: {} as Fetcher,
     ...overrides
   };
 }

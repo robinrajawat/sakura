@@ -27,6 +27,8 @@
 name = "sakura-vault"
 main = "src/index.ts"
 compatibility_date = "2026-08-31"
+# @cloudflare/puppeteer (POST /pdf) needs the Node.js compatibility layer.
+compatibility_flags = ["nodejs_compat"]
 
 [vars]
 FIREBASE_PROJECT_ID = "sakura-4cdae"
@@ -34,7 +36,14 @@ FIREBASE_PROJECT_ID = "sakura-4cdae"
 # entry, not a secret, so it's tunable without touching code — still needs a real number
 # chosen before launch (see docs/ai-hosted-vault-design.md's "Open decisions").
 DAILY_AI_QUOTA = "20"
+# PDF files per signed-in user per UTC day (POST /pdf, src/pdf.ts). Separate from the AI quota.
+DAILY_PDF_QUOTA = "50"
 
 [[kv_namespaces]]
 binding = "SAKURA_VAULT_KV"
 id = "160c845516104abbb49306c740e809ed"
+
+# Cloudflare Browser Rendering: POST /pdf prints the app's HTML to a PDF in headless Chrome.
+# Free plan: 10 browser-minutes a day, 3 browsers at once, one new browser every 20 seconds.
+[browser]
+binding = "BROWSER"
