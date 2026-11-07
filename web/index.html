@@ -23179,6 +23179,106 @@ function downloadFileBlob(filename,blob){
   setTimeout(()=>URL.revokeObjectURL(url),1000)
 }
 // ── Generic PDF export for standalone panels (To-Dos) ─────────────────────────────────────────────
+// ── Printing a PDF ────────────────────────────────────────────────────────────────────────────
+// Download PDF saves a real .pdf file without the print dialog when it can (owner, 2026-11-07):
+// signed in and online, the print-ready copy goes to the Worker's POST /pdf (worker/src/pdf.ts),
+// where Cloudflare's headless Chrome prints it with the same print CSS, and the file is
+// downloaded. Anywhere else (signed out, offline, the Worker busy or over its daily limit) the
+// browser's print dialog opens as before.
+//
+// The copy is a standalone HTML page: every <style>, the font links, <html>/<body> classes and
+// inline styles (the light print colours), and the print target. Once it is made the page's own
+// print state is no longer needed, so the caller's afterprint cleanup runs at once.
+//
+// Safari skips window.print() without a word while the page still has a request open (WebKit
+// defers the print "until the page finishes loading", and that never comes). A signed-in page
+// always has Firestore's live connection open, so Download PDF did nothing in Safari on the Mac
+// (owner bug 2026-11-04). So in Safari, and whenever the server PDF failed, the copy is printed
+// from a fresh hidden iframe, which has nothing loading once its fonts and images are in.
+// Chrome and Firefox without the server print the page itself, as before.
+const PRINT_VIA_FRAME=/AppleWebKit/.test(navigator.userAgent)&&!/Chrome|Chromium|CriOS|Edg|Android/.test(navigator.userAgent);
+const PDF_SITE_BASE='https://www.sakura-notes.com/';
+function buildPrintCopyHtml(target){
+  const css=[...document.querySelectorAll('style')].map(st=>st.textContent).join('\n').replace(/<\/style/gi,'<\\/style');
+  const links=[...document.querySelectorAll('link[rel="stylesheet"]')].map(l=>l.outerHTML).join('');
+  const attr=(n,a)=>escapeHtml(n.getAttribute(a)||'');
+  return `<!doctype html><html class="${attr(document.documentElement,'class')}" style="${attr(document.documentElement,'style')}"><head><meta charset="utf-8"><title>${escapeHtml(document.title)}</title>${links}<style>${css}</style></head>`
+    +`<body class="${attr(document.body,'class')}" style="${attr(document.body,'style')}">${target.outerHTML}</body></html>`;
+}
+// blob: images only exist in this tab, so the server copy carries them as data: URLs.
+async function inlineBlobImages(root){
+  await Promise.all([...root.querySelectorAll('img[src^="blob:"]')].map(async img=>{
+    try{
+      const blob=await (await fetch(img.getAttribute('src'))).blob();
+      img.setAttribute('src',await new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(r.result); r.onerror=rej; r.readAsDataURL(blob); }));
+    }catch{ /* left as is: the image is missing from the file, nothing else is */ }
+  }));
+}
+function serverPdfAvailable(){
+  return !window.__sakuraNoServerPdf&&!!currentUser&&navigator.onLine!==false&&typeof AI_VAULT_WORKER_URL==='string'&&!!AI_VAULT_WORKER_URL;
+}
+// Asks the Worker for the PDF and downloads it. Resolves true when the file was saved.
+async function saveServerPdf(html,title){
+  const ctrl=new AbortController(); const timer=setTimeout(()=>ctrl.abort(),45000);
+  try{
+    const token=await currentUser.getIdToken();
+    const res=await fetch(AI_VAULT_WORKER_URL+'/pdf',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+token},body:JSON.stringify({html,title}),signal:ctrl.signal});
+    if(!res.ok){ console.warn('[sakura] server PDF failed:',res.status,await res.text().catch(()=>'')); return false; }
+    const blob=await res.blob();
+    if(!blob.size||!/pdf/.test(blob.type))return false;
+    const a=document.createElement('a');
+    a.href=window.URL.createObjectURL(blob);
+    a.download=(String(title||'Sakura').replace(/[\\/:*?"<>|]+/g,'_').trim()||'Sakura')+'.pdf';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(()=>window.URL.revokeObjectURL(a.href),60000);
+    return true;
+  }catch(e){ console.warn('[sakura] server PDF failed:',e); return false; }
+  finally{ clearTimeout(timer); }
+}
+function printCopyInFrame(html){
+  document.getElementById('sakura-print-frame')?.remove();
+  const frame=document.createElement('iframe');
+  frame.id='sakura-print-frame'; frame.setAttribute('aria-hidden','true'); frame.tabIndex=-1;
+  frame.style.cssText='position:fixed;left:-20000px;top:0;width:800px;height:600px;border:0;pointer-events:none';
+  document.body.appendChild(frame);
+  const d=frame.contentDocument;
+  d.open(); d.write(html); d.close();
+  const w=frame.contentWindow;
+  const ready=Promise.race([
+    Promise.all([d.fonts?d.fonts.ready:Promise.resolve(),_pdfWaitForImages(d.body,4000)]),
+    new Promise(r=>setTimeout(r,5000))
+  ]);
+  // Safari's print sheet keeps reading the frame while it is open; it goes with the next print.
+  return ready.then(()=>new Promise(r=>setTimeout(r,50))).then(()=>{
+    try{ w.focus(); w.print(); }
+    catch(e){ console.warn('[sakura] print frame failed:',e); }
+  });
+}
+function sakuraPrint(target){
+  const viaServer=!!target&&serverPdfAvailable();
+  const viaFrame=!!target&&(PRINT_VIA_FRAME||!!window.__sakuraPrintViaFrame);
+  if(!viaServer&&!viaFrame){ window.print(); return; }
+  const title=document.title;
+  const frameHtml=buildPrintCopyHtml(target);
+  const clone=viaServer?target.cloneNode(true):null;
+  window.dispatchEvent(new Event('afterprint'));
+  if(!viaServer){ printCopyInFrame(frameHtml); return; }
+  showToast('Making PDF…','',false,45000);
+  inlineBlobImages(clone)
+    .then(()=>saveServerPdf(buildPrintCopyHtmlFor(clone,frameHtml),title))
+    .then(saved=>{
+      if(saved){ showToast('PDF saved','success'); return; }
+      el('toast')?.classList.remove('show');
+      printCopyInFrame(frameHtml);
+    });
+}
+// The server copy: the frame copy with the cloned target (blob: images inlined) and a <base>, so
+// the font files and relative image addresses resolve against the live site.
+function buildPrintCopyHtmlFor(clone,frameHtml){
+  const i=frameHtml.lastIndexOf('<body'); const j=frameHtml.indexOf('>',i)+1;
+  const head=frameHtml.slice(0,i).replace('<meta charset="utf-8">',`<meta charset="utf-8"><base href="${PDF_SITE_BASE}">`);
+  return head+frameHtml.slice(i,j)+clone.outerHTML+'</body></html>';
+}
 // Same underlying technique as exportPreviewAsPdf (window.print() against a purpose-built,
 // print-only overlay), just generalized: any caller hands in a title + body HTML string and
 // gets a properly paginated, light-themed PDF via the browser's native print-to-PDF, without
@@ -23186,41 +23286,6 @@ function downloadFileBlob(filename,blob){
 // exportPreviewAsPdf (no cover page, no branding, no configurable margin) since none of these
 // three panels have asked for that yet — can grow into sharing more of exportPreviewAsPdf's
 // machinery later if that changes.
-// Safari skips window.print() without a word while the page still has a request open (WebKit
-// defers the print "until the page finishes loading", and that never comes). A signed-in page
-// always has Firestore's live connection open, so Download PDF did nothing in Safari on the Mac
-// (owner bug 2026-11-04). In Safari the print target is copied into a fresh hidden iframe,
-// which has nothing loading once its fonts and images are in, and the iframe prints instead.
-// Chrome and Firefox print the page itself, as before. The copy is independent of the page, so
-// the caller's afterprint cleanup runs as soon as the print has been handed to Safari.
-const PRINT_VIA_FRAME=/AppleWebKit/.test(navigator.userAgent)&&!/Chrome|Chromium|CriOS|Edg|Android/.test(navigator.userAgent);
-function sakuraPrint(target){
-  if(!(PRINT_VIA_FRAME||window.__sakuraPrintViaFrame)||!target){ window.print(); return; }
-  document.getElementById('sakura-print-frame')?.remove();
-  const frame=document.createElement('iframe');
-  frame.id='sakura-print-frame'; frame.setAttribute('aria-hidden','true'); frame.tabIndex=-1;
-  frame.style.cssText='position:fixed;left:-20000px;top:0;width:800px;height:600px;border:0;pointer-events:none';
-  document.body.appendChild(frame);
-  const css=[...document.querySelectorAll('style')].map(st=>st.textContent).join('\n').replace(/<\/style/gi,'<\\/style');
-  const links=[...document.querySelectorAll('link[rel="stylesheet"]')].map(l=>l.outerHTML).join('');
-  const attr=(n,a)=>escapeHtml(n.getAttribute(a)||'');
-  const d=frame.contentDocument;
-  d.open();
-  d.write(`<!doctype html><html class="${attr(document.documentElement,'class')}" style="${attr(document.documentElement,'style')}"><head><meta charset="utf-8"><title>${escapeHtml(document.title)}</title>${links}<style>${css}</style></head>`
-    +`<body class="${attr(document.body,'class')}" style="${attr(document.body,'style')}">${target.outerHTML}</body></html>`);
-  d.close();
-  const w=frame.contentWindow;
-  const ready=Promise.race([
-    Promise.all([d.fonts?d.fonts.ready:Promise.resolve(),_pdfWaitForImages(d.body,4000)]),
-    new Promise(r=>setTimeout(r,5000))
-  ]);
-  ready.then(()=>new Promise(r=>setTimeout(r,50))).then(()=>{
-    try{ w.focus(); w.print(); }
-    catch(e){ console.warn('[sakura] print frame failed, printing the page:',e); window.print(); }
-    window.dispatchEvent(new Event('afterprint'));
-    // Safari's print sheet keeps reading the frame while it is open; it goes with the next print.
-  });
-}
 let _genericPrintActive=false;
 function printHtmlAsPdf(filenameTitle,titleHtml,bodyHtml,onDone){
   if(_genericPrintActive)return; // re-entrancy guard — a second export mid-print would corrupt the first's overlay

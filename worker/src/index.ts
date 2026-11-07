@@ -4,6 +4,7 @@
  *   GET/POST/DELETE /admin/providers — the admin manages the provider fallback chain
  *   GET/POST /admin/config           — the admin tunes the daily AI quota at runtime
  *   POST /ai/complete                — a signed-in user gets an AI completion, quota-gated
+ *   POST /pdf                        — a signed-in user turns print-ready HTML into a PDF file (src/pdf.ts)
  *
  * Route handlers are exported individually and tested directly with injected dependencies
  * (getKey, fetchImpl) rather than through the router — the router itself (the default export's
@@ -23,6 +24,7 @@ import { getDailyQuota, setDailyQuota } from './config';
 import { consumeQuota } from './quota';
 import { buildAiRequest, parseAiResponse, parseAiErrorMessage, type AiShape } from './providerShapes';
 import type { JWTVerifyGetKey } from 'jose';
+import { handlePdf, browserRenderer, DEFAULT_DAILY_PDF_QUOTA } from './pdf';
 
 export interface Env {
   SAKURA_VAULT_KV: KVNamespace;
@@ -30,6 +32,9 @@ export interface Env {
   VAULT_KEK: string;
   ADMIN_UID: string;
   DAILY_AI_QUOTA?: string;
+  /** Cloudflare Browser Rendering binding ([browser] in wrangler.toml), used by POST /pdf. */
+  BROWSER: Fetcher;
+  DAILY_PDF_QUOTA?: string;
 }
 
 const VALID_SHAPES: readonly AiShape[] = ['gemini', 'openai', 'cerebras', 'anthropic'];
@@ -50,6 +55,8 @@ export function corsHeadersFor(origin: string | null): Record<string, string> {
     'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
     'Access-Control-Allow-Headers': 'Authorization, Content-Type',
     'Access-Control-Max-Age': '86400',
+    // The PDF route's download name, readable by the page across origins.
+    'Access-Control-Expose-Headers': 'Content-Disposition',
     Vary: 'Origin'
   };
 }
@@ -262,6 +269,13 @@ export default {
       response = await handleAdminConfigPost(request, env, getKey);
     } else if (url.pathname === '/ai/complete' && request.method === 'POST') {
       response = await handleAiComplete(request, env, getKey, fetch);
+    } else if (url.pathname === '/pdf' && request.method === 'POST') {
+      const uidOrResponse = await requireUid(request, env, getKey);
+      if (uidOrResponse instanceof Response) response = uidOrResponse;
+      else {
+        const limit = parseInt(env.DAILY_PDF_QUOTA || '', 10) || DEFAULT_DAILY_PDF_QUOTA;
+        response = await handlePdf(request, uidOrResponse, env.SAKURA_VAULT_KV, limit, browserRenderer(env.BROWSER));
+      }
     } else {
       response = new Response('not found', { status: 404 });
     }
