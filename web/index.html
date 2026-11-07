@@ -3980,7 +3980,7 @@ html.calm-layout #help-meta-links .help-coffee-icon{color:var(--support)}
           <div class="help-section" data-cat="documents">
 <h4>Share and PDF</h4>
 <ul>
-<li>Share → Download PDF prints the whole document, with notes, threads, tables and images. Cover page and PDF mark are in Settings → Documents</li>
+<li>Share → Download PDF saves the whole document as a PDF file, with notes, threads, tables and images (signed out or offline, the print dialog opens: choose Save as PDF). Cover page and PDF mark are in Settings → Documents</li>
 <li>Share → Send a copy (signed in) gives another Sakura user their own copy to edit and keep. It arrives in their notifications with Add to my documents and Decline; nothing is added until they choose</li>
 <li>Share → Export saves the outline as an OPML file; the File Explorer's + → Import (.opml)… opens one, or drop a .opml file on the File Explorer or the page</li>
 </ul>
@@ -23217,22 +23217,23 @@ async function inlineBlobImages(root){
 function serverPdfAvailable(){
   return !window.__sakuraNoServerPdf&&!!currentUser&&navigator.onLine!==false&&typeof AI_VAULT_WORKER_URL==='string'&&!!AI_VAULT_WORKER_URL;
 }
-// Asks the Worker for the PDF and downloads it. Resolves true when the file was saved.
+// Asks the Worker for the PDF and downloads it. Resolves 'saved', or 'limit' when today's PDF
+// count is used up, or 'failed' for anything else (the caller then opens the print dialog).
 async function saveServerPdf(html,title){
   const ctrl=new AbortController(); const timer=setTimeout(()=>ctrl.abort(),45000);
   try{
     const token=await currentUser.getIdToken();
     const res=await fetch(AI_VAULT_WORKER_URL+'/pdf',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+token},body:JSON.stringify({html,title}),signal:ctrl.signal});
-    if(!res.ok){ console.warn('[sakura] server PDF failed:',res.status,await res.text().catch(()=>'')); return false; }
+    if(!res.ok){ console.warn('[sakura] server PDF failed:',res.status,await res.text().catch(()=>'')); return res.status===429?'limit':'failed'; }
     const blob=await res.blob();
-    if(!blob.size||!/pdf/.test(blob.type))return false;
+    if(!blob.size||!/pdf/.test(blob.type))return 'failed';
     const a=document.createElement('a');
     a.href=window.URL.createObjectURL(blob);
     a.download=(String(title||'Sakura').replace(/[\\/:*?"<>|]+/g,'_').trim()||'Sakura')+'.pdf';
     document.body.appendChild(a); a.click(); a.remove();
     setTimeout(()=>window.URL.revokeObjectURL(a.href),60000);
-    return true;
-  }catch(e){ console.warn('[sakura] server PDF failed:',e); return false; }
+    return 'saved';
+  }catch(e){ console.warn('[sakura] server PDF failed:',e); return 'failed'; }
   finally{ clearTimeout(timer); }
 }
 function printCopyInFrame(html){
@@ -23254,6 +23255,8 @@ function printCopyInFrame(html){
     catch(e){ console.warn('[sakura] print frame failed:',e); }
   });
 }
+// True while a server PDF is being made: a second Download PDF click then does nothing.
+let _serverPdfBusy=false;
 function sakuraPrint(target){
   const viaServer=!!target&&serverPdfAvailable();
   const viaFrame=!!target&&(PRINT_VIA_FRAME||!!window.__sakuraPrintViaFrame);
@@ -23263,12 +23266,15 @@ function sakuraPrint(target){
   const clone=viaServer?target.cloneNode(true):null;
   window.dispatchEvent(new Event('afterprint'));
   if(!viaServer){ printCopyInFrame(frameHtml); return; }
+  _serverPdfBusy=true;
   showToast('Making PDF…','',false,45000);
   inlineBlobImages(clone)
     .then(()=>saveServerPdf(buildPrintCopyHtmlFor(clone,frameHtml),title))
-    .then(saved=>{
-      if(saved){ showToast('PDF saved','success'); return; }
-      el('toast')?.classList.remove('show');
+    .then(result=>{
+      _serverPdfBusy=false;
+      if(result==='saved'){ showToast('PDF saved','success'); return; }
+      // Say why the print dialog opens instead of a download.
+      showToast(result==='limit'?"Today's PDF limit is reached, opening print instead":"Couldn't make the PDF file, opening print instead",'',false,4000);
       printCopyInFrame(frameHtml);
     });
 }
@@ -23288,7 +23294,7 @@ function buildPrintCopyHtmlFor(clone,frameHtml){
 // machinery later if that changes.
 let _genericPrintActive=false;
 function printHtmlAsPdf(filenameTitle,titleHtml,bodyHtml,onDone){
-  if(_genericPrintActive)return; // re-entrancy guard — a second export mid-print would corrupt the first's overlay
+  if(_genericPrintActive||_serverPdfBusy)return; // re-entrancy guard — a second export mid-print would corrupt the first's overlay
   _genericPrintActive=true;
   const overlay=document.createElement('div');
   overlay.id='gpe-overlay';
@@ -29368,6 +29374,7 @@ function _applyNodeContentExportState(){
 // The PDF's Contents page lists headings up to this level (plus [Section] markers).
 const PDF_TOC_MAX_LEVEL=2;
 function exportPdfDirect(){
+  if(_serverPdfBusy)return; // "Making PDF…" is showing: one file per click
   // PDF export is headless and always prints the whole document — nothing is folded,
   // whatever is collapsed in the outline editor.
   previewCollapsedIds = new Set();
