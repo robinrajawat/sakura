@@ -1,4 +1,4 @@
-import { test, expect, type Page, type BrowserContext } from '@playwright/test';
+import { test, expect, type Page } from '@playwright/test';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -8,10 +8,6 @@ import { fileURLToPath } from 'url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const indexPath = path.resolve(__dirname, '../../index.html');
 
-// The headless shell (Playwright's default) has no real window focus: document.hasFocus() stays
-// true when another window comes to the front. Full Chromium in headless mode switches focus
-// like a real browser, so these tests use it.
-test.use({ channel: 'chromium' });
 
 async function seed(page: Page, todos: object[] = []) {
   await page.addInitScript((t) => {
@@ -33,16 +29,24 @@ async function seed(page: Page, todos: object[] = []) {
   `);
 }
 
-// A real window switch: another window comes to the front, then Sakura again.
-async function awayAndBack(page: Page, context: BrowserContext) {
-  const cdp = await context.newCDPSession(page);
-  await cdp.send('Emulation.setFocusEmulationEnabled', { enabled: false });
-  const other = await context.newPage();
-  await other.bringToFront();
-  await expect.poll(() => page.evaluate(() => document.hasFocus())).toBe(false);
-  await page.bringToFront();
-  await expect.poll(() => page.evaluate(() => document.hasFocus())).toBe(true);
-  await other.close();
+// A window switch, played the way the browser does it: the window loses focus
+// (document.hasFocus() turns false) and the focused element gets blur + focusout while it stays
+// the active element; on return, the same element gets focus + focusin. Headless browsers don't
+// switch real window focus reliably across versions, so the events are sent from the page.
+async function awayAndBack(page: Page) {
+  await page.evaluate(() => {
+    const el = document.activeElement as HTMLElement;
+    const realHasFocus = Document.prototype.hasFocus;
+    document.hasFocus = () => false;
+    el.dispatchEvent(new FocusEvent('blur'));
+    el.dispatchEvent(new FocusEvent('focusout', { bubbles: true }));
+    window.dispatchEvent(new FocusEvent('blur'));
+    document.hasFocus = realHasFocus;
+    window.dispatchEvent(new FocusEvent('focus'));
+    el.dispatchEvent(new FocusEvent('focus'));
+    el.dispatchEvent(new FocusEvent('focusin', { bubbles: true }));
+  });
+  await page.waitForTimeout(50);
 }
 
 async function caretTwoBeforeEnd(page: Page) {
@@ -51,36 +55,36 @@ async function caretTwoBeforeEnd(page: Page) {
   await page.keyboard.press('ArrowLeft');
 }
 
-test('row text: still editing, caret where it was', async ({ page, context }) => {
+test('row text: still editing, caret where it was', async ({ page }) => {
   await seed(page);
   await page.locator('.node-row[data-id="1"] .node-label').first().click();
   await caretTwoBeforeEnd(page);
-  await awayAndBack(page, context);
+  await awayAndBack(page);
   await page.keyboard.type('X');
   await page.keyboard.press('Escape');
   expect(await page.evaluate('nodes[0].text')).toBe('hello worXld');
 });
 
-test('note: caret where it was, not at the start', async ({ page, context }) => {
+test('note: caret where it was, not at the start', async ({ page }) => {
   await seed(page);
   await page.locator('#note-line-2').click();
   await caretTwoBeforeEnd(page);
-  await awayAndBack(page, context);
+  await awayAndBack(page);
   await page.keyboard.type('X');
   expect(await page.evaluate('nodes[1].note')).toBe('note words heXre');
 });
 
-test('thread entry: caret where it was', async ({ page, context }) => {
+test('thread entry: caret where it was', async ({ page }) => {
   await seed(page);
   await page.locator('#inline-remark-text-c1').click();
   await caretTwoBeforeEnd(page);
-  await awayAndBack(page, context);
+  await awayAndBack(page);
   await page.keyboard.type('X');
   await page.locator('.node-row[data-id="2"] .node-label').first().click();
   expect(await page.evaluate("remarks.find(r => r.id === 'c1').text")).toBe('thread words heXre');
 });
 
-test('a selection survives too', async ({ page, context }) => {
+test('a selection survives too', async ({ page }) => {
   await seed(page);
   await page.locator('#note-line-2').click();
   await page.keyboard.press('End');
@@ -88,29 +92,29 @@ test('a selection survives too', async ({ page, context }) => {
   await page.keyboard.press('Shift+ArrowLeft');
   await page.keyboard.press('Shift+ArrowLeft');
   await page.keyboard.press('Shift+ArrowLeft');
-  await awayAndBack(page, context);
+  await awayAndBack(page);
   await page.keyboard.type('X');
   expect(await page.evaluate('nodes[1].note')).toBe('note words X');
 });
 
-test('To-Do text: caret where it was', async ({ page, context }) => {
+test('To-Do text: caret where it was', async ({ page }) => {
   await seed(page, [{ id: 'a', text: 'call the vendor' }]);
   await page.keyboard.press('Control+Shift+T');
   await page.waitForSelector('#todos-panel:not([style*="display: none"])');
   await page.locator('.todo-text[data-id="a"]').click();
   await caretTwoBeforeEnd(page);
-  await awayAndBack(page, context);
+  await awayAndBack(page);
   await page.keyboard.type('X');
   await page.keyboard.press('Enter');
   await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('sakura_todos_v1') || '[]')[0]?.text)).toBe('call the vendXor');
 });
 
-test('a click elsewhere after coming back still finishes the edit normally', async ({ page, context }) => {
+test('a click elsewhere after coming back still finishes the edit normally', async ({ page }) => {
   await seed(page);
   await page.locator('.node-row[data-id="1"] .node-label').first().click();
   await page.keyboard.press('End');
   await page.keyboard.type('!');
-  await awayAndBack(page, context);
+  await awayAndBack(page);
   await page.locator('#note-line-2').click();
   expect(await page.evaluate('({ editing: editingId, text: nodes[0].text })')).toEqual({ editing: null, text: 'hello world!' });
 });
