@@ -8,6 +8,11 @@ import { fileURLToPath } from 'url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const indexPath = path.resolve(__dirname, '../../index.html');
 
+// The headless shell (Playwright's default) has no real window focus: document.hasFocus() stays
+// true when another window comes to the front. Full Chromium in headless mode switches focus
+// like a real browser, so these tests use it.
+test.use({ channel: 'chromium' });
+
 async function seed(page: Page, todos: object[] = []) {
   await page.addInitScript((t) => {
     try {
