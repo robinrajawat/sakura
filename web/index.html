@@ -4228,7 +4228,7 @@ html.calm-layout #help-meta-links .help-coffee-icon{color:var(--support)}
 </div>
 
 <!-- Node Note Panel -->
-<div id="todos-panel" role="dialog" aria-label="To-Dos">
+<div id="todos-panel" role="dialog" aria-label="To-Dos" tabindex="-1">
   <div id="todos-resize-handle"></div>
   <div id="help-resize-handle" aria-hidden="true"></div>
   <!-- One bar: the add-task input + its add button, then History / Export / Maximize / Close.
@@ -22027,7 +22027,10 @@ const aiOutlineBtn=document.getElementById('es-ai-outline-btn'); if(aiOutlineBtn
         commitNoteLine();
         return;
       }
-      if(hasRichContent){ setTimeout(()=>{ noteLine.querySelectorAll('table').forEach(t=>_attachTableResizeHandles(t)); commitNoteLine(); const i=getIndex(nodes,node.id); if(i>=0&&migrateNoteImagesToNode(nodes[i])){ _pendingInlineFocus={kind:'note',nodeId:node.id}; render(); } },0); return; }
+      // Formatted text from a web page or another app keeps bold, italic, lists and links but
+      // not its fonts, sizes and colours (same as rows and threads). A table still pastes natively.
+      if(html&&!/<table[\s>]/i.test(html)&&text.trim()){ e.preventDefault(); document.execCommand('insertHTML',false,cleanThreadPasteHtml(html)); commitNoteLine(); return; }
+      if(hasRichContent){ setTimeout(()=>{ noteLine.querySelectorAll('[style]').forEach(n=>{ n.style.removeProperty('font-family'); n.style.removeProperty('font-size'); if(!n.getAttribute('style'))n.removeAttribute('style'); }); noteLine.querySelectorAll('font[face],font[size]').forEach(f=>{ f.removeAttribute('face'); f.removeAttribute('size'); }); noteLine.querySelectorAll('table').forEach(t=>_attachTableResizeHandles(t)); commitNoteLine(); const i=getIndex(nodes,node.id); if(i>=0&&migrateNoteImagesToNode(nodes[i])){ _pendingInlineFocus={kind:'note',nodeId:node.id}; render(); } },0); return; }
       const files=[..._drawioFilesFrom(e.clipboardData?.files),...clipboardImageFiles(e.clipboardData)];
       if(files.length){ e.preventDefault(); addDroppedFilesToNode(node.id,[...new Set(files)]); }
     });
@@ -24800,7 +24803,7 @@ document.addEventListener('DOMContentLoaded', function(){
   });
 });
 
-document.addEventListener('keydown',e=>{if(el('history-modal-overlay')?.classList.contains('open')){if(e.key==='Escape'){e.preventDefault(); closeVersionHistory();} return;} if(demoActive){if(e.key==='Escape'){e.preventDefault(); closeDemo();} return} if(tourActive){if(e.key==='Escape'){e.preventDefault(); tourSkip();}else if(e.key==='ArrowRight'||e.key==='Enter'){e.preventDefault(); tourNext();}else if(e.key==='ArrowLeft'){e.preventDefault(); tourBack();} return} if(e.key==='Escape'){hideContextMenu(); if(zenMode)setZenMode(false); if(dragState.draggedId){dragState={draggedId:null,draggedIds:null,targetId:null,mode:null}; clearDragIndicators();} if(editingId===null&&multiSelectedIds.length>1){clearMultiSelection(); selectionAnchorId=selectedId; render()} else if(focusedId!==null&&editingId===null)exitFocus();} if((e.ctrlKey||e.metaKey)&&!e.shiftKey&&e.key==='.'&&editingId===null){e.preventDefault(); if(selectedId!==null)enterFocus(selectedId); return} if((e.ctrlKey||e.metaKey)&&!e.shiftKey&&e.key===','&&editingId===null){e.preventDefault(); focusUpOne(); return} if (matchesShortcut(e,'save')) { e.preventDefault(); fireShortcut('save'); return; } if (matchesShortcut(e,'quickAssist')) { e.preventDefault(); fireShortcut('quickAssist'); return; } if (matchesShortcut(e,'newDoc')) { e.preventDefault(); fireShortcut('newDoc'); return; } if (matchesShortcut(e,'docBack')) { e.preventDefault(); fireShortcut('docBack'); return; } if (matchesShortcut(e,'docForward')) { e.preventDefault(); fireShortcut('docForward'); return; } if (matchesShortcut(e,'findInTree')) { e.preventDefault(); fireShortcut('findInTree'); return; } if (matchesShortcut(e,'findReplace')) { e.preventDefault(); fireShortcut('findReplace'); return; } if(e.key==='Escape'&&searchOpen){e.preventDefault(); closeSearch(); return} if (matchesShortcut(e,'collapseAll')) { e.preventDefault(); fireShortcut('collapseAll'); return; } if (matchesShortcut(e,'insertDateTime')) { e.preventDefault(); fireShortcut('insertDateTime'); return; } if (matchesShortcut(e,'generateOutline')) { e.preventDefault(); fireShortcut('generateOutline'); return; } if (matchesShortcut(e,'toggleZen')) { e.preventDefault(); fireShortcut('toggleZen'); return; } if(!isTextEntryTarget(e.target)&&!hasExternalTextSelection()){ if (matchesShortcut(e,'undo')) { e.preventDefault(); fireShortcut('undo'); return; } if (matchesShortcut(e,'redo')) { e.preventDefault(); fireShortcut('redo'); return; } } if(isControlTarget(e.target))return; if(hasExternalTextSelection())return; if (matchesShortcut(e,'copyAsText')) { e.preventDefault(); fireShortcut('copyAsText'); return; } if (matchesShortcut(e,'selectAll')) { if(nodes.length){e.preventDefault(); commitEdit(); selectAllMode=true; editingId=null; clearMultiSelection(); selectionAnchorId=nodes[0]?.id??null; render()} return; } if (matchesShortcut(e,'bold')) { e.preventDefault(); fireShortcut('bold'); return; } if (matchesShortcut(e,'italic')) { e.preventDefault(); fireShortcut('italic'); return; } if (matchesShortcut(e,'underline')) { e.preventDefault(); fireShortcut('underline'); return; } if (matchesShortcut(e,'strike')) { e.preventDefault(); fireShortcut('strike'); return; } if (matchesShortcut(e,'highlight')) { e.preventDefault(); fireShortcut('highlight'); return; } if (matchesShortcut(e,'textColor')) { e.preventDefault(); fireShortcut('textColor'); return; } if (matchesShortcut(e,'heading1')) { e.preventDefault(); fireShortcut('heading1'); return; } if (matchesShortcut(e,'heading2')) { e.preventDefault(); fireShortcut('heading2'); return; } if (matchesShortcut(e,'heading3')) { e.preventDefault(); fireShortcut('heading3'); return; } if (matchesShortcut(e,'headingClear')) { e.preventDefault(); fireShortcut('headingClear'); return; } if (matchesShortcut(e,'newChild')) { e.preventDefault(); fireShortcut('newChild'); return; } if (matchesShortcut(e,'moveUp')) { e.preventDefault(); fireShortcut('moveUp'); return; } if (matchesShortcut(e,'moveDown')) { e.preventDefault(); fireShortcut('moveDown'); return; } if(editingId!==null)return; if(!nodes.length){if((e.ctrlKey||e.metaKey)&&!e.altKey&&e.key.toLowerCase()==='v'){e.preventDefault(); smartPasteFromClipboard(); return} if(e.key.length===1&&!e.altKey&&!e.metaKey&&!e.ctrlKey){e.preventDefault(); createRootAndEdit(e.key)} if(e.key==='Enter'||e.key==='F2'){e.preventDefault(); createRootAndEdit('')} return} if(focusedId!==null){const fIdx=getIndex(nodes,focusedId); if(fIdx>=0&&getSubtreeEnd(nodes,fIdx)<=fIdx+1){
+document.addEventListener('keydown',e=>{if(el('history-modal-overlay')?.classList.contains('open')){if(e.key==='Escape'){e.preventDefault(); closeVersionHistory();} return;} if(demoActive){if(e.key==='Escape'){e.preventDefault(); closeDemo();} return} if(tourActive){if(e.key==='Escape'){e.preventDefault(); tourSkip();}else if(e.key==='ArrowRight'||e.key==='Enter'){e.preventDefault(); tourNext();}else if(e.key==='ArrowLeft'){e.preventDefault(); tourBack();} return} if(e.key==='Escape'){hideContextMenu(); if(zenMode)setZenMode(false); if(dragState.draggedId){dragState={draggedId:null,draggedIds:null,targetId:null,mode:null}; clearDragIndicators();} if(editingId===null&&multiSelectedIds.length>1){clearMultiSelection(); selectionAnchorId=selectedId; render()} else if(focusedId!==null&&editingId===null)exitFocus();} if((e.ctrlKey||e.metaKey)&&!e.shiftKey&&e.key==='.'&&editingId===null){e.preventDefault(); if(selectedId!==null)enterFocus(selectedId); return} if((e.ctrlKey||e.metaKey)&&!e.shiftKey&&e.key===','&&editingId===null){e.preventDefault(); focusUpOne(); return} if (matchesShortcut(e,'save')) { e.preventDefault(); fireShortcut('save'); return; } if (matchesShortcut(e,'quickAssist')) { e.preventDefault(); fireShortcut('quickAssist'); return; } if (matchesShortcut(e,'newDoc')) { e.preventDefault(); fireShortcut('newDoc'); return; } if (matchesShortcut(e,'docBack')) { e.preventDefault(); fireShortcut('docBack'); return; } if (matchesShortcut(e,'docForward')) { e.preventDefault(); fireShortcut('docForward'); return; } if (matchesShortcut(e,'findInTree')) { e.preventDefault(); fireShortcut('findInTree'); return; } if (matchesShortcut(e,'findReplace')) { e.preventDefault(); fireShortcut('findReplace'); return; } if(e.key==='Escape'&&searchOpen){e.preventDefault(); closeSearch(); return} if (matchesShortcut(e,'collapseAll')) { e.preventDefault(); fireShortcut('collapseAll'); return; } if (matchesShortcut(e,'insertDateTime')) { e.preventDefault(); fireShortcut('insertDateTime'); return; } if (matchesShortcut(e,'generateOutline')) { e.preventDefault(); fireShortcut('generateOutline'); return; } if (matchesShortcut(e,'toggleZen')) { e.preventDefault(); fireShortcut('toggleZen'); return; } if(!isTextEntryTarget(e.target)&&!hasExternalTextSelection()){ if (matchesShortcut(e,'undo')) { e.preventDefault(); fireShortcut('undo'); return; } if (matchesShortcut(e,'redo')) { e.preventDefault(); fireShortcut('redo'); return; } } if(isControlTarget(e.target))return; if(hasExternalTextSelection())return; if (matchesShortcut(e,'copyAsText')) { e.preventDefault(); fireShortcut('copyAsText'); return; } if (matchesShortcut(e,'selectAll')) { if(nodes.length){e.preventDefault(); commitEdit(); selectAllMode=true; editingId=null; clearMultiSelection(); selectionAnchorId=nodes[0]?.id??null; render()} return; } if (matchesShortcut(e,'bold')) { e.preventDefault(); fireShortcut('bold'); return; } if (matchesShortcut(e,'italic')) { e.preventDefault(); fireShortcut('italic'); return; } if (matchesShortcut(e,'underline')) { e.preventDefault(); fireShortcut('underline'); return; } if (matchesShortcut(e,'strike')) { e.preventDefault(); fireShortcut('strike'); return; } if (matchesShortcut(e,'highlight')) { e.preventDefault(); fireShortcut('highlight'); return; } if (matchesShortcut(e,'textColor')) { e.preventDefault(); fireShortcut('textColor'); return; } if (matchesShortcut(e,'heading1')) { e.preventDefault(); fireShortcut('heading1'); return; } if (matchesShortcut(e,'heading2')) { e.preventDefault(); fireShortcut('heading2'); return; } if (matchesShortcut(e,'heading3')) { e.preventDefault(); fireShortcut('heading3'); return; } if (matchesShortcut(e,'headingClear')) { e.preventDefault(); fireShortcut('headingClear'); return; } if (matchesShortcut(e,'newChild')) { e.preventDefault(); fireShortcut('newChild'); return; } if (matchesShortcut(e,'moveUp')) { e.preventDefault(); fireShortcut('moveUp'); return; } if (matchesShortcut(e,'moveDown')) { e.preventDefault(); fireShortcut('moveDown'); return; } /* Keys inside a side panel (To-Dos, Settings, Help) belong to the panel: they never start editing or moving rows of the document. */ if(e.target&&e.target.closest&&e.target.closest('#todos-panel,#settings-panel,#help-panel'))return; if(editingId!==null)return; if(!nodes.length){if((e.ctrlKey||e.metaKey)&&!e.altKey&&e.key.toLowerCase()==='v'){e.preventDefault(); smartPasteFromClipboard(); return} if(e.key.length===1&&!e.altKey&&!e.metaKey&&!e.ctrlKey){e.preventDefault(); createRootAndEdit(e.key)} if(e.key==='Enter'||e.key==='F2'){e.preventDefault(); createRootAndEdit('')} return} if(focusedId!==null){const fIdx=getIndex(nodes,focusedId); if(fIdx>=0&&getSubtreeEnd(nodes,fIdx)<=fIdx+1){
     // Zoomed into a node with no children yet: render() shows only the focus-empty-state
     // placeholder here, with no row to click or type into -- so typing or Enter must create
     // that first child directly, mirroring the !nodes.length branch just above.
@@ -32904,8 +32907,9 @@ function todosHistorySummary(list) {
           }
           return;
         }
-        if(e.key==='Enter'){ e.preventDefault(); elx.blur(); }
-        if(e.key==='Escape'){ e.preventDefault(); elx.blur(); }
+        // Enter/Esc finish the task's text. Focus stays in the To-Dos panel, so the next keys
+        // don't fall through to the page and start editing a row of the document.
+        if(e.key==='Enter'||e.key==='Escape'){ e.preventDefault(); elx.blur(); const tp=document.getElementById('todos-panel'); if(tp&&tp.contains(e.target))tp.focus({preventScroll:true}); }
       });
     });
     initRowDragDrop(body);
@@ -34422,8 +34426,12 @@ function selectionFmtLinkTarget(){
     if(!r||r.start===r.end||idx<0)return null;
     const read=readRowMarksFromDom(input); const id=nodes[idx].id;
     const linked=read.marks.find(m=>m.k==='a'&&m.s<r.end&&m.e>r.start);
-    return {text:read.text.slice(r.start,r.end),url:linked?linked.v:'',apply:(text,url)=>setRowLinkRange(id,r.start,r.end,text,url),
-      remove:linked?()=>applyRowMarkToRange(id,r.start,r.end,'a',false):null};
+    // Back in the row afterwards, like any editor: after the link (Enter) or with the same words
+    // selected (Esc), not out of the text.
+    const backTo=(a,b)=>{ if(getIndex(nodes,id)<0)return; if(editingId!==id)beginEditAt(id,b); const inp=getEditingInput(); if(inp)setEditableSelectionRange(inp,a,b); };
+    return {text:read.text.slice(r.start,r.end),url:linked?linked.v:'',apply:(text,url)=>{ setRowLinkRange(id,r.start,r.end,text,url); const e2=r.start+(text||read.text.slice(r.start,r.end)).length; backTo(e2,e2); },
+      cancel:()=>backTo(r.start,r.end),
+      remove:linked?()=>{ applyRowMarkToRange(id,r.start,r.end,'a',false); backTo(r.end,r.end); }:null};
   }
   return richFieldLinkTarget(el(_selectionFmtEditorId));
 }
@@ -34449,6 +34457,7 @@ function richFieldLinkTarget(editor){
   // The same words keep their formatting; new words replace them.
   const insert=(label,href)=>document.execCommand('insertHTML',false,`<a href="${escAttr(sanitizeHrefUrl(href))}" target="_blank" rel="noopener noreferrer">${label===text?html:esc(label)}</a>`);
   return {text,url,
+    cancel:()=>{ restore(); },
     apply:(label,href)=>{ const ed=restore(); if(!ed)return; insert(label,href); saved(ed); },
     remove:link?()=>{ const ed=restore(); if(!ed)return; document.execCommand('insertHTML',false,html); saved(ed); }:null};
 }
@@ -34493,7 +34502,7 @@ function openSelectionFmtUrlBox(){
   field.addEventListener('keydown',e=>{
     if(e.key!=='Enter')field.classList.remove('is-invalid');
     if(e.key==='Enter'){ e.preventDefault(); applySelectionFmtUrl(); }
-    else if(e.key==='Escape'){ e.preventDefault(); e.stopPropagation(); hideSelectionFmtPopover(); }
+    else if(e.key==='Escape'){ e.preventDefault(); e.stopPropagation(); const back=_sfmtLinkTarget&&_sfmtLinkTarget.cancel; hideSelectionFmtPopover(); if(back)back(); }
   });
 }
 // Ctrl/Cmd+K (owner 2026-10-29, as most apps): selected words in a row, To-Do, note or thread get
