@@ -118,3 +118,40 @@ test('a click elsewhere after coming back still finishes the edit normally', asy
   await page.locator('#note-line-2').click();
   expect(await page.evaluate('({ editing: editingId, text: nodes[0].text })')).toEqual({ editing: null, text: 'hello world!' });
 });
+
+// Same rule for anything else that takes the caret away for a moment: a re-render while typing (a
+// sync, the theme check when the tab comes back) and Search / Find closed with Esc.
+test('a re-render while typing keeps the caret in a note and a thread entry', async ({ page }) => {
+  await seed(page);
+  await page.locator('#note-line-2').click();
+  await caretTwoBeforeEnd(page);
+  await page.evaluate('render()');
+  await page.keyboard.type('X');
+  expect(await page.evaluate('nodes[1].note')).toBe('note words heXre');
+  await page.locator('#inline-remark-text-c1').click();
+  await caretTwoBeforeEnd(page);
+  await page.evaluate('render()');
+  await page.keyboard.type('Y');
+  await expect(page.locator('#inline-remark-text-c1')).toHaveText('thread words heYre');
+});
+
+for (const [name, key] of [['Search', 'Control+/'], ['Find', 'Control+f']] as const) {
+  test(`Esc in ${name} returns to the row and the note, caret where it was`, async ({ page }) => {
+    await seed(page);
+    await page.locator('.node-row[data-id="1"] .node-label').first().click();
+    await caretTwoBeforeEnd(page);
+    await page.keyboard.press(key);
+    await page.waitForTimeout(100);
+    await page.keyboard.press('Escape');
+    await page.keyboard.type('X');
+    await page.keyboard.press('Escape');
+    expect(await page.evaluate('nodes[0].text')).toBe('hello worXld');
+    await page.locator('#note-line-2').click();
+    await caretTwoBeforeEnd(page);
+    await page.keyboard.press(key);
+    await page.waitForTimeout(100);
+    await page.keyboard.press('Escape');
+    await page.keyboard.type('Y');
+    expect(await page.evaluate('nodes[1].note')).toBe('note words heYre');
+  });
+}

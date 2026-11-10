@@ -18949,11 +18949,13 @@ function qaRenderCategoryPicker(){
 function isQaDropdownOpen(){ return !!el('qa-dropdown')?.classList.contains('open'); }
 function setQaOpen(on){
   const dropdown=el('qa-dropdown'); if(!dropdown)return;
+  const wasQaOpen=dropdown.classList.contains('open');
   dropdown.classList.toggle('open',!!on);
   const wrap=el('global-search-wrap'); if(wrap)wrap.classList.toggle('qa-open',!!on);
   // The magnifier is the rail's Search button while closed and the category picker inside the open box.
   const catBtn=el('qa-category-icon-btn'); if(catBtn){ catBtn.dataset.tip=on?'Browse by category':'Search (Ctrl/Cmd+K)'; catBtn.setAttribute('aria-label',on?'Browse search categories':'Search'); }
   if(on){
+    if(!wasQaOpen)rememberEditSpot();
     // Only if still open: closed again within those 10ms (the shortcut pressed twice), focusing
     // the box would open it once more.
     closeTransientMenus(); hideContextMenu(); qaRender(); setTimeout(()=>{ if(isQaDropdownOpen())el('qa-input')?.focus(); },10);
@@ -19030,7 +19032,7 @@ el('qa-input')?.addEventListener('keydown',e=>{
   if(matchesShortcut(e,'save')){e.preventDefault(); e.stopPropagation(); fireShortcut('save'); return}
   if(matchesShortcut(e,'newDoc')){e.preventDefault(); e.stopPropagation(); fireShortcut('newDoc'); return}
   // The same keys close it again.
-  if(matchesShortcut(e,'quickAssist')){e.preventDefault(); e.stopPropagation(); setQaOpen(false); return}
+  if(matchesShortcut(e,'quickAssist')){e.preventDefault(); e.stopPropagation(); setQaOpen(false); returnToEditSpot(); return}
   e.stopPropagation();
   if(e.key===' '&&el('qa-input').value.trim()===''){
     // Space on a genuinely empty box (a lone space is already indistinguishable from
@@ -19040,7 +19042,7 @@ el('qa-input')?.addEventListener('keydown',e=>{
     qaRenderCategoryPicker();
     return;
   }
-  if(e.key==='Escape'){e.preventDefault(); setQaOpen(false); return}
+  if(e.key==='Escape'){e.preventDefault(); setQaOpen(false); returnToEditSpot(); return}
   if(e.key==='ArrowDown'){e.preventDefault(); qaFlushPendingRender(); qaChipModeActive()?qaMoveChip(0,1):qaMoveSelection(1); return}
   if(e.key==='ArrowUp'){e.preventDefault(); qaFlushPendingRender(); qaChipModeActive()?qaMoveChip(0,-1):qaMoveSelection(-1); return}
   // Left/Right only apply inside the chip picker (row-relative movement); everywhere else
@@ -20744,8 +20746,8 @@ function showAiErrorModal(provider, err){
   overlay.classList.add('open');
   setTimeout(()=>closeBtn.focus(), 80);
 }
-function openSearch(){searchOpen=true; const bar=el('search-bar'); if(bar)bar.hidden=false; const inp=el('search-input'); if(inp){inp.value=searchQuery; inp.focus(); inp.select()} computeSearchMatches(); render()}
-function closeSearch(){searchOpen=false; const bar=el('search-bar'); if(bar)bar.hidden=true; const rbar=el('replace-bar'); if(rbar){rbar.hidden=true; rbar.classList.remove('open')} const rbtn=el('search-toggle-replace'); if(rbtn)rbtn.setAttribute('aria-expanded','false'); searchMatches=[]; searchIndex=-1; render(); focusPane()}
+function openSearch(){if(!searchOpen)rememberEditSpot(); searchOpen=true; const bar=el('search-bar'); if(bar)bar.hidden=false; const inp=el('search-input'); if(inp){inp.value=searchQuery; inp.focus(); inp.select()} computeSearchMatches(); render()}
+function closeSearch(){searchOpen=false; const bar=el('search-bar'); if(bar)bar.hidden=true; const rbar=el('replace-bar'); if(rbar){rbar.hidden=true; rbar.classList.remove('open')} const rbtn=el('search-toggle-replace'); if(rbtn)rbtn.setAttribute('aria-expanded','false'); searchMatches=[]; searchIndex=-1; render(); if(!returnToEditSpot())focusPane()}
 // Whole-word matching needs word-boundary detection, which only RegExp can do — but the
 // query itself is always escaped and used as a literal substring, never interpreted as a
 // pattern. This is not a "regex search mode": the person never types regex syntax, and
@@ -20830,12 +20832,42 @@ function setSearchWholeWord(on,persist=true){
   if(searchOpen){computeSearchMatches(); render()}
 }
 function updateSearchCount(){const c=el('search-count'); if(c)c.textContent=searchMatches.length?`${searchIndex+1}/${searchMatches.length}`:'0/0'}
-function jumpSearch(dir){if(!searchMatches.length)return; searchIndex=(searchIndex+dir+searchMatches.length)%searchMatches.length; const id=searchMatches[searchIndex]; exitFocusIfOutsideCurrent(id); expandAncestorsOf(id); setSingleSelection(id); render(); updateSearchCount(); scrollToNode(id)}
+function jumpSearch(dir){if(!searchMatches.length)return; _editSpot=null; searchIndex=(searchIndex+dir+searchMatches.length)%searchMatches.length; const id=searchMatches[searchIndex]; exitFocusIfOutsideCurrent(id); expandAncestorsOf(id); setSingleSelection(id); render(); updateSearchCount(); scrollToNode(id)}
 function toggleReplaceBar(){const bar=el('replace-bar'); const btn=el('search-toggle-replace'); if(!bar||!btn)return; const willOpen=!bar.classList.contains('open'); if(willOpen){bar.hidden=false; requestAnimationFrame(()=>bar.classList.add('open')); btn.setAttribute('aria-expanded','true'); const inp=el('replace-input'); if(inp)setTimeout(()=>inp.focus(),150)} else {bar.classList.remove('open'); btn.setAttribute('aria-expanded','false'); setTimeout(()=>{if(!bar.classList.contains('open'))bar.hidden=true},150)}}
 function replaceTextInNode(text,query,replacement){if(!query)return text; const escaped=escapeRegExpLiteral(query); const pattern=searchWholeWord?('\\b'+escaped+'\\b'):escaped; const re=new RegExp(pattern,searchMatchCase?'g':'gi'); return String(text||'').replace(re,replacement)}
 function replaceCurrentMatch(){if(!searchMatches.length||searchIndex<0)return; const q=searchQuery.trim(); if(!q)return; const replacement=el('replace-input')?.value??''; const id=searchMatches[searchIndex]; const idx=getIndex(nodes,id); if(idx<0)return; pushUndo(); nodes[idx].text=replaceTextInNode(nodes[idx].text,q,replacement); markDirty(); computeSearchMatches(); render(); if(searchMatches.length){if(searchIndex>=searchMatches.length)searchIndex=0; scrollToNode(searchMatches[searchIndex])} showToast('Replaced')}
 function replaceAllMatches(){const q=searchQuery.trim(); if(!q||!searchMatches.length)return; const replacement=el('replace-input')?.value??''; pushUndo(); let count=0; searchMatches.forEach(id=>{const idx=getIndex(nodes,id); if(idx<0)return; const before=nodes[idx].text; const after=replaceTextInNode(before,q,replacement); if(after!==before){nodes[idx].text=after; count++}}); markDirty(); computeSearchMatches(); render(); showToast(count?`Replaced ${count} match${count===1?'':'es'}`:'No matches replaced')}
 function scrollToNode(id,block='center'){requestAnimationFrame(()=>{const row=document.querySelector(`.node-row[data-id="${id}"]`); if(row)row.scrollIntoView({block})})}
+// Where you were typing before Search (Quick Assist) or Find took the keyboard. Esc there brings
+// you back to the same row, note or thread entry with the same caret/selection (standard: closing
+// a search box returns you to the text). Jumping to a Find match or running a command forgets it.
+// render() rebuilds every row, so a focused note/thread field is a new element afterwards and
+// focusing it put the caret at the start (a sync, a theme check on tab return, any re-render while
+// typing). The caret/selection is read here, by the field's id, and put back after the rebuild.
+function _inlineFieldSelection(){
+  const ae=document.activeElement; if(!ae||!ae.isContentEditable||!ae.id||(editingId!==null&&ae===getEditingInput()))return null;
+  const r=getEditableSelectionRange(ae); return r?{id:ae.id,start:r.start,end:r.end}:null;
+}
+let _editSpot=null;
+function rememberEditSpot(){
+  const ae=document.activeElement; _editSpot=null;
+  if(!ae||!ae.isContentEditable)return;
+  const field=ae.closest('[contenteditable="true"][id]')||ae; if(!field.id)return;
+  const sel=getEditableSelectionRange(field);
+  _editSpot=(editingId!==null&&field===getEditingInput())?{row:editingId,sel}:{id:field.id,sel};
+}
+function returnToEditSpot(){
+  const s=_editSpot; _editSpot=null; if(!s)return false;
+  if(s.row!=null){
+    if(getIndex(nodes,s.row)<0)return false;
+    beginEditAt(s.row,s.sel?s.sel.end:-1);
+    const input=getEditingInput(); if(input&&s.sel&&s.sel.start!==s.sel.end)setEditableSelectionRange(input,s.sel.start,s.sel.end);
+    return true;
+  }
+  const field=document.getElementById(s.id); if(!field)return false;
+  field.focus(); if(s.sel)setEditableSelectionRange(field,s.sel.start,s.sel.end);
+  return true;
+}
 function focusPane(){el('editor-pane').focus()} function getEditingInput(){return editingId!==null?document.getElementById('in-'+editingId):null}
 function autosizeNodeInput(input){/* no-op: .node-input is a contenteditable div now, which sizes itself naturally -- explicitly forcing style.height via scrollHeight (a <textarea>-era necessity) was introducing a small but measurable height mismatch against .node-label, which has no explicit height at all */}
 
@@ -21685,7 +21717,7 @@ function updateRowSelectionPill(){
   pill.querySelector('.rsp-hint').innerHTML='<kbd>'+mod+'+C</kbd>copy · <kbd>Del</kbd>delete · <kbd>Tab</kbd>indent';
   pill.classList.add('show');
 }
-function render(){if(_apiEd)apiEditorFinish({cancelIfInvalid:true,focusBack:false}); ensureQaMigratedToDiscussion(); ensureSelection(); pruneCollapsedIds(); pruneInlineExpandIds(); pruneFocus(); updateRowSelectionPill(); if(typeof updateRowsFmtBar==='function')updateRowsFmtBar();
+function render(){const _keptInlineSel=_inlineFieldSelection(); if(_apiEd)apiEditorFinish({cancelIfInvalid:true,focusBack:false}); ensureQaMigratedToDiscussion(); ensureSelection(); pruneCollapsedIds(); pruneInlineExpandIds(); pruneFocus(); updateRowSelectionPill(); if(typeof updateRowsFmtBar==='function')updateRowsFmtBar();
   // Runs over EVERY node, not just the ones the per-row loop below actually builds DOM for --
   // a node inside a collapsed branch never reaches that loop at all, and renderPreviewBody() reads
   // node.tables directly rather than re-deriving it from node.note, so a table living inside a
@@ -22133,7 +22165,7 @@ const aiOutlineBtn=document.getElementById('es-ai-outline-btn'); if(aiOutlineBtn
   // into a childless node, or every node deleted). Previously this only ran inside the normal-
   // tree branch, so an active filter's bar/chips could keep showing stale state — or simply
   // never get hidden — once the pane had no rows to filter in the first place.
-  applyTagFilterToPane(pane); restoreRenderScrollAnchor(_scrollAnchor); if(editingId!==null){const input=getEditingInput(); if(input){autosizeNodeInput(input); input.focus(); setInputCaret(input,inputCaret??_preservedCaretOffset??-1); inputCaret=null}} else if(_pendingInlineFocus){ const pf=_pendingInlineFocus; _pendingInlineFocus=null; const target=pf.kind==='note'?document.querySelector(`.node-note-line[data-node-id="${pf.nodeId}"]`):(pf.kind==='threadComposer'?document.querySelector(`.thread-composer-input[data-node-id="${pf.nodeId}"]`):(pf.kind==='remarkText'?document.querySelector(`.node-remark-text-inline[data-remark-id="${pf.remarkId}"]`):(pf.kind==='qaQuestion'?document.querySelector(`.node-qa-question[data-qa-id="${pf.qaId}"]`):(pf.kind==='qaAnswer'?document.querySelector(`.node-qa-answer[data-qa-id="${pf.qaId}"]`):null)))); if(target){ target.focus(); if(pf.kind==='threadComposer'&&target.textContent){ const rg=document.createRange(); rg.selectNodeContents(target); rg.collapse(false); const sel=getSelection(); sel.removeAllRanges(); sel.addRange(rg); } } } const idx=getIndex(nodes,selectedId); const selectedDepth=idx>=0?nodes[idx].depth:null; if(el('sb-depth')){el('sb-depth').textContent=selectedDepth===null?'':`Depth ${selectedDepth}`; el('sb-depth').style.display=selectedDepth===null?'none':''; const dd=el('sb-depth-divider'); if(dd)dd.style.display=selectedDepth===null?'none':''} if(el('sb-wordcount')){const wc=nodes.reduce((sum,n)=>{const t=getNodePlainText(n).trim(); return sum+(t?t.split(/\s+/).length:0)},0); el('sb-wordcount').textContent=`Words ${wc}`} updateAuthorDisplay(); updateToolbarStates();
+  applyTagFilterToPane(pane); restoreRenderScrollAnchor(_scrollAnchor); if(editingId!==null){const input=getEditingInput(); if(input){autosizeNodeInput(input); input.focus(); setInputCaret(input,inputCaret??_preservedCaretOffset??-1); inputCaret=null}} else if(_pendingInlineFocus){ const pf=_pendingInlineFocus; _pendingInlineFocus=null; const target=pf.kind==='note'?document.querySelector(`.node-note-line[data-node-id="${pf.nodeId}"]`):(pf.kind==='threadComposer'?document.querySelector(`.thread-composer-input[data-node-id="${pf.nodeId}"]`):(pf.kind==='remarkText'?document.querySelector(`.node-remark-text-inline[data-remark-id="${pf.remarkId}"]`):(pf.kind==='qaQuestion'?document.querySelector(`.node-qa-question[data-qa-id="${pf.qaId}"]`):(pf.kind==='qaAnswer'?document.querySelector(`.node-qa-answer[data-qa-id="${pf.qaId}"]`):null)))); if(target){ target.focus(); if(_keptInlineSel&&_keptInlineSel.id===target.id){ setEditableSelectionRange(target,_keptInlineSel.start,_keptInlineSel.end); } else if(pf.kind==='threadComposer'&&target.textContent){ const rg=document.createRange(); rg.selectNodeContents(target); rg.collapse(false); const sel=getSelection(); sel.removeAllRanges(); sel.addRange(rg); } } } const idx=getIndex(nodes,selectedId); const selectedDepth=idx>=0?nodes[idx].depth:null; if(el('sb-depth')){el('sb-depth').textContent=selectedDepth===null?'':`Depth ${selectedDepth}`; el('sb-depth').style.display=selectedDepth===null?'none':''; const dd=el('sb-depth-divider'); if(dd)dd.style.display=selectedDepth===null?'none':''} if(el('sb-wordcount')){const wc=nodes.reduce((sum,n)=>{const t=getNodePlainText(n).trim(); return sum+(t?t.split(/\s+/).length:0)},0); el('sb-wordcount').textContent=`Words ${wc}`} updateAuthorDisplay(); updateToolbarStates();
   updateDirtyIndicator(); updateMarkerSummary();
   document.querySelectorAll('#editor-pane .bl-link[data-r]').forEach(lnk=>{const target=findNodeByRowLinkId(lnk.dataset.r); lnk.classList.toggle('bl-unresolved',!target); lnk.dataset.tip=target?'Go to: '+(getNodePlainText(target).trim()||'(empty row)'):'The linked row no longer exists';});
 }
