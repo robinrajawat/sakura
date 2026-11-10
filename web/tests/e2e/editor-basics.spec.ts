@@ -144,3 +144,50 @@ test('formatted text pasted into a note keeps bold but not its fonts and sizes',
   expect(html).toMatch(/<b>bold<\/b>/);
   expect(html).not.toMatch(/Comic|30px|color/i);
 });
+
+test('Esc in a thread entry or the title leaves it, like in a row or a note', async ({ page }) => {
+  await seed(page);
+  await page.locator('#inline-remark-text-c1').click();
+  await page.keyboard.press('Escape');
+  await expect(page.locator('#inline-remark-text-c1')).not.toBeFocused();
+  expect(await page.evaluate('selectedId')).toBe(3);
+  await page.locator('#header-title').click();
+  await page.keyboard.press('Escape');
+  await expect(page.locator('#header-title')).not.toBeFocused();
+});
+
+test('Ctrl/Cmd+A pressed twice in a row selects every row', async ({ page }) => {
+  await seed(page);
+  await editRow(page, 1);
+  await page.keyboard.press('ControlOrMeta+a');
+  expect(await page.evaluate('[editingId, selectAllMode]')).toEqual([1, false]);
+  await page.keyboard.press('ControlOrMeta+a');
+  expect(await page.evaluate('[editingId, selectAllMode]')).toEqual([null, true]);
+});
+
+test('letters typed straight after Ctrl/Cmd+K or Ctrl/Cmd+F go to the box, not the row', async ({ page }) => {
+  await seed(page);
+  await editRow(page, 1);
+  await page.keyboard.press('ControlOrMeta+k');
+  await page.keyboard.type('theta');
+  await expect(page.locator('#qa-input')).toHaveValue('theta');
+  await page.keyboard.press('Escape');
+  await page.keyboard.press('ControlOrMeta+f');
+  await page.keyboard.type('iota');
+  await expect(page.locator('#search-input')).toHaveValue('iota');
+  await page.keyboard.press('Escape');
+  expect(await rows(page)).toEqual(['alpha beta gamma', 'delta epsilon zeta', 'eta theta iota']);
+});
+
+test('Ctrl/Cmd+X on selected rows cuts them; Ctrl/Cmd+Z brings them back', async ({ page, context }) => {
+  await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+  await seed(page);
+  await editRow(page, 1);
+  await page.keyboard.press('Escape');
+  await page.keyboard.press('Shift+ArrowDown');
+  await page.keyboard.press('ControlOrMeta+x');
+  expect(await rows(page)).toEqual(['eta theta iota']);
+  await expect.poll(() => page.evaluate('navigator.clipboard.readText()')).toContain('alpha beta gamma');
+  await page.keyboard.press('ControlOrMeta+z');
+  expect(await rows(page)).toEqual(['alpha beta gamma', 'delta epsilon zeta', 'eta theta iota']);
+});
