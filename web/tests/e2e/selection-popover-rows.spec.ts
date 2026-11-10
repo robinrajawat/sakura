@@ -136,6 +136,9 @@ test('Link opens an address box in the bar that turns the selected words into a 
   await page.keyboard.type('example.com/guide');
   await page.keyboard.press('Enter');
   await expect(pop(page)).not.toHaveClass(/open/);
+  // Back in the row with the caret right after the new link (2026-11-10, standard editors); Esc leaves it.
+  expect(await page.evaluate(() => (window as any).eval('[editingId, getEditableSelectionRange(getEditingInput()).end]'))).toEqual([id, 13]);
+  await page.keyboard.press('Escape');
   await expect.poll(() => rows(page)).toEqual([{ text: 'Read the docs first', marks: [{ s: 9, e: 13, k: 'a', v: 'https://example.com/guide' }] }]);
   const link = page.locator(`.node-row[data-id="${id}"] .node-label a.row-weblink`);
   await expect(link).toHaveText('docs');
@@ -171,6 +174,7 @@ test("the link card's address changes in place even when the page scrolls; typin
   await popBtn(page, 'link').click();
   await page.keyboard.type('example.com/guide');
   await page.keyboard.press('Enter');
+  await page.keyboard.press('Escape');
   await page.locator(`.node-row[data-id="${id}"] .node-label a.row-weblink`).click();
   await page.locator('#link-card-addr').click();
   await page.evaluate(() => document.dispatchEvent(new Event('scroll')));
