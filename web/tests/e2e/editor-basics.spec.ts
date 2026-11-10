@@ -191,3 +191,28 @@ test('Ctrl/Cmd+X on selected rows cuts them; Ctrl/Cmd+Z brings them back', async
   await page.keyboard.press('ControlOrMeta+z');
   expect(await rows(page)).toEqual(['alpha beta gamma', 'delta epsilon zeta', 'eta theta iota']);
 });
+
+test('Alt+Up/Down move several selected rows together; Ctrl/Cmd+Z puts them back', async ({ page }) => {
+  await seed(page);
+  await editRow(page, 1);
+  await page.keyboard.press('Escape');
+  await page.keyboard.press('Shift+ArrowDown');
+  await page.keyboard.press('Alt+ArrowDown');
+  expect(await rows(page)).toEqual(['eta theta iota', 'alpha beta gamma', 'delta epsilon zeta']);
+  expect(await page.evaluate('multiSelectedIds')).toEqual([1, 2]);
+  await page.keyboard.press('Alt+ArrowUp');
+  expect(await rows(page)).toEqual(['alpha beta gamma', 'delta epsilon zeta', 'eta theta iota']);
+  await page.keyboard.press('Alt+ArrowDown');
+  await page.keyboard.press('ControlOrMeta+z');
+  expect(await rows(page)).toEqual(['alpha beta gamma', 'delta epsilon zeta', 'eta theta iota']);
+});
+
+test('a click on empty page space drops a several-row selection to one row', async ({ page }) => {
+  await seed(page);
+  await editRow(page, 1);
+  await page.keyboard.press('Escape');
+  await page.keyboard.press('Shift+ArrowDown');
+  expect(await page.evaluate('multiSelectedIds.length')).toBe(2);
+  await page.mouse.click(700, 820);
+  expect(await page.evaluate('multiSelectedIds.length')).toBe(0);
+});

@@ -21121,7 +21121,24 @@ function cancelEdit(){commitEdit(); render()}
 // whose surrounding depth didn't match the block's own (unchanged) depth, producing a jump of
 // more than 1 level between adjacent nodes -- a broken tree, same failure mode canIndentAt above
 // already guards against for indent.
-function moveSelected(direction){if(selectAllMode)return; const roots=getSelectionRootIndexes(); if(roots.length!==1)return; const idx=roots[0]; const end=getSubtreeEnd(nodes,idx); if(direction<0){ if(idx===0||!canMoveUpAt(nodes,idx))return; pushUndo(); selectedId=moveNodeUp(nodes,idx) } else { if(end>=nodes.length||!canMoveDownAt(nodes,idx,end))return; pushUndo(); selectedId=moveNodeDown(nodes,idx) } rebuildParentIds(); markDirty(); render() }
+/* Several selected sibling rows (one after another) move together with Alt+Up/Down, past the
+   sibling above or below, as in other outliners. The selection stays on them. */
+function moveSelectedBlock(roots,direction){
+  const sorted=[...roots].sort((x,y)=>x-y); const first=sorted[0]; const depth=nodes[first].depth;
+  for(let k=1;k<sorted.length;k++){ if(nodes[sorted[k]].depth!==depth||sorted[k]!==getSubtreeEnd(nodes,sorted[k-1]))return }
+  const end=getSubtreeEnd(nodes,sorted[sorted.length-1]);
+  if(direction<0){
+    if(!canMoveUpAt(nodes,first))return;
+    let ps=first-1; while(ps>0&&nodes[ps].depth>depth)ps--;
+    pushUndo(); const prev=nodes.splice(ps,first-ps); nodes.splice(ps+(end-first),0,...prev);
+  } else {
+    if(!canMoveDownAt(nodes,first,end))return;
+    const nextEnd=getSubtreeEnd(nodes,end);
+    pushUndo(); const next=nodes.splice(end,nextEnd-end); nodes.splice(first,0,...next);
+  }
+  rebuildParentIds(); markDirty(); render(); if(selectedId!==null)scrollToNode(selectedId,'nearest');
+}
+function moveSelected(direction){if(selectAllMode)return; const roots=getSelectionRootIndexes(); if(roots.length>1){moveSelectedBlock(roots,direction); return} if(roots.length!==1)return; const idx=roots[0]; const end=getSubtreeEnd(nodes,idx); if(direction<0){ if(idx===0||!canMoveUpAt(nodes,idx))return; pushUndo(); selectedId=moveNodeUp(nodes,idx) } else { if(end>=nodes.length||!canMoveDownAt(nodes,idx,end))return; pushUndo(); selectedId=moveNodeDown(nodes,idx) } rebuildParentIds(); markDirty(); render() }
 function clearDragIndicators(){document.querySelectorAll('.node-row.drag-over-above,.node-row.drag-over-below,.node-row.drag-over-child,.node-row.dragging').forEach(row=>row.classList.remove('drag-over-above','drag-over-below','drag-over-child','dragging')); el('editor-pane').classList.remove('drag-over-end')}
 function getDropModeFromEvent(e,row){const rect=row.getBoundingClientRect(); const y=e.clientY-rect.top; if(y<rect.height*0.28)return 'above'; if(y>rect.height*0.72)return 'below'; return 'child'}
 // Manual (non-native) press-and-track drag for reordering a node row, plus click-and-drag
@@ -24235,8 +24252,11 @@ el('editor-pane').addEventListener('click',e=>{
   const blLink=e.target.closest('.bl-link[data-r]');
   if(blLink&&!blLink.closest('.node-input')){e.stopPropagation(); openRowLink(blLink); return;}
   if(e.target.closest('.sem-sap-note')){e.stopPropagation(); return;}
-  hideContextMenu(); if(!e.target.closest('.node-row'))focusPane();
-}); el('editor-pane').addEventListener('dblclick',e=>{if(e.target.closest('.node-row'))return; if(!nodes.length)createRootAndEdit('')});
+  hideContextMenu(); if(!e.target.closest('.node-row')){ focusPane();
+    // A click on empty page space (pressed and released there, not the end of a drag across rows)
+    // drops a several-row selection back to one row, as in other editors.
+    if(_paneDownOnEmpty&&editingId===null&&(selectAllMode||multiSelectedIds.length>1)){ selectAllMode=false; clearMultiSelection(); selectionAnchorId=selectedId; render(); } }
+}); let _paneDownOnEmpty=false; el('editor-pane').addEventListener('mousedown',e=>{ _paneDownOnEmpty=!(e.target.closest&&e.target.closest('.node-row,.node-table-line,.node-note-line,.node-remark-text-inline,button,a,input,textarea,[contenteditable]')); },true); el('editor-pane').addEventListener('dblclick',e=>{if(e.target.closest('.node-row'))return; if(!nodes.length)createRootAndEdit('')});
 // Themed hover tooltip — delegated on the document rather than attached per-element, since
 // many elements (node rows, sidebar rows, settings controls, dialogs) get torn down and
 // rebuilt on every render(). Replaces the native title attribute app-wide: native tooltips are
