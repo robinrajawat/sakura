@@ -91,3 +91,56 @@ test('Ctrl+Home / Ctrl+End go to the start and end of the document', async ({ pa
   await page.keyboard.press('Escape');
   expect(await rows(page)).toEqual(['Yalpha beta gamma', 'delta epsilon zeta', 'eta theta iotaX']);
 });
+
+test('Link box: Enter puts the caret after the new link, Esc puts the words back selected', async ({ page }) => {
+  await seed(page);
+  const pickLastThree = async () => {
+    await editRow(page, 1);
+    await page.keyboard.press('End');
+    await page.keyboard.press('ArrowLeft');
+    await page.keyboard.press('ArrowLeft');
+    for (let i = 0; i < 3; i++) await page.keyboard.press('Shift+ArrowLeft');
+    await page.keyboard.press('ControlOrMeta+k');
+    await expect(page.locator('#sfmt-url')).toBeFocused();
+  };
+  await pickLastThree();
+  await page.keyboard.press('Escape');
+  expect(await page.evaluate('getSelection().toString()')).toBe('gam');
+  await page.keyboard.press('Escape');
+  await pickLastThree();
+  await page.keyboard.type('example.com');
+  await page.keyboard.press('Enter');
+  await page.keyboard.type('Z');
+  await page.keyboard.press('Escape');
+  expect((await rows(page))[0]).toBe('alpha beta gamZma');
+  expect(JSON.stringify(await page.evaluate('nodes[0].marks'))).toContain('example.com');
+});
+
+test('Enter in a To-Do keeps the keys in To-Dos: typing next never edits the document', async ({ page }) => {
+  await page.addInitScript(() => { try { localStorage.setItem('sakura_todos_v1', JSON.stringify([{ id: 'a', text: 'first task', createdAt: Date.now(), done: false, subtasks: [] }])); } catch { /* storage unavailable */ } });
+  await seed(page);
+  await page.keyboard.press('Control+Shift+T');
+  await page.waitForSelector('#todos-panel:not([style*="display: none"])');
+  await page.locator('.todo-text[data-id="a"]').click();
+  await page.keyboard.press('End');
+  await page.keyboard.press('Enter');
+  await page.keyboard.type('zz');
+  expect(await rows(page)).toEqual(['alpha beta gamma', 'delta epsilon zeta', 'eta theta iota']);
+  expect(await page.evaluate('editingId')).toBeNull();
+});
+
+test('formatted text pasted into a note keeps bold but not its fonts and sizes', async ({ page, context }) => {
+  await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+  await seed(page);
+  await page.evaluate(async () => {
+    const html = '<span style="color:red;font-family:Comic Sans MS;font-size:30px">red <b>bold</b></span>';
+    await navigator.clipboard.write([new ClipboardItem({ 'text/html': new Blob([html], { type: 'text/html' }), 'text/plain': new Blob(['red bold'], { type: 'text/plain' }) })]);
+  });
+  await page.locator('#note-line-2').click();
+  await page.keyboard.press('End');
+  await page.keyboard.press('ControlOrMeta+v');
+  await expect.poll(() => note(page)).toContain('bold');
+  const html = await note(page);
+  expect(html).toMatch(/<b>bold<\/b>/);
+  expect(html).not.toMatch(/Comic|30px|color/i);
+});
