@@ -216,3 +216,28 @@ test('a click on empty page space drops a several-row selection to one row', asy
   await page.mouse.click(700, 820);
   expect(await page.evaluate('multiSelectedIds.length')).toBe(0);
 });
+
+test('Ctrl/Cmd+Z after a "/" list choice undoes it and keeps you typing in the row', async ({ page }) => {
+  await seed(page);
+  await editRow(page, 1);
+  await page.keyboard.press('End');
+  await page.keyboard.type(' /head');
+  await expect.poll(() => page.evaluate('!!_sbContextEl')).toBe(true);
+  await page.keyboard.press('Enter');
+  await expect.poll(() => page.evaluate('nodes[0].styles.heading')).toBe(1);
+  await page.keyboard.press('ControlOrMeta+z');
+  expect(await page.evaluate('[nodes[0].styles.heading || 0, editingId]')).toEqual([0, 1]);
+  await expect(page.locator('#in-1')).toBeFocused();
+});
+
+test('Shift+F10 or the Menu key opens the selected row\'s menu', async ({ page }) => {
+  await seed(page);
+  await editRow(page, 3);
+  await page.keyboard.press('Escape');
+  await page.keyboard.press('Shift+F10');
+  await expect.poll(() => page.evaluate('!!_sbContextEl')).toBe(true);
+  await page.keyboard.press('Escape');
+  await expect.poll(() => page.evaluate('!!_sbContextEl')).toBe(false);
+  await page.keyboard.press('ContextMenu');
+  await expect.poll(() => page.evaluate('!!_sbContextEl')).toBe(true);
+});
