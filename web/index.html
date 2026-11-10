@@ -17665,7 +17665,7 @@ function stopRealtimeSync(){
 
 
 function markDirty(){ensureDocumentForEditing(); dirty=true; updateDirtyIndicator(); scheduleAutoSave()} function resetDirty(){dirty=false; updateDirtyIndicator()}
-function updateDirtyIndicator(){document.title=dirty?'• Sakura':'Sakura'}
+function updateDirtyIndicator(){ /* Only on a real change: writing document.title on every keystroke counts as a page edit in Chrome and split the browser's own undo in notes and threads into one letter per Ctrl+Z. */ const t=dirty?'• Sakura':'Sakura'; if(document.title!==t)document.title=t; }
 // Expand all / Collapse all cover inline objects too (owner request): every note, Q&A, remark and
 // diagram opens or closes under its row, and tables and images unfold or fold, along with the
 // branches themselves.
@@ -21050,6 +21050,32 @@ function caretOffsetFromPoint(labelEl,x,y,fallbackLen){
     return fallbackLen
   }catch(err){ return fallbackLen }
 }
+// Up/Down between rows and an open note, like one continuous document (Workflowy/Notion): the
+// caret leaves a note only from its first or last line, and keeps its horizontal place.
+function caretClientRect(){
+  const sel=window.getSelection(); if(!sel||!sel.rangeCount)return null;
+  const r=sel.getRangeAt(0).cloneRange(); r.collapse(true);
+  let rect=r.getClientRects()[0];
+  if(!rect){ const n=r.startContainer; const e=n.nodeType===1?(n.childNodes[r.startOffset]||n):n.parentElement; if(e&&e.getBoundingClientRect)rect=e.getBoundingClientRect(); }
+  return rect||null;
+}
+function caretOnEdgeLine(field,up){
+  const rect=caretClientRect(); if(!rect)return true;
+  const cs=getComputedStyle(field); const lh=parseFloat(cs.lineHeight)||parseFloat(cs.fontSize)*1.4||18;
+  const fr=field.getBoundingClientRect();
+  return up?(rect.top-(fr.top+(parseFloat(cs.paddingTop)||0)))<lh*0.75:((fr.bottom-(parseFloat(cs.paddingBottom)||0))-rect.bottom)<lh*0.75;
+}
+function placeCaretInFieldAt(field,x,up){
+  // Lands on the field's last line (coming up) or first line (coming down), nearest to x.
+  field.focus();
+  const fr=field.getBoundingClientRect(); const cs=getComputedStyle(field); const lh=parseFloat(cs.lineHeight)||18;
+  const y=up?fr.bottom-(parseFloat(cs.paddingBottom)||0)-lh/2:fr.top+(parseFloat(cs.paddingTop)||0)+lh/2;
+  let range=null; try{ range=document.caretRangeFromPoint?document.caretRangeFromPoint(x,y):null; }catch(err){ range=null; }
+  const sel=window.getSelection();
+  if(range&&field.contains(range.startContainer)){ range.collapse(true); sel.removeAllRanges(); sel.addRange(range); return; }
+  setEditableCaretOffset(field,up?-1:0);
+}
+function openNoteLineFor(id){ return document.querySelector(`.node-note-line[data-node-id="${id}"]`); }
 // Words dragged over in a row that isn't being edited: start editing it with the same words
 // selected, so the selection popover (and the formatting shortcuts) can act on them. Offsets count
 // the label's text like caretOffsetFromPoint does.
@@ -21936,6 +21962,20 @@ const aiOutlineBtn=document.getElementById('es-ai-outline-btn'); if(aiOutlineBtn
     noteLine.addEventListener('keydown',e=>{
       // "/" opens the Insert list in the inline note like in other text.
       if(handleSlashInsertKeydown(e,noteLine))return;
+      // Up on the first line goes to the note's row, Down on the last line to the next row.
+      if((e.key==='ArrowUp'||e.key==='ArrowDown')&&!e.defaultPrevented&&!e.shiftKey&&!e.altKey&&!e.ctrlKey&&!e.metaKey){
+        const up=e.key==='ArrowUp'; const anchorN=window.getSelection()?.anchorNode; const inCell=anchorN&&(anchorN.nodeType===1?anchorN:anchorN.parentElement)?.closest?.('td,th');
+        if(!inCell&&caretOnEdgeLine(noteLine,up)){
+          const nid=Number(noteLine.dataset.nodeId); const vis=getVisibleNodeIndexes(nodes,collapsedIds); const pos=vis.indexOf(getIndex(nodes,nid));
+          const targetId=up?nid:(pos>=0&&pos<vis.length-1?nodes[vis[pos+1]].id:null);
+          if(targetId!=null){
+            e.preventDefault(); const x=(caretClientRect()||{left:0}).left;
+            const lbl=document.querySelector(`.node-row[data-id="${targetId}"] .node-label`); const len=(nodes[getIndex(nodes,targetId)].text||'').length;
+            let off=up?len:0; if(lbl){ const lr=lbl.getBoundingClientRect(); off=caretOffsetFromPoint(lbl,Math.min(Math.max(x,lr.left+1),lr.right-1),up?lr.bottom-4:lr.top+4,up?len:Math.min(len,0)); if(x>lr.right)off=len; }
+            noteLine.blur(); _pendingInlineFocus=null; beginEditAt(targetId,off); return;
+          }
+        }
+      }
       // Esc leaves the note like it leaves a row: the row stays selected for the keyboard.
       if(e.key==='Escape'&&!e.defaultPrevented&&!e.shiftKey&&!e.altKey&&!e.ctrlKey&&!e.metaKey){ e.preventDefault(); const nid=Number(noteLine.dataset.nodeId); noteLine.blur(); if(Number.isFinite(nid)){ _pendingInlineFocus=null; setSingleSelection(nid); render(); } return; }
       if(e.key==='Tab'){
@@ -21965,7 +22005,7 @@ const aiOutlineBtn=document.getElementById('es-ai-outline-btn'); if(aiOutlineBtn
         return;
       }
       if(e.key!=='Backspace'||e.shiftKey||e.altKey||e.ctrlKey||e.metaKey)return;
-      const wasEmpty=!htmlHasVisibleContent(noteLine.innerHTML); const doDelete=()=>{ noteLine.dataset.deleting='1'; const i=getIndex(nodes,node.id); if(i>=0){nodes[i].note=''; nodes[i].modifiedAt=Date.now()} if(forceInlineNoteId===node.id)forceInlineNoteId=null; markDirty(); scheduleAutoSave(); beginEdit(node.id,true); }; if(wasEmpty){ e.preventDefault(); doDelete(); return; } setTimeout(()=>{ if(!htmlHasVisibleContent(noteLine.innerHTML))doDelete(); },0);
+      const wasEmpty=!htmlHasVisibleContent(noteLine.innerHTML); const doDelete=()=>{ noteLine.dataset.deleting='1'; const i=getIndex(nodes,node.id); if(i>=0){nodes[i].note=''; nodes[i].modifiedAt=Date.now()} if(forceInlineNoteId===node.id)forceInlineNoteId=null; markDirty(); scheduleAutoSave(); beginEdit(node.id,true); }; if(wasEmpty){ e.preventDefault(); doDelete(); return; } /* Emptying the note keeps it (Ctrl+A, Backspace, type again); only Backspace in an already-empty note removes it. */
     });
     // Genuine rich content (any text or HTML representation) is left to the browser's native
     // paste, which is how a pasted table lands as real <table> markup. A picture never goes into
@@ -23669,6 +23709,13 @@ function onEditorKeyDownInner(e){const id=Number(e.target.id.replace('in-',''));
     if(e.key==='Enter'||e.key==='Tab'){if(cands.length&&cands[_atActiveIdx]){e.preventDefault(); commitAtSuggest(cands[_atActiveIdx]); return} closeAtSuggest();}
     if(e.key==='Escape'){e.preventDefault(); closeAtSuggest(); return}
   }
+  // Ctrl/Cmd+Home and Ctrl/Cmd+End go to the start of the document and the end of it, as in any
+  // text editor, not just to the start/end of this row.
+  if((e.key==='Home'||e.key==='End')&&(e.ctrlKey||e.metaKey)&&!e.altKey&&!e.shiftKey){
+    const vis=getVisibleNodeIndexes(nodes,collapsedIds);
+    if(vis.length){ e.preventDefault(); const target=nodes[vis[e.key==='Home'?0:vis.length-1]]; commitEdit(); beginEditAt(target.id,e.key==='Home'?0:(target.text||'').length); scrollToNode(target.id,'nearest'); }
+    return
+  }
   // Dynalist/Workflowy-style continuous editing: only escape into the adjacent node once the caret
   // is at the true start/end of this node's text (position 0 or full length) -- normal in-textarea
   // caret movement across wrapped lines within a long paragraph is left untouched, since the browser
@@ -23677,6 +23724,8 @@ function onEditorKeyDownInner(e){const id=Number(e.target.id.replace('in-',''));
     const ta=e.target;
     if(caretVisualLineIndex(ta)>0)return; // caret is below the first wrapped line -- let the browser move up within the paragraph normally
     const curIdx=getIndex(nodes,id); const vis=getVisibleNodeIndexes(nodes,collapsedIds); const pos=vis.indexOf(curIdx);
+    const prevNote=pos>0?openNoteLineFor(nodes[vis[pos-1]].id):null;
+    if(prevNote){ e.preventDefault(); const x=(caretClientRect()||{left:0}).left; _lastArrowCol=null; commitEdit(); render(); const pn=openNoteLineFor(nodes[vis[pos-1]].id); if(pn)placeCaretInFieldAt(pn,x,true); return }
     if(pos>0){
       e.preventDefault();
       const prevId=nodes[vis[pos-1]].id;
@@ -23723,6 +23772,7 @@ function onEditorKeyDownInner(e){const id=Number(e.target.id.replace('in-',''));
     const ta=e.target;
     if(caretVisualLineIndex(ta)<caretVisualLineCount(ta)-1)return; // not on the last wrapped line yet -- let the browser move down normally
     const curIdx=getIndex(nodes,id); const vis=getVisibleNodeIndexes(nodes,collapsedIds); const pos=vis.indexOf(curIdx);
+    if(openNoteLineFor(id)){ e.preventDefault(); const x=(caretClientRect()||{left:0}).left; _lastArrowCol=null; commitEdit(); render(); const nn=openNoteLineFor(id); if(nn)placeCaretInFieldAt(nn,x,false); return }
     if(pos>=0&&pos<vis.length-1){
       e.preventDefault();
       const nextId=nodes[vis[pos+1]].id;
