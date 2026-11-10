@@ -17708,7 +17708,7 @@ function collapseAll(){if(!nodes.length)return; pushFoldUndo(); collapsedIds.cle
   const o=inlineObjectNodeIds();
   inlineExpandNoteNodeIds.clear(); inlineExpandQaNodeIds.clear(); inlineExpandRemarksNodeIds.clear(); inlineExpandDiagramNodeIds.clear(); showAllRemarksNodeIds.clear(); showClosedQaNodeIds.clear();
   o.tables.forEach(id=>collapsedTableNodeIds.add(id)); o.images.forEach(id=>collapsedImageNodeIds.add(id));
-  scheduleAutoSave(); render(); showToast('All collapsed — Ctrl/Cmd+Z to undo')}
+  scheduleAutoSave(); if(!moveOffFoldedRows())render(); showToast('All collapsed — Ctrl/Cmd+Z to undo')}
 function pushFoldUndo(){undoStack.push(snapshot(true)); if(undoStack.length>200)undoStack.shift(); redoStack=[]}
 function expandAll(){pushFoldUndo(); collapsedIds.clear();
   const o=inlineObjectNodeIds();
@@ -19383,8 +19383,17 @@ function jumpToNodeTodoRefs(anchorEl, refs){
   openRefJumpPopover(anchorEl, refs, refs.length+' to-dos reference this node');
 }
 const REMARK_DOT_SVG='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 9a2 2 0 0 1-2 2H6l-4 4V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2z"/><path d="M18 9h2a2 2 0 0 1 2 2v11l-4-4h-6a2 2 0 0 1-2-2v-1"/></svg>';
-function toggleCollapse(id){if(collapsedIds.has(id))collapsedIds.delete(id); else collapsedIds.add(id); scheduleAutoSave(); render()}
-function collapseNode(id){if(!collapsedIds.has(id)){collapsedIds.add(id); scheduleAutoSave(); render()}}
+function toggleCollapse(id){if(collapsedIds.has(id))collapsedIds.delete(id); else collapsedIds.add(id); scheduleAutoSave(); if(!moveOffFoldedRows())render()}
+function collapseNode(id){if(!collapsedIds.has(id)){collapsedIds.add(id); scheduleAutoSave(); if(!moveOffFoldedRows())render()}}
+/* Folding a branch that holds the row being typed in (or the selected row) moves the caret to the
+   end of the folded row, as in other outliners, instead of leaving it in a hidden row. Returns
+   true when it rendered. */
+function moveOffFoldedRows(){
+  const vis=new Set(visibleIndexes()); const anc=id=>{ let i=getIndex(nodes,id); while(i>=0&&!vis.has(i))i=getParentIndex(nodes,i); return i; };
+  if(editingId!==null&&getIndex(nodes,editingId)>=0&&!vis.has(getIndex(nodes,editingId))){ const a=anc(editingId); if(a>=0){ commitEdit(); beginEditAt(nodes[a].id,(nodes[a].text||'').length); return true; } }
+  if(editingId===null&&selectedId!==null&&getIndex(nodes,selectedId)>=0&&!vis.has(getIndex(nodes,selectedId))){ const a=anc(selectedId); if(a>=0){ clearMultiSelection(); setSingleSelection(nodes[a].id); render(); return true; } }
+  return false;
+}
 function expandNode(id){if(collapsedIds.has(id)){collapsedIds.delete(id); scheduleAutoSave(); render()}}
 // Shared entry point for every "add/edit note" action (toolbar button, right-click menu, hover
 // toolbar, keyboard shortcut, Quick Assist search results, Preview's note dot) now that notes
@@ -19454,6 +19463,9 @@ function pruneInlineExpandIds(){
 // node's descendants (with a breadcrumb trail back out), the same way Workflowy's
 // zoom or Dynalist's focus mode works. Purely a view-state concern — it is not part
 // of undo/redo history, but it does persist per-document/per-tab like collapsedIds.
+/* The rows on screen: unfolded rows, and only the zoomed-in branch while zoomed in, so arrows,
+   Backspace joins and Ctrl+Home/End never reach rows that are out of view. */
+function visibleIndexes(){ const vis=getVisibleNodeIndexes(nodes,collapsedIds); const f=focusedId!==null?getIndex(nodes,focusedId):-1; if(f<0)return vis; const end=getSubtreeEnd(nodes,f); return vis.filter(i=>i>=f&&i<end); }
 function pruneFocus(){if(focusedId!==null&&getIndex(nodes,focusedId)<0)focusedId=null}
 // Jump-to-node entry points (in-document Find, Global Search/Quick Assist, Notes/Tags
 // results) can land on a node outside the currently focused (zoomed-in) subtree. render()
@@ -20752,7 +20764,7 @@ function showAiErrorModal(provider, err){
   overlay.classList.add('open');
   setTimeout(()=>closeBtn.focus(), 80);
 }
-function openSearch(){if(!searchOpen)rememberEditSpot(); /* Leave the row: keys go to the Find box (closing it brings the caret back). */ commitEdit(); searchOpen=true; const bar=el('search-bar'); if(bar)bar.hidden=false; const inp=el('search-input'); if(inp){inp.value=searchQuery; inp.focus(); inp.select()} computeSearchMatches(); render()}
+function openSearch(){ /* Words selected in the document become what to find, as in other editors. */ { const sel=window.getSelection(); const t=sel&&!sel.isCollapsed?sel.toString().trim():''; const pane=el('editor-pane'); if(t&&t.length<=100&&!/\n/.test(t)&&pane&&sel.anchorNode&&pane.contains(sel.anchorNode))searchQuery=t; } if(!searchOpen)rememberEditSpot(); /* Leave the row: keys go to the Find box (closing it brings the caret back). */ commitEdit(); searchOpen=true; const bar=el('search-bar'); if(bar)bar.hidden=false; const inp=el('search-input'); if(inp){inp.value=searchQuery; inp.focus(); inp.select()} computeSearchMatches(); render()}
 function closeSearch(){searchOpen=false; const bar=el('search-bar'); if(bar)bar.hidden=true; const rbar=el('replace-bar'); if(rbar){rbar.hidden=true; rbar.classList.remove('open')} const rbtn=el('search-toggle-replace'); if(rbtn)rbtn.setAttribute('aria-expanded','false'); searchMatches=[]; searchIndex=-1; render(); if(!returnToEditSpot())focusPane()}
 // Whole-word matching needs word-boundary detection, which only RegExp can do — but the
 // query itself is always escaped and used as a literal substring, never interpreted as a
@@ -21989,7 +22001,7 @@ const aiOutlineBtn=document.getElementById('es-ai-outline-btn'); if(aiOutlineBtn
       if((e.key==='ArrowUp'||e.key==='ArrowDown')&&!e.defaultPrevented&&!e.shiftKey&&!e.altKey&&!e.ctrlKey&&!e.metaKey){
         const up=e.key==='ArrowUp'; const anchorN=window.getSelection()?.anchorNode; const inCell=anchorN&&(anchorN.nodeType===1?anchorN:anchorN.parentElement)?.closest?.('td,th');
         if(!inCell&&caretOnEdgeLine(noteLine,up)){
-          const nid=Number(noteLine.dataset.nodeId); const vis=getVisibleNodeIndexes(nodes,collapsedIds); const pos=vis.indexOf(getIndex(nodes,nid));
+          const nid=Number(noteLine.dataset.nodeId); const vis=visibleIndexes(); const pos=vis.indexOf(getIndex(nodes,nid));
           const targetId=up?nid:(pos>=0&&pos<vis.length-1?nodes[vis[pos+1]].id:null);
           if(targetId!=null){
             e.preventDefault(); const x=(caretClientRect()||{left:0}).left;
@@ -22664,7 +22676,7 @@ function deleteEmptyNodeAndFocusPrev(id){
   // An empty row can still hold a diagram, which Undo can't bring back: go through Delete's
   // confirmation for that. Its other objects (note, remarks, Q&A…) go with it, undoably.
   if(collectDeleteImpact([id]).diagrams){ commitEdit(); setSingleSelection(id); render(); confirmDeleteIfNeeded().then(ok=>{ if(ok){ deleteSelected(); focusPane(); } }); return; }
-  const vis=getVisibleNodeIndexes(nodes,collapsedIds); const pos=vis.indexOf(idx); if(pos<0)return;
+  const vis=visibleIndexes(); const pos=vis.indexOf(idx); if(pos<0)return;
   const prevId=pos>0?nodes[vis[pos-1]].id:null;
   pushUndo(); markDirty();
   const deletedIds=[nodes[idx].id];
@@ -22692,7 +22704,7 @@ function deleteEmptyNodeAndFocusPrev(id){
 function canAdoptChildrenOf(keepIdx,goneIdx){ return (nodes[keepIdx].depth||0)===(nodes[goneIdx].depth||0)&&!nodeHasChildren(nodes,keepIdx); }
 function mergeNodeIntoPrevAndFocus(id,liveText){
   const idx=getIndex(nodes,id); if(idx<0)return;
-  const vis=getVisibleNodeIndexes(nodes,collapsedIds); const pos=vis.indexOf(idx); if(pos<=0)return;
+  const vis=visibleIndexes(); const pos=vis.indexOf(idx); if(pos<=0)return;
   const prevIdx=vis[pos-1]; const prevId=nodes[prevIdx].id;
   // A row with children merges only into a childless sibling just above it: its children then
   // simply become that row's children (as in Workflowy/Dynalist). Anywhere else they'd change level.
@@ -22725,7 +22737,7 @@ function mergeNodeIntoPrevAndFocus(id,liveText){
 // mergeNodeIntoPrevAndFocus).
 function mergeNextNodeIntoAndFocus(id,liveText){
   const idx=getIndex(nodes,id); if(idx<0)return;
-  const vis=getVisibleNodeIndexes(nodes,collapsedIds); const pos=vis.indexOf(idx); if(pos<0||pos>=vis.length-1)return;
+  const vis=visibleIndexes(); const pos=vis.indexOf(idx); if(pos<0||pos>=vis.length-1)return;
   const nextIdx=vis[pos+1];
   // An empty row just goes away and the cursor lands at the start of the next one.
   if(!(liveText||'')&&!nodeHasChildren(nodes,idx)&&!collectDeleteImpact([id]).diagrams){
@@ -23735,6 +23747,17 @@ function onEditorKeyDownInner(e){const id=Number(e.target.id.replace('in-',''));
     if(e.key==='Enter'||e.key==='Tab'){if(cands.length&&cands[_atActiveIdx]){e.preventDefault(); commitAtSuggest(cands[_atActiveIdx]); return} closeAtSuggest();}
     if(e.key==='Escape'){e.preventDefault(); closeAtSuggest(); return}
   }
+  // Ctrl/Cmd+Up folds the row's children, Ctrl/Cmd+Down unfolds them, while you keep typing.
+  if((e.key==='ArrowUp'||e.key==='ArrowDown')&&(e.ctrlKey||e.metaKey)&&!e.altKey&&!e.shiftKey){
+    const i=getIndex(nodes,id);
+    if(i>=0&&nodeHasChildren(nodes,i)){ e.preventDefault(); const up=e.key==='ArrowUp'; if(up!==collapsedIds.has(id)){ const caret=getEditableCaretOffset(e.target); commitEdit(); if(up)collapsedIds.add(id); else collapsedIds.delete(id); scheduleAutoSave(); beginEditAt(id,caret??(nodes[i].text||'').length); } return }
+  }
+  // Ctrl/Cmd+. zooms into the row being typed in, Ctrl/Cmd+, zooms out one level; typing goes on.
+  if((e.key==='.'||e.key===',')&&(e.ctrlKey||e.metaKey)&&!e.altKey&&!e.shiftKey){
+    e.preventDefault(); const caret=getEditableCaretOffset(e.target);
+    if(e.key==='.')enterFocus(id); else { if(focusedId===null)return; focusUpOne(); }
+    if(getIndex(nodes,id)>=0&&visibleIndexes().includes(getIndex(nodes,id)))beginEditAt(id,caret??0); return
+  }
   // Ctrl/Cmd+A selects the row's words; pressed again (words already all selected) it selects every
   // row, as in other outliners.
   if(e.key.toLowerCase()==='a'&&(e.ctrlKey||e.metaKey)&&!e.altKey&&!e.shiftKey&&nodes.length>1){
@@ -23744,7 +23767,7 @@ function onEditorKeyDownInner(e){const id=Number(e.target.id.replace('in-',''));
   // Ctrl/Cmd+Home and Ctrl/Cmd+End go to the start of the document and the end of it, as in any
   // text editor, not just to the start/end of this row.
   if((e.key==='Home'||e.key==='End')&&(e.ctrlKey||e.metaKey)&&!e.altKey&&!e.shiftKey){
-    const vis=getVisibleNodeIndexes(nodes,collapsedIds);
+    const vis=visibleIndexes();
     if(vis.length){ e.preventDefault(); const target=nodes[vis[e.key==='Home'?0:vis.length-1]]; commitEdit(); beginEditAt(target.id,e.key==='Home'?0:(target.text||'').length); scrollToNode(target.id,'nearest'); }
     return
   }
@@ -23755,7 +23778,7 @@ function onEditorKeyDownInner(e){const id=Number(e.target.id.replace('in-',''));
   if(e.key==='ArrowUp'&&!e.shiftKey&&!e.altKey&&!e.ctrlKey&&!e.metaKey){
     const ta=e.target;
     if(caretVisualLineIndex(ta)>0)return; // caret is below the first wrapped line -- let the browser move up within the paragraph normally
-    const curIdx=getIndex(nodes,id); const vis=getVisibleNodeIndexes(nodes,collapsedIds); const pos=vis.indexOf(curIdx);
+    const curIdx=getIndex(nodes,id); const vis=visibleIndexes(); const pos=vis.indexOf(curIdx);
     const prevNote=pos>0?openNoteLineFor(nodes[vis[pos-1]].id):null;
     if(prevNote){ e.preventDefault(); const x=(caretClientRect()||{left:0}).left; _lastArrowCol=null; commitEdit(); render(); const pn=openNoteLineFor(nodes[vis[pos-1]].id); if(pn)placeCaretInFieldAt(pn,x,true); return }
     if(pos>0){
@@ -23787,7 +23810,7 @@ function onEditorKeyDownInner(e){const id=Number(e.target.id.replace('in-',''));
     const ta=e.target; const len=(ta.textContent||'').length; const r=getEditableSelectionRange(ta);
     const down=e.key==='ArrowDown';
     if(r&&(down?r.end===len:r.start===0)){
-      const curIdx=getIndex(nodes,id); const vis=getVisibleNodeIndexes(nodes,collapsedIds); const pos=vis.indexOf(curIdx);
+      const curIdx=getIndex(nodes,id); const vis=visibleIndexes(); const pos=vis.indexOf(curIdx);
       const nextPos=pos+(down?1:-1);
       if(pos>=0&&nextPos>=0&&nextPos<vis.length){
         e.preventDefault();
@@ -23803,7 +23826,7 @@ function onEditorKeyDownInner(e){const id=Number(e.target.id.replace('in-',''));
   if(e.key==='ArrowDown'&&!e.shiftKey&&!e.altKey&&!e.ctrlKey&&!e.metaKey){
     const ta=e.target;
     if(caretVisualLineIndex(ta)<caretVisualLineCount(ta)-1)return; // not on the last wrapped line yet -- let the browser move down normally
-    const curIdx=getIndex(nodes,id); const vis=getVisibleNodeIndexes(nodes,collapsedIds); const pos=vis.indexOf(curIdx);
+    const curIdx=getIndex(nodes,id); const vis=visibleIndexes(); const pos=vis.indexOf(curIdx);
     if(openNoteLineFor(id)){ e.preventDefault(); const x=(caretClientRect()||{left:0}).left; _lastArrowCol=null; commitEdit(); render(); const nn=openNoteLineFor(id); if(nn)placeCaretInFieldAt(nn,x,false); return }
     if(pos>=0&&pos<vis.length-1){
       e.preventDefault();
@@ -23820,7 +23843,7 @@ function onEditorKeyDownInner(e){const id=Number(e.target.id.replace('in-',''));
     const ta=e.target;
     const selRange=getEditableSelectionRange(ta);
     if(selRange&&selRange.start===0&&selRange.end===0){
-      const curIdx=getIndex(nodes,id); const vis=getVisibleNodeIndexes(nodes,collapsedIds); const pos=vis.indexOf(curIdx);
+      const curIdx=getIndex(nodes,id); const vis=visibleIndexes(); const pos=vis.indexOf(curIdx);
       if(pos>0){
         e.preventDefault();
         const prevId=nodes[vis[pos-1]].id;
@@ -23840,7 +23863,7 @@ function onEditorKeyDownInner(e){const id=Number(e.target.id.replace('in-',''));
     const len=(ta.textContent||'').length;
     const selRange=getEditableSelectionRange(ta);
     if(selRange&&selRange.start===len&&selRange.end===len){
-      const curIdx=getIndex(nodes,id); const vis=getVisibleNodeIndexes(nodes,collapsedIds); const pos=vis.indexOf(curIdx);
+      const curIdx=getIndex(nodes,id); const vis=visibleIndexes(); const pos=vis.indexOf(curIdx);
       if(pos>=0&&pos<vis.length-1){
         e.preventDefault();
         const nextId=nodes[vis[pos+1]].id;
@@ -24037,7 +24060,7 @@ async function clearAllNodes(){commitEdit(); if(!nodes.length){showToast('This d
     if(id==='header-title'&&ev.key==='ArrowDown'&&!ev.shiftKey&&!ev.altKey&&!ev.ctrlKey&&!ev.metaKey){
       ev.preventDefault(); ev.stopPropagation();
       if(!nodes.length){createRootAndEdit(''); return}
-      const vis=getVisibleNodeIndexes(nodes,collapsedIds); if(!vis.length)return;
+      const vis=visibleIndexes(); if(!vis.length)return;
       const firstId=nodes[vis[0]].id; const column=node.selectionStart??0;
       const targetText=nodes[vis[0]].text||'';
       beginEditAt(firstId,Math.min(column,targetText.length)); _lastArrowCol=column; return
@@ -24045,7 +24068,7 @@ async function clearAllNodes(){commitEdit(); if(!nodes.length){showToast('This d
     if(id==='header-title'&&ev.key==='ArrowRight'&&!ev.shiftKey&&!ev.altKey&&!ev.ctrlKey&&!ev.metaKey&&node.selectionStart===node.value.length&&node.selectionEnd===node.value.length){
       ev.preventDefault(); ev.stopPropagation();
       if(!nodes.length){createRootAndEdit(''); return}
-      const vis=getVisibleNodeIndexes(nodes,collapsedIds); if(!vis.length)return;
+      const vis=visibleIndexes(); if(!vis.length)return;
       beginEditAt(nodes[vis[0]].id,0); return
     }
     if(id==='header-title'&&ev.key!=='ArrowUp'&&ev.key!=='ArrowDown'){_lastArrowCol=null}
@@ -24835,14 +24858,14 @@ document.addEventListener('DOMContentLoaded', function(){
   });
 });
 
-document.addEventListener('keydown',e=>{if(el('history-modal-overlay')?.classList.contains('open')){if(e.key==='Escape'){e.preventDefault(); closeVersionHistory();} return;} if(demoActive){if(e.key==='Escape'){e.preventDefault(); closeDemo();} return} if(tourActive){if(e.key==='Escape'){e.preventDefault(); tourSkip();}else if(e.key==='ArrowRight'||e.key==='Enter'){e.preventDefault(); tourNext();}else if(e.key==='ArrowLeft'){e.preventDefault(); tourBack();} return} if(e.key==='Escape'){hideContextMenu(); if(zenMode)setZenMode(false); if(dragState.draggedId){dragState={draggedId:null,draggedIds:null,targetId:null,mode:null}; clearDragIndicators();} if(editingId===null&&multiSelectedIds.length>1){clearMultiSelection(); selectionAnchorId=selectedId; render()} else if(focusedId!==null&&editingId===null)exitFocus();} if((e.ctrlKey||e.metaKey)&&!e.shiftKey&&e.key==='.'&&editingId===null){e.preventDefault(); if(selectedId!==null)enterFocus(selectedId); return} if((e.ctrlKey||e.metaKey)&&!e.shiftKey&&e.key===','&&editingId===null){e.preventDefault(); focusUpOne(); return} if (matchesShortcut(e,'save')) { e.preventDefault(); fireShortcut('save'); return; } if (matchesShortcut(e,'quickAssist')) { e.preventDefault(); fireShortcut('quickAssist'); return; } if (matchesShortcut(e,'newDoc')) { e.preventDefault(); fireShortcut('newDoc'); return; } if (matchesShortcut(e,'docBack')) { e.preventDefault(); fireShortcut('docBack'); return; } if (matchesShortcut(e,'docForward')) { e.preventDefault(); fireShortcut('docForward'); return; } if (matchesShortcut(e,'findInTree')) { e.preventDefault(); fireShortcut('findInTree'); return; } if (matchesShortcut(e,'findReplace')) { e.preventDefault(); fireShortcut('findReplace'); return; } if(e.key==='Escape'&&searchOpen){e.preventDefault(); closeSearch(); return} if (matchesShortcut(e,'collapseAll')) { e.preventDefault(); fireShortcut('collapseAll'); return; } if (matchesShortcut(e,'insertDateTime')) { e.preventDefault(); fireShortcut('insertDateTime'); return; } if (matchesShortcut(e,'generateOutline')) { e.preventDefault(); fireShortcut('generateOutline'); return; } if (matchesShortcut(e,'toggleZen')) { e.preventDefault(); fireShortcut('toggleZen'); return; } if(!isTextEntryTarget(e.target)&&!hasExternalTextSelection()){ if (matchesShortcut(e,'undo')) { e.preventDefault(); fireShortcut('undo'); return; } if (matchesShortcut(e,'redo')) { e.preventDefault(); fireShortcut('redo'); return; } } if(isControlTarget(e.target))return; if(hasExternalTextSelection())return; if (matchesShortcut(e,'copyAsText')) { e.preventDefault(); fireShortcut('copyAsText'); return; } /* Ctrl/Cmd+X on selected rows cuts them (copy, then delete; Ctrl/Cmd+Z brings them back). */ if((e.ctrlKey||e.metaKey)&&!e.altKey&&!e.shiftKey&&e.key.toLowerCase()==='x'&&editingId===null&&!isTextEntryTarget(e.target)&&!(e.target&&e.target.closest&&e.target.closest('#todos-panel,#settings-panel,#help-panel'))&&(selectAllMode||(selectedId!==null&&getIndex(nodes,selectedId)>=0))){ e.preventDefault(); copyNodesToClipboard(); deleteSelected(); return; } if (matchesShortcut(e,'selectAll')) { if(nodes.length){e.preventDefault(); commitEdit(); selectAllMode=true; editingId=null; clearMultiSelection(); selectionAnchorId=nodes[0]?.id??null; render()} return; } if (matchesShortcut(e,'bold')) { e.preventDefault(); fireShortcut('bold'); return; } if (matchesShortcut(e,'italic')) { e.preventDefault(); fireShortcut('italic'); return; } if (matchesShortcut(e,'underline')) { e.preventDefault(); fireShortcut('underline'); return; } if (matchesShortcut(e,'strike')) { e.preventDefault(); fireShortcut('strike'); return; } if (matchesShortcut(e,'highlight')) { e.preventDefault(); fireShortcut('highlight'); return; } if (matchesShortcut(e,'textColor')) { e.preventDefault(); fireShortcut('textColor'); return; } if (matchesShortcut(e,'heading1')) { e.preventDefault(); fireShortcut('heading1'); return; } if (matchesShortcut(e,'heading2')) { e.preventDefault(); fireShortcut('heading2'); return; } if (matchesShortcut(e,'heading3')) { e.preventDefault(); fireShortcut('heading3'); return; } if (matchesShortcut(e,'headingClear')) { e.preventDefault(); fireShortcut('headingClear'); return; } if (matchesShortcut(e,'newChild')) { e.preventDefault(); fireShortcut('newChild'); return; } if (matchesShortcut(e,'moveUp')) { e.preventDefault(); fireShortcut('moveUp'); return; } if (matchesShortcut(e,'moveDown')) { e.preventDefault(); fireShortcut('moveDown'); return; } /* Keys inside a side panel (To-Dos, Settings, Help) belong to the panel: they never start editing or moving rows of the document. */ if(e.target&&e.target.closest&&e.target.closest('#todos-panel,#settings-panel,#help-panel'))return; if(editingId!==null)return; if(!nodes.length){if((e.ctrlKey||e.metaKey)&&!e.altKey&&e.key.toLowerCase()==='v'){e.preventDefault(); smartPasteFromClipboard(); return} if(e.key.length===1&&!e.altKey&&!e.metaKey&&!e.ctrlKey){e.preventDefault(); createRootAndEdit(e.key)} if(e.key==='Enter'||e.key==='F2'){e.preventDefault(); createRootAndEdit('')} return} if(focusedId!==null){const fIdx=getIndex(nodes,focusedId); if(fIdx>=0&&getSubtreeEnd(nodes,fIdx)<=fIdx+1){
+document.addEventListener('keydown',e=>{if(el('history-modal-overlay')?.classList.contains('open')){if(e.key==='Escape'){e.preventDefault(); closeVersionHistory();} return;} if(demoActive){if(e.key==='Escape'){e.preventDefault(); closeDemo();} return} if(tourActive){if(e.key==='Escape'){e.preventDefault(); tourSkip();}else if(e.key==='ArrowRight'||e.key==='Enter'){e.preventDefault(); tourNext();}else if(e.key==='ArrowLeft'){e.preventDefault(); tourBack();} return} if(e.key==='Escape'){hideContextMenu(); if(zenMode)setZenMode(false); if(dragState.draggedId){dragState={draggedId:null,draggedIds:null,targetId:null,mode:null}; clearDragIndicators();} if(editingId===null&&multiSelectedIds.length>1){clearMultiSelection(); selectionAnchorId=selectedId; render()} else if(focusedId!==null&&editingId===null&&!(e.target&&e.target.closest&&e.target.closest('.node-input,.node-note-line,.node-remark-text-inline,[contenteditable="true"],input,textarea')))exitFocus(); /* Esc that just left a row or note keeps the zoom; the next Esc zooms out. */} if((e.ctrlKey||e.metaKey)&&!e.shiftKey&&e.key==='.'&&editingId===null){e.preventDefault(); if(selectedId!==null)enterFocus(selectedId); return} if((e.ctrlKey||e.metaKey)&&!e.shiftKey&&e.key===','&&editingId===null){e.preventDefault(); focusUpOne(); return} if (matchesShortcut(e,'save')) { e.preventDefault(); fireShortcut('save'); return; } if (matchesShortcut(e,'quickAssist')) { e.preventDefault(); fireShortcut('quickAssist'); return; } if (matchesShortcut(e,'newDoc')) { e.preventDefault(); fireShortcut('newDoc'); return; } if (matchesShortcut(e,'docBack')) { e.preventDefault(); fireShortcut('docBack'); return; } if (matchesShortcut(e,'docForward')) { e.preventDefault(); fireShortcut('docForward'); return; } if (matchesShortcut(e,'findInTree')) { e.preventDefault(); fireShortcut('findInTree'); return; } if (matchesShortcut(e,'findReplace')) { e.preventDefault(); fireShortcut('findReplace'); return; } if(e.key==='Escape'&&searchOpen){e.preventDefault(); closeSearch(); return} if (matchesShortcut(e,'collapseAll')) { e.preventDefault(); fireShortcut('collapseAll'); return; } if (matchesShortcut(e,'insertDateTime')) { e.preventDefault(); fireShortcut('insertDateTime'); return; } if (matchesShortcut(e,'generateOutline')) { e.preventDefault(); fireShortcut('generateOutline'); return; } if (matchesShortcut(e,'toggleZen')) { e.preventDefault(); fireShortcut('toggleZen'); return; } if(!isTextEntryTarget(e.target)&&!hasExternalTextSelection()){ if (matchesShortcut(e,'undo')) { e.preventDefault(); fireShortcut('undo'); return; } if (matchesShortcut(e,'redo')) { e.preventDefault(); fireShortcut('redo'); return; } } if(isControlTarget(e.target))return; if(hasExternalTextSelection())return; if (matchesShortcut(e,'copyAsText')) { e.preventDefault(); fireShortcut('copyAsText'); return; } /* Ctrl/Cmd+X on selected rows cuts them (copy, then delete; Ctrl/Cmd+Z brings them back). */ if((e.ctrlKey||e.metaKey)&&!e.altKey&&!e.shiftKey&&e.key.toLowerCase()==='x'&&editingId===null&&!isTextEntryTarget(e.target)&&!(e.target&&e.target.closest&&e.target.closest('#todos-panel,#settings-panel,#help-panel'))&&(selectAllMode||(selectedId!==null&&getIndex(nodes,selectedId)>=0))){ e.preventDefault(); copyNodesToClipboard(); deleteSelected(); return; } if (matchesShortcut(e,'selectAll')) { if(nodes.length){e.preventDefault(); commitEdit(); selectAllMode=true; editingId=null; clearMultiSelection(); selectionAnchorId=nodes[0]?.id??null; render()} return; } if (matchesShortcut(e,'bold')) { e.preventDefault(); fireShortcut('bold'); return; } if (matchesShortcut(e,'italic')) { e.preventDefault(); fireShortcut('italic'); return; } if (matchesShortcut(e,'underline')) { e.preventDefault(); fireShortcut('underline'); return; } if (matchesShortcut(e,'strike')) { e.preventDefault(); fireShortcut('strike'); return; } if (matchesShortcut(e,'highlight')) { e.preventDefault(); fireShortcut('highlight'); return; } if (matchesShortcut(e,'textColor')) { e.preventDefault(); fireShortcut('textColor'); return; } if (matchesShortcut(e,'heading1')) { e.preventDefault(); fireShortcut('heading1'); return; } if (matchesShortcut(e,'heading2')) { e.preventDefault(); fireShortcut('heading2'); return; } if (matchesShortcut(e,'heading3')) { e.preventDefault(); fireShortcut('heading3'); return; } if (matchesShortcut(e,'headingClear')) { e.preventDefault(); fireShortcut('headingClear'); return; } if (matchesShortcut(e,'newChild')) { e.preventDefault(); fireShortcut('newChild'); return; } if (matchesShortcut(e,'moveUp')) { e.preventDefault(); fireShortcut('moveUp'); return; } if (matchesShortcut(e,'moveDown')) { e.preventDefault(); fireShortcut('moveDown'); return; } /* Keys inside a side panel (To-Dos, Settings, Help) belong to the panel: they never start editing or moving rows of the document. */ if(e.target&&e.target.closest&&e.target.closest('#todos-panel,#settings-panel,#help-panel'))return; if(editingId!==null)return; if(!nodes.length){if((e.ctrlKey||e.metaKey)&&!e.altKey&&e.key.toLowerCase()==='v'){e.preventDefault(); smartPasteFromClipboard(); return} if(e.key.length===1&&!e.altKey&&!e.metaKey&&!e.ctrlKey){e.preventDefault(); createRootAndEdit(e.key)} if(e.key==='Enter'||e.key==='F2'){e.preventDefault(); createRootAndEdit('')} return} if(focusedId!==null){const fIdx=getIndex(nodes,focusedId); if(fIdx>=0&&getSubtreeEnd(nodes,fIdx)<=fIdx+1){
     // Zoomed into a node with no children yet: render() shows only the focus-empty-state
     // placeholder here, with no row to click or type into -- so typing or Enter must create
     // that first child directly, mirroring the !nodes.length branch just above.
     if(e.key.length===1&&!e.altKey&&!e.metaKey&&!e.ctrlKey){e.preventDefault(); const newId=insertChildFirst(focusedId,false); if(newId!==undefined){const ni=getIndex(nodes,newId); if(ni>=0)nodes[ni].text=e.key; beginEditAt(newId,e.key.length)} return}
     if(e.key==='Enter'||e.key==='F2'){e.preventDefault(); insertChildFirst(focusedId,true); return}
     return
-  }} ensureSelection(); /* Shift+F10 or the Menu key opens the selected row's right-click menu, as in any app. */ if((e.key==='ContextMenu'||(e.key==='F10'&&e.shiftKey))&&!e.ctrlKey&&!e.metaKey&&!e.altKey&&selectedId!==null&&!selectAllMode){ const r=document.querySelector(`.node-row[data-id="${selectedId}"] .node-label`)||document.querySelector(`.node-row[data-id="${selectedId}"]`); if(r){ e.preventDefault(); const b=r.getBoundingClientRect(); showContextMenu(b.left+8,b.bottom,selectedId); } return } const idx=getIndex(nodes,selectedId); if(e.key==='ArrowLeft'&&!e.altKey&&selectedId!==null&&idx>=0){e.preventDefault(); if(nodeHasChildren(nodes,idx)&&!collapsedIds.has(selectedId)){collapseNode(selectedId)} else if(nodes[idx].depth>0){const p=getParentIndex(nodes,idx); if(p>=0){selectedId=nodes[p].id; selectionAnchorId=selectedId; selectAllMode=false; clearMultiSelection(); render(); scrollToNode(selectedId,'nearest')}} return} if(e.key==='ArrowRight'&&!e.altKey&&selectedId!==null&&idx>=0){e.preventDefault(); if(collapsedIds.has(selectedId)){expandNode(selectedId)} else if(nodeHasChildren(nodes,idx)){selectedId=nodes[idx+1].id; selectionAnchorId=selectedId; selectAllMode=false; clearMultiSelection(); render(); scrollToNode(selectedId,'nearest')} return} if(e.key==='ArrowUp'){e.preventDefault(); const vis=getVisibleNodeIndexes(nodes,collapsedIds); const pos=vis.indexOf(idx); if(pos>0){const nextId=nodes[vis[pos-1]].id; if(e.shiftKey){selectAllMode=false; const anchor=selectionAnchorId??selectedId; selectionAnchorId=anchor; multiSelectedIds=getSelectionRangeIds(nodes,collapsedIds,anchor,nextId); selectedId=nextId}else{selectAllMode=false; clearMultiSelection(); selectedId=nextId; selectionAnchorId=nextId} render(); scrollToNode(selectedId,'nearest')} return} if(e.key==='ArrowDown'){e.preventDefault(); const vis=getVisibleNodeIndexes(nodes,collapsedIds); const pos=vis.indexOf(idx); if(pos>=0&&pos<vis.length-1){const nextId=nodes[vis[pos+1]].id; if(e.shiftKey){selectAllMode=false; const anchor=selectionAnchorId??selectedId; selectionAnchorId=anchor; multiSelectedIds=getSelectionRangeIds(nodes,collapsedIds,anchor,nextId); selectedId=nextId}else{selectAllMode=false; clearMultiSelection(); selectedId=nextId; selectionAnchorId=nextId} render(); scrollToNode(selectedId,'nearest')} return} if(e.key==='F2'||e.key==='Enter'){e.preventDefault(); if(selectAllMode){selectAllMode=false; selectedId=nodes[0]?.id??null} clearMultiSelection(); selectionAnchorId=selectedId; if(selectedId!==null)beginEdit(selectedId,true); return} if(e.key==='Delete'||e.key==='Backspace'){e.preventDefault(); confirmDeleteIfNeeded().then(ok=>{if(ok)deleteSelected()}); return} if(e.key==='Tab'&&!e.ctrlKey&&!e.metaKey){e.preventDefault(); if(selectAllMode)return; if(e.shiftKey)outdentSelected(); else indentSelected(); return} if(e.key.length===1&&!e.altKey&&!e.metaKey&&!e.ctrlKey){e.preventDefault(); if(selectAllMode||multiSelectedIds.length>1)return; clearMultiSelection(); selectionAnchorId=selectedId; beginEdit(selectedId,true); const input=getEditingInput(); if(input){input.focus(); setInputCaret(input,-1); document.execCommand('insertText',false,e.key)}}});
+  }} ensureSelection(); /* Shift+F10 or the Menu key opens the selected row's right-click menu, as in any app. */ if((e.key==='ContextMenu'||(e.key==='F10'&&e.shiftKey))&&!e.ctrlKey&&!e.metaKey&&!e.altKey&&selectedId!==null&&!selectAllMode){ const r=document.querySelector(`.node-row[data-id="${selectedId}"] .node-label`)||document.querySelector(`.node-row[data-id="${selectedId}"]`); if(r){ e.preventDefault(); const b=r.getBoundingClientRect(); showContextMenu(b.left+8,b.bottom,selectedId); } return } const idx=getIndex(nodes,selectedId); if(e.key==='ArrowLeft'&&!e.altKey&&selectedId!==null&&idx>=0){e.preventDefault(); if(nodeHasChildren(nodes,idx)&&!collapsedIds.has(selectedId)){collapseNode(selectedId)} else if(nodes[idx].depth>0){const p=getParentIndex(nodes,idx); if(p>=0){selectedId=nodes[p].id; selectionAnchorId=selectedId; selectAllMode=false; clearMultiSelection(); render(); scrollToNode(selectedId,'nearest')}} return} if(e.key==='ArrowRight'&&!e.altKey&&selectedId!==null&&idx>=0){e.preventDefault(); if(collapsedIds.has(selectedId)){expandNode(selectedId)} else if(nodeHasChildren(nodes,idx)){selectedId=nodes[idx+1].id; selectionAnchorId=selectedId; selectAllMode=false; clearMultiSelection(); render(); scrollToNode(selectedId,'nearest')} return} if(e.key==='ArrowUp'){e.preventDefault(); const vis=visibleIndexes(); const pos=vis.indexOf(idx); if(pos>0){const nextId=nodes[vis[pos-1]].id; if(e.shiftKey){selectAllMode=false; const anchor=selectionAnchorId??selectedId; selectionAnchorId=anchor; multiSelectedIds=getSelectionRangeIds(nodes,collapsedIds,anchor,nextId); selectedId=nextId}else{selectAllMode=false; clearMultiSelection(); selectedId=nextId; selectionAnchorId=nextId} render(); scrollToNode(selectedId,'nearest')} return} if(e.key==='ArrowDown'){e.preventDefault(); const vis=visibleIndexes(); const pos=vis.indexOf(idx); if(pos>=0&&pos<vis.length-1){const nextId=nodes[vis[pos+1]].id; if(e.shiftKey){selectAllMode=false; const anchor=selectionAnchorId??selectedId; selectionAnchorId=anchor; multiSelectedIds=getSelectionRangeIds(nodes,collapsedIds,anchor,nextId); selectedId=nextId}else{selectAllMode=false; clearMultiSelection(); selectedId=nextId; selectionAnchorId=nextId} render(); scrollToNode(selectedId,'nearest')} return} if(e.key==='F2'||e.key==='Enter'){e.preventDefault(); if(selectAllMode){selectAllMode=false; selectedId=nodes[0]?.id??null} clearMultiSelection(); selectionAnchorId=selectedId; if(selectedId!==null)beginEdit(selectedId,true); return} if(e.key==='Delete'||e.key==='Backspace'){e.preventDefault(); confirmDeleteIfNeeded().then(ok=>{if(ok)deleteSelected()}); return} if(e.key==='Tab'&&!e.ctrlKey&&!e.metaKey){e.preventDefault(); if(selectAllMode)return; if(e.shiftKey)outdentSelected(); else indentSelected(); return} if(e.key.length===1&&!e.altKey&&!e.metaKey&&!e.ctrlKey){e.preventDefault(); if(selectAllMode||multiSelectedIds.length>1)return; clearMultiSelection(); selectionAnchorId=selectedId; beginEdit(selectedId,true); const input=getEditingInput(); if(input){input.focus(); setInputCaret(input,-1); document.execCommand('insertText',false,e.key)}}});
 // --- AI Rewrite ---
 /* GENERATED:aiProviders:START — DO NOT EDIT BY HAND. Source of truth: src/state/aiProviders.ts (tests: tests/unit/aiProvidersState.test.ts). Regenerate with `npm run generate` after changing the source; CI fails if this block drifts from what the generator produces (see .github/workflows/ci.yml and scripts/generate-index-blocks.mjs). */
 /**

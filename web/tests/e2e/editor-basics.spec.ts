@@ -241,3 +241,45 @@ test('Shift+F10 or the Menu key opens the selected row\'s menu', async ({ page }
   await page.keyboard.press('ContextMenu');
   await expect.poll(() => page.evaluate('!!_sbContextEl')).toBe(true);
 });
+
+const nest = (page: Page) => page.evaluate(`nodes[1].depth = 1; nodes[2].depth = 2; rebuildParentIds(); collapsedIds = new Set(); render();`);
+
+test('folding a branch while typing inside it moves the caret to the folded row', async ({ page }) => {
+  await seed(page);
+  await nest(page);
+  await editRow(page, 3);
+  await page.locator('.node-row[data-id="1"] .fold-dot, .node-row[data-id="1"] .fold-toggle').first().click();
+  expect(await page.evaluate('[editingId, getEditableCaretOffset(getEditingInput())]')).toEqual([1, 16]);
+  await expect(page.locator('#in-1')).toBeFocused();
+});
+
+test('Ctrl/Cmd+Up folds and Ctrl/Cmd+Down unfolds the row being typed in', async ({ page }) => {
+  await seed(page);
+  await nest(page);
+  await editRow(page, 1);
+  await page.keyboard.press('ControlOrMeta+ArrowUp');
+  expect(await page.evaluate('[[...collapsedIds], editingId]')).toEqual([[1], 1]);
+  await page.keyboard.press('ControlOrMeta+ArrowDown');
+  expect(await page.evaluate('[[...collapsedIds], editingId]')).toEqual([[], 1]);
+});
+
+test('zoomed in, typing and arrows stay inside the branch; Ctrl/Cmd+. works while typing', async ({ page }) => {
+  await seed(page);
+  await nest(page);
+  await editRow(page, 2);
+  await page.keyboard.press('ControlOrMeta+.');
+  expect(await page.evaluate('[focusedId, editingId]')).toEqual([2, 2]);
+  await page.keyboard.press('Escape');
+  await page.keyboard.press('ArrowUp');
+  await page.keyboard.press('ArrowUp');
+  expect(await page.evaluate('selectedId')).toBe(2);
+});
+
+test('Ctrl/Cmd+F with words selected finds those words', async ({ page }) => {
+  await seed(page);
+  await editRow(page, 1);
+  await page.keyboard.press('Home');
+  await page.keyboard.press('Shift+ControlOrMeta+ArrowRight');
+  await page.keyboard.press('ControlOrMeta+f');
+  await expect(page.locator('#search-input')).toHaveValue('alpha');
+});
