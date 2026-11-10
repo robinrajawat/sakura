@@ -25973,6 +25973,33 @@ window.addEventListener('beforeunload',e=>{
   e.preventDefault(); e.returnValue='';
 })
 
+// Leaving the window is not leaving the field (standard editor behaviour). Switching to another
+// app or tab fires blur/focusout on whatever has focus, and many fields here finish editing on
+// blur: they commit, swap to their display markup or re-render, which threw the caret away (it
+// came back at the start of the note, or the row stopped being edited). While the window itself
+// is losing focus (document.hasFocus() is already false), those events stop here, before any
+// field's own handler. When the window comes back, the browser focuses the same element again;
+// that one focus/focusin stops here too, so focus handlers that rebuild markup don't run, and the
+// caret and selection are exactly where they were. Saving is unaffected: fields save as you
+// type, and the 'hidden' handler below writes everything to storage.
+let _windowBlurKeptEl=null;
+const _keepFieldOnWindowBlur=e=>{
+  if(document.hasFocus()||e.target===window||e.target===document)return;
+  _windowBlurKeptEl=e.target; e.stopImmediatePropagation();
+};
+const _keepFieldOnWindowFocus=e=>{
+  if(!_windowBlurKeptEl)return;
+  const kept=_windowBlurKeptEl;
+  if(e.target!==kept){ if(e.target!==window&&e.target!==document)_windowBlurKeptEl=null; return; }
+  e.stopImmediatePropagation();
+  // focus and focusin both arrive for this one return; forget the element after both.
+  setTimeout(()=>{ if(_windowBlurKeptEl===kept&&document.hasFocus())_windowBlurKeptEl=null; },0);
+};
+window.addEventListener('blur',_keepFieldOnWindowBlur,true);
+window.addEventListener('focusout',_keepFieldOnWindowBlur,true);
+window.addEventListener('focusin',_keepFieldOnWindowFocus,true);
+window.addEventListener('focus',_keepFieldOnWindowFocus,true);
+
 document.addEventListener('visibilitychange',()=>{
   if(document.visibilityState==='hidden'){
     if(!suppressSaveToStorageOnUnload)saveToStorage();
