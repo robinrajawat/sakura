@@ -178,3 +178,63 @@ contradicts README.md or docs/feature-reference.md, trust them.)*
 - **Editor basics audit, round 3 (2026-11-10, owner: "one more check and polishing").** Menus, link box, To-Dos keys, thread reply line and pasted formatting. Fixed: (1) the Link box (Ctrl/Cmd+K or the bar's Link) left you outside the row: Enter now puts the caret right after the new link, Esc puts the same words back selected (target `cancel`/`backTo` in `selectionFmtLinkTarget`, `richFieldLinkTarget`). (2) Enter/Esc in a To-Do's text dropped focus to the page, so the next keys started editing a row of the document: focus stays in `#todos-panel` (tabindex -1) and the page's row keys ignore targets inside To-Dos/Settings/Help. (3) Formatted text pasted into a note kept its fonts, sizes and colours (rows and threads didn't): non-table HTML goes through `cleanThreadPasteHtml`; a pasted table still pastes natively, minus font-family/font-size. Already fine: right-click menu Esc, Ctrl+B in rows/notes, title ↔ first row, reply-line draft on Esc, Alt+Down undo. Tests: editor-basics.spec.ts (+3).
 
 - **Editor basics audit, round 2 (2026-11-10, owner: "the basic expectations from an editor").** A scripted run of ~45 standard checks across rows, notes, threads, title and To-Dos (word keys, selection, undo/redo, cut/paste, Delete/Backspace joins, Tab, Esc, "/" menu, right-click, Ctrl+A scope) found four gaps, now fixed: (1) Ctrl/Cmd+Z in a note or thread entry undid one letter at a time: `updateDirtyIndicator` wrote `document.title` on every keystroke, which Chrome counts as an edit that splits its own undo; it now writes only on a change. (2) Up/Down were stuck inside an open note: rows and notes now flow like one document (row Down → its note, note's first/last line → its row/the next row, row Up → the note above), keeping the horizontal place (`caretOnEdgeLine`, `placeCaretInFieldAt`); not inside a table cell. (3) Deleting a note's last letter deleted the note at once (Ctrl+A, Backspace, retype went into the row): only Backspace in an already-empty note removes it now. (4) Ctrl/Cmd+Home/End in a row go to the first/last row of the document. Test: editor-basics.spec.ts.
+
+
+### In progress / not built
+
+- Security review (2026-11-03): done. Fixed: stored HTML cleaned with DOMPurify on every load and import (#821), phone CSP without 'unsafe-eval' (#823), dev tools updated (#825). Left on purpose: images from any https: address are allowed (opening a received document can reveal the reader's IP to its sender; blocking would break web images in notes); Send a copy has no rate limit (would need a server); 10 moderate `npm audit` items in eslint's minimatch until an eslint release uses minimatch 11.
+- PDF ideas offered 2026-11-03, not chosen: Contents shows no hierarchy (plain sections and H1s look the same; a wrapped entry's dotted leader shrinks to a stub); heading-size sections have more space below than plain ones. Declined: "min read" anywhere (also not in the editor: the status bar was removed on purpose, 2026-10-28) and all-caps for top-level headings.
+- Share stays as it is: Download PDF, Export (.opml), Send a copy (owner, 2026-11-03: "we have come a long way to simplify things"). Declined: email from Share (as text, or Send a copy also emailing the recipient) and public share links (anyone-with-the-link view). Don't re-propose unless the owner asks.
+- API documentation (2026-10-30): done — API request card + Copy as cURL, form editor, cURL paste (into the form or straight into a row) and per-card export. Owner decisions: no collection import, no document-wide export, nothing API-specific in Share. Live "Send" deliberately not built (CORS, secrets); "try it" = cURL or Postman. Next only if the owner asks.
+- Queue from 2026-10-29: done. Decided: the bottom-right focus-mode
+  button `#editor-zen-toggle` stays (owner: "not really adding noise"; it's how people find focus mode). Its
+  removal is dropped unless the owner asks again.
+  Also decided: the top line's folder path stays (owner: it's the "where am I" cue; Notion/Confluence do it).
+- Modularization as its own project is paused (owner, 2026-10-26): move code into `src/` only when that area is being
+  changed anyway (e.g. lazy-loading draw.io/AI, or a To-Dos rework giving the panel explicit state).
+- Ideas offered 2026-10-26, not chosen yet: dark mode follows the system by default. (Phones: read-only documents
+  built 2026-11-03; light editing on the phone is not planned, since sync is whole-document last-write-wins.)
+- Grouping displays (lanes/stages) beyond Lanes by ‹column›: only if needed.
+- Suggested, not chosen: a "down is good" option so a falling change shows green.
+
+### Parked / open questions for the owner
+
+- Phone tables (owner OK'd 2026-11-03 "for now"): the phone shows the computer's ready-made table copies (`docs/{id}/previews/_tables`, a derived cache, never read back). Cleaner later option: move the table drawing code (drawTableDisplay and the Show as renderers, ~1,500 lines in index.html) into shared src modules so the phone draws tables itself and the cache goes away. Do it when tables are next reworked.
+- Zoom row as title: breadcrumb shows only ancestors, the zoomed row becomes the larger title.
+- Record the date a document is set to Approved or Rejected and show it on the PDF (needs a new
+  saved field such as `docStatusAt`; undecided whether in the stamp or the cover's meta line).
+- Google sign-in CSP origins (`accounts.google.com`, `oauth2.googleapis.com`) stay in index.html's
+  CSP until someone verifies live sign-in works without them; then remove them.
+
+### Standing lessons
+
+- Merging anything under `worker/` (package.json included) redeploys the live Worker (`deploy-worker.yml` on push to main): say so in the PR and let the owner merge on purpose.
+- npm 10.9 (this environment's) can crash with "Cannot read properties of null (reading 'edgesOut')" on peer-dependency upgrades; `npx npm@11.6.2 install` works, and npm 10's `npm ci` reads its lockfile. Don't delete node_modules to "fix" it: the crash stays and the install is gone (`git stash` + `npm ci` restores).
+- e2e: `undo-not-confirm.spec.ts` "Reset settings … Undo" reloads the page twice within a 30s budget and can time out under the full parallel suite; it passes alone. Rerun it alone before blaming a change.
+- Stored HTML (notes, tables, anything later rendered with innerHTML) must pass `sakuraSanitizeRichHtml` on the way in: add any new HTML field to `normalizeNode` (and to any import path that skips it). Never assign stored HTML to innerHTML raw, not even on a detached element: images in it still load and fire onerror.
+- e2e: opening the To-Dos panel focuses `#todos-input` 40ms later; wait for it before focusing anything else in the
+  panel, or it takes the focus back (flaked once in CI, 2026-10-25).
+- e2e: seed `localStorage.sakura_welcome_seen` in an `addInitScript` before load (the welcome
+  dialog opens on a delay and races clicks). `page.reload()` of a `file://` page can lose
+  localStorage under Playwright; re-run `loadPrefs()` instead. Some thread/note tests are flaky
+  under parallel load on main too; save the full e2e output to a file so a failure can be named.
+- e2e locally: if Playwright wants `/opt/pw-browsers/chromium_headless_shell-1194` and only `-1243` exists, make
+  `-1194/chrome-linux` a symlink to `-1243/chrome-headless-shell-linux64` (plus a `headless_shell` link to
+  `chrome-headless-shell` and the two marker files); otherwise every test fails at browser launch.
+- PR bodies: the GitHub MCP tool may rewrite or strip the `_Generated by …_` footer. Re-read the
+  live body after creating or editing a PR and fix it to exactly one plain footer line.
+- Installed-app (PWA) title bar shows "manifest name - page title" whenever the two differ; keep `<title>` and the
+  manifests' `name` the same ("Sakura") or users see the name twice.
+- Merging via `mcp__github__merge_pull_request`: pass the full head SHA from `git rev-parse HEAD` as `expectedHeadSha`
+  (a guessed/short one fails with 409). GitHub's API sometimes returns 500 on merge or check-runs; re-check the PR
+  state, then retry once after a few minutes rather than looping.
+- Two changes in flight on the one designated branch: commit the second locally, push only the first
+  (`git push origin <sha>:refs/heads/<branch>`), and after its squash-merge `git rebase --onto origin/main <old base>`.
+- A stop hook in this environment asks to re-author commits as `Claude <noreply@anthropic.com>` ("Unverified"
+  commits). That contradicts CLAUDE.md's identity rule: decline, keep `robinrajawat`, and tell the owner. The
+  "verified signatures" bypass notice on push is expected.
+- Interface text uses the `--fs-*` scale only (tests/unit/textSizeTokens.test.ts fails on a px `font-size`); use the
+  tokens in `font:` shorthands too.
+- Verify any delegated subagent's diff yourself before merging (both under- and over-removal have
+  happened), including author/committer identity and the PR footer.
+```
