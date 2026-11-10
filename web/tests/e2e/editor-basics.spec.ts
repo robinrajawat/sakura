@@ -338,3 +338,55 @@ test('Esc in a reply box keeps what is typed as a draft; Esc on an empty box clo
   await page.keyboard.press('Escape');
   await expect(box).toHaveCount(0);
 });
+
+async function longDoc(page: Page) {
+  await seed(page);
+  await page.evaluate(`
+    const n = (id, text) => ({ id, depth: 0, text, parentId: null, isCheckbox: false, checked: false, note: '', tables: [], images: [], tags: [], styles: {} });
+    nodes = []; for (let i = 1; i <= 80; i++) nodes.push(n(i, 'row ' + i + ' alpha')); rebuildParentIds(); nextId = 81;
+    remarks = []; inlineExpandRemarksNodeIds = new Set(); inlineExpandNoteNodeIds = new Set(); collapsedIds = new Set(); editingId = null; render();
+  `);
+}
+
+test('Home, End, PageUp and PageDown move the row selection; Shift extends it', async ({ page }) => {
+  await longDoc(page);
+  await page.evaluate('selectedId = 5; selectionAnchorId = 5; render();');
+  await page.keyboard.press('End');
+  expect(await page.evaluate('selectedId')).toBe(80);
+  await page.keyboard.press('ControlOrMeta+Home');
+  expect(await page.evaluate('selectedId')).toBe(1);
+  await page.keyboard.press('PageDown');
+  const paged = await page.evaluate('selectedId') as number;
+  expect(paged).toBeGreaterThan(5);
+  await expect(page.locator(`.node-row[data-id="${paged}"]`)).toBeInViewport();
+  await page.keyboard.press('PageUp');
+  expect(await page.evaluate('selectedId')).toBe(1);
+  await page.keyboard.press('Shift+PageDown');
+  expect((await page.evaluate('multiSelectedIds') as number[]).length).toBe(paged);
+});
+
+test('PageDown while typing moves the caret a screen of rows down, at the same place in the words', async ({ page }) => {
+  await longDoc(page);
+  await editRow(page, 2);
+  await page.keyboard.press('Home');
+  await page.keyboard.press('ArrowRight');
+  await page.keyboard.press('PageDown');
+  const id = await page.evaluate('editingId') as number;
+  expect(id).toBeGreaterThan(5);
+  expect(await page.evaluate('getEditableCaretOffset(getEditingInput())')).toBe(1);
+  await page.keyboard.press('PageUp');
+  expect(await page.evaluate('editingId')).toBe(2);
+});
+
+test('F3 and Shift+F3 step through Find matches', async ({ page }) => {
+  await longDoc(page);
+  await page.evaluate('selectedId = 1; render();');
+  await page.keyboard.press('ControlOrMeta+f');
+  await page.keyboard.type('alpha');
+  await page.keyboard.press('Enter');
+  const first = await page.evaluate('searchIndex') as number;
+  await page.keyboard.press('F3');
+  expect(await page.evaluate('searchIndex')).toBe(first + 1);
+  await page.keyboard.press('Shift+F3');
+  expect(await page.evaluate('searchIndex')).toBe(first);
+});
