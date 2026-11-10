@@ -283,3 +283,58 @@ test('Ctrl/Cmd+F with words selected finds those words', async ({ page }) => {
   await page.keyboard.press('ControlOrMeta+f');
   await expect(page.locator('#search-input')).toHaveValue('alpha');
 });
+
+test('Esc closes the Settings and Help sheets', async ({ page }) => {
+  await seed(page);
+  await page.evaluate(() => (window as any).eval('el("settings-toggle").click()'));
+  await expect(page.locator('#settings-panel')).toHaveClass(/open/);
+  await page.keyboard.press('Escape');
+  await expect(page.locator('#settings-panel')).not.toHaveClass(/open/);
+  await page.evaluate(() => (window as any).eval('el("help-toggle").click()'));
+  await expect(page.locator('#help-panel')).toHaveClass(/open/);
+  await page.keyboard.press('Escape');
+  await expect(page.locator('#help-panel')).not.toHaveClass(/open/);
+});
+
+test('Tab and Shift+Tab nest and lift a list item in a note', async ({ page }) => {
+  await seed(page);
+  await page.evaluate('nodes[1].note = "<ul><li>one</li><li>two</li></ul>"; render();');
+  await page.locator('#note-line-2 li').nth(1).click();
+  await page.keyboard.press('Tab');
+  await expect.poll(() => note(page)).toBe('<ul><li>one</li><ul><li>two</li></ul></ul>');
+  await page.keyboard.press('Shift+Tab');
+  await expect.poll(() => note(page)).toBe('<ul><li>one</li><li>two</li></ul>');
+});
+
+test('Up and Down move between documents in the explorer', async ({ page }) => {
+  await seed(page);
+  await page.evaluate(`
+    saveToStorage(); const first = currentDocId; createDoc(); el('header-title').value = 'Second'; el('header-title').dispatchEvent(new Event('input')); saveToStorage();
+    if (!sidebarOpen) setSidebarOpen(true); renderSidebar();
+  `);
+  const names = page.locator('#sidebar .sdoc-name-btn');
+  await expect(names).toHaveCount(2);
+  await names.first().focus();
+  await page.keyboard.press('ArrowDown');
+  await expect(names.nth(1)).toBeFocused();
+  await page.keyboard.press('ArrowUp');
+  await expect(names.first()).toBeFocused();
+});
+
+test('Esc in a reply box keeps what is typed as a draft; Esc on an empty box closes it', async ({ page }) => {
+  await seed(page);
+  await page.evaluate('editingId = null; selectedId = 3; render();');
+  await page.keyboard.press('Control+Alt+KeyM');
+  const box = page.locator('.thread-composer-input[data-node-id="3"]');
+  await expect(box).toBeFocused();
+  await page.keyboard.type('half a thought');
+  await page.keyboard.press('Escape');
+  await expect(box).not.toBeFocused();
+  await expect(box).toHaveText('half a thought');
+  expect(await page.evaluate('selectedId')).toBe(3);
+  await box.click();
+  await page.keyboard.press('ControlOrMeta+a');
+  await page.keyboard.press('Delete');
+  await page.keyboard.press('Escape');
+  await expect(box).toHaveCount(0);
+});
