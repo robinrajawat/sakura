@@ -30820,7 +30820,8 @@ function renderThreadComposer(node,thread,place,commit){
     // Backspace on an empty input line closes it and puts the caret at the end of the row's text,
     // like an emptied entry (a held-down Backspace that just erased the text doesn't).
     else if(e.key==='Backspace'&&!e.repeat&&!e.shiftKey&&!e.altKey&&!e.ctrlKey&&!e.metaKey&&!(input.textContent||'').trim()&&!input.querySelector('img')){ e.preventDefault(); _threadDrafts.delete(node.id); _threadComposerNodeId=null; setThreadComposerKind(node.id,'comment'); render(); beginEdit(node.id,true); }
-    else if(e.key==='Escape'){ e.preventDefault(); _threadDrafts.delete(node.id); _threadComposerNodeId=null; setThreadComposerKind(node.id,'comment'); _threadAnswerTo.delete(node.id); render(); }
+    // Esc leaves the box. Typed words stay as a draft (as in Slack, Teams or Docs comments); an empty box closes.
+    else if(e.key==='Escape'){ e.preventDefault(); if(htmlHasVisibleText(input.innerHTML)||input.querySelector('img')){ _threadDrafts.set(node.id,sakuraSanitizeRichHtml(input.innerHTML)); input.blur(); _pendingInlineFocus=null; if(getIndex(nodes,node.id)>=0){ setSingleSelection(node.id); render(); } return; } _threadDrafts.delete(node.id); _threadComposerNodeId=null; setThreadComposerKind(node.id,'comment'); _threadAnswerTo.delete(node.id); render(); }
   });
   // Owner design (2026-10-27): the line's own icon picks the kind, like an entry's icon -- Comment,
   // Question or Decision; on a reply line Reply or Decision. Enter adds it.

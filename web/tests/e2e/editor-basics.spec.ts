@@ -320,3 +320,21 @@ test('Up and Down move between documents in the explorer', async ({ page }) => {
   await page.keyboard.press('ArrowUp');
   await expect(names.first()).toBeFocused();
 });
+
+test('Esc in a reply box keeps what is typed as a draft; Esc on an empty box closes it', async ({ page }) => {
+  await seed(page);
+  await page.evaluate('editingId = null; selectedId = 3; render();');
+  await page.keyboard.press('Control+Alt+KeyM');
+  const box = page.locator('.thread-composer-input[data-node-id="3"]');
+  await expect(box).toBeFocused();
+  await page.keyboard.type('half a thought');
+  await page.keyboard.press('Escape');
+  await expect(box).not.toBeFocused();
+  await expect(box).toHaveText('half a thought');
+  expect(await page.evaluate('selectedId')).toBe(3);
+  await box.click();
+  await page.keyboard.press('ControlOrMeta+a');
+  await page.keyboard.press('Delete');
+  await page.keyboard.press('Escape');
+  await expect(box).toHaveCount(0);
+});
