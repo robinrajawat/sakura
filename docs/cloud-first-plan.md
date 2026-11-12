@@ -51,16 +51,14 @@ fake Firestore for "two devices edit the same document".
 
 Cost: one extra read per push (inside the transaction). Pushes are already debounced (1.5s).
 
-### 2. Version history in the account
+### 2. Version history in the account (mostly built already)
 
-Versions today live only in this browser (`sakura_doc_rev_v1_<id>`), which is why recovery on a
-new computer is limited. Store them in `users/{uid}/docs/{docId}/versions/{ts}` too: the same
-moments that record a local version (10-minute gap, "Before changes from another device",
-"Before restoring", Phase 1's conflicts), capped per document (10, as now), oldest dropped.
-Version history lists both, newest first, and restoring works from any device.
-
-Watch: each version is a full copy, and a Firestore document holds at most 1MB, so very large
-documents need the same split the diagrams already use (or versions without diagram XML).
+Correction (2026-11-12): document versions already sync. Each version is also written to
+`users/{uid}/docs/{docId}/versions/{ts}`, and Version history joins the cloud's versions with
+this device's (docs/feature-reference.md, Version History). What's left: Phase 1's conflict
+version ("Your changes on this device") goes through the same path, and a version over
+Firestore's 1MB record limit, which today stays on the device that made it, gets the diagram
+split so it reaches the account too.
 
 ### 3. Open documents from the account
 
@@ -85,12 +83,35 @@ guest's documents up (exists) and says so.
   "PDF" below). Guests get the print dialog, labelled "Print / Save as PDF".
 - Sharing and hosted AI already need an account.
 
+### 5b. Data & Backup, cut down
+
+Today Settings → Data & backup has Backup all data, Restore from backup, Undo last restore,
+Secure Storage and Reset. With the account as the real copy (synced documents, synced versions),
+most of it is a second safety system for signed-in people. Proposal:
+
+- **Signed in:** one **Download all data** button (a full JSON export: data portability, the
+  "export your workspace" that Notion and Google offer). **Restore from backup** and **Undo last
+  restore** go: a restore replaces the whole workspace and has to be held back from sync
+  (`SAKURA_JUST_RESTORED_KEY`, the reconcile-only pull), and per-document Version history covers
+  recovery. Bringing work back from an old file can become an import that adds documents rather
+  than replacing everything, if anyone asks for it.
+- **Guests:** keep Backup and Restore (their only copy outside the browser), with the line
+  "Sign in and your documents are kept in your account automatically" above them.
+- **Secure Storage** (a passphrase for bring-your-own AI keys) is an AI setting, not a data one:
+  move it under AI, or drop it if bring-your-own keys go once Hosted AI is the default. Separate
+  decision.
+- **Reset** stays.
+
+Do this after Phase 1 (safe writes) is live, so the account copy is trustworthy before the
+file-based safety net is narrowed. Owner decision needed before building.
+
 ### 6. Docs and privacy wording
 
-README.md ("no account needed", "Everything is stored in your browser") and
-docs/feature-reference.md ("stores its data locally in the browser by default") describe
-local-first; the in-app privacy text likely does too. Rewrite them when Phases 1–4 are live, not
-before.
+README.md and docs/feature-reference.md were reworded on 2026-11-12 to lead with the account
+(sign in and your documents are kept in your account; or try it without one and they stay in
+this browser), which is already true. Still to update as the phases land: the in-app sign-in
+screen ("Optional: sign in…"), Settings → About → Privacy & data, and the Data & Backup section
+once 5b ships.
 
 ## PDF (decide before Phase 5)
 
@@ -116,6 +137,6 @@ so those PRs are merged by the owner on purpose.
 
 ## Order
 
-1 → 2 → 3 → 4 → 5 → 6. Phase 1 protects data on its own and is worth doing even if the rest
+1 → 2 → 3 → 4 → 5 → 5b → 6. Phase 1 protects data on its own and is worth doing even if the rest
 waits. Phases 2 and 3 can swap. PDF reliability is independent and can go any time once its
 failure is known.

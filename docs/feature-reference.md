@@ -2,7 +2,7 @@
 
 > The project [README](../README.md) says what Sakura is and what it is for. This file is the long, behaviour-by-behaviour reference (every key, menu and edge case) that sessions working on the code check before changing user-facing behaviour. Some sections lag the app; where they disagree with the app, the app wins and this file should be corrected.
 
-Sakura is a single-file, browser-based outliner that's grown into a full personal productivity workspace: notes, plans, and documents live as a nested tree at the center, with tasks, diagrams, remarks, and Q&A woven directly into it via backlinks and cross-references rather than bolted on as separate disconnected tools. It runs entirely client-side and stores its data locally in the browser by default — no install, no build step, no account required. Signing in (optional) syncs everything to your own account so it follows you across devices, and lets you share individual documents with other Sakura accounts. Optional AI features (rewrite, outline generation, and similar) are opt-in too: use **Sakura Hosted AI** by signing in (no key needed, daily quota), or bring your own key for one of seven built-in providers.
+Sakura is a single-file, browser-based outliner that's grown into a full personal productivity workspace: notes, plans, and documents live as a nested tree at the center, with tasks, diagrams, remarks, and Q&A woven directly into it via backlinks and cross-references rather than bolted on as separate disconnected tools. It runs in the browser with nothing to install. Signed in, your documents, folders, To-Dos and settings are kept in your account and follow you across devices, and you can send copies of documents to other Sakura accounts. You can also try it without an account: everything then stays in this browser until you sign in. (Direction since 2026-11-12: cloud-first, with try-without-an-account kept — see docs/cloud-first-plan.md.) Optional AI features (rewrite, outline generation, and similar) are opt-in too: use **Sakura Hosted AI** by signing in (no key needed, daily quota), or bring your own key for one of seven built-in providers.
 
 ## Contents
 
@@ -27,7 +27,7 @@ Sakura is a single-file, browser-based outliner that's grown into a full persona
 
 ## Overview
 
-Sakura is a single `.html` file. Open it in a browser and it runs — no install, no build step, no network dependency for core functionality. All documents, folders, To-Dos, and settings are stored in the browser's local storage, scoped to that exact file.
+Sakura runs at www.sakura-notes.com — no install. Signed in, documents, folders, To-Dos and settings are kept in your account (with a copy in the browser, so it keeps working offline). Without an account they are stored in the browser's local storage only.
 
 Key capabilities:
 
@@ -241,7 +241,7 @@ There is no live co-editing (owner, 2026-10-30): the earlier "invite people to v
 
 ## Data & Backup
 
-Everything is stored locally in the browser, scoped to this exact file. Opening a different copy or a newer version of the file starts with empty storage — this is a browser limitation (local storage is partitioned per file URL), not a bug.
+Signed in, your account holds your documents (the browser keeps a working copy). Without an account, everything is stored only in this browser.
 
 How your data is protected depends on whether you're signed in:
 
@@ -254,8 +254,6 @@ How your data is protected depends on whether you're signed in:
 **Secure Storage** (Settings → Data) optionally encrypts your AI provider keys at rest with a passphrase only you know — in this browser and in backup files. Once set up, a status-bar chip appears while it's locked and a saved key for your active BYOK provider needs it; click to unlock. On Sakura Hosted AI the chip stays hidden — saved fallback keys only matter if a hosted call fails, so Sakura asks for the passphrase at that moment instead.
 
 (Earlier versions also offered Cloud Backup to GitHub Gist / Google Drive, Auto-backup to a file on disk with Backup history, an automatic Local safety copy, a "Remind me to back up" status-bar chip, and a "Warn if this session isn't backed up" close-tab prompt. These were removed to keep backup simple: sign in for automatic sync, or back up manually.)
-
-**Recommended workflow when moving to a new copy of this file:** Backup all data from the old copy, open the new copy, then Restore immediately.
 
 ## Feedback & Crash Reports
 
