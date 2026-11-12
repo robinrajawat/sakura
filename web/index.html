@@ -34822,7 +34822,7 @@ function openSelectionFmtUrlBox(){
   field.addEventListener('keydown',e=>{
     if(e.key!=='Enter')field.classList.remove('is-invalid');
     if(e.key==='Enter'){ e.preventDefault(); applySelectionFmtUrl(); }
-    else if(e.key==='Escape'){ e.preventDefault(); e.stopPropagation(); const back=_sfmtLinkTarget&&_sfmtLinkTarget.cancel; hideSelectionFmtPopover(); if(back)back(); }
+    else if(e.key==='Escape'){ e.preventDefault(); e.stopPropagation(); const back=_sfmtLinkTarget&&_sfmtLinkTarget.cancel; hideSelectionFmtPopover(); if(back){ back(); _sfmtDismissedSel=selectionSnapshot(); } }
   });
 }
 // Ctrl/Cmd+K (owner 2026-10-29, as most apps): selected words in a row, To-Do, note or thread get
@@ -34904,7 +34904,20 @@ function placeSelectionFmtPopover(rect){
 let _sfmtPointerDown=false;
 document.addEventListener('mousedown',e=>{ const pop=el('selection-fmt-popover'); if(!(pop&&pop.contains(e.target)))_sfmtPointerDown=true; },true);
 document.addEventListener('mouseup',()=>{ if(!_sfmtPointerDown)return; _sfmtPointerDown=false; setTimeout(updateSelectionFmtPopover,0); },true);
+// Escape in the Link box puts the same words back, still selected; the bar stays closed for that
+// selection (as in other editors) and comes back once the selection changes. Without this the
+// selectionchange from putting them back reopened it a moment later, depending on timing.
+let _sfmtDismissedSel=null;
+function selectionSnapshot(){
+  const sel=window.getSelection(); if(!sel||!sel.rangeCount)return null;
+  return {an:sel.anchorNode,ao:sel.anchorOffset,fn:sel.focusNode,fo:sel.focusOffset};
+}
 function updateSelectionFmtPopover(){
+  if(_sfmtDismissedSel){
+    const now=selectionSnapshot(), d=_sfmtDismissedSel;
+    if(now&&now.an===d.an&&now.ao===d.ao&&now.fn===d.fn&&now.fo===d.fo)return;
+    _sfmtDismissedSel=null;
+  }
   if(_sfmtPointerDown){ hideSelectionFmtPopover(); return; }
   const pop=el('selection-fmt-popover');
   if(pop&&pop.classList.contains('open')&&pop.contains(document.activeElement))return; // typing a web address
