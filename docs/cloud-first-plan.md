@@ -68,7 +68,7 @@ to the cached copy offline. A small status shows where things stand: "Saving…"
 account", "Offline: saved on this device, will sync". The File Explorer only lists documents
 whose content is here (cached) or loading (the #842 lock covers the gap).
 
-Built: the save state left of Share (`renderDocSaveState`: cloud mark / Saving… / Offline / Not
+Built: the save state after the folder path, hidden while saved (`renderDocSaveState`: Saving… / Offline / Not
 synced / Only on this device) and automatic retry of failed pushes (15s doubling to 5 min, and on
 `online`; before, a failed push waited for the next edit). Loading itself already comes from the
 account: the live listener keeps every document current, and #842 locks a document until its

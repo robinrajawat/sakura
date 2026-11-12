@@ -175,11 +175,11 @@ contradicts README.md or docs/feature-reference.md, trust them.)*
 
 ### Latest changes
 
+- **Save state moved after the folder path (2026-11-12, owner chose "option B" over beside the title, after mock-ups).** `#doc-save-state` now sits in `#doc-path` after the crumbs (a "·" before it when there's a path) and is hidden while saved (Notion-style); it shows Saving…, Offline, Not synced (click retries) and a guest's "Only on this device" (click: sign in). The top line's right side is Share and Help only again. Tests: doc-save-state.spec.ts, header-polish.spec.ts.
+
 - **Firestore rule for `rev` (2026-11-12, owner: "prepare the rules").** `firebase/firestore.rules`: under `users/{uid}`, everything stays owner-only, and `docs/{docId}` updates must set `rev` to the stored `rev` (0 when missing) + 1, so a tab running a pre-#845 version can no longer save over a newer copy (its push fails and retries quietly until reloaded). Create/delete and all subcollections unchanged. Checked with the Firestore emulator: `firebase/rules.test.mjs` (20 checks; how to run is in its header). **Not auto-deployed:** the owner publishes it in Firebase Console → Firestore Database → Rules, a day or so after #845 is live so open tabs have reloaded.
 
 - **Cloud-first Phases 4 + 5b (2026-11-12, owner: "go ahead with remaining phase", "merge them when ready").** Sign-in screen: "Sign in to keep your documents in your account and on every device." / "Try it without an account". Data & backup follows the account (`applyDataSettingsForAccount`, called from `updateAccountUI`): signed in, one **Download all data** + Reset (Restore and Undo restore hidden; `updatePreRestoreSnapshotStatus` keeps Undo hidden too); without an account, Backup/Restore/Undo as before. Secure storage moved to the end of Settings → AI (`#settings-section-ai-secure-storage`). Privacy & data leads with "Your account". Not built: Phase 4's timed sign-in nudges (the "Only on this device" label from Phase 3 is the standing prompt). Tests: data-settings-account.spec.ts; backup-simplified.spec.ts updated.
-
-- **Cloud-first Phase 3: save state + automatic retry (2026-11-12, owner: "proceed to make the application cloud first").** Left of Share: `#doc-save-state` (`renderDocSaveState`) shows a cloud mark (saved), Saving…, Offline, Not synced (click retries) or, for a guest, "Only on this device" (click opens sign-in); nothing while a returning account is still restoring. `flushSyncQueue` now re-queues what failed and retries on its own (15s doubling to 5 min, and on `online`), one flush at a time (`_syncInFlight`). Tests: doc-save-state.spec.ts.
 
 ### In progress / not built
 

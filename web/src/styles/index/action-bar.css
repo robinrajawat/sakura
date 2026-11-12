@@ -73,10 +73,13 @@
 .quick-btn:disabled{opacity:.35;cursor:default;pointer-events:none;transform:none;box-shadow:none}
 @media (max-width:560px){#quick-bar{padding:6px 8px;gap:3px}.quick-btn{width:36px;height:36px}}
 
-/* The open document's save state, left of Share (cloud-first plan, Phase 3): quiet grey, words
-   only when something is in progress or wrong; a guest's "Only on this device" opens sign-in. */
+/* The open document's save state, after the folder path (cloud-first plan, Phase 3): hidden while
+   saved; quiet grey words while saving, offline or not synced; a guest's "Only on this device"
+   opens sign-in. A dot separates it from the path when there is one. */
 .doc-save-state{appearance:none;border:none;background:none;display:inline-flex;align-items:center;gap:5px;height:28px;padding:0 6px;border-radius:6px;color:var(--hint);font:500 var(--fs-sm) 'Inter',sans-serif;cursor:default;white-space:nowrap}
 .doc-save-state[hidden]{display:none}
 .doc-save-state.is-guest,.doc-save-state.is-error,.doc-save-state.is-offline{cursor:pointer;color:var(--muted)}
 .doc-save-state.is-guest:hover,.doc-save-state.is-error:hover,.doc-save-state.is-offline:hover{background:var(--hover);color:var(--fg)}
 .doc-save-state.is-error{color:var(--danger)}
+#doc-path .doc-save-state{flex-shrink:0;margin-left:2px}
+#doc-path-crumbs:not(:empty)+.doc-save-state::before{content:"\00B7";margin-right:4px;color:var(--hint)}

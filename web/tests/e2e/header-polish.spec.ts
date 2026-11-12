@@ -77,9 +77,9 @@ test('the byline is Status · author · link; the top line ends with Share and t
   });
   expect(s.linkSep).toBe('3px 3px 50%');
   expect(s.inByline).toEqual([]);
-  // Help's "?" sits after Share, right above where the Help pane opens (owner 2026-11-02); the
-  // document's save state comes first (cloud-first plan, Phase 3, 2026-11-12).
-  expect(s.order).toEqual(['doc-save-state', 'doc-share-wrap', 'doc-help-btn']);
+  // Help's "?" sits after Share, right above where the Help pane opens (owner 2026-11-02). The
+  // save state sits after the folder path, not here (owner 2026-11-12).
+  expect(s.order).toEqual(['doc-share-wrap', 'doc-help-btn']);
   // Share sits at the right edge, so its menu opens leftwards from there.
   expect(s.menuRight).toBe('0px');
 });
