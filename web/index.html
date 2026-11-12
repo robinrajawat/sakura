@@ -888,13 +888,16 @@ body.zen-mode #quick-bar{display:none}
 .quick-btn:disabled{opacity:.35;cursor:default;pointer-events:none;transform:none;box-shadow:none}
 @media (max-width:560px){#quick-bar{padding:6px 8px;gap:3px}.quick-btn{width:36px;height:36px}}
 
-/* The open document's save state, left of Share (cloud-first plan, Phase 3): quiet grey, words
-   only when something is in progress or wrong; a guest's "Only on this device" opens sign-in. */
+/* The open document's save state, after the folder path (cloud-first plan, Phase 3): hidden while
+   saved; quiet grey words while saving, offline or not synced; a guest's "Only on this device"
+   opens sign-in. A dot separates it from the path when there is one. */
 .doc-save-state{appearance:none;border:none;background:none;display:inline-flex;align-items:center;gap:5px;height:28px;padding:0 6px;border-radius:6px;color:var(--hint);font:500 var(--fs-sm) 'Inter',sans-serif;cursor:default;white-space:nowrap}
 .doc-save-state[hidden]{display:none}
 .doc-save-state.is-guest,.doc-save-state.is-error,.doc-save-state.is-offline{cursor:pointer;color:var(--muted)}
 .doc-save-state.is-guest:hover,.doc-save-state.is-error:hover,.doc-save-state.is-offline:hover{background:var(--hover);color:var(--fg)}
 .doc-save-state.is-error{color:var(--danger)}
+#doc-path .doc-save-state{flex-shrink:0;margin-left:2px}
+#doc-path-crumbs:not(:empty)+.doc-save-state::before{content:"\00B7";margin-right:4px;color:var(--hint)}
 /* === Documents menu === */
 #docs-menu{min-width:280px;max-width:min(92vw,320px)}
 .docs-row{display:flex;align-items:center;gap:4px;padding:2px 6px}
@@ -4111,7 +4114,7 @@ html.calm-layout #help-meta-links .help-coffee-icon{color:var(--support)}
   <!-- Main content column -->
   <div style="flex:1;min-width:0;display:flex;flex-direction:column;overflow:hidden">
   <div id="doc-tab-strip-row">
-    <div id="doc-path"><nav id="doc-path-crumbs" aria-label="Where you are"></nav></div>
+    <div id="doc-path"><nav id="doc-path-crumbs" aria-label="Where you are"></nav><button type="button" class="doc-save-state" id="doc-save-state" hidden></button></div>
     <button id="sidebar-reopen-btn" data-tip="Show file explorer" aria-label="Show file explorer" style="display:none">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="3" x2="9" y2="21"/></svg>
     </button>
@@ -4127,7 +4130,6 @@ html.calm-layout #help-meta-links .help-coffee-icon{color:var(--support)}
     <div class="action-group" id="ag-markers" hidden><div class="ag-buttons" id="marker-summary" role="group" aria-label="Open items"></div></div>
     <div class="action-group" id="ag-fold">
       <div class="ag-buttons">
-        <button type="button" class="doc-save-state" id="doc-save-state" hidden></button>
         <div class="todo-dd-wrap" id="doc-share-wrap">
           <button type="button" class="btn quick-btn" id="doc-share-chip" aria-label="Share" data-tip="Download a PDF, export, or send a copy" aria-haspopup="true" aria-expanded="false"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg><span id="doc-share-chip-label">Share</span></button>
           <div class="todo-dd-menu share-dd-menu" id="share-dd-menu" role="menu">
@@ -17103,9 +17105,11 @@ function scheduleSyncRetry(){
 }
 window.addEventListener('online',()=>{ renderDocSaveState(); if(currentUser&&_syncPushQueue.size){ _syncRetryDelay=15000; flushSyncQueue(); } });
 window.addEventListener('offline',()=>renderDocSaveState());
-// The open document's save state, at the right of the top line (cloud-first plan, Phase 3):
-// a cloud mark when it's in the account, "Saving…" while a save is on its way, "Offline" /
-// "Not synced" when it can't get there, and "Only on this device" for a guest (click: sign in).
+// The open document's save state, after the folder path on the top line (cloud-first plan,
+// Phase 3; owner 2026-11-12 chose this over beside the title): nothing while it's saved to the
+// account (Notion-style, the right side stays Share and Help), "Saving…" while a save is on its
+// way, "Offline" / "Not synced" when it can't get there, and "Only on this device" for a guest
+// (click: sign in).
 let _syncLastStatus='idle';
 const SAVE_STATE_ICONS={
   cloud:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17.5 19H8a5 5 0 1 1 .9-9.9A6 6 0 0 1 20 11.5a3.75 3.75 0 0 1-2.5 7.5z"/><polyline points="9.5 14 11.5 16 15 12.5"/></svg>',
@@ -17126,7 +17130,7 @@ function docSaveState(){
 function renderDocSaveState(){
   const b=el('doc-save-state'); if(!b)return;
   const st=docSaveState();
-  b.hidden=!st; if(!st)return;
+  b.hidden=!st||st==='saved'; if(b.hidden)return;
   const view={
     guest:{icon:'device',text:'Only on this device',tip:'Sign in to keep your documents in your account, on every device'},
     offline:{icon:'offline',text:'Offline',tip:'Your edits are saved on this device and go to your account when you\u2019re back online'},

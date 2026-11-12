@@ -19,6 +19,8 @@ test.beforeEach(async ({ page }) => {
 
 test('a guest sees "Only on this device", and clicking it opens sign-in', async ({ page }) => {
   const state = page.locator('#doc-save-state');
+  // It sits on the top line after the folder path, not with Share and Help.
+  await expect(page.locator('#doc-path #doc-save-state')).toHaveCount(1);
   await expect(state).toHaveText('Only on this device');
   await state.click();
   await expect(page.locator('#sakura-landing-overlay')).toBeVisible();
@@ -52,7 +54,7 @@ test('signed in: saving, saved, and a failed push that retries by itself', async
   await expect(state).toHaveText('Saving…');
   // The first push fails: shown, then retried without another edit.
   await expect(state).toHaveText('Not synced');
-  await expect(state).toHaveAttribute('data-tip', 'Saved to your account');
-  await expect(state).toHaveText('');
+  // Saved: nothing shows (owner 2026-11-12, after the folder path, Notion-style).
+  await expect(state).toBeHidden();
   expect(await page.evaluate(() => (window as unknown as { __pushes: number }).__pushes)).toBe(2);
 });
