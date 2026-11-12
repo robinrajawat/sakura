@@ -3465,7 +3465,7 @@ html.calm-layout #help-meta-links .help-coffee-icon{color:var(--support)}
         <span id="sakura-landing-brand-name">Sakura</span>
       </div>
       <h1 id="sakura-landing-heading">Your outline, wherever you go</h1>
-      <p id="sakura-landing-sub">Optional: sign in to sync your documents and settings across devices.</p>
+      <p id="sakura-landing-sub">Sign in to keep your documents in your account and on every device.</p>
       <button type="button" id="sakura-landing-google-signin-btn" class="btn" style="border:1px solid var(--border);border-radius:8px;padding:10px 16px;width:100%;font-size:14px;display:flex;align-items:center;justify-content:center;gap:8px">
         <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
         Sign in with Google
@@ -3484,7 +3484,7 @@ html.calm-layout #help-meta-links .help-coffee-icon{color:var(--support)}
           <button type="button" id="sakura-landing-email-forgot-btn" style="background:none;border:none;color:var(--muted);font-size:11.5px;cursor:pointer;padding:0;flex-shrink:0">Forgot password?</button>
         </div>
       </div>
-      <button type="button" id="sakura-landing-continue-btn" style="display:block;background:none;border:none;color:var(--muted);font-size:13px;margin:18px auto 0;cursor:pointer;text-decoration:underline;text-underline-offset:2px">Continue without signing in</button>
+      <button type="button" id="sakura-landing-continue-btn" style="display:block;background:none;border:none;color:var(--muted);font-size:13px;margin:18px auto 0;cursor:pointer;text-decoration:underline;text-underline-offset:2px">Try it without an account</button>
       <details id="sakura-landing-privacy" class="signin-privacy">
         <summary>What gets stored?<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></summary>
         <ul>
@@ -3651,16 +3651,10 @@ html.calm-layout #help-meta-links .help-coffee-icon{color:var(--support)}
           <div class="settings-section" data-cat="data">
             <div class="settings-section-title">Data</div>
             <div class="settings-list">
-              <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Backup all data</span><span class="settings-row-desc">Everything in one file, AI keys included. Signed out, it is your only copy.</span><span class="settings-row-desc" id="sb-export-status" style="margin-top:2px"></span></div><button id="sb-export-all-btn" class="btn data-io-btn">Backup</button></div>
-              <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Restore from backup</span><span class="settings-row-desc">Replaces everything in the app.</span></div><button id="sb-import-all-btn" class="btn data-io-btn">Restore…</button></div>
+              <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text" id="sb-export-title">Backup all data</span><span class="settings-row-desc" id="sb-export-desc">Everything in one file, AI keys included. Without an account it is your only copy; sign in and your documents are kept in your account automatically.</span><span class="settings-row-desc" id="sb-export-status" style="margin-top:2px"></span></div><button id="sb-export-all-btn" class="btn data-io-btn">Backup</button></div>
+              <div class="settings-list-row" id="sb-restore-row"><div class="settings-row-text"><span class="settings-switch-text">Restore from backup</span><span class="settings-row-desc">Replaces everything in the app.</span></div><button id="sb-import-all-btn" class="btn data-io-btn">Restore…</button></div>
               <div class="settings-list-row" id="sb-undo-restore-row" style="display:none"><div class="settings-row-text"><span class="settings-switch-text">Undo last restore</span><span class="settings-row-desc">Brings back what was here before your last Restore.</span><span class="settings-row-desc" id="sb-undo-restore-status" style="margin-top:2px"></span></div><button id="sb-undo-restore-btn" class="btn data-io-btn">Undo…</button></div>
               <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Reset to default settings</span><span class="settings-row-desc">Theme, text size and other preferences. Documents and AI settings stay.</span></div><button id="sb-reset-settings-btn" class="btn data-io-btn">Reset…</button></div>
-            </div>
-          </div>
-          <div class="settings-section" data-cat="data">
-            <div class="settings-section-title">Secure storage</div>
-            <div class="settings-list">
-              <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Encrypt keys at rest</span><span class="settings-row-desc">Locks your AI keys with a passphrase. It can't be recovered if forgotten.</span><span class="settings-row-desc" id="vault-status" style="margin-top:2px">Not set up — keys are stored as plain text.</span></div><div style="display:flex;gap:6px;flex-wrap:wrap"><button id="vault-setup-btn" class="btn data-io-btn">Set up…</button><button id="vault-unlock-btn" class="btn data-io-btn backup-btn" style="display:none">Unlock…</button><button id="vault-lock-btn" class="btn data-io-btn" style="display:none">Lock now</button><button id="vault-disable-btn" class="btn data-io-btn" style="display:none">Turn off…</button></div></div>
             </div>
           </div>
           <div class="settings-section" data-cat="about" id="settings-section-about">
@@ -3677,8 +3671,8 @@ html.calm-layout #help-meta-links .help-coffee-icon{color:var(--support)}
           <div class="settings-section" data-cat="about" id="settings-section-about-privacy">
             <div class="settings-section-title">Privacy &amp; data</div>
             <div class="settings-list">
-              <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">On this device</span><span class="settings-row-desc">Everything is stored in your browser. Nothing leaves it unless you sign in or use AI.</span></div></div>
-              <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Sync</span><span class="settings-row-desc">Your documents, folders, To-Dos and settings sync to Sakura's cloud storage so they follow you across devices. Nothing else is kept, and other users can never see it.</span></div></div>
+              <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Your account</span><span class="settings-row-desc">Signed in, your documents, folders, To-Dos and settings are kept in Sakura's cloud storage so they follow you across devices, with a copy in your browser for working offline. Nothing else is kept, and other users can never see it.</span></div></div>
+              <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Without an account</span><span class="settings-row-desc">Everything stays in your browser. Nothing leaves it unless you use AI.</span></div></div>
               <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">AI with your own key</span><span class="settings-row-desc">Only the text you ask AI to work on goes straight from your browser to the provider you chose, with your key. Sakura's server is never involved.</span></div></div>
               <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Sakura Hosted AI</span><span class="settings-row-desc">That text goes to Sakura's server, which passes it to a provider Sakura picks (currently Groq, Cerebras or Gemini). The text is not stored; only a daily request count.</span></div></div>
               <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Sign-in</span><span class="settings-row-desc">Google shares only your name, email and picture. Email sign-in is handled by Firebase Authentication.</span></div></div>
@@ -3811,6 +3805,12 @@ html.calm-layout #help-meta-links .help-coffee-icon{color:var(--support)}
                 <div class="settings-row-text"><span class="settings-switch-text">Auto-rewrite</span><span class="settings-row-desc">Rewrites rows a while after you finish editing them, in one batched request.</span></div>
                 <button class="toggle-switch" type="button" role="switch" id="auto-rewrite-toggle" aria-checked="false" aria-label="Enable auto-rewrite on commit"></button>
               </div>
+            </div>
+          </div>
+          <div class="settings-section" data-cat="ai" id="settings-section-ai-secure-storage">
+            <div class="settings-section-title">Secure storage</div>
+            <div class="settings-list">
+              <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Encrypt keys at rest</span><span class="settings-row-desc">Locks your AI keys with a passphrase. It can't be recovered if forgotten.</span><span class="settings-row-desc" id="vault-status" style="margin-top:2px">Not set up — keys are stored as plain text.</span></div><div style="display:flex;gap:6px;flex-wrap:wrap"><button id="vault-setup-btn" class="btn data-io-btn">Set up…</button><button id="vault-unlock-btn" class="btn data-io-btn backup-btn" style="display:none">Unlock…</button><button id="vault-lock-btn" class="btn data-io-btn" style="display:none">Lock now</button><button id="vault-disable-btn" class="btn data-io-btn" style="display:none">Turn off…</button></div></div>
             </div>
           </div>
             </div>
@@ -15604,8 +15604,21 @@ initAdminState({
   closeFeedbackInboxModal:()=>closeFeedbackInboxModal()
 });
 /* GENERATED:admin:END */
+// Data & backup follows the account (cloud-first plan, Phase 5b): signed in, the account holds
+// the documents, so Backup becomes "Download all data" and the whole-workspace Restore (and its
+// Undo) go; without an account both stay, as the only copy outside the browser.
+function applyDataSettingsForAccount(){
+  const signedIn=!!currentUser;
+  const t=el('sb-export-title'), d=el('sb-export-desc'), b=el('sb-export-all-btn');
+  if(t)t.textContent=signedIn?'Download all data':'Backup all data';
+  if(d)d.textContent=signedIn?'Everything in your account in one file, AI keys included.':'Everything in one file, AI keys included. Without an account it is your only copy; sign in and your documents are kept in your account automatically.';
+  if(b)b.textContent=signedIn?'Download':'Backup';
+  const r=el('sb-restore-row'); if(r)r.style.display=signedIn?'none':'';
+  const u=el('sb-undo-restore-row'); if(u&&signedIn)u.style.display='none';
+  else if(u&&typeof updatePreRestoreSnapshotStatus==='function')updatePreRestoreSnapshotStatus();
+}
 function updateAccountUI(user){
-  currentUser=user; renderDocSaveState();
+  currentUser=user; renderDocSaveState(); applyDataSettingsForAccount();
   refreshAdminStatus(user);
   // All three sign-in paths (Google popup, email/password, and restored-session
   // onAuthStateChanged) funnel through here uniformly, so this is the one place that needs to
@@ -27969,6 +27982,7 @@ async function restoreFromPreRestoreSnapshot(){
 }
 async function updatePreRestoreSnapshotStatus(){
   const row=el('sb-undo-restore-row'); const note=el('sb-undo-restore-status'); if(!row||!note)return;
+  if(currentUser){ row.style.display='none'; return; } // signed in: no whole-workspace restore (applyDataSettingsForAccount)
   try{
     const entry=await idbGet('preRestoreSnapshot');
     if(entry&&entry.savedAt){ row.style.display=''; note.textContent=`From ${formatRelativeTime(entry.savedAt)}, before a ${entry.reason||'restore'}`; }
@@ -34808,7 +34822,7 @@ function openSelectionFmtUrlBox(){
   field.addEventListener('keydown',e=>{
     if(e.key!=='Enter')field.classList.remove('is-invalid');
     if(e.key==='Enter'){ e.preventDefault(); applySelectionFmtUrl(); }
-    else if(e.key==='Escape'){ e.preventDefault(); e.stopPropagation(); const back=_sfmtLinkTarget&&_sfmtLinkTarget.cancel; hideSelectionFmtPopover(); if(back)back(); }
+    else if(e.key==='Escape'){ e.preventDefault(); e.stopPropagation(); const back=_sfmtLinkTarget&&_sfmtLinkTarget.cancel; hideSelectionFmtPopover(); if(back){ back(); _sfmtDismissedSel=selectionSnapshot(); } }
   });
 }
 // Ctrl/Cmd+K (owner 2026-10-29, as most apps): selected words in a row, To-Do, note or thread get
@@ -34890,7 +34904,20 @@ function placeSelectionFmtPopover(rect){
 let _sfmtPointerDown=false;
 document.addEventListener('mousedown',e=>{ const pop=el('selection-fmt-popover'); if(!(pop&&pop.contains(e.target)))_sfmtPointerDown=true; },true);
 document.addEventListener('mouseup',()=>{ if(!_sfmtPointerDown)return; _sfmtPointerDown=false; setTimeout(updateSelectionFmtPopover,0); },true);
+// Escape in the Link box puts the same words back, still selected; the bar stays closed for that
+// selection (as in other editors) and comes back once the selection changes. Without this the
+// selectionchange from putting them back reopened it a moment later, depending on timing.
+let _sfmtDismissedSel=null;
+function selectionSnapshot(){
+  const sel=window.getSelection(); if(!sel||!sel.rangeCount)return null;
+  return {an:sel.anchorNode,ao:sel.anchorOffset,fn:sel.focusNode,fo:sel.focusOffset};
+}
 function updateSelectionFmtPopover(){
+  if(_sfmtDismissedSel){
+    const now=selectionSnapshot(), d=_sfmtDismissedSel;
+    if(now&&now.an===d.an&&now.ao===d.ao&&now.fn===d.fn&&now.fo===d.fo)return;
+    _sfmtDismissedSel=null;
+  }
   if(_sfmtPointerDown){ hideSelectionFmtPopover(); return; }
   const pop=el('selection-fmt-popover');
   if(pop&&pop.classList.contains('open')&&pop.contains(document.activeElement))return; // typing a web address

@@ -166,7 +166,9 @@ test.describe('Simplified data backup (manual when signed out)', () => {
     await expect(page.locator('#sb-undo-restore-btn')).toBeVisible();
 
     const titles = await page.locator('#settings-panel .settings-section[data-cat="data"] .settings-section-title').allTextContents();
-    expect(titles).toContain('Secure storage');
+    // Secure storage (a passphrase for AI keys) moved to the AI page (cloud-first plan, Phase 5b).
+    expect(titles).not.toContain('Secure storage');
+    await expect(page.locator('#settings-panel .settings-section[data-cat="ai"] .settings-section-title', { hasText: 'Secure storage' })).toHaveCount(1);
     expect(titles).not.toContain('Cloud Backup');
 
     // Nothing from the removed features is left in the panel's text or DOM.
