@@ -18,6 +18,10 @@ exists so that distinction is visible without opening every file.
   ("Sakura Hosted AI (beta)" in Settings → AI → Provider) are all built, merged to `main`, and
   deployed. All three "Open decisions" the doc originally listed are resolved — see that section.
 
+- **`cloud-first-plan.md`** — proposed (2026-11-12): make the account's copy the real one for
+  signed-in people while guests can still try Sakura without an account. Six phases, starting
+  with safe (versioned) cloud writes. Not started.
+
 ## Closed / historical reference (`history/`)
 
 Real, accurate records of finished work — not stale, just done. Nothing here needs further
