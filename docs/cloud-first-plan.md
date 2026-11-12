@@ -60,13 +60,19 @@ version ("Your changes on this device") goes through the same path, and a versio
 Firestore's 1MB record limit, which today stays on the device that made it, gets the diagram
 split so it reaches the account too.
 
-### 3. Open documents from the account
+### 3. Open documents from the account (save state and automatic retry built 2026-11-12)
 
 For a signed-in person, opening a document reads the cloud copy first when online (the realtime
 listener usually has it already, so this is mostly about not trusting a stale cache), falling back
 to the cached copy offline. A small status shows where things stand: "Saving…", "Saved to your
 account", "Offline: saved on this device, will sync". The File Explorer only lists documents
 whose content is here (cached) or loading (the #842 lock covers the gap).
+
+Built: the save state left of Share (`renderDocSaveState`: cloud mark / Saving… / Offline / Not
+synced / Only on this device) and automatic retry of failed pushes (15s doubling to 5 min, and on
+`online`; before, a failed push waited for the next edit). Loading itself already comes from the
+account: the live listener keeps every document current, and #842 locks a document until its
+content has arrived.
 
 ### 4. Guest mode, said plainly
 
