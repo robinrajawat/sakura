@@ -74,7 +74,7 @@ synced / Only on this device) and automatic retry of failed pushes (15s doubling
 account: the live listener keeps every document current, and #842 locks a document until its
 content has arrived.
 
-### 4. Guest mode, said plainly
+### 4. Guest mode, said plainly (wording and label built 2026-11-12; timed nudges not built)
 
 Signed out, the app says the work is "Only on this device" (a quiet line near the title, not a
 nag). It asks to sign in at the moments where the account clearly helps: sharing, downloading a PDF
@@ -89,7 +89,7 @@ guest's documents up (exists) and says so.
   "PDF" below). Guests get the print dialog, labelled "Print / Save as PDF".
 - Sharing and hosted AI already need an account.
 
-### 5b. Data & Backup, cut down
+### 5b. Data & Backup, cut down (built 2026-11-12)
 
 Today Settings → Data & backup has Backup all data, Restore from backup, Undo last restore,
 Secure Storage and Reset. With the account as the real copy (synced documents, synced versions),
