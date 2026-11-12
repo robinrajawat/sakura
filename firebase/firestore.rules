@@ -28,8 +28,31 @@ rules_version = '2';
 //   5. /admins/{uid}        — existence-only admin registry backing isFeedbackAdminAuth() below.
 service cloud.firestore {
   match /databases/{database}/documents {
-    match /users/{userId}/{document=**} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+    function isOwner(userId) {
+      return request.auth != null && request.auth.uid == userId;
+    }
+    // Owner-only, as before. Synced documents (docs/{docId}) get one extra condition (cloud-first
+    // plan, Phase 1, docs/cloud-first-plan.md): every update must raise `rev` by exactly one.
+    // The app writes a document only inside a transaction that checked `rev` first
+    // (pushDocToCloud / decideDocPush), so this changes nothing for it; it stops a copy that
+    // skipped the check (a tab still running an older version) from saving over a newer one.
+    // A document from before revs has none: read as 0, so its first versioned write is rev 1.
+    // Creating and deleting a document, and everything else under the account, are unchanged.
+    match /users/{userId} {
+      allow read, write: if isOwner(userId);
+    }
+    match /users/{userId}/{collection}/{rest=**} {
+      allow read, write: if isOwner(userId) && collection != 'docs';
+    }
+    match /users/{userId}/docs/{docId} {
+      allow read, create, delete: if isOwner(userId);
+      allow update: if isOwner(userId)
+        && request.resource.data.get('rev', 0) is int
+        && request.resource.data.get('rev', 0) == resource.data.get('rev', 0) + 1;
+      // The document's subcollections (diagrams, previews, versions): owner-only, unchanged.
+      match /{subcollection}/{rest=**} {
+        allow read, write: if isOwner(userId);
+      }
     }
 
     match /profiles/{uid} {
