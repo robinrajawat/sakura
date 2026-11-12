@@ -4,7 +4,7 @@
 
 Sakura is a web app for structured documents: plans, specs, designs, meeting notes and decisions. You write in an outline, attach the diagrams, tables and screenshots that belong to each point, discuss each point right where it sits, and keep track of what is still open until it is settled. When it's ready, you hand people a clean PDF.
 
-Open it at **[www.sakura-notes.com](https://www.sakura-notes.com)**. There's nothing to install and no account needed. Your documents stay in your browser until you choose to sign in, and then they follow you to any device.
+Open it at **[www.sakura-notes.com](https://www.sakura-notes.com)**. There's nothing to install. Sign in and your documents are kept in your account and follow you to any device; or just try it without an account, and your work stays in this browser until you sign in.
 
 ![Sakura](web/public/social-card.png)
 
@@ -148,8 +148,8 @@ Two ways to run it:
 
 ## Your data
 
-- **No account needed.** Everything is stored in your browser and works offline once loaded. Sakura can also be installed as an app from the browser's address bar.
-- **Sign in** (Google or email) to sync documents, folders, To-Dos and settings across your devices.
+- **Sign in** (Google or email) and your documents, folders, To-Dos and settings are kept in your account, on every device, with version history.
+- **Try it without an account.** Everything then stays in your browser and works offline once loaded; signing in later brings it into your account. Sakura can also be installed as an app from the browser's address bar.
 - **Send a copy** of a document to another Sakura user. It becomes their own document; nothing stays linked.
 - **Backup** saves everything to one file, and **Restore** brings it back (with one-step undo).
 - **Secure storage** locks your AI keys with a passphrase.
