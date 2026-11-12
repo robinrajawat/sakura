@@ -17120,11 +17120,52 @@ async function flushSyncQueue(){
     if(!_syncErrorToastShown){ _syncErrorToastShown=true; showToast('Sync ran into a problem — will keep retrying quietly'); }
   }
 }
+// The cloud rev each local document copy is based on (see src/state/docRev.ts): set when a copy
+// comes from the cloud or is written to it, checked before every push.
+const DOC_BASE_REV_KEY='sakura_doc_cloud_rev_v1';
+let _incomingDocRev={}; // open document: rev of another device's copy stored but not yet on screen
+function getDocBaseRev(id){ try{ const m=JSON.parse(localStorage.getItem(DOC_BASE_REV_KEY)||'{}'); return Number.isFinite(m[id])?m[id]:undefined; }catch(e){ return undefined; } }
+function setDocBaseRev(id,rev){ try{ const m=JSON.parse(localStorage.getItem(DOC_BASE_REV_KEY)||'{}'); m[id]=rev; localStorage.setItem(DOC_BASE_REV_KEY,JSON.stringify(m)); }catch(e){} }
+// The open document took another device's copy into storage but not onto the screen
+// (_incomingDocRev): with no remembered rev yet, -1 makes sure the screen's older copy can't be
+// written over it on timestamps alone.
+function pushBaseRev(id){ const b=getDocBaseRev(id); return b===undefined&&_incomingDocRev[id]!==undefined?-1:b; }
+function cloudDocStateOf(snap){ const d=snap.exists()?snap.data():null; return {exists:!!d,rev:d?.rev,updatedAt:d?.updatedAt}; }
+// Another device saved this document since this device's copy was taken from the cloud: nothing
+// is written over it. This device's copy is kept as a version, the cloud's becomes the copy here
+// (and on screen, if open), and the person is told where their edits went.
+async function resolveDocPushConflict(mod,db,ownerUid,docId,cloud){
+  try{
+    const open=docId===currentDocId&&activeTabDocId===docId;
+    if(open)commitEdit();
+    const mine=open?currentDocRevisionContent():await storedDocForRevision(docId,localStorage.getItem(docKey(docId)));
+    if(mine&&Array.isArray(mine.nodes)&&mine.nodes.length)await recordDocRevision(docId,mine,'Your changes on this device',{dedupe:true});
+  }catch(e){ console.warn('[sakura] could not keep this device\'s copy as a version:',e); }
+  if(!cloud)return;
+  const {updatedAt,rev,...rawDocData}=cloud;
+  const docData=await hydrateCloudDocBlobs(mod,db,ownerUid,docId,rawDocData);
+  localStorage.setItem(docKey(docId),JSON.stringify(docData));
+  touchDocIndex(docId,docData.title||'Untitled');
+  setDocBaseRev(docId,readDocRev(rev));
+  delete _incomingDocRev[docId];
+  const tab=findOpenTab(docId);
+  if(tab){
+    const fresh=loadTabFromStorageObj(docId);
+    if(fresh){
+      openTabs[openTabs.indexOf(tab)]=fresh;
+      if(activeTabDocId===docId){ if(_foreignDocVersionPending===docId)_foreignDocVersionPending=null; applyTabSnapshot(fresh); }
+    }
+  }
+  renderSidebar();
+  showToast('This document was changed on another device. Your edits here are kept in Version history.',null,false,6000);
+}
 async function pushDocToCloud(mod,db,docId){
   const raw=localStorage.getItem(docKey(docId)); if(raw===null)return;
   let data; try{data=JSON.parse(raw)}catch(e){return}
   const ts=Date.now(); _lastPushedTs['doc:'+docId]=ts;
   const ownerUid=currentUser.uid;
+  const ref=mod.doc(db,'users',ownerUid,'docs',docId);
+  const localUpdatedAt=Number(loadDocsIndex().find(d=>d.id===docId)?.updatedAt)||0;
   // Diagram XML used to ride inline in this same doc write — a document with enough diagrams
   // can add up past Firestore's 1MB-per-document cap (see the "too large" catch below, which
   // used to be the only defense). Each diagram's XML now pushes to its own subcollection doc
@@ -17141,6 +17182,9 @@ async function pushDocToCloud(mod,db,docId){
   try{
     let diagrams=Array.isArray(data.diagrams)?data.diagrams:[];
     if(diagrams.length){
+      // Checked before the diagram writes too, so a refused copy writes nothing at all.
+      const pre=await mod.getDoc(ref);
+      if(!decideDocPush(cloudDocStateOf(pre),pushBaseRev(docId),localUpdatedAt).write){ await resolveDocPushConflict(mod,db,ownerUid,docId,pre.data()); return; }
       const hydrated=await Promise.all(diagrams.map(async dg=>{
         if(dg.xml!==undefined)return dg; // saveToStorage's own pre-first-sync safety-net copy — already has it
         try{
@@ -17157,8 +17201,18 @@ async function pushDocToCloud(mod,db,docId){
     // since there's no longer any subcollection or UI on the other end to read it back from.
     const {attachments:_droppedAttachments,...dataWithoutAttachments}=data;
     const dataToSend={...dataWithoutAttachments,diagrams};
-    // {merge:true}: fields this device doesn't keep locally (such as an old sharedWith map) stay as they are.
-    await mod.setDoc(mod.doc(db,'users',ownerUid,'docs',docId),{...dataToSend,updatedAt:ts},{merge:true});
+    // One transaction: the write happens only if the cloud is still at the rev this copy is based
+    // on (decideDocPush). {merge:true}: fields this device doesn't keep locally (such as an old
+    // sharedWith map) stay as they are.
+    const outcome=await mod.runTransaction(db,async tx=>{
+      const snap=await tx.get(ref);
+      const decision=decideDocPush(cloudDocStateOf(snap),pushBaseRev(docId),localUpdatedAt);
+      if(!decision.write)return {conflict:true,cloud:snap.data()};
+      tx.set(ref,{...dataToSend,updatedAt:ts,rev:decision.nextRev},{merge:true});
+      return {conflict:false,rev:decision.nextRev};
+    });
+    if(outcome.conflict){ await resolveDocPushConflict(mod,db,ownerUid,docId,outcome.cloud); return; }
+    setDocBaseRev(docId,outcome.rev);
     if(previewItems.length)await pushDiagramPreviews(mod,db,ownerUid,docId,previewItems); // never throws
     await pushTablePreviews(mod,db,ownerUid,docId,data.nodes); // never throws
     _docTooLargeToastShown.delete(docId); // clears the one-time-per-incident gate below, so a genuinely new occurrence (after this got fixed once) is reported again rather than staying silently suppressed forever
@@ -17429,18 +17483,22 @@ async function applyIncomingDocData(mod,db,ownerUid,id,cloud,viaRealtime){
   if(!shouldApplyIncomingSyncCore(cloud.updatedAt,(localEntry&&hasLocalContent)?Number(localEntry.updatedAt)||0:null,_lastPushedTs['doc:'+id]))return false;
   if(findOpenTab(id)?._ghostFallback){
     // On screen (or cached) as a placeholder: nothing real to protect, so show the content now.
-    const {updatedAt,...rawDocData}=cloud;
+    const {updatedAt,rev:_rev,...rawDocData}=cloud;
     const docData=await hydrateCloudDocBlobs(mod,db,ownerUid,id,rawDocData);
     localStorage.setItem(docKey(id),JSON.stringify(docData));
     touchDocIndex(id,docData.title||'Untitled');
+    setDocBaseRev(id,readDocRev(cloud.rev));
     replaceGhostTabWithStored(id);
     return true;
   }
   if(id===currentDocId){
     if(!viaRealtime)return false; // polling: leave the active doc alone entirely
-    const {updatedAt,...rawDocData}=cloud;
+    const {updatedAt,rev:_rev,...rawDocData}=cloud;
     const docData=await hydrateCloudDocBlobs(mod,db,ownerUid,id,rawDocData);
     localStorage.setItem(docKey(id),JSON.stringify(docData)); // safe: not touching live `nodes`
+    // The editor is still based on the older rev, so its next push is refused (see
+    // resolveDocPushConflict) unless Reload latest takes this copy first.
+    _incomingDocRev[id]=readDocRev(cloud.rev);
     _foreignDocVersionPending=currentDocId; // the next save here keeps the other copy as a version first
     if(crossTabWarningDocId!==currentDocId){
       crossTabWarningDocId=currentDocId;
@@ -17449,11 +17507,12 @@ async function applyIncomingDocData(mod,db,ownerUid,id,cloud,viaRealtime){
     }
     return true;
   }
-  const {updatedAt,...rawDocData}=cloud;
+  const {updatedAt,rev:_rev,...rawDocData}=cloud;
   await keepLocalDocBeforeIncoming(id,rawDocData); // before hydrateCloudDocBlobs replaces the local diagram blobs
   const docData=await hydrateCloudDocBlobs(mod,db,ownerUid,id,rawDocData);
   localStorage.setItem(docKey(id),JSON.stringify(docData));
   touchDocIndex(id,docData.title||'Untitled');
+  setDocBaseRev(id,readDocRev(cloud.rev));
   return true;
 }
 const TODOS_VERSIONS_MAX=5; // owner, 2026-10-20: the last 5 are enough, listed inline in the To-Dos ⋯ menu
@@ -17559,6 +17618,48 @@ function findIdsMissingFromCloud(localIds, cloudIds) {
 }
 
 /* GENERATED:syncReconcile:END */
+/* GENERATED:docRev:START — DO NOT EDIT BY HAND. Source of truth: src/state/docRev.ts (tests: tests/unit/docRev.test.ts). Regenerate with `npm run generate` after changing the source; CI fails if this block drifts from what the generator produces (see .github/workflows/ci.yml and scripts/generate-index-blocks.mjs). */
+/**
+ * Safe cloud writes — cloud-first plan Phase 1 (docs/cloud-first-plan.md).
+ *
+ * Every cloud document carries `rev`, a number that goes up by one on each write. A device
+ * remembers, per document, the `rev` its own copy is based on (the one it last loaded from the
+ * cloud or last wrote). A push may only replace the cloud copy when the cloud is still at that
+ * `rev`: otherwise another device saved in between, and writing would silently throw that work
+ * away (the 2026-11-12 data loss was this, through a blank placeholder). The push then stops,
+ * and the caller keeps this device's copy as a version and takes the cloud's.
+ *
+ * Migration: documents written before this existed have no `rev` (read as 0), and a device that
+ * has not loaded a document since the update has no remembered `rev` for it. For that one case
+ * the old rule still decides (this device's last save is at least as new as the cloud's last
+ * write), so updating the app never turns ordinary saves into conflicts. From then on the
+ * remembered `rev` decides.
+ */
+/** Pure: a stored `rev` value as a whole number (missing or invalid reads as 0). */
+function readDocRev(rev) {
+    const n = Number(rev);
+    return Number.isFinite(n) && n > 0 ? Math.floor(n) : 0;
+}
+/**
+ * Pure: may this device write its copy over the cloud's?
+ * - No cloud copy: write (a new document, or one deleted elsewhere and still edited here).
+ * - A remembered `rev`: write only when the cloud is still at it.
+ * - No remembered `rev` (migration): write only when this device's last save is at least as new
+ *   as the cloud's last write.
+ * `nextRev` is the `rev` to store with the write.
+ */
+function decideDocPush(cloud, baseRev, localUpdatedAt) {
+    if (!cloud.exists)
+        return { write: true, nextRev: (baseRev ?? 0) + 1 };
+    const cloudRev = readDocRev(cloud.rev);
+    if (baseRev !== undefined) {
+        return cloudRev === baseRev ? { write: true, nextRev: cloudRev + 1 } : { write: false };
+    }
+    const cloudTs = Number(cloud.updatedAt) || 0;
+    return cloudTs <= localUpdatedAt ? { write: true, nextRev: cloudRev + 1 } : { write: false };
+}
+
+/* GENERATED:docRev:END */
 let _lastPullAt=0;
 async function pullAndMergeFromCloud(isInitial=false){
   if(!currentUser)return;
@@ -27867,6 +27968,7 @@ function reloadCurrentDocFromOtherTab(){
   // (when it differs), so Reload latest can never lose this tab's own edits.
   commitEdit();
   if(_foreignDocVersionPending===id)_foreignDocVersionPending=null; // the other copy becomes the one on screen
+  if(_incomingDocRev[id]!==undefined){ setDocBaseRev(id,_incomingDocRev[id]); delete _incomingDocRev[id]; } // another device's copy
   let sameAsOther=false; try{ const o=JSON.parse(localStorage.getItem(docKey(id))||'null'); sameAsOther=!!o&&JSON.stringify([o.nodes,o.remarks||[]])===JSON.stringify([nodes,remarks]); }catch(e){}
   if(!sameAsOther)recordDocRevision(id,currentDocRevisionContent(),'Before reloading the other version',{dedupe:true});
   const fresh=loadTabFromStorageObj(id);

@@ -435,7 +435,15 @@ initHubTodosState({
     // (the docs loop and the templates loop inside pullAndMergeFromCloud) were updated in the
     // same commit that wired this block in.
     footer: ''
+  },  {
+    // Cloud-first Phase 1 (docs/cloud-first-plan.md): may a push replace the cloud copy?
+    // Pure; called from pushDocToCloud, applyIncomingDocData and resolveDocPushConflict.
+    name: 'docRev',
+    sourceFile: 'src/state/docRev.ts',
+    testFile: 'tests/unit/docRev.test.ts',
+    footer: ''
   },
+
   {
     // node.images (screenshots as per-node objects) -- pure decisions only: normalization of the
     // stored array, copy-with-new-ids, downscale sizing, animated-GIF detection, encode choice,
