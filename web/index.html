@@ -23771,21 +23771,35 @@ function serverPdfAvailable(){
 }
 // Asks the Worker for the PDF and downloads it. Resolves 'saved', or 'limit' when today's PDF
 // count is used up, or 'failed' for anything else (the caller then opens the print dialog).
+// _serverPdfFailure keeps a short reason for the last failure, said in the message (as other
+// apps show an error code) so a failure can be told apart without the browser's dev tools.
+let _serverPdfFailure='';
 async function saveServerPdf(html,title){
+  _serverPdfFailure='';
   const ctrl=new AbortController(); const timer=setTimeout(()=>ctrl.abort(),45000);
   try{
     const token=await currentUser.getIdToken();
     const res=await fetch(AI_VAULT_WORKER_URL+'/pdf',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+token},body:JSON.stringify({html,title}),signal:ctrl.signal});
-    if(!res.ok){ console.warn('[sakura] server PDF failed:',res.status,await res.text().catch(()=>'')); return res.status===429?'limit':'failed'; }
+    if(!res.ok){
+      const body=await res.text().catch(()=>'');
+      console.warn('[sakura] server PDF failed:',res.status,body);
+      let why=''; try{ const j=JSON.parse(body); why=[j.error,...(Array.isArray(j.details)?j.details:[])].filter(Boolean).join(': '); }catch(e){}
+      _serverPdfFailure='error '+res.status+(why?' \u2014 '+why.slice(0,140):'');
+      return res.status===429?'limit':'failed';
+    }
     const blob=await res.blob();
-    if(!blob.size||!/pdf/.test(blob.type))return 'failed';
+    if(!blob.size||!/pdf/.test(blob.type)){ _serverPdfFailure='not a PDF ('+(blob.type||'empty')+')'; return 'failed'; }
     const a=document.createElement('a');
     a.href=window.URL.createObjectURL(blob);
     a.download=(String(title||'Sakura').replace(/[\\/:*?"<>|]+/g,'_').trim()||'Sakura')+'.pdf';
     document.body.appendChild(a); a.click(); a.remove();
     setTimeout(()=>window.URL.revokeObjectURL(a.href),60000);
     return 'saved';
-  }catch(e){ console.warn('[sakura] server PDF failed:',e); return 'failed'; }
+  }catch(e){
+    console.warn('[sakura] server PDF failed:',e);
+    _serverPdfFailure=e&&e.name==='AbortError'?'timed out after 45s':navigator.onLine===false?'offline':'no response from the PDF service';
+    return 'failed';
+  }
   finally{ clearTimeout(timer); }
 }
 function printCopyInFrame(html){
@@ -23826,7 +23840,7 @@ function sakuraPrint(target){
       _serverPdfBusy=false;
       if(result==='saved'){ showToast('PDF saved','success'); return; }
       // Say why the print dialog opens instead of a download.
-      showToast(result==='limit'?"Today's PDF limit is reached, opening print instead":"Couldn't make the PDF file, opening print instead",'',false,4000);
+      showToast(result==='limit'?"Today's PDF limit is reached, opening print instead":"Couldn't make the PDF file ("+(_serverPdfFailure||'unknown error')+"), opening print instead",'',false,result==='limit'?4000:7000);
       printCopyInFrame(frameHtml);
     });
 }

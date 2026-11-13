@@ -95,6 +95,19 @@ test('server limit reached: says why, then opens print', async ({ page }) => {
   await expect(page.locator('#toast')).toContainText("Today's PDF limit is reached, opening print instead");
 });
 
+test('server error: the message names it, so a failure can be told apart without dev tools', async ({ page }) => {
+  await page.route('https://ai.sakura-notes.com/pdf', (route) =>
+    route.fulfill({ status: 502, contentType: 'application/json', headers: { 'Access-Control-Allow-Origin': '*' }, body: '{"error":"PDF rendering failed","details":["Browser time limit exceeded"]}' }));
+  await page.evaluate(() => (window as any).exportPdfDirect());
+  await expect(page.locator('#toast')).toContainText("Couldn't make the PDF file (error 502 \u2014 PDF rendering failed: Browser time limit exceeded), opening print instead");
+});
+
+test('no response (blocked or network down): the message says so', async ({ page }) => {
+  await page.route('https://ai.sakura-notes.com/pdf', (route) => route.abort());
+  await page.evaluate(() => (window as any).exportPdfDirect());
+  await expect(page.locator('#toast')).toContainText("Couldn't make the PDF file (no response from the PDF service), opening print instead");
+});
+
 test('a second click while the PDF is being made does nothing', async ({ page }) => {
   let requests = 0;
   let release: () => void = () => {};
