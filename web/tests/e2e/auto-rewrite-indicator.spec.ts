@@ -47,3 +47,14 @@ test('after a rewrite: "Rewrote 1 row" with Undo, which puts the words back', as
   expect(await page.evaluate(() => nodes[0].text)).toBe('this are a row with some words in it');
   await expect(toast).toContainText('Rewrite undone');
 });
+
+test('words while rows wait, and no leftover "is on" label for screen readers', async ({ page }) => {
+  await page.evaluate(() => {
+    // @ts-expect-error -- bare globals from index.html
+    autoRewriteQueue.add(1); _autoRewriteFireAt = Date.now() + 5000; updateAutoRewriteStatusChip();
+  });
+  const chip = page.locator('#sb-auto-rewrite-chip');
+  await expect(chip).toContainText('1 to rewrite');
+  expect(await chip.getAttribute('aria-label')).toBeNull();
+});
+

@@ -124,3 +124,27 @@ test('a document taken from the account is not sent back up on the next catch-up
   expect(await page.evaluate(() => _syncPushQueue.has('doc:fromB'))).toBe(false);
   expect((await cloud(page, 'users/u1/docs/fromB') as { rev: number }).rev).toBe(3);
 });
+
+test('delete markers older than 180 days are cleared, and do not remove anything', async ({ page }) => {
+  const id = await seedDoc(page, 'Kept');
+  await page.evaluate((id) => {
+    const w = window as unknown as { __cloud: Record<string, Record<string, unknown>> };
+    w.__cloud['users/u1/deletedDocs/' + id] = { deletedAt: Date.now() - 200 * 24 * 60 * 60 * 1000 };
+  }, id);
+  await pull(page);
+  expect(await cloud(page, 'users/u1/deletedDocs/' + id)).toBeUndefined();
+  expect(await page.evaluate((id) => localStorage.getItem('sakura_doc_v1_' + id) !== null, id)).toBe(true);
+});
+
+test('a placeholder for a document the account does not have stops saying "Loading…" after a catch-up', async ({ page }) => {
+  await page.evaluate(() => {
+    const list = JSON.parse(localStorage.getItem('sakura_docs_index_v1') || '[]');
+    list.push({ id: 'gone', title: 'Gone', updatedAt: Date.now() });
+    localStorage.setItem('sakura_docs_index_v1', JSON.stringify(list));
+    // @ts-expect-error -- bare global from index.html
+    switchDoc('gone');
+  });
+  await expect(page.locator('#doc-content-pending-msg')).toHaveText('Loading this document from your account…');
+  await pull(page);
+  await expect(page.locator('#doc-content-pending-msg')).toHaveText('This document isn’t in your account. It may have been deleted on another device.');
+});

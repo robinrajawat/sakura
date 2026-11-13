@@ -57,3 +57,16 @@ test('the sign-in screen leads with the account and offers a try without one', a
   await expect(page.locator('#sakura-landing-sub')).toHaveText('Sign in to keep your documents in your account and on every device.');
   await expect(page.locator('#sakura-landing-continue-btn')).toHaveText('Try it without an account');
 });
+
+test('the backup message matches the button: Backup saved without an account', async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('sakura_welcome_seen', '1');
+    sessionStorage.setItem('sakura_landing_dismissed', 'true');
+  });
+  await page.goto('file://' + indexPath);
+  const download = page.waitForEvent('download');
+  await page.evaluate(() => (0, eval)('exportAllData()'));
+  await download;
+  await expect(page.locator('#toast')).toContainText('Backup saved');
+});
+
