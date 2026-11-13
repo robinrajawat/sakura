@@ -132,6 +132,15 @@ initVaultState({
     footer: ''
   },
   {
+    name: 'phoneLayout',
+    sourceFile: 'src/ui/phoneLayout.ts',
+    testFile: 'tests/unit/phoneLayout.test.ts',
+    // docs/mobile-plan.md: the one phone/desktop switch. Spliced into the first <head> script,
+    // before the hub.html redirect (which reads ?layout=phone), so html.phone is set before the
+    // first paint and follows the window when it is resized across 768px.
+    footer: "syncPhoneLayoutClass();\ntry { window.matchMedia(PHONE_LAYOUT_QUERY).addEventListener('change', () => syncPhoneLayoutClass()); } catch (e) {}\n"
+  },
+  {
     name: 'toasts',
     sourceFile: 'src/ui/toasts.ts',
     testFile: 'tests/unit/toasts.test.ts',
@@ -652,6 +661,12 @@ const STYLE_BLOCKS = [
     name: 'css-todos',
     targetFile: 'index.html',
     styleFiles: ['src/styles/index/todos-panel.css', 'src/styles/index/hub-dock.css']
+  },
+  {
+    // Last, so phone rules win ties. Every rule sits in the phone @media query (docs/mobile-plan.md).
+    name: 'css-phone',
+    targetFile: 'index.html',
+    styleFiles: ['src/styles/index/phone.css']
   },
   {
     name: 'css-hub',

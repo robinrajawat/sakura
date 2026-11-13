@@ -175,11 +175,11 @@ contradicts README.md or docs/feature-reference.md, trust them.)*
 
 ### Latest changes
 
+- **Mobile plan, phase 0 (2026-11-13, owner: "adopt the standard practice… two separate pages for desktop and mobile is perhaps not ideal", then "go with the defaults").** `docs/mobile-plan.md` (approved): one app with a limited phone layout, `hub.html` retired in phase 5; decisions 768px, guests allowed, thread replies allowed. Phase 0 built the safety net only, with no visible change. `src/ui/phoneLayout.ts` (`isPhoneLayout()`, `html.phone`) and `src/styles/index/phone.css` (`<style id="sakura-phone-css">`, every rule inside `@media (max-width: 767.98px)`). `?layout=phone` skips the hub redirect. Playwright projects: `desktop`, plus `phone-ios` and `phone-android` for `*.phone.spec.ts`. Tests: desktop-unchanged.spec.ts compares each desktop screen's pixels with and without phone.css, phone-layout-switch.spec.ts, phone-layout.phone.spec.ts, phoneLayout/phoneCss unit tests. Measured: `index.html` is 700 KB gzip against hub's 81 KB, so lazy-loading the phone-hidden parts is required before phase 5.
+
 - **Polish round 2 (2026-11-13, owner: "one more round of polishing?").** Conflict message gets a **Version history** button (opens the versions where this device's edits went). A placeholder for a document the account doesn't have stops saying "Loading…" after a catch-up (`_missingInAccount`). Delete markers older than 180 days are cleared on catch-up (`DELETE_MARKER_KEEP_MS`), so that read stays small. The backup message matches the button ("Backup saved" / "Your data is downloaded"). The auto-rewrite chip drops its icon-only `aria-label` when it shows words. Checked by eye: the top line at 900px with long folder names. Tests: sync-offline-and-deletes.spec.ts (+2), auto-rewrite-indicator.spec.ts (+1), data-settings-account.spec.ts (+1), doc-safe-writes.spec.ts.
 
 - **Polish pass over 2026-11-12/13's work (owner: "check if the changes we did today needs polishing, do it thoroughly").** Review of #842–#859 found and fixed: (1) **sync ping-pong**: a document taken from the cloud was stamped `Date.now()` in the index (`touchDocIndex`), so the next catch-up's `localCopyIsNewer` sent it back up and the other device did the same; `touchDocIndex(id,title,at)` now takes the cloud copy's `updatedAt` in the apply, ghost and conflict paths. (2) Download PDF's chain has a `.catch` that unpins the toast and clears `_serverPdfBusy`. (3) A waiting toast with an action (Undo) isn't replaced by a plain one while a toast is pinned. (4) "Not synced" click catches up (`pullAndMergeFromCloud`) when nothing is queued. (5) `saveToStorage` remembers the last saved signature (`_lastSavedDocSig`) instead of parsing the stored copy on every save. (6) metaMerge helpers renamed `mmSame`/`mmIsObject`/`mmIsIdArray` (one shared script scope). (7) Stale comment. Tests: sync-offline-and-deletes.spec.ts (+1), pdf-server-download.spec.ts (+1), toasts.test.ts (+1).
-
-- **Quieter auto-rewrite indicator (2026-11-13, owner: "can we inform the user in a more subtle and elegant way?" then "just do it").** On and idle, `#sb-auto-rewrite-chip` is only the sparkle (`.is-quiet`: a faint 28px square matching `#editor-zen-toggle`, `AUTO_REWRITE_SPARKLE`); words only while queued ("✦ N to rewrite · Ns"), rewriting or paused. After a rewrite: action toast "Rewrote N rows" with **Undo** (only if `undoStack` hasn't grown since; otherwise it points to Ctrl/Cmd+Z). Tests: auto-rewrite-indicator.spec.ts.
 
 ### In progress / not built
 
@@ -193,8 +193,8 @@ contradicts README.md or docs/feature-reference.md, trust them.)*
   Also decided: the top line's folder path stays (owner: it's the "where am I" cue; Notion/Confluence do it).
 - Modularization as its own project is paused (owner, 2026-10-26): move code into `src/` only when that area is being
   changed anyway (e.g. lazy-loading draw.io/AI, or a To-Dos rework giving the panel explicit state).
-- Ideas offered 2026-10-26, not chosen yet: dark mode follows the system by default. (Phones: read-only documents
-  built 2026-11-03; light editing on the phone is not planned, since sync is whole-document last-write-wins.)
+- Ideas offered 2026-10-26, not chosen yet: dark mode follows the system by default. (Phones: see `docs/mobile-plan.md`;
+  one app with light editing on the phone replaces the read-only hub, phase 0 done.)
 - Grouping displays (lanes/stages) beyond Lanes by ‹column›: only if needed.
 - Suggested, not chosen: a "down is good" option so a falling change shows green.
 
