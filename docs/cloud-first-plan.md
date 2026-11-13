@@ -29,7 +29,7 @@ stop being "extras with a fallback" and become reasons to have an account.
 
 ## Phases
 
-### 1. Safe writes (built 2026-11-12: `src/state/docRev.ts`, `pushDocToCloud`, `resolveDocPushConflict`; Firestore rule written in `firebase/firestore.rules`, published by hand)
+### 1. Safe writes (built 2026-11-12: `src/state/docRev.ts`, `pushDocToCloud`, `resolveDocPushConflict`; Firestore rule in `firebase/firestore.rules`, published 2026-11-13)
 
 Every cloud document gets a version number (`rev`, an integer). A device remembers the `rev` it
 last loaded or wrote for each document. A push is a Firestore transaction: read the cloud
