@@ -175,11 +175,12 @@ contradicts README.md or docs/feature-reference.md, trust them.)*
 
 ### Latest changes
 
+- **Download PDF: Worker no longer times out (2026-11-13, owner's console: 502 "PDF rendering failed: Navigation timeout of 30000 ms exceeded").** `worker/src/pdf.ts`: `setContent` waited for `networkidle0`, which a slow font/image request kept from happening; now `waitUntil: 'load'` (15s) and, on a timeout, prints what has loaded (`isTimeout`). Browser kept warm 10s instead of 60s (free-plan browser minutes). The page's fallback message now says why (`_serverPdfFailure`: "error 502 — …", "timed out after 45s", "offline", "no response…"). Under `worker/`: merging redeploys the live Worker, so the owner merges it. Not verifiable here (no Cloudflare browser in the sandbox): confirm live with one Download PDF.
+
 - **Synced lists and settings merge (2026-11-13, owner: "how standard apps handle these… we should do the same").** Meta keys (docsIndex, folders, docFolderMap, docOrder, prefs, todos, todosSettings) no longer go last-save-wins: `merge3` (`src/state/metaMerge.ts`, unit-tested) merges base/local/cloud key by key, and lists with ids item by item. Base per key in `sakura_sync_meta_base_v1` (set on every take/send; seeded on catch-up when both copies already agree). `applyIncomingMetaData` merges when this device also changed (then re-sends); `pushMetaToCloud` merges in a transaction with anything sent since. todosRevisions keeps its own join. Tests: metaMerge.test.ts, meta-merge.spec.ts; doc-save-state.spec.ts counts document writes only.
 
 - **Offline edits and deletes sync like other apps (2026-11-13, owner: "go ahead and merge it when ready", "follow the standard practice").** Catch-up now sends documents saved here after the account's last write (`localCopyIsNewer`), not only ones missing from the account. Delete forever writes a marker `users/{uid}/deletedDocs/{id}` first; other devices remove their copy (on catch-up and live, `applyIncomingDocDeletion`) unless edited there after the delete (`deletionWins`: the edit wins, marker cleared). Marked documents are never re-sent as "missing"; if the markers can't be read, that push is held back for the round. Rules: already covered (owner-only, not `docs`). Tests: docRev.test.ts, sync-offline-and-deletes.spec.ts.
 
-- **Save state moved after the folder path (2026-11-12, owner chose "option B" over beside the title, after mock-ups).** `#doc-save-state` now sits in `#doc-path` after the crumbs (a "·" before it when there's a path) and is hidden while saved (Notion-style); it shows Saving…, Offline, Not synced (click retries) and a guest's "Only on this device" (click: sign in). The top line's right side is Share and Help only again. Tests: doc-save-state.spec.ts, header-polish.spec.ts.
 
 ### In progress / not built
 
@@ -200,7 +201,6 @@ contradicts README.md or docs/feature-reference.md, trust them.)*
 
 ### Parked / open questions for the owner
 
-- Download PDF falls back to the print dialog for the owner every time (reported 2026-11-12). The Worker is deployed (Deploy Worker run for #830 succeeded); the failure reason is in the toast ("limit" vs "couldn't make the file") and in `wrangler tail` / the Browser Rendering usage page. Suspects: the Free plan's 10 browser-minutes a day (each PDF keeps a browser warm for 60s, `keep_alive`), or the 45s client timeout on a slow upload. Decide after seeing the Worker's error.
 - Phone tables (owner OK'd 2026-11-03 "for now"): the phone shows the computer's ready-made table copies (`docs/{id}/previews/_tables`, a derived cache, never read back). Cleaner later option: move the table drawing code (drawTableDisplay and the Show as renderers, ~1,500 lines in index.html) into shared src modules so the phone draws tables itself and the cache goes away. Do it when tables are next reworked.
 - Zoom row as title: breadcrumb shows only ancestors, the zoomed row becomes the larger title.
 - Record the date a document is set to Approved or Rejected and show it on the PDF (needs a new
