@@ -19,35 +19,35 @@
  */
 export type Side = 'local' | 'cloud';
 
-function same(a: unknown, b: unknown): boolean {
+function mmSame(a: unknown, b: unknown): boolean {
   return JSON.stringify(a) === JSON.stringify(b);
 }
-function isPlainObject(v: unknown): v is Record<string, unknown> {
+function mmIsObject(v: unknown): v is Record<string, unknown> {
   return !!v && typeof v === 'object' && !Array.isArray(v);
 }
 type IdItem = { id: string | number } & Record<string, unknown>;
-function isIdArray(v: unknown): v is IdItem[] {
-  return Array.isArray(v) && v.every((x) => isPlainObject(x) && (typeof x.id === 'string' || typeof x.id === 'number'));
+function mmIsIdArray(v: unknown): v is IdItem[] {
+  return Array.isArray(v) && v.every((x) => mmIsObject(x) && (typeof x.id === 'string' || typeof x.id === 'number'));
 }
 
 export function merge3(base: unknown, local: unknown, cloud: unknown, prefer: Side): unknown {
-  if (same(local, cloud)) return cloud;
-  if (same(local, base)) return cloud; // only the account changed
-  if (same(cloud, base)) return local; // only this device changed
+  if (mmSame(local, cloud)) return cloud;
+  if (mmSame(local, base)) return cloud; // only the account changed
+  if (mmSame(cloud, base)) return local; // only this device changed
   // Both changed.
-  if (isPlainObject(local) && isPlainObject(cloud)) {
-    const b = isPlainObject(base) ? base : {};
+  if (mmIsObject(local) && mmIsObject(cloud)) {
+    const b = mmIsObject(base) ? base : {};
     const out: Record<string, unknown> = {};
     const keys = new Set([...Object.keys(cloud), ...Object.keys(local), ...Object.keys(b)]);
     for (const k of keys) {
       const inL = k in local, inC = k in cloud, inB = k in b;
       if (inL && inC) out[k] = merge3(b[k], local[k], cloud[k], prefer);
-      else if (inL && !inC) { if (!inB || !same(local[k], b[k])) out[k] = local[k]; } // removed in the account unless changed here
-      else if (!inL && inC) { if (!inB || !same(cloud[k], b[k])) out[k] = cloud[k]; } // removed here unless changed in the account
+      else if (inL && !inC) { if (!inB || !mmSame(local[k], b[k])) out[k] = local[k]; } // removed in the account unless changed here
+      else if (!inL && inC) { if (!inB || !mmSame(cloud[k], b[k])) out[k] = cloud[k]; } // removed here unless changed in the account
     }
     return out;
   }
-  if (isIdArray(local) && isIdArray(cloud) && (base === undefined || base === null || isIdArray(base))) {
+  if (mmIsIdArray(local) && mmIsIdArray(cloud) && (base === undefined || base === null || mmIsIdArray(base))) {
     const key = (x: IdItem) => String(x.id);
     const bMap = new Map((Array.isArray(base) ? (base as IdItem[]) : []).map((x) => [key(x), x]));
     const lMap = new Map(local.map((x) => [key(x), x]));
@@ -56,8 +56,8 @@ export function merge3(base: unknown, local: unknown, cloud: unknown, prefer: Si
     const pick = (id: string): IdItem | null => {
       const l = lMap.get(id), c = cMap.get(id), b = bMap.get(id);
       if (l && c) return merge3(b, l, c, prefer) as IdItem;
-      if (l && !c) return !b || !same(l, b) ? l : null;
-      if (c && !l) return !b || !same(c, b) ? c : null;
+      if (l && !c) return !b || !mmSame(l, b) ? l : null;
+      if (c && !l) return !b || !mmSame(c, b) ? c : null;
       return null;
     };
     for (const x of cloud) { const m = pick(key(x)); if (m) out.push(m); }

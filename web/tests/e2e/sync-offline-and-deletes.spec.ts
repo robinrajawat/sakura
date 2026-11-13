@@ -110,3 +110,17 @@ test('Delete forever here leaves the marker for other devices', async ({ page })
   const marker = (await cloud(page, 'users/u1/deletedDocs/' + id)) as { deletedAt: number };
   expect(marker.deletedAt).toBeGreaterThan(0);
 });
+
+test('a document taken from the account is not sent back up on the next catch-up (no bouncing between devices)', async ({ page }) => {
+  await page.evaluate(async () => {
+    const w = window as unknown as { __cloud: Record<string, Record<string, unknown>> };
+    w.__cloud['users/u1/docs/fromB'] = { title: 'From the other device', rev: 3, updatedAt: Date.now() - 60000, nodes: [{ id: 1, depth: 0, text: 'Written on the other device' }] };
+    // @ts-expect-error -- bare globals from index.html
+    _syncPushQueue.clear(); await pullAndMergeFromCloud(true);
+    // @ts-expect-error -- bare globals from index.html
+    _syncPushQueue.clear(); _lastPullAt = 0; await pullAndMergeFromCloud(true);
+  });
+  // @ts-expect-error -- bare global from index.html
+  expect(await page.evaluate(() => _syncPushQueue.has('doc:fromB'))).toBe(false);
+  expect((await cloud(page, 'users/u1/docs/fromB') as { rev: number }).rev).toBe(3);
+});
