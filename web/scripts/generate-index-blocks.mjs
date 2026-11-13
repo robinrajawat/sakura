@@ -157,6 +157,14 @@ initVaultState({
     footer: ''
   },
   {
+    name: 'phoneEditing',
+    sourceFile: 'src/ui/phoneEditing.ts',
+    testFile: 'tests/unit/phoneEditing.test.ts',
+    // docs/mobile-plan.md, phase 3: keyboard inset and long-press for the phone's row toolbar and
+    // row menu, wired right after it next to the phone drawer.
+    footer: ''
+  },
+  {
     name: 'toasts',
     sourceFile: 'src/ui/toasts.ts',
     testFile: 'tests/unit/toasts.test.ts',

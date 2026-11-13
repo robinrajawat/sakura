@@ -9,8 +9,10 @@ const indexPath = path.resolve(__dirname, '../../index.html');
 // wide tables scroll in their own box, and pictures and diagrams open full screen, view-only, with
 // two-finger pinch and double-tap zoom.
 const SVG = 'data:image/svg+xml;base64,' + Buffer.from('<svg xmlns="http://www.w3.org/2000/svg" width="600" height="300"><rect width="600" height="300" fill="#cde"/></svg>').toString('base64');
-const WIDE = '<table><thead><tr>' + ['Owner', 'Status', 'Due date', 'Notes about the work', 'Budget', 'Region'].map((h) => `<th>${h}</th>`).join('') +
-  '</tr></thead><tbody><tr>' + ['Sam', 'Open', '2026-12-01', 'Waiting for the vendor', '12,000', 'North'].map((c) => `<td>${c}</td>`).join('') + '</tr></tbody></table>';
+// Ten columns: clearly wider than any phone, whichever font has loaded (six columns only just
+// overflowed a Pixel 7 and fit before the web font arrived).
+const WIDE = '<table><thead><tr>' + ['Owner', 'Status', 'Due date', 'Notes about the work', 'Budget', 'Region', 'Priority', 'Approver', 'Quarter', 'Reference'].map((h) => `<th>${h}</th>`).join('') +
+  '</tr></thead><tbody><tr>' + ['Sam', 'Open', '2026-12-01', 'Waiting for the vendor', '12,000', 'North', 'High', 'Ana Lopez', 'Q4 2026', 'PO-2026-0042'].map((c) => `<td>${c}</td>`).join('') + '</tr></tbody></table>';
 
 test.beforeEach(async ({ page }) => {
   await page.addInitScript(({ svg, wide }) => {
@@ -32,6 +34,7 @@ test.beforeEach(async ({ page }) => {
   await page.waitForFunction(() => typeof (window as unknown as { createDoc?: unknown }).createDoc === 'function');
   await expect(page.locator('#editor-pane')).toContainText('Diagram row');
   await expect(page.locator('.pv-table-figure').first()).toBeVisible();
+  await page.evaluate(() => document.fonts.ready);
 });
 
 // Two fingers, through Chrome's own touch input, so the page sees real pointer events.
@@ -60,12 +63,12 @@ test('a fold dot is a 40px target that folds and unfolds its row', async ({ page
 
 test('a wide table scrolls sideways in its own box, never the page', async ({ page }) => {
   const fig = page.locator('.pv-table-figure').first();
-  const sizes = await fig.evaluate((e) => ({ sw: e.scrollWidth, cw: e.clientWidth }));
-  expect(sizes.sw).toBeGreaterThan(sizes.cw);
-  await fig.evaluate((e) => { e.scrollLeft = 1000; });
-  expect(await fig.evaluate((e) => e.scrollLeft)).toBeGreaterThan(0);
+  // Polled: the outline can redraw its tables just after first paint, and a figure caught mid-swap
+  // measures 0 (seen once under full-suite load on the Pixel 7 profile).
+  await expect.poll(() => fig.evaluate((e) => e.scrollWidth - e.clientWidth)).toBeGreaterThan(0);
+  await expect.poll(() => fig.evaluate((e) => { e.scrollLeft = 1000; return e.scrollLeft; })).toBeGreaterThan(0);
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(page.viewportSize()!.width);
-  await expect(fig.locator('th', { hasText: 'Region' })).toBeAttached();
+  await expect(fig.locator('th', { hasText: 'Reference' })).toBeAttached();
 });
 
 test('the diagram viewer is full screen and view-only; two fingers pinch and a double-tap zooms', async ({ page }) => {

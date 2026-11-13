@@ -57,3 +57,19 @@ test('the desktop has no ☰ button, drawer or phone back button', async ({ page
   // @ts-expect-error -- bare global from index.html
   expect(await page.evaluate(() => { setPhoneDrawerOpen(true); return document.documentElement.classList.contains('phone-drawer-open'); })).toBe(false);
 });
+
+test('the desktop never shows the phone row toolbar or row menu', async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('sakura_welcome_seen', '1');
+    sessionStorage.setItem('sakura_landing_dismissed', 'true');
+  });
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.goto('file://' + indexPath);
+  // @ts-expect-error -- bare globals from index.html
+  await page.evaluate(() => { createDoc(); nodes = [normalizeNode({ id: 1, depth: 0, text: 'Row' })]; nextId = 2; render(); });
+  await page.locator('.node-row .node-label').first().click();
+  // @ts-expect-error -- bare global from index.html
+  await expect.poll(() => page.evaluate(() => editingId)).toBe(1);
+  await expect(page.locator('#phone-edit-bar')).toBeHidden();
+  await expect(page.locator('#phone-row-menu')).toBeHidden();
+});
