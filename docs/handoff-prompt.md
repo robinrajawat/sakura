@@ -175,12 +175,11 @@ contradicts README.md or docs/feature-reference.md, trust them.)*
 
 ### Latest changes
 
+- **Guest sign-in prompt (2026-11-13, owner: "how standard apps handle these open items. We should do the same").** `maybePromptGuestSignIn` (from `saveToStorage`): the first guest save with words notes `sakura_guest_first_content_at`; from a day later one action toast offers **Sign in** (opens the sign-in screen), then not again for 14 days (`sakura_guest_prompt_at`), at most once a session; never when signed in or restoring an account. Ctrl/Cmd+Z stays undo while it shows. Tests: guest-sign-in-prompt.spec.ts.
+
 - **Download PDF: Worker no longer times out (2026-11-13, owner's console: 502 "PDF rendering failed: Navigation timeout of 30000 ms exceeded").** `worker/src/pdf.ts`: `setContent` waited for `networkidle0`, which a slow font/image request kept from happening; now `waitUntil: 'load'` (15s) and, on a timeout, prints what has loaded (`isTimeout`). Browser kept warm 10s instead of 60s (free-plan browser minutes). The page's fallback message now says why (`_serverPdfFailure`: "error 502 — …", "timed out after 45s", "offline", "no response…"). Under `worker/`: merging redeploys the live Worker, so the owner merges it. Not verifiable here (no Cloudflare browser in the sandbox): confirm live with one Download PDF.
 
 - **Synced lists and settings merge (2026-11-13, owner: "how standard apps handle these… we should do the same").** Meta keys (docsIndex, folders, docFolderMap, docOrder, prefs, todos, todosSettings) no longer go last-save-wins: `merge3` (`src/state/metaMerge.ts`, unit-tested) merges base/local/cloud key by key, and lists with ids item by item. Base per key in `sakura_sync_meta_base_v1` (set on every take/send; seeded on catch-up when both copies already agree). `applyIncomingMetaData` merges when this device also changed (then re-sends); `pushMetaToCloud` merges in a transaction with anything sent since. todosRevisions keeps its own join. Tests: metaMerge.test.ts, meta-merge.spec.ts; doc-save-state.spec.ts counts document writes only.
-
-- **Offline edits and deletes sync like other apps (2026-11-13, owner: "go ahead and merge it when ready", "follow the standard practice").** Catch-up now sends documents saved here after the account's last write (`localCopyIsNewer`), not only ones missing from the account. Delete forever writes a marker `users/{uid}/deletedDocs/{id}` first; other devices remove their copy (on catch-up and live, `applyIncomingDocDeletion`) unless edited there after the delete (`deletionWins`: the edit wins, marker cleared). Marked documents are never re-sent as "missing"; if the markers can't be read, that push is held back for the round. Rules: already covered (owner-only, not `docs`). Tests: docRev.test.ts, sync-offline-and-deletes.spec.ts.
-
 
 ### In progress / not built
 

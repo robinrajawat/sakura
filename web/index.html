@@ -13294,6 +13294,30 @@ function warnDiagramBlobWriteFailed(){
   diagramBlobWriteFailed=true;
   showToast('This browser\u2019s IndexedDB storage isn\u2019t syncing diagram content right now. Edits are still being kept in regular storage as a fallback. If a diagram won\u2019t load, use its Retry button rather than drawing over what looks like a blank canvas.');
 }
+// A guest's gentle sign-in prompt (cloud-first plan, Phase 4), the way try-first apps ask:
+// never a wall, once real work exists. The first time a guest saves a document with words in it is
+// noted; from a day later, one dismissible message on a save offers sign-in, and it isn't
+// repeated for 14 days. "Only on this device" on the top line stays
+// the standing prompt in between.
+const GUEST_FIRST_CONTENT_KEY='sakura_guest_first_content_at', GUEST_PROMPT_KEY='sakura_guest_prompt_at';
+const GUEST_PROMPT_AFTER_MS=24*60*60*1000, GUEST_PROMPT_EVERY_MS=14*24*60*60*1000;
+let _guestPromptShownThisSession=false;
+function maybePromptGuestSignIn(savedNodes){
+  try{
+    if(currentUser||_guestPromptShownThisSession||localStorage.getItem('sakura_account_active')==='true')return;
+    if(!(savedNodes||[]).some(n=>String(n&&n.text||'').trim()))return;
+    const now=Date.now();
+    let first=Number(localStorage.getItem(GUEST_FIRST_CONTENT_KEY))||0;
+    if(!first){ localStorage.setItem(GUEST_FIRST_CONTENT_KEY,String(now)); first=now; }
+    const last=Number(localStorage.getItem(GUEST_PROMPT_KEY))||0;
+    if(last&&now-last<GUEST_PROMPT_EVERY_MS)return;
+    if(now-first<GUEST_PROMPT_AFTER_MS)return;
+    _guestPromptShownThisSession=true;
+    localStorage.setItem(GUEST_PROMPT_KEY,String(now));
+    showActionToast('Your documents are only in this browser. Sign in to keep them in your account.','Sign in',()=>showLandingOverlay(),10000);
+    _actionToastUndo=null; // Ctrl/Cmd+Z stays undo while this shows
+  }catch(e){}
+}
 function saveToStorage(){
   try{
     if(!currentDocId)return;
@@ -13413,6 +13437,7 @@ function saveToStorage(){
     if(sbSyncKey!==_sbTitleSyncCache){_sbTitleSyncCache=sbSyncKey; renderSidebar(); renderTabStrip();}
     lastSavedAt=Date.now();
     updateSavedIndicator();
+    maybePromptGuestSignIn(payload.nodes);
   }catch(e){ }
 }
 function loadDocFromStorage(id){
