@@ -74,7 +74,7 @@ synced / Only on this device) and automatic retry of failed pushes (15s doubling
 account: the live listener keeps every document current, and #842 locks a document until its
 content has arrived.
 
-### 4. Guest mode, said plainly (wording and label built 2026-11-12; timed nudges not built)
+### 4. Guest mode, said plainly (wording and label built 2026-11-12; the sign-in prompt 2026-11-13)
 
 Signed out, the app says the work is "Only on this device" (a quiet line near the title, not a
 nag). It asks to sign in at the moments where the account clearly helps: sharing, downloading a PDF
