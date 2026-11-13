@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { handlePdf, pdfFileName, pdfQuotaUid, MAX_PDF_HTML_BYTES } from '../src/pdf';
+import { handlePdf, pdfFileName, pdfQuotaUid, MAX_PDF_HTML_BYTES, isTimeout } from '../src/pdf';
 import type { QuotaKV } from '../src/quota';
 
 function fakeKv(): QuotaKV & { store: Record<string, string> } {
@@ -76,5 +76,18 @@ describe('handlePdf', () => {
     });
     expect(res.status).toBe(502);
     expect(await res.json()).toEqual({ error: 'PDF rendering failed', details: ['browser busy'] });
+  });
+});
+
+describe('isTimeout', () => {
+  it("recognises puppeteer's navigation timeout, so the page still prints", () => {
+    const e = new Error('Navigation timeout of 30000 ms exceeded');
+    e.name = 'TimeoutError';
+    expect(isTimeout(e)).toBe(true);
+    expect(isTimeout(new Error('Navigation timeout of 15000 ms exceeded'))).toBe(true);
+  });
+  it('leaves real failures alone', () => {
+    expect(isTimeout(new Error('Browser closed'))).toBe(false);
+    expect(isTimeout(null)).toBe(false);
   });
 });
