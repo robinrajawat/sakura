@@ -73,3 +73,10 @@ test('the desktop never shows the phone row toolbar or row menu', async ({ page 
   await expect(page.locator('#phone-edit-bar')).toBeHidden();
   await expect(page.locator('#phone-row-menu')).toBeHidden();
 });
+
+test('a first visit on the desktop still shows the welcome', async ({ page }) => {
+  await page.addInitScript(() => sessionStorage.setItem('sakura_landing_dismissed', 'true'));
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.goto('file://' + indexPath);
+  await expect(page.locator('#welcome-overlay')).toHaveClass(/open/);
+});
