@@ -16,7 +16,8 @@ export const QA_TOAST_ICON_SVG='<svg width="13" height="13" viewBox="0 0 24 24" 
 export const TOAST_UNDO_MS=4000;
 // A pinned toast (a progress message such as Download PDF's) isn't replaced by other messages:
 // they wait, and the latest one shows once it is unpinned (owner 2026-11-13: a sync message
-// replaced the PDF progress). Only the latest waiting message is kept.
+// replaced the PDF progress). Only the latest waiting message is kept, except that a message with
+// an action (Undo) isn't replaced by a plain one, so its action isn't lost.
 let _toastPinned=false;
 let _toastWaiting: any=null;
 export function setToastPinned(on: boolean){ _toastPinned=on; }
@@ -29,7 +30,7 @@ export function showWaitingToast(delayMs=0){
   if(delayMs>0)setTimeout(show,delayMs); else show();
 }
 export function isToastPinned(){ return _toastPinned; }
-export function showToast(msg: any,type?: any,fromQa?: any,durationMs?: any){if(_toastPinned){_toastWaiting={kind:'toast',args:[msg,type,fromQa,durationMs]};return} const t=el('toast'); t.classList.remove('with-action','toast-success'); t.innerHTML=''; if(fromQa){const icon=document.createElement('span'); icon.className='toast-qa-icon'; icon.innerHTML=QA_TOAST_ICON_SVG; icon.dataset.tip='From Search'; t.appendChild(icon)} const span=document.createElement('span'); span.textContent=msg; t.appendChild(span); if(type==='success')t.classList.add('toast-success'); t.classList.add('show'); clearTimeout((showToast as any)._tm); (showToast as any)._tm=setTimeout(()=>t.classList.remove('show'),durationMs||(/undo/i.test(msg)?TOAST_UNDO_MS:1600))}
+export function showToast(msg: any,type?: any,fromQa?: any,durationMs?: any){if(_toastPinned){if(!_toastWaiting||_toastWaiting.kind!=='action')_toastWaiting={kind:'toast',args:[msg,type,fromQa,durationMs]};return} const t=el('toast'); t.classList.remove('with-action','toast-success'); t.innerHTML=''; if(fromQa){const icon=document.createElement('span'); icon.className='toast-qa-icon'; icon.innerHTML=QA_TOAST_ICON_SVG; icon.dataset.tip='From Search'; t.appendChild(icon)} const span=document.createElement('span'); span.textContent=msg; t.appendChild(span); if(type==='success')t.classList.add('toast-success'); t.classList.add('show'); clearTimeout((showToast as any)._tm); (showToast as any)._tm=setTimeout(()=>t.classList.remove('show'),durationMs||(/undo/i.test(msg)?TOAST_UNDO_MS:1600))}
 // Tracks the undo callback for whichever action-toast (see showActionToast) is currently
 // visible, so Ctrl/Cmd+Z can trigger it — see the capture-phase listener just below.
 let _actionToastUndo: any=null;

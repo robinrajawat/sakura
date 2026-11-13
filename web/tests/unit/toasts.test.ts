@@ -117,3 +117,17 @@ describe('pinned toast (a progress message)', () => {
     expect(toast().textContent).toBe('Second message');
   });
 });
+
+describe('pinned toast keeps an Undo that waits', () => {
+  afterEach(() => t.setToastPinned(false));
+  it('a plain message does not replace a waiting message with an action', () => {
+    t.showActionToast('Preparing PDF…', 'Cancel', () => {}, 60000);
+    t.setToastPinned(true);
+    t.showActionToast('Rewrote 2 rows', 'Undo', () => {}, 6000);
+    t.showToast('Sync ran into a problem');
+    t.setToastPinned(false);
+    t.showWaitingToast();
+    expect(toast().textContent).toContain('Rewrote 2 rows');
+    expect(toast().querySelector('.toast-action-btn')?.textContent).toBe('Undo');
+  });
+});

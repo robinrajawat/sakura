@@ -150,6 +150,19 @@ test('another message (a sync problem) waits until the PDF progress is done', as
   await expect(toast).toContainText('Sync ran into a problem', { timeout: 5000 });
 });
 
+test('if something breaks while making the PDF, the progress never stays stuck', async ({ page }) => {
+  await page.route('https://ai.sakura-notes.com/pdf', (route) =>
+    route.fulfill({ status: 502, contentType: 'application/json', headers: { 'Access-Control-Allow-Origin': '*' }, body: '{"error":"PDF rendering failed"}' }));
+  await page.evaluate(() => {
+    const w = window as any; w.print = () => {};
+    // Something unexpected throws in the middle of the export.
+    (0, eval)("saveServerPdf = async function(){ throw new Error('unexpected'); }");
+    w.exportPdfDirect();
+  });
+  await expect.poll(() => page.evaluate(() => (0, eval)('_serverPdfBusy'))).toBe(false);
+  expect(await page.evaluate(() => (0, eval)('isToastPinned()'))).toBe(false);
+});
+
 test('a slow PDF says it is still working after 10 seconds', async ({ page }) => {
   await page.clock.install();
   await page.route('https://ai.sakura-notes.com/pdf', () => { /* never answers */ });
