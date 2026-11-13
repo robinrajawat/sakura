@@ -5,7 +5,8 @@
  * src/styles/index/phone.css inside the same query, so the desktop never sees it.
  *
  * Wired into index.html via scripts/generate-index-blocks.mjs's `phoneLayout` block, in the
- * first <head> script, so `html.phone` is set before the first paint.
+ * first <head> script, so `html.phone` is set before the first paint. Phones use this page; the old
+ * phone page (hub.html) only forwards here (phase 5).
  */
 
 /**
@@ -27,9 +28,4 @@ export function isPhoneLayout(): boolean {
 /** Puts `phone` on <html> exactly while the page is in its phone layout. */
 export function syncPhoneLayoutClass(root: HTMLElement = document.documentElement): void {
   root.classList.toggle('phone', isPhoneLayout());
-}
-
-/** Phase 0 preview: `?layout=phone` keeps a phone-sized screen on this page instead of hub.html. */
-export function wantsPhoneLayoutPreview(search: string): boolean {
-  return /[?&]layout=phone(?:&|$)/.test(search);
 }

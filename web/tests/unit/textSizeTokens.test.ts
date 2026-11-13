@@ -8,11 +8,11 @@ import { describe, it, expect } from 'vitest';
 // (including top-level section headings, .pv-section-h1-3).
 // Text that scales with the user's text size (calc(… * var(--editor-scale))) and em sizes are
 // not px and so not checked.
-const SHEETS = import.meta.glob(['../../src/styles/index/*.css', '../../src/styles/hub/*.css'], { query: '?raw', import: 'default', eager: true }) as Record<string, string>;
+const SHEETS = import.meta.glob(['../../src/styles/index/*.css'], { query: '?raw', import: 'default', eager: true }) as Record<string, string>;
 
-// hub.css (the phone app, 2026-10-25): its ×/− glyphs (#hub-search-close, .hub-sheet-close, .todo-subtask-remove),
-// and the phone's document reader (2026-11-03, #doc-reader-body/.rd-*): document typography, like the preview's.
-const NOT_UI_TEXT = /(#hub-search-close|#rd-viewer-close|\.hub-sheet-close|\.todo-subtask-remove|icon|dot\b|-dot|petal|blossom|avatar|badge|caret-btn|\.app-modal-close-btn|dismiss|heading-option|\.pv-(heading|section|text|bullet|toc|cap-head-dot)|#app-icon|stamp|#doc-reader-body|\.rd-)/i;
+// The To-Dos panel's subtask − glyph (.todo-subtask-remove). (The old phone page's own entries,
+// #hub-search-close, .hub-sheet-close and #rd-viewer-close, went with it in phase 5 of docs/mobile-plan.md.)
+const NOT_UI_TEXT = /(\.todo-subtask-remove|icon|dot\b|-dot|petal|blossom|avatar|badge|caret-btn|\.app-modal-close-btn|dismiss|heading-option|\.pv-(heading|section|text|bullet|toc|cap-head-dot)|#app-icon|stamp|#doc-reader-body|\.rd-)/i;
 
 describe('interface text sizes come from the --fs-* scale', () => {
   it('no interface rule sets its own px font-size', () => {
@@ -28,8 +28,8 @@ describe('interface text sizes come from the --fs-* scale', () => {
     expect(offenders).toEqual([]);
   });
 
-  it('the scale is defined in base.css and hub.css', () => {
-    for (const base of [SHEETS['../../src/styles/index/base.css'], SHEETS['../../src/styles/hub/hub.css']])
+  it('the scale is defined in base.css', () => {
+    for (const base of [SHEETS['../../src/styles/index/base.css']])
     for (const [t, px] of [['2xs', 10], ['xs', 11], ['sm', 12], ['md', 13], ['lg', 14], ['xl', 16]] as const) {
       expect(base).toContain(`--fs-${t}:${px}px`);
     }

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
-  normalizeTodo, todoSection, groupTodos, firstMention, waitingLabel, waitingCandidates, isWaiting, type TodoItem
+  normalizeTodo, todoSection, groupTodos, firstMention, waitingLabel, waitingCandidates, isWaiting, sharedTodoText, type TodoItem
 } from '../../src/utils/todoModel';
 
 const base = { id: 't1', text: 'Task', done: false, createdAt: 1, completedAt: null };
@@ -77,5 +77,19 @@ describe('normalizeTodo keeps title formatting', () => {
     expect(t.marks).toEqual([{ s: 9, e: 15, k: 'b' }]);
     expect(t.marksText).toBe('Call the vendor');
     expect('marks' in normalizeTodo({ id: 'b', text: 'Plain', marks: [{ s: 0, e: 2, k: 'b' }] }, 0)!).toBe(false);
+  });
+});
+
+describe('sharedTodoText', () => {
+  it('uses the shared text, else the title, then the link', () => {
+    expect(sharedTodoText('Page title', 'Read this', 'https://a.example/x')).toBe('Read this — https://a.example/x');
+    expect(sharedTodoText('Page title', '', 'https://a.example/x')).toBe('Page title — https://a.example/x');
+    expect(sharedTodoText(null, null, 'https://a.example/x')).toBe('https://a.example/x');
+    expect(sharedTodoText(null, 'Just text', null)).toBe('Just text');
+  });
+  it('does not repeat a link the text already has, and is empty when nothing was shared', () => {
+    expect(sharedTodoText(null, 'See https://a.example/x', 'https://a.example/x')).toBe('See https://a.example/x');
+    expect(sharedTodoText(null, '  ', null)).toBe('');
+    expect(sharedTodoText(null, null, null)).toBe('');
   });
 });

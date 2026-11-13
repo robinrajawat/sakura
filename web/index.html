@@ -127,18 +127,10 @@ function a(e,t){return n(e)||r(e,t)||o(e,t)||i()}function o(e,n){if(e){if(typeof
 </style>
 <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&family=Fira+Code:wght@400;500;700&display=swap" rel="stylesheet">
 <script>
-// ---------- Mobile redirect ----------
-// The very first thing this page does, before anything else executes: below the breakpoint,
-// send the person straight to hub.html — a separate, purpose-built mobile page (To-Dos
-// only, sign-in required) that reads/writes the exact same Firestore-backed data as
-// this file. Checked once, on load, not on resize — a mid-session resize (narrowing a desktop
-// window, or opening/closing dev tools) never yanks the editor away from someone actively
-// using it, only a fresh load below the breakpoint does. There is deliberately no escape
-// hatch back to this full editor from a phone-sized screen — it isn't designed for one, and
-// hub.html's own sign-in screen says so and points to a computer instead.
-// Until the mobile plan's phase 5 (docs/mobile-plan.md), `?layout=phone` keeps a phone-sized
-// screen on this page so the new phone layout can be built and tried; phase 5 removes the redirect.
-// The phone layout switch just below runs first so html.phone is set before the first paint.
+// ---------- Phone layout ----------
+// One page for every screen (docs/mobile-plan.md, owner 2026-11-13): below 768px this page shows its
+// phone layout instead of sending phones to a separate page. hub.html, the old phone page, now only
+// forwards here. The switch runs first so html.phone is set before the first paint.
 /* GENERATED:phoneLayout:START — DO NOT EDIT BY HAND. Source of truth: src/ui/phoneLayout.ts (tests: tests/unit/phoneLayout.test.ts). Regenerate with `npm run generate` after changing the source; CI fails if this block drifts from what the generator produces (see .github/workflows/ci.yml and scripts/generate-index-blocks.mjs). */
 /**
  * The phone layout switch (docs/mobile-plan.md, ground rule 1). One media query decides it, by
@@ -147,7 +139,8 @@ function a(e,t){return n(e)||r(e,t)||o(e,t)||i()}function o(e,n){if(e){if(typeof
  * src/styles/index/phone.css inside the same query, so the desktop never sees it.
  *
  * Wired into index.html via scripts/generate-index-blocks.mjs's `phoneLayout` block, in the
- * first <head> script, so `html.phone` is set before the first paint.
+ * first <head> script, so `html.phone` is set before the first paint. Phones use this page; the old
+ * phone page (hub.html) only forwards here (phase 5).
  */
 /**
  * Must match the `@media` query every rule in src/styles/index/phone.css sits in. `screen` keeps it
@@ -168,23 +161,11 @@ function isPhoneLayout() {
 function syncPhoneLayoutClass(root = document.documentElement) {
     root.classList.toggle('phone', isPhoneLayout());
 }
-/** Phase 0 preview: `?layout=phone` keeps a phone-sized screen on this page instead of hub.html. */
-function wantsPhoneLayoutPreview(search) {
-    return /[?&]layout=phone(?:&|$)/.test(search);
-}
 
 syncPhoneLayoutClass();
 try { window.matchMedia(PHONE_LAYOUT_QUERY).addEventListener('change', () => syncPhoneLayoutClass()); } catch (e) {}
 
 /* GENERATED:phoneLayout:END */
-(function(){
-  try{
-    if(window.innerWidth<768&&!wantsPhoneLayoutPreview(window.location.search||'')){
-      var qs=window.location.search||'';
-      window.location.replace('hub.html'+qs);
-    }
-  }catch(e){}
-})();
 // ---------- Error capture: rolling console buffer (local only) ----------
 // Installed as the very first statement in the app so nothing that runs afterward can throw
 // before this is in place. Purely in-memory and local — nothing here is ever sent anywhere on
@@ -33025,6 +33006,22 @@ function waitingCandidates(todos) {
     });
     return [...counts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).map(([n]) => n);
 }
+/**
+ * "Share to Sakura" (manifest.json share_target, docs/mobile-plan.md phase 5): the to-do a shared
+ * link or text becomes. The shared text (or, without it, the title), then the link unless the text
+ * already contains it, joined with an em dash. Empty when nothing usable was shared.
+ */
+function sharedTodoText(title, text, url) {
+    const t = String(title || '').trim(), x = String(text || '').trim(), u = String(url || '').trim();
+    const parts = [];
+    if (x)
+        parts.push(x);
+    else if (t)
+        parts.push(t);
+    if (u && !parts.some((p) => p.includes(u)))
+        parts.push(u);
+    return parts.join(' — ').trim();
+}
 
 /* GENERATED:todoModel:END */
 /* GENERATED:todoFormat:START — DO NOT EDIT BY HAND. Source of truth: src/core/todoFormat.ts (tests: tests/unit/todoFormat.test.ts). Regenerate with `npm run generate` after changing the source; CI fails if this block drifts from what the generator produces (see .github/workflows/ci.yml and scripts/generate-index-blocks.mjs). */
@@ -34958,6 +34955,22 @@ function todosHistorySummary(list) {
   }
   // On a phone To-Dos is full screen, so it has a back button (docs/mobile-plan.md).
   document.getElementById('todos-phone-back')?.addEventListener('click',closeTodosPanel);
+  // "Share to Sakura" (manifest.json share_target; docs/mobile-plan.md phase 5, taken over from the
+  // old phone page): a link or text shared from another app arrives as query params and becomes a
+  // to-do. The params are then cleared, so a reload doesn't add it again. Run once start-up has
+  // finished: opening To-Dos uses helpers defined further down this script.
+  setTimeout(function(){
+    try{
+      const p=new URLSearchParams(window.location.search);
+      const text=sharedTodoText(p.get('share_title'),p.get('share_text'),p.get('share_url'));
+      if(!p.has('share_title')&&!p.has('share_text')&&!p.has('share_url'))return;
+      ['share_title','share_text','share_url'].forEach(k=>p.delete(k));
+      const q=p.toString();
+      window.history.replaceState(null,'',window.location.pathname+(q?'?'+q:'')+(window.location.hash||''));
+      if(!text)return;
+      addTodo(text); openTodosPanel(); showToast('Added to your To-Dos.','success',false,4000);
+    }catch(e){ console.error('[Sakura] Share to Sakura failed:',e); }
+  },0);
   // On a phone a task swipes, as on the old phone page (docs/mobile-plan.md, phase 4): right
   // completes it, left deletes it with Undo in the toast. Touch only; the desktop is unchanged.
   (function(){

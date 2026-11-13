@@ -7,7 +7,6 @@ import { fileURLToPath } from 'url';
 // shape as a row's (src/utils/rowMarks.ts), kept by normalizeTodo and drawn by the Hub too.
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const indexPath = path.resolve(__dirname, '../../index.html');
-const hubPath = path.resolve(__dirname, '../../hub.html');
 const mod = process.platform === 'darwin' ? 'Meta' : 'Control';
 
 async function openWith(page: Page, todos: object[]) {
@@ -79,23 +78,6 @@ test('typing and chips keep the formatting on its words', async ({ page }) => {
   const t = (await stored(page))[0];
   expect(t.text).toBe('Please Ask @Ana about rollout');
   expect(t.marks).toEqual([{ s: 22, e: 29, k: 'b' }]);
-});
-
-test('the Hub keeps and shows a title\'s formatting', async ({ page }) => {
-  const todos = [{ id: 'h', text: 'Ship the build', marks: [{ s: 9, e: 14, k: 'b' }, { s: 0, e: 4, k: 'hl', v: 'yellow' }], marksText: 'Ship the build', createdAt: Date.now(), completedAt: null, done: false, dueDate: null, link: null, linkLabel: null, nodeRef: null, repeat: null, subtasks: [] }];
-  await page.setViewportSize({ width: 390, height: 844 });
-  await page.addInitScript((t) => localStorage.setItem('sakura_todos_v1', JSON.stringify(t)), todos);
-  await page.goto('file://' + hubPath);
-  await page.evaluate(() => {
-    const w = window as any;
-    document.getElementById('auth-gate')!.style.display = 'none';
-    document.getElementById('hub-app')!.style.display = 'block';
-    w.eval("currentUser = { displayName: 'Test User' }; loadTodosLocal(); renderTodos(); saveTodos();");
-  });
-  const row = page.locator('.swipe-row[data-id="h"] .todo-row-text');
-  await expect(row.locator('b')).toHaveText('build');
-  await expect(row.locator('mark.hl-mark-yellow')).toHaveText('Ship');
-  expect((await stored(page))[0].marks).toEqual([{ s: 0, e: 4, k: 'hl', v: 'yellow' }, { s: 9, e: 14, k: 'b' }]);
 });
 
 test('typing over a link in a title renames it and keeps the link; the card changes its address', async ({ page }) => {

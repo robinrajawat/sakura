@@ -5,9 +5,9 @@ import { fileURLToPath } from 'url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // One scrollbar everywhere (owner 2026-10-30): a single global rule -- 8px, rounded --scroll thumb,
-// darker on hover, no track -- in index.html and hub.html, and no panel with its own copy (the
+// darker on hover, no track -- in index.html, and no panel with its own copy (the
 // copies had drifted and 14 of 41 scrolling areas had none).
-for (const file of ['index.html', 'hub.html']) {
+for (const file of ['index.html']) {
   test(`${file}: one global scrollbar rule and no per-panel scrollbar rules`, async ({ page }) => {
     await page.goto('file://' + path.resolve(__dirname, '../../' + file));
     const r = await page.evaluate(() => {

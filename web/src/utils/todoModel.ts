@@ -169,3 +169,16 @@ export function waitingCandidates(todos: TodoItem[]): string[] {
   });
   return [...counts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).map(([n]) => n);
 }
+
+/**
+ * "Share to Sakura" (manifest.json share_target, docs/mobile-plan.md phase 5): the to-do a shared
+ * link or text becomes. The shared text (or, without it, the title), then the link unless the text
+ * already contains it, joined with an em dash. Empty when nothing usable was shared.
+ */
+export function sharedTodoText(title: string | null, text: string | null, url: string | null): string {
+  const t = String(title || '').trim(), x = String(text || '').trim(), u = String(url || '').trim();
+  const parts: string[] = [];
+  if (x) parts.push(x); else if (t) parts.push(t);
+  if (u && !parts.some((p) => p.includes(u))) parts.push(u);
+  return parts.join(' — ').trim();
+}

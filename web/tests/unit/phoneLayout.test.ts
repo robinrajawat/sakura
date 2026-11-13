@@ -1,5 +1,5 @@
 import { describe, it, expect, afterEach, vi } from 'vitest';
-import { PHONE_LAYOUT_QUERY, isPhoneLayout, syncPhoneLayoutClass, wantsPhoneLayoutPreview } from '../../src/ui/phoneLayout';
+import { PHONE_LAYOUT_QUERY, isPhoneLayout, syncPhoneLayoutClass } from '../../src/ui/phoneLayout';
 
 const withWidth = (width: number) => {
   vi.stubGlobal('window', {
@@ -37,13 +37,5 @@ describe('phoneLayout', () => {
     withWidth(1280);
     syncPhoneLayoutClass(root);
     expect([...classes]).toEqual(['theme-light']);
-  });
-
-  it('reads the ?layout=phone preview switch', () => {
-    expect(wantsPhoneLayoutPreview('?layout=phone')).toBe(true);
-    expect(wantsPhoneLayoutPreview('?x=1&layout=phone')).toBe(true);
-    expect(wantsPhoneLayoutPreview('?layout=phone&x=1')).toBe(true);
-    expect(wantsPhoneLayoutPreview('?layout=phones')).toBe(false);
-    expect(wantsPhoneLayoutPreview('')).toBe(false);
   });
 });
