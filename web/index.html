@@ -223,6 +223,11 @@ window.addEventListener('unhandledrejection',e=>{
     var landingDismissed = false;
     try { landingDismissed = sessionStorage.getItem('sakura_landing_dismissed') === 'true'; } catch (e) {}
     if (localStorage.getItem('sakura_account_active') !== 'true' && !landingDismissed) cls.push('presetup-landing');
+    // A browser that was signed in: until the session is restored (which can take a few seconds on
+    // a slow connection), the account button shows a neutral avatar and its menu "Signing you in…",
+    // never "Sign in" (owner bug 2026-11-13). updateAccountUI removes it. Not a presetup- class: those
+    // are all stripped once startup ends, and restoring can take longer than that.
+    if (localStorage.getItem('sakura_account_active') === 'true') cls.push('account-restoring');
     if (cls.length) document.documentElement.className += ' ' + cls.join(' ');
   }catch(e){}
 })();
@@ -244,6 +249,11 @@ window.addEventListener('unhandledrejection',e=>{
 .presetup-doc-pending #quick-bar{display:none}
 /* A browser that has never signed in sees the sign-in screen from the first frame (see the pre-setup script). */
 .presetup-landing #sakura-landing-overlay{display:flex}
+/* A browser that was signed in, before its session is restored: the plain account icon and "Signing you in…", never "Sign in". */
+html.account-restoring #account-toggle-label,html.account-restoring #account-signed-out{display:none!important}
+#account-restoring{display:none;padding:12px;color:var(--hint);font:400 var(--fs-sm) 'Inter',sans-serif}
+html.account-restoring #account-restoring{display:block}
+
 /* GENERATED:css-presetup:END */
 </style>
 <style>
@@ -3532,8 +3542,9 @@ html.calm-layout #help-meta-links .help-coffee-icon{color:var(--support)}
           <span id="account-toggle-label">Sign in</span>
         </button>
         <div class="export-menu export-menu-rich" id="account-menu">
+          <div id="account-restoring" class="account-restoring" role="status">Signing you in…</div>
           <div id="account-signed-out" style="padding:10px 12px 6px;min-width:0;box-sizing:border-box">
-            <div class="muted-help" style="margin:0 0 8px;font-size:11px;line-height:1.5;color:var(--hint);white-space:normal;overflow-wrap:anywhere;word-break:break-word;max-width:100%">Optional: sign in to sync your documents and settings across devices.</div>
+            <div class="muted-help" style="margin:0 0 8px;font-size:11px;line-height:1.5;color:var(--hint);white-space:normal;overflow-wrap:anywhere;word-break:break-word;max-width:100%">Sign in to keep your documents in your account and on every device.</div>
             <button class="btn primary" id="account-signin-open-btn" style="width:100%;box-sizing:border-box;border-radius:8px;padding:8px 10px;font-size:13px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:7px;border:none">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
               Sign in
@@ -15662,6 +15673,7 @@ function applyDataSettingsForAccount(){
   else if(u&&typeof updatePreRestoreSnapshotStatus==='function')updatePreRestoreSnapshotStatus();
 }
 function updateAccountUI(user){
+  document.documentElement.classList.remove('account-restoring');
   currentUser=user; renderDocSaveState(); applyDataSettingsForAccount();
   refreshAdminStatus(user);
   // All three sign-in paths (Google popup, email/password, and restored-session
@@ -15947,7 +15959,7 @@ function restoreAccountSessionIfNeeded(){
         if(shouldShowLandingOverlay())showLandingOverlay();
       }
     });
-  }).catch(e=>{ console.warn('[sakura] could not restore account session:',e); if(shouldShowLandingOverlay())showLandingOverlay(); });
+  }).catch(e=>{ console.warn('[sakura] could not restore account session:',e); document.documentElement.classList.remove('account-restoring'); if(shouldShowLandingOverlay())showLandingOverlay(); });
 }
 
 // === Cloud sync (Phase 2: push + pull/merge — no live cross-device listener yet, that's
