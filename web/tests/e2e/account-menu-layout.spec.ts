@@ -95,7 +95,9 @@ test('Help → About Sakura opens Settings → About', async ({ page }) => {
 
 // Below 860px the old app bar rule (overflow:hidden) clipped the menu inside the 52px rail, so with
 // Settings open it showed under Settings (owner bug 2026-11-04). It is fixed beside its button now.
-for (const width of [1440, 800, 500]) {
+// 768px is the narrowest desktop width; below it the phone layout's account menu is a sheet along
+// the bottom (phone-shell.phone.spec.ts, docs/mobile-plan.md).
+for (const width of [1440, 800, 768]) {
   test(`account menu shows above Settings at ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height: 800 });
     await showSignedIn(page);

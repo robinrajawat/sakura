@@ -1,6 +1,73 @@
 /* Phone layout (docs/mobile-plan.md). Every rule here sits inside this one query, which matches
    PHONE_LAYOUT_QUERY in src/ui/phoneLayout.ts; tests/unit/phoneCss.test.ts fails on anything
    outside it, and tests/e2e/desktop-unchanged.spec.ts checks the desktop renders the same with
-   and without this file. Empty until phase 1. */
-@media (max-width: 767.98px) {
+   and without this file. Rules are scoped to html.phone too, so they follow the same switch as
+   the code. */
+@media screen and (max-width: 767.98px) {
+  /* ---- Drawer: the rail and the File Explorer slide in together from the left (phase 1). ---- */
+  /* The rail slides with `left`, not a transform: Settings, Help and the account and notification
+     menus live inside it as position:fixed, and a transform would carry them off-screen. */
+  html.phone #appbar {
+    position: fixed; left: -52px; top: 0; bottom: 0; height: 100dvh; z-index: 1201;
+    transition: left .2s cubic-bezier(.22,.8,.34,1);
+  }
+  html.phone #sidebar, html.phone #sidebar.collapsed {
+    position: fixed; left: 52px; top: 0; bottom: 0; height: 100dvh; z-index: 1200;
+    width: min(320px, calc(100vw - 52px - 56px)) !important; flex-basis: auto !important;
+    opacity: 1; pointer-events: auto;
+    transform: translateX(calc(-100% - 52px)); transition: transform .2s cubic-bezier(.22,.8,.34,1);
+  }
+  html.phone.phone-drawer-open #appbar { left: 0; }
+  html.phone.phone-drawer-open #sidebar { transform: none; box-shadow: 8px 0 24px rgba(0,0,0,.12); }
+  html.phone #phone-drawer-backdrop { position: fixed; inset: 0; z-index: 1199; background: rgba(0,0,0,.28); }
+  html.phone #sidebar-resize-handle { display: none; }
+  html.phone body:has(#todos-panel.open) #app-layout, html.phone body:has(.help-panel.open) #app-layout { margin: 0; }
+
+  /* ---- Top line: ☰, where you are, then Share (phase 1). ---- */
+  html.phone #phone-menu-btn {
+    display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto;
+    width: 40px; height: 40px; margin-left: -4px; border: none; background: none; border-radius: 8px; color: var(--fg);
+  }
+  html.phone #doc-tab-strip-row { height: 52px; padding: 0 8px 0 8px; gap: 2px; }
+  html.phone #doc-path { min-width: 0; flex: 1 1 auto; overflow: hidden; }
+  html.phone #doc-path-crumbs { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  /* ---- Editor: full width, 16px sides (phase 1). ---- */
+  html.phone #editor-title-row { padding: 20px 16px 2px 16px; }
+  html.phone #editor-pane { padding-left: 16px; padding-right: 16px; }
+
+  /* ---- Settings, Help and To-Dos open full screen (phase 1). ---- */
+  html.phone #settings-panel, html.phone #help-panel, html.phone #todos-panel {
+    position: fixed !important; inset: 0 !important; width: 100% !important; max-width: none !important;
+    height: 100dvh !important; max-height: none !important; border-radius: 0 !important; border: none !important;
+    z-index: 1300;
+  }
+
+  html.phone #todos-phone-back {
+    display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px; margin-left: -8px;
+    border: none; background: none; border-radius: 8px; color: var(--fg); cursor: pointer;
+  }
+
+  /* ---- Search: the box along the top, results under it, over the open drawer. ---- */
+  html.phone #global-search-wrap.qa-open .qa-input-row {
+    left: 8px; right: 8px; top: calc(8px + env(safe-area-inset-top)); transform: none; width: auto;
+  }
+  html.phone #global-search-wrap .qa-dropdown {
+    left: 8px; right: 8px; top: calc(60px + env(safe-area-inset-top)); transform: none; width: auto; max-height: 60dvh;
+  }
+
+  /* ---- Account and notification menus: sheets along the bottom, over the open drawer. ---- */
+  html.phone #account-menu, html.phone #notif-menu {
+    position: fixed !important; left: 8px !important; right: 8px !important; bottom: calc(8px + env(safe-area-inset-bottom)) !important;
+    top: auto !important; width: auto !important; max-width: none !important; max-height: 70dvh; overflow-y: auto;
+  }
+
+  /* ---- Desktop-only parts (the plan's feature table). ---- */
+  html.phone #statusbar, html.phone #editor-zen-toggle { display: none !important; }
+  /* Hover tooltips: there is no hover on a touch screen, and a tap would leave one stuck. */
+  html.phone #node-timestamp-tip { display: none !important; }
+  /* Settings keeps Appearance, Documents, Account and About; AI, keyboard shortcuts and data
+     files are desktop-only. Help loses the guided tour and the shortcut sheet. */
+  html.phone #settings-panel [data-cat="ai"], html.phone #settings-panel [data-cat="shortcuts"], html.phone #settings-panel [data-cat="data"],
+  html.phone #help-tour-replay-row, html.phone #help-cheatsheet-row { display: none !important; }
 }

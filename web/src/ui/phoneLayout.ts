@@ -8,8 +8,12 @@
  * first <head> script, so `html.phone` is set before the first paint.
  */
 
-/** Must match the `@media` query every rule in src/styles/index/phone.css sits in. */
-export const PHONE_LAYOUT_QUERY = '(max-width: 767.98px)';
+/**
+ * Must match the `@media` query every rule in src/styles/index/phone.css sits in. `screen` keeps it
+ * off printouts and PDFs: a page's printable width can be under 768px, and a PDF made on a phone
+ * must look the same as one made on a computer.
+ */
+export const PHONE_LAYOUT_QUERY = 'screen and (max-width: 767.98px)';
 
 /** True when the page is in its phone layout. */
 export function isPhoneLayout(): boolean {

@@ -141,6 +141,14 @@ initVaultState({
     footer: "syncPhoneLayoutClass();\ntry { window.matchMedia(PHONE_LAYOUT_QUERY).addEventListener('change', () => syncPhoneLayoutClass()); } catch (e) {}\n"
   },
   {
+    name: 'phoneDrawer',
+    sourceFile: 'src/ui/phoneDrawer.ts',
+    testFile: 'tests/unit/phoneDrawer.test.ts',
+    // docs/mobile-plan.md, phase 1: the phone's ☰ drawer. Spliced just before toggleDocumentsPanel,
+    // which closes it on a phone instead of changing the desktop's sidebar setting.
+    footer: ''
+  },
+  {
     name: 'toasts',
     sourceFile: 'src/ui/toasts.ts',
     testFile: 'tests/unit/toasts.test.ts',
