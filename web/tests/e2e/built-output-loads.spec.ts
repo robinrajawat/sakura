@@ -16,10 +16,10 @@ test.describe('built output actually runs (not just present on disk)', () => {
     expect(hasEditorPane).toBe(true);
   });
 
-  test('built hub.html loads', async ({ page }) => {
-    await page.goto('file://' + path.join(distDir, 'hub.html'));
-    await page.waitForTimeout(300);
-    const title = await page.title();
-    expect(title).toContain('Sakura');
+  // The old phone page only forwards to the app now (docs/mobile-plan.md, phase 5).
+  test('built hub.html forwards to index.html, keeping the query string', async ({ page }) => {
+    await page.goto('file://' + path.join(distDir, 'hub.html') + '?x=1');
+    await page.waitForURL(/index\.html/);
+    expect(page.url()).toContain('x=1');
   });
 });

@@ -18,7 +18,7 @@ test.beforeEach(async ({ page }) => {
     localStorage.setItem('sakura_docs_index_v1', JSON.stringify([{ id: 'one', title: 'First', updatedAt: 2 }, { id: 'two', title: 'Second', updatedAt: 1 }]));
     localStorage.setItem('sakura_current_doc_v1', 'one');
   }, [row(1, 'A row in the first document with enough words to wrap on a small phone screen'), row(1, 'Only in the second')]);
-  await page.goto('file://' + indexPath + '?layout=phone');
+  await page.goto('file://' + indexPath);
   await page.waitForFunction(() => typeof (window as unknown as { createDoc?: unknown }).createDoc === 'function');
 });
 

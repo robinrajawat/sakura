@@ -135,9 +135,8 @@ initVaultState({
     name: 'phoneLayout',
     sourceFile: 'src/ui/phoneLayout.ts',
     testFile: 'tests/unit/phoneLayout.test.ts',
-    // docs/mobile-plan.md: the one phone/desktop switch. Spliced into the first <head> script,
-    // before the hub.html redirect (which reads ?layout=phone), so html.phone is set before the
-    // first paint and follows the window when it is resized across 768px.
+    // docs/mobile-plan.md: the one phone/desktop switch. Spliced into the first <head> script, so
+    // html.phone is set before the first paint and follows the window when it is resized across 768px.
     footer: "syncPhoneLayoutClass();\ntry { window.matchMedia(PHONE_LAYOUT_QUERY).addEventListener('change', () => syncPhoneLayoutClass()); } catch (e) {}\n"
   },
   {
@@ -327,60 +326,6 @@ initAiProvidersState({
     footer: ''
   },
   {
-    // hub.html's own generated-blocks pilot — the first block targeting a file other than
-    // index.html, proving the generator's multi-file support with the lowest possible risk:
-    // reusing an ALREADY-TESTED source module (generateId.ts, Phase 1) rather than writing new
-    // source, since hub.html's todoUid/subUid turned out to be exact matches for
-    // generateId(prefix, 6) — same `.slice(2,8)` (suffix length 6), just different prefixes.
-    // Zero new tests needed; the existing tests/unit/generateId.test.ts already covers this
-    // exact function. See this file's header for why targetFile defaults to 'index.html' and
-    // must be set explicitly here.
-    name: 'hubGenerateId',
-    sourceFile: 'src/utils/generateId.ts',
-    testFile: 'tests/unit/generateId.test.ts',
-    targetFile: 'hub.html',
-    // todoUid/subUid both become thin wrappers, same names/signatures — zero call sites
-    // in hub.html needed to change. (A third, jnUid, was dropped along with the Hub's Journal.)
-    footer: `
-function todoUid(){return generateId('t',6);}
-function subUid(){return generateId('sub',6);}
-`.trim()
-  },
-  {
-    // First Hub FEATURE-DOMAIN slice — see this module's own header for why hubGenerateId
-    // (the infrastructure pilot above) doesn't count as one.
-    name: 'hubTodos',
-    sourceFile: 'src/state/hubTodos.ts',
-    testFile: 'tests/unit/hubTodos.test.ts',
-    targetFile: 'hub.html',
-    footer: `
-// --- production wiring (also generated, not hand-written — see the header above) ---
-// Real ambient globals, referenced directly since this code shares hub.html's own classic
-// script scope at runtime: localStorage, bumpSyncTimestamp, pushMetaToCloud, todoUid.
-initHubTodosState({
-  getLocalStorage:function(){ try{ return localStorage; }catch(e){ return null; } },
-  bumpSyncTimestamp:function(metaKey){ bumpSyncTimestamp(metaKey); },
-  pushMetaToCloud:function(metaKey,value){ pushMetaToCloud(metaKey,value); },
-  now:function(){ return Date.now(); },
-  generateTodoId:function(){ return todoUid(); }
-});
-`.trim()
-  },
-  {
-    // Third Hub feature-domain slice — subtask CRUD, flagged as "genuinely separate... not
-    // investigated" in hubTodos.ts's own header. subUid comes from the already-generated
-    // hubGenerateId block (declare function, not DI — see this module's own header for why).
-    name: 'hubSubtasks',
-    sourceFile: 'src/state/hubSubtasks.ts',
-    testFile: 'tests/unit/hubSubtasks.test.ts',
-    targetFile: 'hub.html',
-    // No production wiring needed — pure functions (mutate the passed-in task in place, same
-    // convention as nodeMutations.ts/diagramAnchor.ts; no DOM/storage side effects
-    // of their own). The three real call sites (the subtask toggle/remove click handler and the
-    // subtask-input keydown handler) were updated in the same commit that wired this block in.
-    footer: ''
-  },
-  {
     // Export domain — first slice. Pure once traced: every function it calls is already a
     // generated ambient global (buildPrefix/hasLaterSiblingAtDepth from nodeQueries.ts,
     // computeOutlineNumbers from computeOutlineNumbers.ts, getNodePlainText from
@@ -438,22 +383,6 @@ initHubTodosState({
     // No production wiring needed — pure function, no DOM/side effects. All three real call
     // sites (the decision fragment inside applyIncomingDocData/applyIncomingTemplateData/
     // applyIncomingMetaData) were updated in the same commit that wired this block in.
-    footer: ''
-  },
-  {
-    // Sync subsystem — Phase 4, second real call site of the same already-tested syncApply.ts
-    // module, this time targeting hub.html: pullMetaFromCloud's own inline `cloudTs>localTs`
-    // check is exactly shouldApplyIncomingSyncCore's own logic with no echo-suppression (a
-    // one-shot poll, not a live listener, so lastPushedTsForKey is always undefined — which
-    // degrades the shared predicate to plain always-compare, matching pullMetaFromCloud's real
-    // original behavior exactly, verified before reusing rather than assumed). Zero new source,
-    // same low-risk reuse pattern hubGenerateId established for a cross-file shared module.
-    name: 'hubSyncApply',
-    sourceFile: 'src/state/syncApply.ts',
-    testFile: 'tests/unit/syncApply.test.ts',
-    targetFile: 'hub.html',
-    // No production wiring needed — pure function, no DOM/side effects. The one real call site
-    // (pullMetaFromCloud's own body) was updated in the same commit that wired this block in.
     footer: ''
   },
   {
@@ -579,57 +508,10 @@ initHubTodosState({
     footer: ''
   },
   {
-    // A To-Do title's formatting is stored like a row's (marks beside the plain text), so the
-    // Hub draws it with the same helpers.
-    name: 'hubRowMarks',
-    sourceFile: 'src/utils/rowMarks.ts',
-    testFile: 'tests/unit/rowMarks.test.ts',
-    targetFile: 'hub.html',
-    footer: ''
-  },
-  {
-    name: 'hubTodoModel',
-    sourceFile: 'src/utils/todoModel.ts',
-    testFile: 'tests/unit/todoModel.test.ts',
-    targetFile: 'hub.html',
-    footer: ''
-  },
-  {
-    // Reading documents on the phone (2026-11-03): threads read in the same order as on desktop.
-    name: 'hubDiscussionStatus',
-    sourceFile: 'src/utils/discussionStatus.ts',
-    testFile: 'tests/unit/discussionStatus.test.ts',
-    targetFile: 'hub.html',
-    footer: ''
-  },
-  {
-    // Picture mark-up (arrows, boxes, labels) drawn over pictures in the phone's document reader.
-    name: 'hubNodeImages',
-    sourceFile: 'src/utils/nodeImages.ts',
-    testFile: 'tests/unit/nodeImages.test.ts',
-    targetFile: 'hub.html',
-    footer: ''
-  },
-  {
     // Tables on the phone as the computer draws them: the key that pairs a table with its copy.
     name: 'tableSnapshot',
     sourceFile: 'src/utils/tableSnapshot.ts',
     testFile: 'tests/unit/tableSnapshot.test.ts',
-    footer: ''
-  },
-  {
-    name: 'hubTableSnapshot',
-    sourceFile: 'src/utils/tableSnapshot.ts',
-    testFile: 'tests/unit/tableSnapshot.test.ts',
-    targetFile: 'hub.html',
-    footer: ''
-  },
-  {
-    // The phone's read-only document list and outline (which rows show, a row's thread).
-    name: 'hubDocReader',
-    sourceFile: 'src/utils/docReader.ts',
-    testFile: 'tests/unit/docReader.test.ts',
-    targetFile: 'hub.html',
     footer: ''
   },
   {
@@ -692,12 +574,6 @@ const STYLE_BLOCKS = [
     targetFile: 'index.html',
     styleFiles: ['src/styles/index/phone.css']
   },
-  {
-    name: 'css-hub',
-    targetFile: 'hub.html',
-    // The phone shows tables exactly as the computer draws them (owner 2026-11-03).
-    styleFiles: ['src/styles/shared/table-display.css', 'src/styles/hub/hub.css']
-  }
 ];
 
 function readStyleBlock(block) {

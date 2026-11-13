@@ -62,7 +62,7 @@ test('a PDF made on a phone looks the same as one made on a computer', async ({ 
   const desktop = await printCopy(browser, { viewport: { width: 1280, height: 800 } }, '');
   const iphone: BrowserContextOptions & { defaultBrowserType?: string } = { ...devices['iPhone 13'] };
   delete iphone.defaultBrowserType;
-  const phone = await printCopy(browser, iphone, '?layout=phone');
+  const phone = await printCopy(browser, iphone, '');
   expect(phone).toMatch(/<html class="[^"]*\bphone\b/);
   const a = await renderAsPrint(browser, desktop);
   const b = await renderAsPrint(browser, phone);

@@ -18,7 +18,7 @@ test.beforeEach(async ({ page }) => {
     localStorage.setItem('sakura_docs_index_v1', JSON.stringify([{ id: 'e', title: 'Edit', updatedAt: 1 }]));
     localStorage.setItem('sakura_current_doc_v1', 'e');
   });
-  await page.goto('file://' + indexPath + '?layout=phone');
+  await page.goto('file://' + indexPath);
   await page.waitForFunction(() => typeof (window as unknown as { createDoc?: unknown }).createDoc === 'function');
   await expect(page.locator('#editor-pane')).toContainText('Third');
 });

@@ -1,6 +1,6 @@
 # Mobile plan: one app, a limited phone layout
 
-**Status:** approved (2026-11-13). Phases 0–4 built (phase 3 awaits a real-device check); phase 5 next. Owner direction: follow standard practice. One
+**Status:** approved (2026-11-13). Phases 0–5 done (phase 3 awaits a real-device check); faster first load next. Owner direction: follow standard practice. One
 app serves every screen size; the phone gets a deliberately **limited** set of features; and
 **nothing on the desktop changes or breaks**. Each phase below is its own PR, in order.
 
@@ -197,18 +197,34 @@ Guests: the phone works without an account like the desktop does (try first, sig
   or vertical drag does nothing, ⋯ visible and its menu on top with no Rewrite) and
   `phoneEditing.test.ts` (+2).
 
-### Phase 5: switch over and retire hub.html
+### Phase 5: switch over. Done 2026-11-13 (owner: "why am I still seeing hub.html")
 
-- Remove the `<768px` redirect from `index.html`.
-- `hub.html` becomes a one-line redirect to `index.html` (keeping the query string), so
-  bookmarks and installed home-screen icons keep working. It is deleted one release later.
-- Move the **share target** (sharing a link or text to Sakura creates a to-do) from
-  `hub-manifest.json` into the main `manifest.json`. Anyone who installed the hub app needs to
-  reinstall it once. Help text will say so.
-- Delete the phone-only code: the reader, the table snapshot and diagram preview uploads
-  (`previews/` in Firestore, `sakura_table_preview_sync_v1`, `sakura_preview_sync_v1`), and
-  `hub*` blocks. A cleanup removes leftover `previews/` documents.
-- Update `feature-reference.md`, Help/About, the README and the handoff prompt.
+- **Phones use this page.** The `<768px` redirect to hub.html is gone, and so is `?layout=phone`
+  (no longer needed).
+- **hub.html only forwards** to `index.html`, keeping its query string and hash, so bookmarks,
+  installed home-screen icons and shares keep working. It is a 20-line page with its own tight
+  CSP. Delete it once installs have moved over.
+- **Share to Sakura** moved into this page. Both manifests (`manifest.json`, and
+  `hub-manifest.json` for older installs) now start at, and share to, `index.html`. A shared
+  link or text becomes a to-do (`sharedTodoText` in `src/utils/todoModel.ts`), To-Dos opens and
+  the share is cleared from the address. It runs once start-up has finished, because opening
+  To-Dos during start-up threw (a helper it uses is defined further down the script).
+- **Deleted:** the old page's code and tests. That is its 11 generated blocks, `hubTodos.ts`,
+  `hubSubtasks.ts`, `docReader.ts`, `src/styles/hub/hub.css`, their unit tests, and nine hub-only
+  browser specs. Shared modules it also used (`todoModel`, `syncApply`, `tableSnapshot`…) stay.
+- **Next (5b):** stop uploading the table and diagram pictures only the old page read
+  (`previews/` in Firestore, `sakura_table_preview_sync_v1`, `sakura_preview_sync_v1`), then the
+  faster first load below.
+- **Still open from phase 3:** a check on a real phone of typing (Enter and Backspace with
+  Gboard or iOS autocorrect, the keyboard toolbar, the caret staying in view).
+- Docs updated: `feature-reference.md` ("On a phone", the old phone page, Share to Sakura,
+  limits) and `README.md`.
+
+### Before or after phase 5: faster first load
+
+Measured in phase 0: the page is 700 KB compressed against hub.html's 81 KB, about 4.5 s on a
+slow phone connection the first time (later visits are cached). The phone-hidden parts are loaded
+on demand, so phones and the desktop's first visit both get faster.
 
 ## Risks
 

@@ -19,7 +19,7 @@ test.beforeEach(async ({ page }) => {
       { id: 't3', text: 'Renew passport', done: false, createdAt: now }
     ]));
   });
-  await page.goto('file://' + indexPath + '?layout=phone');
+  await page.goto('file://' + indexPath);
   await page.waitForFunction(() => typeof (window as unknown as { createDoc?: unknown }).createDoc === 'function');
   await page.locator('#phone-menu-btn').click();
   await page.locator('#dock-panel-appbar-toggle').click();
