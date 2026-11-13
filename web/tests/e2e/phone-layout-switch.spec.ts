@@ -30,3 +30,30 @@ test('desktop widths are never the phone layout; narrowing the window switches i
   await page.setViewportSize({ width: 1280, height: 800 });
   await expect(html).not.toHaveClass(/(^|\s)phone(\s|$)/);
 });
+
+test('the desktop has no ☰ button, drawer or phone back button', async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('sakura_welcome_seen', '1');
+    sessionStorage.setItem('sakura_landing_dismissed', 'true');
+  });
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.goto('file://' + indexPath);
+  await expect(page.locator('#phone-menu-btn')).toBeHidden();
+  await expect(page.locator('#phone-drawer-backdrop')).toBeHidden();
+  // The back button sits in the To-Dos header, so check it with To-Dos open. (The pixel guard can't
+  // see new markup: it shows with or without phone.css. Phone-only elements must be checked here.)
+  await page.locator('#dock-panel-appbar-toggle').click();
+  await expect(page.locator('#todos-panel')).toHaveClass(/open/);
+  await expect(page.locator('#todos-phone-back')).toBeHidden();
+  await page.locator('#dock-panel-appbar-toggle').click();
+  // The rail's Documents button still opens and closes the File Explorer, as before.
+  // @ts-expect-error -- bare global from index.html
+  const open = () => page.evaluate(() => sidebarOpen as boolean);
+  const start = await open();
+  await page.locator('#rail-docs-btn').click();
+  expect(await open()).toBe(!start);
+  await page.locator('#rail-docs-btn').click();
+  expect(await open()).toBe(start);
+  // @ts-expect-error -- bare global from index.html
+  expect(await page.evaluate(() => { setPhoneDrawerOpen(true); return document.documentElement.classList.contains('phone-drawer-open'); })).toBe(false);
+});

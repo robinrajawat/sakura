@@ -1,6 +1,6 @@
 # Mobile plan: one app, a limited phone layout
 
-**Status:** approved (2026-11-13). Phase 0 done; phase 1 next. Owner direction: follow standard practice. One
+**Status:** approved (2026-11-13). Phases 0 and 1 done; phase 2 next. Owner direction: follow standard practice. One
 app serves every screen size; the phone gets a deliberately **limited** set of features; and
 **nothing on the desktop changes or breaks**. Each phase below is its own PR, in order.
 
@@ -19,10 +19,13 @@ also keep the phone feature set small. "One app" does not mean "every feature on
 ## Ground rules (these decide every phase)
 
 1. **The desktop is untouched.** All phone styles live inside one breakpoint,
-   `@media (max-width: 767.98px)`, in their own file (`src/styles/index/phone.css`). All
+   `@media screen and (max-width: 767.98px)`, in their own file (`src/styles/index/phone.css`). All
    phone-only behaviour is gated on one flag, `isPhoneLayout()` (a `matchMedia` on the same
    query, also set as `html.phone`). No desktop rule, handler or default changes. If a phase
    needs to touch shared code, the desktop behaviour must be the same, and its tests prove it.
+   New phone-only elements (a button, a backdrop) carry the `hidden` attribute and get no
+   class that sets `display`, and `phone-layout-switch.spec.ts` checks each one is hidden on the
+   desktop: the pixel guard can't see new markup, which shows with or without `phone.css`.
 2. **Pick features by width, not by browser.** No user-agent sniffing. A narrow desktop window
    gets the phone layout too, which is the standard behaviour and also makes it easy to test.
 3. **Limit features by hiding them, never by forking them.** A feature the phone doesn't offer
@@ -97,18 +100,34 @@ Guests: the phone works without an account like the desktop does (try first, sig
   phone-hidden parts (the AI code, the diagram, chart and table editors, templates, and the
   vendored libraries only they use) must load on demand rather than with the page.
 
-### Phase 1: layout shell
+### Phase 1: layout shell. Done 2026-11-13
 
-- The sidebar becomes a drawer: hidden by default, opened by a menu button on a compact top
-  bar (back, title, sync state, Share, ⋯). Opening a document closes it.
-- The editor goes full width, with 16px side padding and no horizontal page scroll.
-- Settings, Help, version history and the share menu open as full-screen sheets.
-- Phone-hidden features (see the table) are removed in `phone.css`.
-- Tests: no horizontal scroll at 360px, the drawer opens and closes, and the desktop guard
-  passes.
-- Download PDF from a phone must give the same file as from a computer. The print copy carries
-  `html.phone` and every `<style>`, so check that no phone rule applies at the Worker's page width
-  and that `trimPrintCopyCss` drops the phone block.
+- **Drawer.** The side rail and the File Explorer are one drawer, closed by default, opened by
+  ☰ at the start of the top line (`#phone-menu-btn`). A tap beside it, Escape, the rail's
+  Documents button or opening a document closes it (`src/ui/phoneDrawer.ts`,
+  `html.phone-drawer-open`). It is never remembered and never changes the desktop's own
+  sidebar setting (`sakura_sidebar_open`). The rail slides with `left`, not a transform,
+  because Settings, Help and the account and notification menus live inside it as
+  `position: fixed`.
+- **Top line:** ☰, where you are and the save state, then Share and Help. **Editor:** full width,
+  with 16px sides.
+- **Full screen:** Settings, Help and To-Dos. To-Dos gets a back button on a phone
+  (`#todos-phone-back`). Opening Settings or To-Dos from the drawer closes the drawer. Search,
+  the account menu and notifications sit over the open drawer: the search box runs along the
+  top and the menus are sheets along the bottom.
+- **Hidden on a phone:** the status bar, the focus-mode button, hover tooltips, Settings → AI,
+  Shortcuts and Data & backup (also left out of search results), and Help's tour and shortcut
+  sheet. The Share menu and Version history already fit as they are.
+- **PDFs unchanged.** The phone query is `screen and (max-width: 767.98px)`, so it never applies
+  to a printout or PDF: a page's printable width can be under 768px.
+  `phone-pdf-same.spec.ts` exports the same document on a phone and on a computer and requires
+  identical print renders at 700px (it fails if `screen` is dropped and a phone rule reaches
+  the document).
+- Tests: `phone-shell.phone.spec.ts` (no sideways scroll at 360px, drawer, opening a document,
+  Settings, search, Help, To-Dos, account sheet) on both phone profiles,
+  `phone-layout-switch.spec.ts` (no ☰, backdrop or back button on the desktop; the rail's
+  Documents button still toggles the File Explorer), `phoneDrawer.test.ts`, and the desktop
+  guard.
 
 ### Phase 2: reading
 
