@@ -1,6 +1,6 @@
 # Mobile plan: one app, a limited phone layout
 
-**Status:** approved (2026-11-13). Phases 0–2 done; phase 3 next. Owner direction: follow standard practice. One
+**Status:** approved (2026-11-13). Phases 0–3 built (phase 3 awaits a real-device check); phase 4 next. Owner direction: follow standard practice. One
 app serves every screen size; the phone gets a deliberately **limited** set of features; and
 **nothing on the desktop changes or breaks**. Each phase below is its own PR, in order.
 
@@ -150,18 +150,32 @@ Guests: the phone works without an account like the desktop does (try first, sig
   viewers full screen and view-only, a real two-finger pinch through Chrome's touch input,
   double-tap, no diagram editor) and `pinchZoom.test.ts`.
 
-### Phase 3: light editing by touch
+### Phase 3: light editing by touch. Built 2026-11-13; real-device check pending
 
-- A **keyboard toolbar** above the on-screen keyboard: outdent, indent, checkbox, move up,
-  move down, Done. It is positioned with `visualViewport` so it sits on top of the iOS and
-  Android keyboards.
-- **Long-press a row** for a short menu: add a note, make it a heading, copy a link, delete.
-  This replaces right-click and hover controls.
-- Row editing uses the existing `contenteditable` rows and the same `saveToStorage` path.
-  Test on real iOS Safari and Android Chrome, because their `contenteditable` and IME
-  behaviour differs from desktop (Enter, Backspace at the start of a row, autocorrect).
-- Conflicts behave exactly as on desktop: the other device's copy wins, and this one's edits
-  go to Version history.
+- **Typing.** Tapping a row edits it through the same `contenteditable` row and `saveToStorage`
+  path as the desktop, so Enter, Backspace, undo, sync and conflicts all behave as there.
+- **Row toolbar** (`#phone-edit-bar`), shown only while a row is being typed in: outdent, indent,
+  checkbox, move up, move down, Done. It sits on top of the on-screen keyboard: its bottom
+  follows `visualViewport` (`keyboardInset`). A press on it never takes focus from the row, so
+  the keyboard stays up, and each action re-opens the same row at the same caret position.
+- **Long-press a row** (500ms, still to within 10px; `createLongPress`) for a bottom sheet
+  (`#phone-row-menu`): Add a row below, Add or Edit a note, Checkbox, Heading H1/H2/H3, Delete.
+  It calls the desktop's own actions (`runQuickAction`, `applyHeadingOption`). Android's
+  long-press `contextmenu` is swallowed on a phone, so the desktop menu never opens there. The
+  plan's "copy link" was dropped: the desktop has no row-link copy to reuse. Row labels turn off
+  the system's own long-press callout and text selection (a row being typed in keeps both).
+- Conflicts behave exactly as on desktop: the other device's copy wins, and this one's edits go
+  to Version history.
+- Tests: `phone-editing.phone.spec.ts` (toolbar shows only while typing and sits at the bottom;
+  each action keeps the row in edit with the focus never leaving it; a long-press through
+  Chrome's touch input opens the menu without also starting to type; each menu action; a tap
+  beside the sheet closes it; no desktop menu), `phoneEditing.test.ts`, and a desktop check that
+  neither the toolbar nor the menu ever shows.
+- **Still to check on a real iPhone and Android phone** (emulation has no on-screen keyboard or
+  real IME): the toolbar riding on the keyboard; Enter and Backspace at the start of a row with
+  Gboard and iOS autocorrect (Android keyboards can send key 229 instead of Backspace); and the
+  caret staying in view above the toolbar. Anything found is fixed before phase 5 switches
+  phones over.
 
 ### Phase 4: To-Dos
 

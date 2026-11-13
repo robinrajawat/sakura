@@ -3584,6 +3584,46 @@ html.calm-layout #sb-auto-rewrite-chip.is-quiet:hover,html.calm-layout #sb-auto-
   /* The name and caption are shown, not edited, on a phone. */
   html.phone #diagram-viewer .dv-title, html.phone #node-image-viewer .niv-caption { pointer-events: none; }
 
+  /* ---- Editing by touch (phase 3). ---- */
+  /* The row toolbar sits on top of the on-screen keyboard (its bottom follows visualViewport). */
+  html.phone #phone-edit-bar {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 1100; display: flex; align-items: center; gap: 2px;
+    height: 48px; padding: 0 6px; background: var(--surface-raised); border-top: 1px solid var(--border);
+    box-shadow: 0 -2px 10px rgba(0,0,0,.06);
+  }
+  html.phone #phone-edit-bar[hidden] { display: none; }
+  html.phone #phone-edit-bar button {
+    display: inline-flex; align-items: center; justify-content: center; min-width: 44px; height: 44px;
+    border: none; background: none; border-radius: 8px; color: var(--fg); font: 600 15px 'Inter', sans-serif;
+  }
+  html.phone #phone-edit-bar button:active { background: var(--hover); }
+  html.phone #phone-edit-bar .peb-spacer { flex: 1; }
+  html.phone #phone-edit-bar .peb-done { padding: 0 14px; color: var(--accent); }
+  html.phone.phone-editing #editor-pane { padding-bottom: 56px; }
+  /* Long-press on a row opens its menu, so the system's own callout and text selection stay off
+     rows that aren't being typed in. */
+  html.phone .node-row .node-label { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
+  html.phone #phone-row-menu { position: fixed; inset: 0; z-index: 1400; }
+  html.phone #phone-row-menu[hidden] { display: none; }
+  html.phone #phone-row-menu .prm-backdrop { position: absolute; inset: 0; background: rgba(0,0,0,.28); }
+  html.phone #phone-row-menu .prm-sheet {
+    position: absolute; left: 8px; right: 8px; bottom: calc(8px + env(safe-area-inset-bottom));
+    display: flex; flex-direction: column; padding: 6px; background: var(--surface-raised);
+    border: 1px solid var(--border); border-radius: 14px; box-shadow: var(--shadow-panel);
+  }
+  html.phone #phone-row-menu .prm-title {
+    padding: 10px 12px 8px; color: var(--muted); font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  html.phone #phone-row-menu button {
+    min-height: 48px; padding: 0 12px; border: none; background: none; border-radius: 10px; text-align: left;
+    color: var(--fg); font: 500 16px 'Inter', sans-serif;
+  }
+  html.phone #phone-row-menu button:active { background: var(--hover); }
+  html.phone #phone-row-menu .prm-headings { display: flex; align-items: center; gap: 4px; padding-left: 12px; font: 500 16px 'Inter', sans-serif; color: var(--fg); }
+  html.phone #phone-row-menu .prm-headings span { flex: 1; }
+  html.phone #phone-row-menu .prm-headings button { min-width: 52px; text-align: center; font-weight: 600; }
+  html.phone #phone-row-menu .prm-danger { color: var(--danger); }
+
   /* ---- Desktop-only parts (the plan's feature table). ---- */
   html.phone #statusbar, html.phone #editor-zen-toggle { display: none !important; }
   /* Hover tooltips: there is no hover on a touch screen, and a tap would leave one stuck. */
@@ -4239,6 +4279,8 @@ html.calm-layout #sb-auto-rewrite-chip.is-quiet:hover,html.calm-layout #sb-auto-
     </div>
   </div>
   <div id="phone-drawer-backdrop" hidden></div>
+  <div id="phone-edit-bar" role="toolbar" aria-label="Row" hidden><button type="button" data-act="outdent" aria-label="Outdent"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="11 17 6 12 11 7"/><line x1="18" y1="12" x2="6" y2="12"/></svg></button><button type="button" data-act="indent" aria-label="Indent"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="13 7 18 12 13 17"/><line x1="6" y1="12" x2="18" y2="12"/></svg></button><button type="button" data-act="checkbox" aria-label="Checkbox"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="3"/><polyline points="8.5 12 11 14.5 15.5 9.5"/></svg></button><button type="button" data-act="up" aria-label="Move up"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="7 11 12 6 17 11"/><line x1="12" y1="6" x2="12" y2="19"/></svg></button><button type="button" data-act="down" aria-label="Move down"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="7 13 12 18 17 13"/><line x1="12" y1="18" x2="12" y2="5"/></svg></button><span class="peb-spacer"></span><button type="button" data-act="done" class="peb-done">Done</button></div>
+  <div id="phone-row-menu" hidden><div class="prm-backdrop"></div><div class="prm-sheet" role="menu" aria-label="Row actions"><div class="prm-title"></div><button type="button" role="menuitem" data-act="below">Add a row below</button><button type="button" role="menuitem" data-act="note">Note</button><button type="button" role="menuitem" data-act="checkbox">Checkbox</button><div class="prm-headings"><span>Heading</span><button type="button" role="menuitem" data-act="h1">H1</button><button type="button" role="menuitem" data-act="h2">H2</button><button type="button" role="menuitem" data-act="h3">H3</button></div><button type="button" role="menuitem" data-act="delete" class="prm-danger">Delete</button></div></div>
   <div id="app-layout">
   <!-- Sidebar -->
   <div id="sidebar">
@@ -28668,6 +28710,118 @@ el('phone-drawer-backdrop')?.addEventListener('click',()=>setPhoneDrawerOpen(fal
 el('appbar')?.addEventListener('click',e=>{ if(isPhoneDrawerOpen()&&e.target.closest?.('#rail-settings-btn,#dock-panel-appbar-toggle'))setPhoneDrawerOpen(false); },true);
 document.addEventListener('keydown',e=>{ if(e.key==='Escape'&&isPhoneDrawerOpen()){ setPhoneDrawerOpen(false); el('phone-menu-btn')?.focus(); } });
 try{ matchMedia(PHONE_LAYOUT_QUERY).addEventListener('change',e=>{ if(!e.matches)setPhoneDrawerOpen(false); }); }catch(e){}
+/* GENERATED:phoneEditing:START — DO NOT EDIT BY HAND. Source of truth: src/ui/phoneEditing.ts (tests: tests/unit/phoneEditing.test.ts). Regenerate with `npm run generate` after changing the source; CI fails if this block drifts from what the generator produces (see .github/workflows/ci.yml and scripts/generate-index-blocks.mjs). */
+/**
+ * Editing by touch on a phone (docs/mobile-plan.md, phase 3): where the row toolbar sits above the
+ * on-screen keyboard, and the long-press that opens a row's short menu (phones have no right-click,
+ * and iOS sends no contextmenu on a long-press).
+ *
+ * Wired into index.html via scripts/generate-index-blocks.mjs's `phoneEditing` block; the toolbar,
+ * the menu and their actions are wired by hand next to the phone drawer.
+ */
+/**
+ * How far the on-screen keyboard reaches up from the bottom of the layout viewport, from
+ * window.visualViewport. 0 with no keyboard, or where visualViewport is missing.
+ */
+function keyboardInset(innerHeight, vv) {
+    if (!vv)
+        return 0;
+    return Math.max(0, Math.round(innerHeight - (vv.offsetTop + vv.height)));
+}
+/** Fires `onFire(target)` when a finger stays down, within `slop` px, for `delay` ms. */
+function createLongPress(onFire, timers, delay = 500, slop = 10) {
+    let handle = null;
+    let start = null;
+    let didFire = false;
+    const stop = () => { if (handle !== null)
+        timers.clear(handle); handle = null; start = null; };
+    return {
+        down(x, y, target) {
+            stop();
+            didFire = false;
+            start = { x, y };
+            handle = timers.set(() => { handle = null; start = null; didFire = true; onFire(target); }, delay);
+        },
+        move(x, y) { if (start && Math.hypot(x - start.x, y - start.y) > slop)
+            stop(); },
+        cancel() { stop(); },
+        fired() { return didFire; }
+    };
+}
+
+/* GENERATED:phoneEditing:END */
+// Editing by touch (docs/mobile-plan.md, phase 3): a row toolbar above the on-screen keyboard while a
+// row is being edited, and a long-press on a row for its short menu. Phone layout only.
+(function(){
+  const bar=el('phone-edit-bar'), menu=el('phone-row-menu'), pane=el('editor-pane'); if(!bar||!menu||!pane)return;
+  const placeBar=()=>{ bar.style.bottom=keyboardInset(window.innerHeight,window.visualViewport)+'px'; };
+  const syncBar=()=>{
+    const inp=getEditingInput(); const on=isPhoneLayout()&&!!inp&&document.activeElement===inp;
+    bar.hidden=!on; document.documentElement.classList.toggle('phone-editing',on); if(on)placeBar();
+  };
+  document.addEventListener('focusin',()=>setTimeout(syncBar,0));
+  document.addEventListener('focusout',()=>setTimeout(syncBar,0));
+  window.visualViewport?.addEventListener('resize',placeBar);
+  window.visualViewport?.addEventListener('scroll',placeBar);
+  // A press on the toolbar must not take focus from the row, or the keyboard would close.
+  ['pointerdown','mousedown'].forEach(t=>bar.addEventListener(t,e=>{ if(e.target.closest('button'))e.preventDefault(); }));
+  bar.addEventListener('click',e=>{
+    const b=e.target.closest('button[data-act]'); const id=editingId; if(!b||id===null)return;
+    const inp=getEditingInput(); const off=(inp&&getEditableCaretOffset(inp))??0; const act=b.dataset.act;
+    if(act==='done'){ commitEdit(); if(document.activeElement&&document.activeElement.blur)document.activeElement.blur(); syncBar(); return; }
+    commitEdit(); setSingleSelection(id);
+    if(act==='indent')indentSelected(); else if(act==='outdent')outdentSelected();
+    else if(act==='up')moveSelected(-1); else if(act==='down')moveSelected(1);
+    else if(act==='checkbox'){ const i=getIndex(nodes,id); if(i>=0){ if(isCheckboxNode(nodes[i]))removeCheckbox(id); else convertToCheckbox(id); } }
+    beginEditAt(id,off);
+  });
+  // Long-press a row for its menu. iOS sends no contextmenu, so this times the press itself;
+  // Android's contextmenu would open the desktop's menu, so it is swallowed on a phone.
+  let menuNodeId=null;
+  const closeMenu=()=>{ menu.hidden=true; menuNodeId=null; };
+  const openMenu=id=>{
+    const i=getIndex(nodes,id); if(i<0)return;
+    if(editingId!==null)commitEdit();
+    setSingleSelection(id); render();
+    menuNodeId=id;
+    menu.querySelector('.prm-title').textContent=nodes[i].text||'Untitled row';
+    menu.querySelector('[data-act="checkbox"]').textContent=isCheckboxNode(nodes[i])?'Remove checkbox':'Checkbox';
+    menu.querySelector('[data-act="note"]').textContent=nodes[i].note&&String(nodes[i].note).trim()?'Edit note':'Add a note';
+    pressedInMenu=false; menu.hidden=false;
+  };
+  const lp=createLongPress(openMenu,{set:(f,ms)=>setTimeout(f,ms),clear:h=>clearTimeout(h)});
+  const rowIdAt=target=>{ const row=target.closest?.('.node-row[data-id]'); if(!row)return null; const n=nodes.find(x=>String(x.id)===row.dataset.id); return n?n.id:null; };
+  // Capture phase: a row's own press handlers (drag, range selection) stop these from bubbling.
+  pane.addEventListener('pointerdown',e=>{
+    if(!isPhoneLayout()||e.pointerType!=='touch'||!e.isPrimary)return;
+    const inp=getEditingInput(); if(inp&&inp.contains(e.target))return; // pressing in the row being typed in selects words
+    const id=rowIdAt(e.target); if(id!==null)lp.down(e.clientX,e.clientY,id);
+  },true);
+  pane.addEventListener('pointermove',e=>{ if(e.pointerType==='touch')lp.move(e.clientX,e.clientY); },true);
+  ['pointerup','pointercancel'].forEach(t=>pane.addEventListener(t,()=>lp.cancel(),true));
+  pane.addEventListener('scroll',()=>lp.cancel(),{passive:true});
+  // The tap that ends a long-press is not also a tap on the row.
+  pane.addEventListener('click',e=>{ if(isPhoneLayout()&&lp.fired()){ e.preventDefault(); e.stopPropagation(); } },true);
+  pane.addEventListener('contextmenu',e=>{ if(isPhoneLayout()){ e.preventDefault(); e.stopPropagation(); } },true);
+  // The menu opens under the finger that long-pressed, so the lift of that finger lands on it too:
+  // only a tap that also began on the menu counts.
+  let pressedInMenu=false;
+  menu.addEventListener('pointerdown',()=>{ pressedInMenu=true; });
+  menu.addEventListener('click',e=>{
+    const fresh=pressedInMenu; pressedInMenu=false; if(!fresh)return;
+    if(e.target.classList.contains('prm-backdrop')){ closeMenu(); return; }
+    const b=e.target.closest('button[data-act]'); if(!b)return;
+    const id=menuNodeId; closeMenu(); if(id===null||getIndex(nodes,id)<0)return;
+    const act=b.dataset.act; setSingleSelection(id);
+    if(act==='below')insertSiblingAfter(id,true);
+    else if(act==='note')runQuickAction('note',id);
+    else if(act==='checkbox')runQuickAction('toggle-checkbox',id);
+    else if(act==='delete')runQuickAction('delete',id);
+    else if(/^h[123]$/.test(act))applyHeadingOption(Number(act.slice(1)));
+  });
+  document.addEventListener('keydown',e=>{ if(e.key==='Escape'&&!menu.hidden){ e.preventDefault(); closeMenu(); } });
+  try{ matchMedia(PHONE_LAYOUT_QUERY).addEventListener('change',()=>{ closeMenu(); syncBar(); }); }catch(e){}
+})();
 el('sidebar-toggle').addEventListener('click',toggleDocumentsPanel);
 el('sidebar-reopen-btn')?.addEventListener('click',openDocumentsPanel);
 function setZenMode(on){zenMode=!!on; document.body.classList.toggle('zen-mode',zenMode); const btn=el('editor-zen-toggle'); if(btn){btn.classList.toggle('is-active',zenMode); btn.setAttribute('aria-pressed',String(zenMode)); btn.dataset.tip=zenMode?'Exit zen mode (Esc)':'Zen mode (Ctrl/Cmd+Shift+E)'; btn.setAttribute('aria-label',zenMode?'Exit zen mode':'Zen mode')} const icon=el('editor-zen-icon'); if(icon)icon.innerHTML=zenMode?'<polyline points="9 3 9 9 3 9"/><polyline points="15 3 15 9 21 9"/><polyline points="9 21 9 15 3 15"/><polyline points="15 21 15 15 21 15"/>':'<polyline points="9 3 3 3 3 9"/><polyline points="15 3 21 3 21 9"/><polyline points="3 15 3 21 9 21"/><polyline points="21 15 21 21 15 21"/>';

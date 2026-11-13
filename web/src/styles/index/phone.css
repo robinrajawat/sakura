@@ -95,6 +95,46 @@
   /* The name and caption are shown, not edited, on a phone. */
   html.phone #diagram-viewer .dv-title, html.phone #node-image-viewer .niv-caption { pointer-events: none; }
 
+  /* ---- Editing by touch (phase 3). ---- */
+  /* The row toolbar sits on top of the on-screen keyboard (its bottom follows visualViewport). */
+  html.phone #phone-edit-bar {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 1100; display: flex; align-items: center; gap: 2px;
+    height: 48px; padding: 0 6px; background: var(--surface-raised); border-top: 1px solid var(--border);
+    box-shadow: 0 -2px 10px rgba(0,0,0,.06);
+  }
+  html.phone #phone-edit-bar[hidden] { display: none; }
+  html.phone #phone-edit-bar button {
+    display: inline-flex; align-items: center; justify-content: center; min-width: 44px; height: 44px;
+    border: none; background: none; border-radius: 8px; color: var(--fg); font: 600 15px 'Inter', sans-serif;
+  }
+  html.phone #phone-edit-bar button:active { background: var(--hover); }
+  html.phone #phone-edit-bar .peb-spacer { flex: 1; }
+  html.phone #phone-edit-bar .peb-done { padding: 0 14px; color: var(--accent); }
+  html.phone.phone-editing #editor-pane { padding-bottom: 56px; }
+  /* Long-press on a row opens its menu, so the system's own callout and text selection stay off
+     rows that aren't being typed in. */
+  html.phone .node-row .node-label { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
+  html.phone #phone-row-menu { position: fixed; inset: 0; z-index: 1400; }
+  html.phone #phone-row-menu[hidden] { display: none; }
+  html.phone #phone-row-menu .prm-backdrop { position: absolute; inset: 0; background: rgba(0,0,0,.28); }
+  html.phone #phone-row-menu .prm-sheet {
+    position: absolute; left: 8px; right: 8px; bottom: calc(8px + env(safe-area-inset-bottom));
+    display: flex; flex-direction: column; padding: 6px; background: var(--surface-raised);
+    border: 1px solid var(--border); border-radius: 14px; box-shadow: var(--shadow-panel);
+  }
+  html.phone #phone-row-menu .prm-title {
+    padding: 10px 12px 8px; color: var(--muted); font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  html.phone #phone-row-menu button {
+    min-height: 48px; padding: 0 12px; border: none; background: none; border-radius: 10px; text-align: left;
+    color: var(--fg); font: 500 16px 'Inter', sans-serif;
+  }
+  html.phone #phone-row-menu button:active { background: var(--hover); }
+  html.phone #phone-row-menu .prm-headings { display: flex; align-items: center; gap: 4px; padding-left: 12px; font: 500 16px 'Inter', sans-serif; color: var(--fg); }
+  html.phone #phone-row-menu .prm-headings span { flex: 1; }
+  html.phone #phone-row-menu .prm-headings button { min-width: 52px; text-align: center; font-weight: 600; }
+  html.phone #phone-row-menu .prm-danger { color: var(--danger); }
+
   /* ---- Desktop-only parts (the plan's feature table). ---- */
   html.phone #statusbar, html.phone #editor-zen-toggle { display: none !important; }
   /* Hover tooltips: there is no hover on a touch screen, and a tap would leave one stuck. */
