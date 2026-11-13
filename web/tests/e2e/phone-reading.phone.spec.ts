@@ -63,10 +63,10 @@ test('a fold dot is a 40px target that folds and unfolds its row', async ({ page
 
 test('a wide table scrolls sideways in its own box, never the page', async ({ page }) => {
   const fig = page.locator('.pv-table-figure').first();
-  const sizes = await fig.evaluate((e) => ({ sw: e.scrollWidth, cw: e.clientWidth }));
-  expect(sizes.sw).toBeGreaterThan(sizes.cw);
-  await fig.evaluate((e) => { e.scrollLeft = 1000; });
-  expect(await fig.evaluate((e) => e.scrollLeft)).toBeGreaterThan(0);
+  // Polled: the outline can redraw its tables just after first paint, and a figure caught mid-swap
+  // measures 0 (seen once under full-suite load on the Pixel 7 profile).
+  await expect.poll(() => fig.evaluate((e) => e.scrollWidth - e.clientWidth)).toBeGreaterThan(0);
+  await expect.poll(() => fig.evaluate((e) => { e.scrollLeft = 1000; return e.scrollLeft; })).toBeGreaterThan(0);
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(page.viewportSize()!.width);
   await expect(fig.locator('th', { hasText: 'Reference' })).toBeAttached();
 });
