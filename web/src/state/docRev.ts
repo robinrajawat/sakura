@@ -53,3 +53,26 @@ export function decideDocPush(
   const cloudTs = Number(cloud.updatedAt) || 0;
   return cloudTs <= localUpdatedAt ? { write: true, nextRev: cloudRev + 1 } : { write: false };
 }
+
+/**
+ * Pure: catching up with the account, should this device send up its copy of a document the
+ * account already has? Yes when the copy here was saved after the account's last write (an edit
+ * made offline whose push never ran, e.g. the tab was closed first). The push itself still goes
+ * through decideDocPush, so a copy that is newer here but based on an older rev is kept as a
+ * version rather than written over the account's.
+ */
+export function localCopyIsNewer(localUpdatedAt: unknown, cloudUpdatedAt: unknown): boolean {
+  const local = Number(localUpdatedAt) || 0;
+  const cloud = Number(cloudUpdatedAt) || 0;
+  return local > cloud;
+}
+
+/**
+ * Pure: a document was permanently deleted on another device (a marker in the account says when).
+ * Does that delete win over this device's copy? Yes unless this copy was saved after the delete,
+ * or has unsaved edits on screen: then the edit wins and the document stays (and goes back up).
+ */
+export function deletionWins(localUpdatedAt: unknown, deletedAt: unknown, hasUnsavedEdits: boolean): boolean {
+  if (hasUnsavedEdits) return false;
+  return (Number(localUpdatedAt) || 0) <= (Number(deletedAt) || 0);
+}

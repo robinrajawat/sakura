@@ -141,6 +141,19 @@ so those PRs are merged by the owner on purpose.
 - **Privacy promise changes** for anyone who reads the current wording: say it in the release
   note, and keep guest mode genuinely local.
 
+## Follow-ups built 2026-11-13
+
+- **Offline edits reach the account.** Catching up (`pullAndMergeFromCloud`) now also sends a
+  document whose copy here was saved after the account's last write (`localCopyIsNewer`);
+  before, only documents missing from the account went up, so an edit made offline in a tab
+  closed before reconnecting stayed on the device until the next edit. The rev check still decides.
+- **Deletes reach every device.** Delete forever writes `users/{uid}/deletedDocs/{id}`
+  (`deletedAt`); other devices remove their copy on catch-up or live (`applyIncomingDocDeletion`),
+  unless it was saved there after the delete or has unsaved edits (`deletionWins`): then the edit
+  wins, the marker is cleared and it goes back up. Documents with a marker are never sent back up
+  as "missing". Account deletion clears the markers too.
+- Still last-save-wins: folders, document order and settings (meta keys). Rare, low impact.
+
 ## Order
 
 1 → 2 → 3 → 4 → 5 → 5b → 6. Phase 1 protects data on its own and is worth doing even if the rest
