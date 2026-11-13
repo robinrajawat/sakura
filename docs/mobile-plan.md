@@ -1,6 +1,6 @@
 # Mobile plan: one app, a limited phone layout
 
-**Status:** approved (2026-11-13). Phases 0 and 1 done; phase 2 next. Owner direction: follow standard practice. One
+**Status:** approved (2026-11-13). Phases 0–2 done; phase 3 next. Owner direction: follow standard practice. One
 app serves every screen size; the phone gets a deliberately **limited** set of features; and
 **nothing on the desktop changes or breaks**. Each phase below is its own PR, in order.
 
@@ -129,12 +129,26 @@ Guests: the phone works without an account like the desktop does (try first, sig
   Documents button still toggles the File Explorer), `phoneDrawer.test.ts`, and the desktop
   guard.
 
-### Phase 2: reading
+### Phase 2: reading. Done 2026-11-13
 
-- Tap targets of at least 44px. Fold by tapping the row dot, as the hub reader does.
-- Tables and charts scroll sideways inside their own box, never the page.
-- Diagrams open full screen with pinch zoom (reuse the hub reader's viewer).
-- Ready-made snapshots aren't needed any more: the phone runs the real renderer.
+- **Tap targets.** Fold dots and a row's object icons (note, table, picture, diagram, thread)
+  are 40px targets around the same small dot or icon, so rows don't move. Tapping a parent's dot
+  folds and unfolds it, as on the computer.
+- **Tables.** They already scroll sideways inside their own box (`.pv-table-figure`), never the
+  page. A phone adds soft shadows at the edges that have more columns (the usual cue, since
+  phones hide scrollbars).
+- **Pictures and diagrams** open full screen and view-only. Mark up, Delete, Edit and renaming
+  are hidden, and so is the keyboard-and-mouse hint. Both viewers now take a two-finger pinch
+  (zoom around the fingers, pan as they move) and a double-tap (closer look, then back to fit).
+  The math is in `src/ui/pinchZoom.ts`. It is touch-only, so the desktop's mouse, trackpad and
+  double-click are unchanged.
+- **Diagram editing.** A diagram is never opened in the editor on a phone. A diagram without a
+  picture says to open it on a computer.
+- Ready-made table snapshots and diagram previews aren't needed by this page: it runs the real
+  renderer. They are removed with hub.html in phase 5.
+- Tests: `phone-reading.phone.spec.ts` (40px fold target that folds, table scrolling, both
+  viewers full screen and view-only, a real two-finger pinch through Chrome's touch input,
+  double-tap, no diagram editor) and `pinchZoom.test.ts`.
 
 ### Phase 3: light editing by touch
 

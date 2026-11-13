@@ -3551,6 +3551,39 @@ html.calm-layout #sb-auto-rewrite-chip.is-quiet:hover,html.calm-layout #sb-auto-
     top: auto !important; width: auto !important; max-width: none !important; max-height: 70dvh; overflow-y: auto;
   }
 
+  /* ---- Reading (phase 2). ---- */
+  /* Fold dots: a 40px target around the same 18px dot, so the row doesn't move. */
+  html.phone .fold-dot {
+    width: 40px; height: 40px;
+    margin: calc((var(--row-line) - 18px) / 2 - 11px) -5px -11px -11px;
+  }
+  /* A row's object icons (note, table, picture, diagram, thread): the same icon, a 40px target. */
+  html.phone .node-note-dot { position: relative; }
+  html.phone .node-note-dot::after { content: ''; position: absolute; inset: -11px; }
+  /* A table wider than the screen scrolls sideways in its own box; shadows at the edges show
+     there is more (the usual cue on phones, which hide scrollbars). */
+  html.phone .pv-table-figure {
+    background:
+      linear-gradient(to right, var(--canvas-bg) 30%, transparent) left / 24px 100% no-repeat local,
+      linear-gradient(to left, var(--canvas-bg) 30%, transparent) right / 24px 100% no-repeat local,
+      radial-gradient(farthest-side at 0 50%, rgba(0,0,0,.14), transparent) left / 10px 100% no-repeat scroll,
+      radial-gradient(farthest-side at 100% 50%, rgba(0,0,0,.14), transparent) right / 10px 100% no-repeat scroll;
+    -webkit-overflow-scrolling: touch;
+  }
+  /* Picture and diagram viewers: fingers pinch and pan the picture, not the page. Marking up and
+     deleting a picture stay on the computer. */
+  html.phone .niv-stage, html.phone .dv-canvas { touch-action: none; }
+  html.phone #node-image-viewer .niv-markup-toggle, html.phone #node-image-viewer .niv-delete,
+  html.phone #node-image-viewer .niv-markup-bar, html.phone #diagram-viewer .dv-edit,
+  html.phone #diagram-viewer .dv-delete { display: none !important; }
+  /* Both viewers fill the screen, and their hint (Ctrl+scroll, Esc) is for a keyboard and mouse. */
+  html.phone #node-image-viewer { padding: 0; }
+  html.phone .niv-panel { border: none; border-radius: 0; }
+  html.phone .dv-window { inset: 0; border: none; border-radius: 0; }
+  html.phone #node-image-viewer .dv-hint, html.phone #diagram-viewer .dv-hint { display: none !important; }
+  /* The name and caption are shown, not edited, on a phone. */
+  html.phone #diagram-viewer .dv-title, html.phone #node-image-viewer .niv-caption { pointer-events: none; }
+
   /* ---- Desktop-only parts (the plan's feature table). ---- */
   html.phone #statusbar, html.phone #editor-zen-toggle { display: none !important; }
   /* Hover tooltips: there is no hover on a touch screen, and a tap would leave one stuck. */
@@ -11945,12 +11978,46 @@ function _nivZoomWire(ov){
   });
   const end=()=>{ _nivZoom.drag=null; fig.classList.remove('niv-panning'); };
   fig.addEventListener('pointerup',end); fig.addEventListener('pointercancel',end);
-  fig.addEventListener('dblclick',e=>{
-    if(_nivMk)return;
+  // Two fingers pinch (src/ui/pinchZoom.ts, docs/mobile-plan.md phase 2) and a finger's double-tap
+  // zooms like a double-click. Touch only, so the desktop's mouse and trackpad are unchanged.
+  const touches=new Map(); let pinch=null, lastTap=null, lastDoubleTapAt=0;
+  const origin=()=>{ const r=fig.getBoundingClientRect(); return {x:r.left-_nivZoom.tx,y:r.top-_nivZoom.ty}; };
+  stage.addEventListener('pointerdown',e=>{
+    if(e.pointerType!=='touch'||!_nivState||_nivMk)return;
+    touches.set(e.pointerId,{x:e.clientX,y:e.clientY});
+    if(touches.size===2){
+      const o=origin(); const [a,b]=[...touches.values()]; const m=pinchMeasure(a,b);
+      _nivZoom.drag=null; fig.classList.remove('niv-panning');
+      pinch={scale:_nivZoom.s,tx:_nivZoom.tx,ty:_nivZoom.ty,mid:{x:m.mid.x-o.x,y:m.mid.y-o.y},dist:m.dist,o};
+    }
+  });
+  stage.addEventListener('pointermove',e=>{
+    if(!touches.has(e.pointerId))return;
+    touches.set(e.pointerId,{x:e.clientX,y:e.clientY});
+    if(!pinch||touches.size<2)return;
+    const [a,b]=[...touches.values()]; const m=pinchMeasure(a,b);
+    const v=pinchView(pinch,{x:m.mid.x-pinch.o.x,y:m.mid.y-pinch.o.y},m.dist,Math.min(0.5,_nivActualScale()),8);
+    _nivZoom.s=v.scale; _nivZoom.tx=v.tx; _nivZoom.ty=v.ty; _nivZoom.drag=null; _nivZoomApply(false);
+  });
+  const endTouch=e=>{
+    if(!touches.has(e.pointerId))return;
+    const wasPinch=!!pinch; touches.delete(e.pointerId); if(touches.size<2)pinch=null;
+    if(wasPinch&&Math.abs(_nivZoom.s-1)<0.02)_nivZoomReset();
+    if(e.type==='pointerup'&&!wasPinch&&!_nivMk){
+      const now=Date.now();
+      if(isDoubleTap(lastTap,now,e.clientX,e.clientY)){ lastTap=null; lastDoubleTapAt=now; nivToggleZoom(e.clientX,e.clientY); } else lastTap={t:now,x:e.clientX,y:e.clientY};
+    }
+  };
+  stage.addEventListener('pointerup',endTouch); stage.addEventListener('pointercancel',endTouch);
+  const nivToggleZoom=(cx,cy)=>{
     if(_nivZoom.s!==1){ _nivZoomTo(1,undefined,undefined,true); return; }
     // A closer look: the picture's own pixels, or at least twice the size it's shown at.
     const pic=fig.querySelector('.niv-img'); const shown=pic&&pic.clientWidth?pic.naturalWidth/pic.clientWidth:1;
-    _nivZoomTo(Math.max(2,shown),e.clientX,e.clientY,true);
+    _nivZoomTo(Math.max(2,shown),cx,cy,true);
+  };
+  fig.addEventListener('dblclick',e=>{
+    if(_nivMk||Date.now()-lastDoubleTapAt<600)return;
+    nivToggleZoom(e.clientX,e.clientY);
   });
 }
 function nodeImageViewerIsOpen(){ return !!_nivState; }
@@ -14732,6 +14799,31 @@ function showDiagramThumbMenu(e,d,titleEl){
 const PREVIEW_HINT='Pinch or Ctrl+scroll to zoom · drag to move · Esc to close';
 // Shows the hint again each time a preview opens (the overlay itself is built once).
 function replayPreviewHint(ov){ const h=ov&&ov.querySelector('.dv-hint'); if(!h)return; h.style.animation='none'; void h.offsetWidth; h.style.animation=''; }
+/* GENERATED:pinchZoom:START — DO NOT EDIT BY HAND. Source of truth: src/ui/pinchZoom.ts (tests: tests/unit/pinchZoom.test.ts). Regenerate with `npm run generate` after changing the source; CI fails if this block drifts from what the generator produces (see .github/workflows/ci.yml and scripts/generate-index-blocks.mjs). */
+/**
+ * Two-finger pinch for the picture and diagram viewers (docs/mobile-plan.md, phase 2). The point
+ * of the picture that was under the fingers' midpoint when the pinch began stays under the
+ * midpoint as the fingers move, so a pinch zooms where it happens and also pans with the hand.
+ *
+ * Wired into index.html via scripts/generate-index-blocks.mjs's `pinchZoom` block.
+ */
+/** Midpoint and distance of two pointers. */
+function pinchMeasure(a, b) {
+    return { mid: { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 }, dist: Math.hypot(a.x - b.x, a.y - b.y) };
+}
+/** The view for the fingers' current midpoint and distance, with the scale kept within min..max. */
+function pinchView(start, mid, dist, min, max) {
+    const ratio = start.dist > 0 ? dist / start.dist : 1;
+    const scale = Math.min(max, Math.max(min, start.scale * ratio));
+    const k = scale / start.scale;
+    return { scale, tx: mid.x - (start.mid.x - start.tx) * k, ty: mid.y - (start.mid.y - start.ty) * k };
+}
+/** True when two taps (time in ms, positions in px) are close enough to count as a double-tap. */
+function isDoubleTap(prev, t, x, y) {
+    return !!prev && t - prev.t <= 300 && Math.hypot(x - prev.x, y - prev.y) <= 30;
+}
+
+/* GENERATED:pinchZoom:END */
 function _dvEnsure(){
   let ov=el('diagram-viewer'); if(ov)return ov;
   ov=document.createElement('div'); ov.id='diagram-viewer'; ov.setAttribute('role','dialog'); ov.setAttribute('aria-modal','true');
@@ -14809,18 +14901,47 @@ function _dvEnsure(){
       _dvState.tx-=dx*unit; _dvState.ty-=dy*unit; _dvApply();
     }
   },{passive:false});
+  // One pointer drags; two fingers pinch (src/ui/pinchZoom.ts, docs/mobile-plan.md phase 2). A mouse
+  // only ever has one pointer, so the desktop's drag is unchanged.
+  const pointers=new Map(); let pinch=null, lastTap=null, lastDoubleTapAt=0;
+  const canvasPoint=e=>{ const r=canvas.getBoundingClientRect(); return {x:e.clientX-r.left,y:e.clientY-r.top}; };
+  const startDrag=p=>{ _dvState.drag={x:p.clientX,y:p.clientY,tx:_dvState.tx,ty:_dvState.ty}; };
+  const startPinch=()=>{ const [a,b]=[...pointers.values()]; const m=pinchMeasure(a,b); pinch={scale:_dvState.scale,tx:_dvState.tx,ty:_dvState.ty,mid:m.mid,dist:m.dist}; _dvState.drag=null; };
+  const toggleZoomAt=(cx,cy)=>{ if(Math.abs(_dvState.scale-_dvState.fit)<0.01)_dvSetScale(1,cx,cy); else _dvFit(true); };
   canvas.addEventListener('pointerdown',e=>{
     if(!_dvState||e.button!==0)return;
-    _dvState.drag={x:e.clientX,y:e.clientY,tx:_dvState.tx,ty:_dvState.ty};
+    pointers.set(e.pointerId,canvasPoint(e));
     canvas.setPointerCapture(e.pointerId); canvas.classList.add('dragging');
+    if(pointers.size===2)startPinch(); else if(pointers.size===1)startDrag(e);
   });
   canvas.addEventListener('pointermove',e=>{
-    const dr=_dvState&&_dvState.drag; if(!dr)return;
+    if(!_dvState||!pointers.has(e.pointerId))return;
+    pointers.set(e.pointerId,canvasPoint(e));
+    if(pinch&&pointers.size>=2){
+      const [a,b]=[...pointers.values()]; const m=pinchMeasure(a,b);
+      Object.assign(_dvState,pinchView(pinch,m.mid,m.dist,Math.min(_dvState.fit/2,1),8)); _dvApply(); return;
+    }
+    const dr=_dvState.drag; if(!dr)return;
     _dvState.tx=dr.tx+(e.clientX-dr.x); _dvState.ty=dr.ty+(e.clientY-dr.y); _dvApply();
   });
-  const endDrag=()=>{ if(_dvState)_dvState.drag=null; canvas.classList.remove('dragging'); };
+  const endDrag=e=>{
+    const wasPinch=!!pinch;
+    if(e&&e.pointerId!==undefined)pointers.delete(e.pointerId);
+    if(pointers.size<2)pinch=null;
+    if(_dvState){
+      _dvState.drag=null;
+      // One finger left after a pinch carries on dragging from where it is.
+      if(wasPinch&&pointers.size===1){ const [p]=[...pointers.values()]; const r=canvas.getBoundingClientRect(); startDrag({clientX:p.x+r.left,clientY:p.y+r.top}); }
+    }
+    if(!pointers.size)canvas.classList.remove('dragging');
+    // A double-tap with a finger zooms like a double-click (touch browsers don't all send dblclick).
+    if(e&&e.type==='pointerup'&&e.pointerType==='touch'&&!wasPinch&&_dvState){
+      const now=Date.now(), p=canvasPoint(e);
+      if(isDoubleTap(lastTap,now,p.x,p.y)){ lastTap=null; lastDoubleTapAt=now; toggleZoomAt(p.x,p.y); } else lastTap={t:now,x:p.x,y:p.y};
+    }
+  };
   canvas.addEventListener('pointerup',endDrag); canvas.addEventListener('pointercancel',endDrag);
-  canvas.addEventListener('dblclick',e=>{ if(!_dvState)return; const r=canvas.getBoundingClientRect(); if(Math.abs(_dvState.scale-_dvState.fit)<0.01)_dvSetScale(1,e.clientX-r.left,e.clientY-r.top); else _dvFit(true); });
+  canvas.addEventListener('dblclick',e=>{ if(!_dvState||Date.now()-lastDoubleTapAt<600)return; const r=canvas.getBoundingClientRect(); toggleZoomAt(e.clientX-r.left,e.clientY-r.top); });
   // Capture phase on the document: the editor's own key handlers would otherwise see Esc and +/- first.
   document.addEventListener('keydown',e=>{
     if(!ov.classList.contains('open'))return;
@@ -14903,6 +15024,8 @@ function closeDiagramViewer(){
 }
 function openDiagramEditor(diagramId){
   const d=findDiagram(diagramId); if(!d)return;
+  // Diagrams are viewed on a phone and edited on a computer (docs/mobile-plan.md).
+  if(isPhoneLayout()){ showToast(d.previewSvg?'Diagrams are edited on a computer.':'This diagram has no picture yet. Open it on a computer.'); return; }
   const overlay=el('diagram-editor-overlay'); if(!overlay)return;
   const wrap=el('diagram-editor-iframe-wrap'); if(!wrap)return;
   wrap.innerHTML='';

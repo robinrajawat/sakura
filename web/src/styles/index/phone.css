@@ -62,6 +62,39 @@
     top: auto !important; width: auto !important; max-width: none !important; max-height: 70dvh; overflow-y: auto;
   }
 
+  /* ---- Reading (phase 2). ---- */
+  /* Fold dots: a 40px target around the same 18px dot, so the row doesn't move. */
+  html.phone .fold-dot {
+    width: 40px; height: 40px;
+    margin: calc((var(--row-line) - 18px) / 2 - 11px) -5px -11px -11px;
+  }
+  /* A row's object icons (note, table, picture, diagram, thread): the same icon, a 40px target. */
+  html.phone .node-note-dot { position: relative; }
+  html.phone .node-note-dot::after { content: ''; position: absolute; inset: -11px; }
+  /* A table wider than the screen scrolls sideways in its own box; shadows at the edges show
+     there is more (the usual cue on phones, which hide scrollbars). */
+  html.phone .pv-table-figure {
+    background:
+      linear-gradient(to right, var(--canvas-bg) 30%, transparent) left / 24px 100% no-repeat local,
+      linear-gradient(to left, var(--canvas-bg) 30%, transparent) right / 24px 100% no-repeat local,
+      radial-gradient(farthest-side at 0 50%, rgba(0,0,0,.14), transparent) left / 10px 100% no-repeat scroll,
+      radial-gradient(farthest-side at 100% 50%, rgba(0,0,0,.14), transparent) right / 10px 100% no-repeat scroll;
+    -webkit-overflow-scrolling: touch;
+  }
+  /* Picture and diagram viewers: fingers pinch and pan the picture, not the page. Marking up and
+     deleting a picture stay on the computer. */
+  html.phone .niv-stage, html.phone .dv-canvas { touch-action: none; }
+  html.phone #node-image-viewer .niv-markup-toggle, html.phone #node-image-viewer .niv-delete,
+  html.phone #node-image-viewer .niv-markup-bar, html.phone #diagram-viewer .dv-edit,
+  html.phone #diagram-viewer .dv-delete { display: none !important; }
+  /* Both viewers fill the screen, and their hint (Ctrl+scroll, Esc) is for a keyboard and mouse. */
+  html.phone #node-image-viewer { padding: 0; }
+  html.phone .niv-panel { border: none; border-radius: 0; }
+  html.phone .dv-window { inset: 0; border: none; border-radius: 0; }
+  html.phone #node-image-viewer .dv-hint, html.phone #diagram-viewer .dv-hint { display: none !important; }
+  /* The name and caption are shown, not edited, on a phone. */
+  html.phone #diagram-viewer .dv-title, html.phone #node-image-viewer .niv-caption { pointer-events: none; }
+
   /* ---- Desktop-only parts (the plan's feature table). ---- */
   html.phone #statusbar, html.phone #editor-zen-toggle { display: none !important; }
   /* Hover tooltips: there is no hover on a touch screen, and a tap would leave one stuck. */

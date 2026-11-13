@@ -38,7 +38,6 @@ async function printCopy(browser: Browser, opts: BrowserContextOptions, query: s
     });
     await page.goto('file://' + indexPath + query);
     await page.waitForFunction(() => typeof (window as unknown as { exportPdfDirect?: unknown }).exportPdfDirect === 'function');
-    // eslint-disable-next-line no-eval
     await page.evaluate(() => (0, eval)("currentUser = { uid: 'u1', getIdToken: async () => 'token-1' }; exportPdfDirect()"));
     await expect.poll(() => html.length, { timeout: 20000 }).toBeGreaterThan(0);
     return html;
@@ -61,7 +60,8 @@ async function renderAsPrint(browser: Browser, html: string): Promise<Buffer> {
 test('a PDF made on a phone looks the same as one made on a computer', async ({ browser }) => {
   test.setTimeout(90000);
   const desktop = await printCopy(browser, { viewport: { width: 1280, height: 800 } }, '');
-  const { defaultBrowserType: _ignored, ...iphone } = devices['iPhone 13'];
+  const iphone: BrowserContextOptions & { defaultBrowserType?: string } = { ...devices['iPhone 13'] };
+  delete iphone.defaultBrowserType;
   const phone = await printCopy(browser, iphone, '?layout=phone');
   expect(phone).toMatch(/<html class="[^"]*\bphone\b/);
   const a = await renderAsPrint(browser, desktop);

@@ -149,6 +149,14 @@ initVaultState({
     footer: ''
   },
   {
+    name: 'pinchZoom',
+    sourceFile: 'src/ui/pinchZoom.ts',
+    testFile: 'tests/unit/pinchZoom.test.ts',
+    // docs/mobile-plan.md, phase 2: two-finger pinch and double-tap in the diagram viewer. Spliced
+    // just before _dvEnsure, which wires it.
+    footer: ''
+  },
+  {
     name: 'toasts',
     sourceFile: 'src/ui/toasts.ts',
     testFile: 'tests/unit/toasts.test.ts',
