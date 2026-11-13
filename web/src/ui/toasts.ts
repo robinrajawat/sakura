@@ -14,11 +14,27 @@ declare function matchesShortcut(e: any, action: string): boolean;
 export const QA_TOAST_ICON_SVG='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2.5v3.2M12 18.3v3.2M2.5 12h3.2M18.3 12h3.2M6.1 6.1l2.3 2.3M15.6 15.6l2.3 2.3M17.9 6.1l-2.3 2.3M8.4 15.6l-2.3 2.3"/></svg>';
 // A toast that offers Undo stays long enough to read and act on (owner, 2026-10-20: 1.6s was too fast).
 export const TOAST_UNDO_MS=4000;
-export function showToast(msg: any,type?: any,fromQa?: any,durationMs?: any){const t=el('toast'); t.classList.remove('with-action','toast-success'); t.innerHTML=''; if(fromQa){const icon=document.createElement('span'); icon.className='toast-qa-icon'; icon.innerHTML=QA_TOAST_ICON_SVG; icon.dataset.tip='From Search'; t.appendChild(icon)} const span=document.createElement('span'); span.textContent=msg; t.appendChild(span); if(type==='success')t.classList.add('toast-success'); t.classList.add('show'); clearTimeout((showToast as any)._tm); (showToast as any)._tm=setTimeout(()=>t.classList.remove('show'),durationMs||(/undo/i.test(msg)?TOAST_UNDO_MS:1600))}
+// A pinned toast (a progress message such as Download PDF's) isn't replaced by other messages:
+// they wait, and the latest one shows once it is unpinned (owner 2026-11-13: a sync message
+// replaced the PDF progress). Only the latest waiting message is kept.
+let _toastPinned=false;
+let _toastWaiting: any=null;
+export function setToastPinned(on: boolean){ _toastPinned=on; }
+/** Shows the message that waited while a toast was pinned (after `delayMs`, so the pinned flow's
+ * own result is read first). */
+export function showWaitingToast(delayMs=0){
+  if(!_toastWaiting)return;
+  const w=_toastWaiting; _toastWaiting=null;
+  const show=()=>{ if(w.kind==='action')showActionToast(...(w.args as [any,any,any,any,any])); else showToast(...(w.args as [any,any,any,any])); };
+  if(delayMs>0)setTimeout(show,delayMs); else show();
+}
+export function isToastPinned(){ return _toastPinned; }
+export function showToast(msg: any,type?: any,fromQa?: any,durationMs?: any){if(_toastPinned){_toastWaiting={kind:'toast',args:[msg,type,fromQa,durationMs]};return} const t=el('toast'); t.classList.remove('with-action','toast-success'); t.innerHTML=''; if(fromQa){const icon=document.createElement('span'); icon.className='toast-qa-icon'; icon.innerHTML=QA_TOAST_ICON_SVG; icon.dataset.tip='From Search'; t.appendChild(icon)} const span=document.createElement('span'); span.textContent=msg; t.appendChild(span); if(type==='success')t.classList.add('toast-success'); t.classList.add('show'); clearTimeout((showToast as any)._tm); (showToast as any)._tm=setTimeout(()=>t.classList.remove('show'),durationMs||(/undo/i.test(msg)?TOAST_UNDO_MS:1600))}
 // Tracks the undo callback for whichever action-toast (see showActionToast) is currently
 // visible, so Ctrl/Cmd+Z can trigger it — see the capture-phase listener just below.
 let _actionToastUndo: any=null;
 export function showActionToast(msg: any, actionLabel: any, onAction: any, duration=5000, fromQa=false){
+  if(_toastPinned){ _toastWaiting={kind:'action',args:[msg,actionLabel,onAction,duration,fromQa]}; return; }
   const t=el('toast'); if(!t) return;
   clearTimeout((showToast as any)._tm);
   t.innerHTML=''; t.classList.add('with-action');

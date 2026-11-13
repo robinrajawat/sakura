@@ -100,3 +100,20 @@ describe('showActionToast', () => {
     expect(() => t.showActionToast('x', 'Undo', () => {})).not.toThrow();
   });
 });
+
+describe('pinned toast (a progress message)', () => {
+  afterEach(() => t.setToastPinned(false));
+  it('other messages wait while one is pinned, and the latest shows when asked', () => {
+    t.showActionToast('Preparing PDF…', 'Cancel', () => {}, 60000);
+    t.setToastPinned(true);
+    t.showToast('Sync ran into a problem');
+    t.showToast('Second message');
+    expect(toast().textContent).toContain('Preparing PDF…');
+    t.setToastPinned(false);
+    t.showToast('PDF saved');
+    expect(toast().textContent).toBe('PDF saved');
+    t.showWaitingToast(2000);
+    vi.advanceTimersByTime(2000);
+    expect(toast().textContent).toBe('Second message');
+  });
+});

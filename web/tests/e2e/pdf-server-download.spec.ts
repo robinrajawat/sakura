@@ -138,6 +138,18 @@ test('while it is made: one message with a spinner and Cancel; Cancel stops it a
   expect(await page.evaluate(() => ({ frame: !!document.getElementById('sakura-print-frame'), busy: (0, eval)('_serverPdfBusy') }))).toEqual({ frame: false, busy: false });
 });
 
+test('another message (a sync problem) waits until the PDF progress is done', async ({ page }) => {
+  await page.route('https://ai.sakura-notes.com/pdf', () => { /* never answers */ });
+  await page.evaluate(() => (window as any).exportPdfDirect());
+  const toast = page.locator('#toast');
+  await expect(toast).toContainText('Preparing PDF');
+  await page.evaluate(() => (0, eval)("showToast('Sync ran into a problem — will keep retrying quietly')"));
+  await expect(toast).toContainText('Preparing PDF');
+  await toast.locator('.toast-action-btn', { hasText: 'Cancel' }).click();
+  await expect(toast).toContainText('PDF cancelled');
+  await expect(toast).toContainText('Sync ran into a problem', { timeout: 5000 });
+});
+
 test('a slow PDF says it is still working after 10 seconds', async ({ page }) => {
   await page.clock.install();
   await page.route('https://ai.sakura-notes.com/pdf', () => { /* never answers */ });
