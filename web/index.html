@@ -13937,7 +13937,7 @@ function restoreDocFromTrashCore(id){
 }
 // Removes a trashed document for real: storage, index, folder/order maps. Assumes the
 // document is already out of openTabs (true for anything currently sitting in Trash).
-function permanentlyDeleteDocCore(id){
+function permanentlyDeleteDocCore(id,opts){
   try{
     const raw=localStorage.getItem(docKey(id));
     if(raw){
@@ -13954,7 +13954,7 @@ function permanentlyDeleteDocCore(id){
   // is synchronous and called from many places (Empty Trash, the automatic retention purge,
   // bulk trash actions); none of them need to block on the network round-trip, and a failure
   // here is logged rather than surfaced, matching every other best-effort sync call in the file.
-  deleteDocFromCloud(id);
+  if(!(opts&&opts.localOnly))deleteDocFromCloud(id);
 }
 // === Version History panel ===
 function openVersionHistory(docId){
@@ -15856,7 +15856,7 @@ async function signOutOfAccount(){
 // "you're the sole owner of a club, deleting leaves it stuck" warning to carry over here.
 async function deleteAccountCloudData(uid){
   const {mod,db}=await loadFirestoreMods();
-  for(const sub of ['docs','templates','meta']){
+  for(const sub of ['docs','templates','meta','deletedDocs']){
     let snap; try{ snap=await mod.getDocs(mod.collection(db,'users',uid,sub)); }catch(e){ console.error('[sakura] delete account: could not list',sub,e); continue; }
     await Promise.all(snap.docs.map(d=>mod.deleteDoc(d.ref).catch(e=>console.error('[sakura] delete account: failed to delete',sub,d.id,e))));
   }
@@ -17425,6 +17425,12 @@ async function deleteDocFromCloud(docId){
   if(!currentUser)return;
   try{
     const {mod,db}=await loadFirestoreMods();
+    // A marker that this document was deleted forever, so the account's other devices remove
+    // their copy instead of sending it back up as "missing from the account" (cloud-first: a
+    // delete reaches every device, as in Drive or Dropbox). Written first, so a failure part way
+    // through still leaves the delete recorded. See applyIncomingDocDeletion.
+    try{ await mod.setDoc(mod.doc(db,'users',currentUser.uid,'deletedDocs',docId),{deletedAt:Date.now()}); }
+    catch(e){ console.warn('[sakura] deleteDocFromCloud: could not record the delete for',docId,':',e); }
     // Diagrams live in their own subcollection (see pushDocToCloud) — deleting just the parent
     // doc would leave it orphaned in Firestore forever, invisible from the app but still
     // billed/stored. 'attachments' is kept in this list too even though the Files feature itself
@@ -17604,6 +17610,32 @@ async function applyIncomingDocData(mod,db,ownerUid,id,cloud,viaRealtime){
   setDocBaseRev(id,readDocRev(cloud.rev));
   return true;
 }
+// Another device deleted this document forever (its marker in users/{uid}/deletedDocs). The copy
+// here goes too, unless it was saved after the delete or has unsaved edits on screen: then the
+// edit wins, the marker is cleared and the document goes back up (deletionWins). Returns true
+// when the copy here was removed.
+async function applyIncomingDocDeletion(mod,db,id,deletedAt,quiet){
+  const entry=loadDocsIndex().find(d=>d.id===id);
+  const stored=localStorage.getItem(docKey(id))!==null;
+  if(!entry&&!stored)return false;
+  const open=activeTabDocId===id;
+  if(!deletionWins(entry?entry.updatedAt:0,deletedAt,open&&dirty)){
+    try{ await mod.deleteDoc(mod.doc(db,'users',currentUser.uid,'deletedDocs',id)); }catch(e){}
+    queueSync('doc',id);
+    return false;
+  }
+  const idx=openTabs.findIndex(t=>t.docId===id);
+  if(idx>=0)openTabs.splice(idx,1);
+  if(open){
+    const next=openTabs[idx]||openTabs[idx-1]||openTabs[0];
+    if(next)applyTabSnapshot(next); else clearToNoDocumentState();
+    if(!quiet)showToast('This document was deleted on another device.');
+  }
+  permanentlyDeleteDocCore(id,{localOnly:true});
+  delete _incomingDocRev[id];
+  persistOpenTabs(); renderTabStrip(); renderSidebar();
+  return open?'open':true;
+}
 const TODOS_VERSIONS_MAX=5; // owner, 2026-10-20: the last 5 are enough, listed inline in the To-Dos ⋯ menu
 async function applyIncomingMetaData(metaKey,cloud){
   const idbKeyName=getIdbSyncMetaKeys()[metaKey];
@@ -17747,6 +17779,28 @@ function decideDocPush(cloud, baseRev, localUpdatedAt) {
     const cloudTs = Number(cloud.updatedAt) || 0;
     return cloudTs <= localUpdatedAt ? { write: true, nextRev: cloudRev + 1 } : { write: false };
 }
+/**
+ * Pure: catching up with the account, should this device send up its copy of a document the
+ * account already has? Yes when the copy here was saved after the account's last write (an edit
+ * made offline whose push never ran, e.g. the tab was closed first). The push itself still goes
+ * through decideDocPush, so a copy that is newer here but based on an older rev is kept as a
+ * version rather than written over the account's.
+ */
+function localCopyIsNewer(localUpdatedAt, cloudUpdatedAt) {
+    const local = Number(localUpdatedAt) || 0;
+    const cloud = Number(cloudUpdatedAt) || 0;
+    return local > cloud;
+}
+/**
+ * Pure: a document was permanently deleted on another device (a marker in the account says when).
+ * Does that delete win over this device's copy? Yes unless this copy was saved after the delete,
+ * or has unsaved edits on screen: then the edit wins and the document stays (and goes back up).
+ */
+function deletionWins(localUpdatedAt, deletedAt, hasUnsavedEdits) {
+    if (hasUnsavedEdits)
+        return false;
+    return (Number(localUpdatedAt) || 0) <= (Number(deletedAt) || 0);
+}
 
 /* GENERATED:docRev:END */
 let _lastPullAt=0;
@@ -17811,26 +17865,41 @@ async function pullAndMergeFromCloud(isInitial=false){
       }
     }
 
+    // Deletes made on other devices first, so their documents aren't sent back up below.
+    let deletesOk=false, removedOpenDoc=false;
+    try{
+      const tomb=await mod.getDocs(mod.collection(db,'users',currentUser.uid,'deletedDocs'));
+      for(const t of tomb.docs){ if(await applyIncomingDocDeletion(mod,db,t.id,t.data().deletedAt,true)==='open')removedOpenDoc=true; }
+      deletesOk=true;
+    }catch(e){ console.warn('[sakura] pullAndMergeFromCloud: could not read deletes from other devices; holding back missing-document pushes this round:',e); }
     const localIndex=loadDocsIndex();
     const cloudIds=new Set();
     if(cloudDocsSnap){
       for(const docSnap of cloudDocsSnap.docs){
         const id=docSnap.id; cloudIds.add(id);
-        if(await applyIncomingDocData(mod,db,currentUser.uid,id,docSnap.data(),false))pulledInCount++;
+        const data=docSnap.data();
+        if(await applyIncomingDocData(mod,db,currentUser.uid,id,data,false)){ pulledInCount++; continue; }
+        // Saved here after the account's last write and never sent (an offline edit whose push
+        // didn't run before the tab closed): send it now. The usual rev check still decides.
+        if(justRestored||localStorage.getItem(docKey(id))===null)continue;
+        const entry=localIndex.find(d=>d.id===id);
+        if(entry&&localCopyIsNewer(entry.updatedAt,data.updatedAt)){ queueSync('doc',id); pushedUpCount++; }
       }
     }
     // Only decide "this local doc is missing from the cloud, push it up" when we actually
     // know what the cloud has — an empty cloudIds set caused by the fetch above failing
     // isn't the same as a genuinely empty cloud collection. Also never do this right after a
     // Restore (see justRestored above) — see the top of this function for why.
-    if(docsFetchOk&&!justRestored){ const missingDocIds=findIdsMissingFromCloud(localIndex.map(e=>e.id),cloudIds); missingDocIds.forEach(id=>{queueSync('doc',id); pushedUpCount++}); }
+    if(docsFetchOk&&deletesOk&&!justRestored){ const missingDocIds=findIdsMissingFromCloud(localIndex.map(e=>e.id),cloudIds); missingDocIds.forEach(id=>{queueSync('doc',id); pushedUpCount++}); }
 
     loadPrefs();
     renderSidebar();
     if(typeof renderDocsList==='function')renderDocsList();
     updateSyncStatusUI('synced');
     _syncErrorToastShown=false;
-    if(justRestored&&pulledInCount>0){
+    if(removedOpenDoc){
+      showToast('The document you had open was deleted on another device.'); // said last, so the sync summary doesn't replace it
+    }else if(justRestored&&pulledInCount>0){
       showToast(`Restored locally, then reconciled with your account: brought in ${pulledInCount} item${pulledInCount===1?'':'s'} that were newer in the cloud`);
     }else if(isInitial&&(pulledInCount>0||pushedUpCount>0)){
       if(pulledInCount>0&&pushedUpCount>0)showToast(`Synced: brought in ${pulledInCount} item${pulledInCount===1?'':'s'} from your account, sent up ${pushedUpCount} from this device`);
@@ -17900,7 +17969,14 @@ async function startRealtimeSync(){
       },err=>console.warn('[sakura] meta realtime listener error ('+metaKey+'):',err))
     );
 
-    _syncUnsubscribers=[docsUnsub,...metaUnsubs];
+    const deletesUnsub=mod.onSnapshot(mod.collection(db,'users',uid,'deletedDocs'),async snapshot=>{
+      for(const change of snapshot.docChanges()){
+        if(change.type==='removed')continue;
+        await applyIncomingDocDeletion(mod,db,change.doc.id,change.doc.data().deletedAt);
+      }
+    },err=>console.warn('[sakura] deletes realtime listener error:',err));
+
+    _syncUnsubscribers=[docsUnsub,deletesUnsub,...metaUnsubs];
   }catch(e){
     console.warn('[sakura] could not start realtime sync:',e);
   }

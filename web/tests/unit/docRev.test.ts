@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { decideDocPush, readDocRev } from '../../src/state/docRev';
+import { decideDocPush, readDocRev, localCopyIsNewer, deletionWins } from '../../src/state/docRev';
 
 describe('readDocRev', () => {
   it('reads missing, invalid and negative values as 0', () => {
@@ -33,5 +33,25 @@ describe('decideDocPush', () => {
     expect(decideDocPush({ exists: true, rev: 7, updatedAt: 100 }, undefined, 200)).toEqual({ write: true, nextRev: 8 });
     expect(decideDocPush({ exists: true, rev: 7, updatedAt: 100 }, undefined, 100)).toEqual({ write: true, nextRev: 8 });
     expect(decideDocPush({ exists: true, rev: 7, updatedAt: 300 }, undefined, 200)).toEqual({ write: false });
+  });
+});
+
+describe('localCopyIsNewer', () => {
+  it('is true only when this device saved after the account was last written', () => {
+    expect(localCopyIsNewer(200, 100)).toBe(true);
+    expect(localCopyIsNewer(100, 100)).toBe(false);
+    expect(localCopyIsNewer(100, 200)).toBe(false);
+    expect(localCopyIsNewer(undefined, 5)).toBe(false);
+  });
+});
+
+describe('deletionWins', () => {
+  it('a delete wins over a copy last saved before it', () => {
+    expect(deletionWins(100, 200, false)).toBe(true);
+    expect(deletionWins(200, 200, false)).toBe(true);
+  });
+  it('an edit made after the delete wins, and so do unsaved edits on screen', () => {
+    expect(deletionWins(300, 200, false)).toBe(false);
+    expect(deletionWins(100, 200, true)).toBe(false);
   });
 });
