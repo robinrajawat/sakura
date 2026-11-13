@@ -175,11 +175,11 @@ contradicts README.md or docs/feature-reference.md, trust them.)*
 
 ### Latest changes
 
+- **Messages don't trample each other; backup line makes sense (2026-11-13, owner: a sync message replaced the PDF progress; "Exported 30m ago" was confusing).** `src/ui/toasts.ts`: `setToastPinned(true)` holds other toasts while a progress message shows (the latest waits; `showWaitingToast(ms)` shows it after the result). Download PDF pins its progress. Routine "Synced: brought in N items…" toasts removed (problems show on the top line). Data & backup: signed in, no "last exported" line; guests: "Last backup file saved …" / "No backup file saved yet". Tests: toasts.test.ts, pdf-server-download.spec.ts, data-settings-account.spec.ts.
+
 - **No "Sign in" flash on refresh (2026-11-13, owner: menu said Sign in for a few seconds, then the account came back).** Not a sign-out: the account UI starts signed-out until Firebase restores the session (slower on a slow connection). A browser with `sakura_account_active` now starts with `html.account-restoring` (set in the pre-setup script; deliberately not `presetup-`, which is stripped when startup ends): the menu says "Signing you in…" and hides Sign in; `updateAccountUI` (or a failed restore) removes it. The signed-out menu text now leads with the account. Tests: account-restoring.spec.ts.
 
 - **"Saving…" only for real edits (2026-11-13, owner: "the document says saving continuously" without changes).** `saveToStorage` runs on many non-edits (selection, folding, window switches) and queued a full push every time. Now it pushes only when `docSyncSignature` (the stored document minus selectedId/multiSelectedIds/selectionAnchorId/focusedId) changed; folding still syncs. The save state counts only this document's upload (`_syncInFlightKeys`), not settings/list pushes. Tests: doc-save-state.spec.ts (+1).
-
-- **Download PDF: smaller upload, progress with Cancel (2026-11-13, owner: PDF worked but slow on a phone hotspot; "go ahead", condition: no loss of quality).** `trimPrintCopyCss` sends only the CSS rules the printed page can use (`src/utils/cssTrim.ts`: original rule text kept byte for byte; @font-face/@page/@keyframes always kept; untestable selectors kept; any error sends everything): ~370 KB → ~46 KB. Verified identical: pdf-css-trim.spec.ts compares print renders pixel for pixel, and a one-off check rendered both to PDF (4 pages) and compared every page image: identical. Progress: `showPdfProgress` (spinner + Cancel; "Still preparing your PDF…" after 10s); Cancel → "PDF cancelled", no print dialog. `window.__sakuraPdfFullCss` turns trimming off for comparison. Tests: cssTrim.test.ts, pdf-css-trim.spec.ts, pdf-server-download.spec.ts (+2).
 
 ### In progress / not built
 

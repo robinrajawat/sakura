@@ -37,6 +37,8 @@ test('signed in, Data & backup is Download all data and Reset; signed out, Backu
     await updatePreRestoreSnapshotStatus();
   });
   await expect(rows).toHaveText(['Download all data', 'Reset to default settings']);
+  // Signed in, when a backup file was last downloaded says nothing useful (owner 2026-11-13).
+  await expect(page.locator('#sb-export-status')).toBeHidden();
   await expect(page.locator('#sb-export-all-btn')).toHaveText('Download');
 
   await page.evaluate(async () => {
@@ -46,6 +48,7 @@ test('signed in, Data & backup is Download all data and Reset; signed out, Backu
     await updatePreRestoreSnapshotStatus();
   });
   await expect(rows).toHaveText(['Backup all data', 'Restore from backup', 'Undo last restore', 'Reset to default settings']);
+  await expect(page.locator('#sb-export-status')).toHaveText('No backup file saved yet');
 });
 
 test('the sign-in screen leads with the account and offers a try without one', async ({ page }) => {

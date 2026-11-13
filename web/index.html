@@ -15669,6 +15669,7 @@ function applyDataSettingsForAccount(){
   if(d)d.textContent=signedIn?'Everything in your account in one file, AI keys included.':'Everything in one file, AI keys included. Without an account it is your only copy; sign in and your documents are kept in your account automatically.';
   if(b)b.textContent=signedIn?'Download':'Backup';
   const r=el('sb-restore-row'); if(r)r.style.display=signedIn?'none':'';
+  if(typeof updateExportStatus==='function')updateExportStatus();
   const u=el('sb-undo-restore-row'); if(u&&signedIn)u.style.display='none';
   else if(u&&typeof updatePreRestoreSnapshotStatus==='function')updatePreRestoreSnapshotStatus();
 }
@@ -18070,11 +18071,8 @@ async function pullAndMergeFromCloud(isInitial=false){
       showToast('The document you had open was deleted on another device.'); // said last, so the sync summary doesn't replace it
     }else if(justRestored&&pulledInCount>0){
       showToast(`Restored locally, then reconciled with your account: brought in ${pulledInCount} item${pulledInCount===1?'':'s'} that were newer in the cloud`);
-    }else if(isInitial&&(pulledInCount>0||pushedUpCount>0)){
-      if(pulledInCount>0&&pushedUpCount>0)showToast(`Synced: brought in ${pulledInCount} item${pulledInCount===1?'':'s'} from your account, sent up ${pushedUpCount} from this device`);
-      else if(pulledInCount>0)showToast(`Synced: brought in ${pulledInCount} item${pulledInCount===1?'':'s'} from your account`);
-      else showToast(`Synced: sent ${pushedUpCount} item${pushedUpCount===1?'':'s'} from this device to your account`);
     }
+    // Routine syncing says nothing (as other cloud apps): problems show on the top line's save state.
   }catch(e){
     console.warn('[sakura] cloud sync pull failed:',e);
     updateSyncStatusUI('error');
@@ -21134,7 +21132,33 @@ function setTreeIndentWidth(width,persist=true){const normalized=Math.min(6,Math
 const QA_TOAST_ICON_SVG = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2.5v3.2M12 18.3v3.2M2.5 12h3.2M18.3 12h3.2M6.1 6.1l2.3 2.3M15.6 15.6l2.3 2.3M17.9 6.1l-2.3 2.3M8.4 15.6l-2.3 2.3"/></svg>';
 // A toast that offers Undo stays long enough to read and act on (owner, 2026-10-20: 1.6s was too fast).
 const TOAST_UNDO_MS = 4000;
-function showToast(msg, type, fromQa, durationMs) { const t = el('toast'); t.classList.remove('with-action', 'toast-success'); t.innerHTML = ''; if (fromQa) {
+// A pinned toast (a progress message such as Download PDF's) isn't replaced by other messages:
+// they wait, and the latest one shows once it is unpinned (owner 2026-11-13: a sync message
+// replaced the PDF progress). Only the latest waiting message is kept.
+let _toastPinned = false;
+let _toastWaiting = null;
+function setToastPinned(on) { _toastPinned = on; }
+/** Shows the message that waited while a toast was pinned (after `delayMs`, so the pinned flow's
+ * own result is read first). */
+function showWaitingToast(delayMs = 0) {
+    if (!_toastWaiting)
+        return;
+    const w = _toastWaiting;
+    _toastWaiting = null;
+    const show = () => { if (w.kind === 'action')
+        showActionToast(...w.args);
+    else
+        showToast(...w.args); };
+    if (delayMs > 0)
+        setTimeout(show, delayMs);
+    else
+        show();
+}
+function isToastPinned() { return _toastPinned; }
+function showToast(msg, type, fromQa, durationMs) { if (_toastPinned) {
+    _toastWaiting = { kind: 'toast', args: [msg, type, fromQa, durationMs] };
+    return;
+} const t = el('toast'); t.classList.remove('with-action', 'toast-success'); t.innerHTML = ''; if (fromQa) {
     const icon = document.createElement('span');
     icon.className = 'toast-qa-icon';
     icon.innerHTML = QA_TOAST_ICON_SVG;
@@ -21146,6 +21170,10 @@ function showToast(msg, type, fromQa, durationMs) { const t = el('toast'); t.cla
 // visible, so Ctrl/Cmd+Z can trigger it — see the capture-phase listener just below.
 let _actionToastUndo = null;
 function showActionToast(msg, actionLabel, onAction, duration = 5000, fromQa = false) {
+    if (_toastPinned) {
+        _toastWaiting = { kind: 'action', args: [msg, actionLabel, onAction, duration, fromQa] };
+        return;
+    }
     const t = el('toast');
     if (!t)
         return;
@@ -23901,15 +23929,20 @@ function sakuraPrint(target){
     .then(result=>{
       clearTimeout(slow);
       _serverPdfBusy=false;
-      if(result==='cancelled'){ showToast('PDF cancelled'); return; }
-      if(result==='saved'){ showToast('PDF saved','success'); return; }
+      setToastPinned(false); // a message that waited shows after the result below
+      const waiting=(ms=2200)=>showWaitingToast(ms);
+      if(result==='cancelled'){ showToast('PDF cancelled'); waiting(); return; }
+      if(result==='saved'){ showToast('PDF saved','success'); waiting(); return; }
       // Say why the print dialog opens instead of a download.
       showToast(result==='limit'?"Today's PDF limit is reached, opening print instead":"Couldn't make the PDF file ("+(_serverPdfFailure||'unknown error')+"), opening print instead",'',false,result==='limit'?4000:7000);
+      waiting(result==='limit'?4200:7200);
       printCopyInFrame(frameHtml);
     });
 }
 function showPdfProgress(msg,cancel){
-  showActionToast(msg,'Cancel',()=>cancel.abort(),60000);
+  setToastPinned(false); // let this message replace the previous one; anything waiting keeps waiting
+  showActionToast(msg,'Cancel',()=>{ setToastPinned(false); cancel.abort(); },60000);
+  setToastPinned(true);
   _actionToastUndo=null; // Ctrl/Cmd+Z stays undo
   const t=el('toast'); if(!t)return;
   const spin=document.createElement('span'); spin.className='toast-spinner'; spin.setAttribute('aria-hidden','true');
@@ -28453,7 +28486,12 @@ el('sb-auto-rewrite-chip')?.addEventListener('contextmenu',e=>{
 function updateExportStatus(){
   const note=el('sb-export-status'); if(!note)return;
   let ts; try{ ts=Number(localStorage.getItem(LAST_EXPORT_KEY))||0 }catch(e){ ts=0 }
-  note.textContent=ts?`Last exported ${formatRelativeTime(ts)}`:'Never exported';
+  // Signed in, the account holds the documents, so when a file was last downloaded says nothing
+  // useful (owner 2026-11-13: "Exported 30m ago" read like a sync status). Without an account the
+  // file is the only copy outside the browser, so say when one was last saved.
+  if(currentUser){ note.textContent=''; note.style.display='none'; return; }
+  note.style.display='';
+  note.textContent=ts?`Last backup file saved ${formatRelativeTime(ts)}`:'No backup file saved yet';
 }
 function setTrashRetentionDays(days,persist=true){
   const allowed=[0,1,3,7,14,30];
