@@ -22,7 +22,7 @@ exists so that distinction is visible without opening every file.
   signed-in people while guests can still try Sakura without an account. Six phases, starting
   with safe (versioned) cloud writes. Not started.
 
-- **`mobile-plan.md`**: proposed (2026-11-13). One app for every screen size, with a limited
+- **`mobile-plan.md`**: approved (2026-11-13). One app for every screen size, with a limited
   phone layout that leaves the desktop untouched, replacing the separate `hub.html`. Six phases,
   starting with desktop screenshot baselines. Not started.
 

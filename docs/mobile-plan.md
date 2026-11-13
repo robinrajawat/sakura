@@ -1,6 +1,6 @@
 # Mobile plan: one app, a limited phone layout
 
-**Status:** proposed (2026-11-13), not started. Owner direction: follow standard practice. One
+**Status:** approved (2026-11-13), not started. Owner direction: follow standard practice. One
 app serves every screen size; the phone gets a deliberately **limited** set of features; and
 **nothing on the desktop changes or breaks**. Each phase below is its own PR, in order.
 
@@ -138,10 +138,9 @@ Guests: the phone works without an account like the desktop does (try first, sig
 3. **Desktop regressions.** Covered by ground rule 1, the phase 0 baselines and the existing
    suite. Any phase that changes a desktop pixel fails CI.
 
-## Decisions for the owner
+## Decisions (owner, 2026-11-13)
 
-- Breakpoint: 768px, the same as today's redirect. Tablets in portrait (768–1024px) get the
-  desktop layout, as now.
-- Guests on the phone: allowed, as on desktop (recommended), or sign-in required, as on the
-  hub today.
-- Thread replies on the phone: yes (recommended, it's a short text box) or view-only.
+- Breakpoint: 768px, the same as today's redirect. Tablets in portrait (768–1024px) keep the
+  desktop layout.
+- Guests on the phone: allowed, as on desktop (try first, sign in to sync).
+- Thread replies on the phone: allowed (a short text box).
