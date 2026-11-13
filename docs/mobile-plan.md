@@ -1,6 +1,6 @@
 # Mobile plan: one app, a limited phone layout
 
-**Status:** approved (2026-11-13), not started. Owner direction: follow standard practice. One
+**Status:** approved (2026-11-13). Phase 0 done; phase 1 next. Owner direction: follow standard practice. One
 app serves every screen size; the phone gets a deliberately **limited** set of features; and
 **nothing on the desktop changes or breaks**. Each phase below is its own PR, in order.
 
@@ -61,18 +61,41 @@ Guests: the phone works without an account like the desktop does (try first, sig
 
 ## Phases
 
-### Phase 0: safety net (no visible change)
+### Phase 0: safety net (no visible change). Done 2026-11-13
 
-- Add desktop **screenshot baselines** at 1280×800 for the main screens: editor with a rich
-  document, sidebar, settings, To-Dos panel, share menu. They must not change in any later
-  phase. Store them in `web/tests/e2e/` like the existing visual checks.
-- Add a Playwright **`phone` project** (iPhone 13 and Pixel 7 profiles) that runs only
-  `*.phone.spec.ts`. The existing suite stays as it is and keeps running at desktop size.
-- Add `isPhoneLayout()`, `html.phone` and an empty `phone.css` wired through
-  `generate-index-blocks.mjs`. Add `?layout=phone` as a way to skip the redirect for testing.
-- Measure the full page's load on a throttled mid-range phone profile (4× CPU, fast 3G). That
-  sets the performance budget for later phases. The main page is about 35k lines, against
-  hub.html's 5k.
+- **Desktop guard** (`tests/e2e/desktop-unchanged.spec.ts`): five desktop screens (editor with a
+  rich document, sidebar closed, Settings, the Share menu, To-Dos) at 1280, 800 and 768px. Each
+  is photographed as shipped and again with the phone stylesheet switched off, in the same page
+  with its clock paused, and the pixels must be identical. Comparing within one run instead of
+  against stored images keeps it exact on any machine. A one-rule leak into the phone
+  stylesheet fails it (checked by hand).
+- **CSS guard** (`tests/unit/phoneCss.test.ts`): every rule in `src/styles/index/phone.css` must
+  sit inside the phone `@media` query.
+- **The switch** (`src/ui/phoneLayout.ts`, generated block `phoneLayout`): `PHONE_LAYOUT_QUERY`,
+  `isPhoneLayout()` and `html.phone`, set in the first `<head>` script before the first paint
+  and kept in step when the window is resized across 768px. `phone.css` is its own
+  `<style id="sakura-phone-css">`, last in `<head>`, through the `css-phone` block.
+  `tests/e2e/phone-layout-switch.spec.ts` checks 1280, 1024, 800 and 768px are never the phone
+  layout, and 767px is.
+- **Preview**: `index.html?layout=phone` skips the `hub.html` redirect on a phone. Without it a
+  phone still goes to `hub.html`.
+- **Phone test project**: `playwright.config.ts` now has `desktop` (everything as before),
+  `phone-ios` (iPhone 13) and `phone-android` (Pixel 7). The phone projects run only
+  `*.phone.spec.ts`. Both phone projects use Chromium, the one browser CI installs, so real iOS
+  Safari still needs a device (phase 3).
+- **Measured** (production build, Pixel 7 profile, CPU slowed 4×, our own code only, three runs):
+
+  | | Size (gzip) | Page ready (load event) | First paint |
+  |---|---|---|---|
+  | `index.html` | 700 KB | 1.0–1.2 s | 0.3–0.4 s |
+  | `hub.html` | 81 KB | 0.2–0.3 s | 0.1 s |
+
+  Downloading adds roughly 3.5 s for `index.html` on a slow connection (about 1.6 Mbps)
+  against 0.4 s for `hub.html`. The service worker caches the app, so this is a first-visit
+  cost. Later visits pay only the ~1 s start-up. **Verdict:** repeat visits are within the 3 s
+  budget, but a first visit on a slow phone connection is not. Before phase 5, the heavy,
+  phone-hidden parts (the AI code, the diagram, chart and table editors, templates, and the
+  vendored libraries only they use) must load on demand rather than with the page.
 
 ### Phase 1: layout shell
 
@@ -81,8 +104,11 @@ Guests: the phone works without an account like the desktop does (try first, sig
 - The editor goes full width, with 16px side padding and no horizontal page scroll.
 - Settings, Help, version history and the share menu open as full-screen sheets.
 - Phone-hidden features (see the table) are removed in `phone.css`.
-- Tests: no horizontal scroll at 360px, the drawer opens and closes, and the desktop baselines
-  are unchanged.
+- Tests: no horizontal scroll at 360px, the drawer opens and closes, and the desktop guard
+  passes.
+- Download PDF from a phone must give the same file as from a computer. The print copy carries
+  `html.phone` and every `<style>`, so check that no phone rule applies at the Worker's page width
+  and that `trimPrintCopyCss` drops the phone block.
 
 ### Phase 2: reading
 
@@ -126,11 +152,10 @@ Guests: the phone works without an account like the desktop does (try first, sig
 
 ## Risks
 
-1. **Phone performance.** The full page is about 7 times the size of hub.html. If phase 0's
-   measurement is poor (more than 3s to an interactive editor on the throttled profile), we
-   load AI, the diagram editor, the chart editor and the templates on demand before phase 5,
-   rather than shipping a slow phone experience. This is the biggest unknown and is measured
-   first.
+1. **Phone performance.** Measured in phase 0: the page is about 9 times the size of hub.html
+   (700 KB against 81 KB compressed). Repeat visits are fine (about 1 s, cached), but a first
+   visit on a slow connection takes about 4.5 s. Loading the phone-hidden parts on demand is
+   required before phase 5. It also speeds up the desktop's first visit.
 2. **Touch editing on iOS.** `contenteditable` on iOS Safari has known quirks (caret jumps,
    the keyboard covering the caret, autocorrect fighting custom Enter handling). Phase 3 is
    the riskiest phase. It needs real-device testing, and it may need to ship as "edit row

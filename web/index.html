@@ -136,9 +136,46 @@ function a(e,t){return n(e)||r(e,t)||o(e,t)||i()}function o(e,n){if(e){if(typeof
 // using it, only a fresh load below the breakpoint does. There is deliberately no escape
 // hatch back to this full editor from a phone-sized screen — it isn't designed for one, and
 // hub.html's own sign-in screen says so and points to a computer instead.
+// Until the mobile plan's phase 5 (docs/mobile-plan.md), `?layout=phone` keeps a phone-sized
+// screen on this page so the new phone layout can be built and tried; phase 5 removes the redirect.
+// The phone layout switch just below runs first so html.phone is set before the first paint.
+/* GENERATED:phoneLayout:START — DO NOT EDIT BY HAND. Source of truth: src/ui/phoneLayout.ts (tests: tests/unit/phoneLayout.test.ts). Regenerate with `npm run generate` after changing the source; CI fails if this block drifts from what the generator produces (see .github/workflows/ci.yml and scripts/generate-index-blocks.mjs). */
+/**
+ * The phone layout switch (docs/mobile-plan.md, ground rule 1). One media query decides it, by
+ * width, never by browser: below 768px the page is in its phone layout, and `html.phone` is set
+ * so CSS and code agree. Everything phone-only is gated on `isPhoneLayout()` or lives in
+ * src/styles/index/phone.css inside the same query, so the desktop never sees it.
+ *
+ * Wired into index.html via scripts/generate-index-blocks.mjs's `phoneLayout` block, in the
+ * first <head> script, so `html.phone` is set before the first paint.
+ */
+/** Must match the `@media` query every rule in src/styles/index/phone.css sits in. */
+const PHONE_LAYOUT_QUERY = '(max-width: 767.98px)';
+/** True when the page is in its phone layout. */
+function isPhoneLayout() {
+    try {
+        return window.matchMedia(PHONE_LAYOUT_QUERY).matches;
+    }
+    catch {
+        return false;
+    }
+}
+/** Puts `phone` on <html> exactly while the page is in its phone layout. */
+function syncPhoneLayoutClass(root = document.documentElement) {
+    root.classList.toggle('phone', isPhoneLayout());
+}
+/** Phase 0 preview: `?layout=phone` keeps a phone-sized screen on this page instead of hub.html. */
+function wantsPhoneLayoutPreview(search) {
+    return /[?&]layout=phone(?:&|$)/.test(search);
+}
+
+syncPhoneLayoutClass();
+try { window.matchMedia(PHONE_LAYOUT_QUERY).addEventListener('change', () => syncPhoneLayoutClass()); } catch (e) {}
+
+/* GENERATED:phoneLayout:END */
 (function(){
   try{
-    if(window.innerWidth<768){
+    if(window.innerWidth<768&&!wantsPhoneLayoutPreview(window.location.search||'')){
       var qs=window.location.search||'';
       window.location.replace('hub.html'+qs);
     }
@@ -3443,6 +3480,16 @@ html.calm-layout #sb-auto-rewrite-chip.is-quiet:hover,html.calm-layout #sb-auto-
 }
 
 /* GENERATED:css-todos:END */
+</style>
+<style id="sakura-phone-css">
+/* GENERATED:css-phone:START — DO NOT EDIT BY HAND. Source of truth: src/styles/index/phone.css. Regenerate with `npm run generate` after changing them; CI fails if this block drifts (see scripts/generate-index-blocks.mjs). */
+/* Phone layout (docs/mobile-plan.md). Every rule here sits inside this one query, which matches
+   PHONE_LAYOUT_QUERY in src/ui/phoneLayout.ts; tests/unit/phoneCss.test.ts fails on anything
+   outside it, and tests/e2e/desktop-unchanged.spec.ts checks the desktop renders the same with
+   and without this file. Empty until phase 1. */
+@media (max-width: 767.98px) {
+}
+/* GENERATED:css-phone:END */
 </style>
 </head>
 <body class="theme-light">
