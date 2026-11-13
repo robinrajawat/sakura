@@ -118,12 +118,33 @@ test('a second click while the PDF is being made does nothing', async ({ page })
     await route.fulfill({ status: 200, contentType: 'application/pdf', headers: { 'Access-Control-Allow-Origin': '*' }, body: '%PDF-1.7 test' });
   });
   await page.evaluate(() => (window as any).exportPdfDirect());
-  await expect(page.locator('#toast')).toContainText('Making PDF');
+  await expect(page.locator('#toast')).toContainText('Preparing PDF');
   await page.evaluate(() => (window as any).exportPdfDirect());
   const download = page.waitForEvent('download');
   release();
   await download;
   expect(requests).toBe(1);
+});
+
+test('while it is made: one message with a spinner and Cancel; Cancel stops it and opens no print dialog', async ({ page }) => {
+  await page.route('https://ai.sakura-notes.com/pdf', () => { /* never answers */ });
+  await page.evaluate(() => { const w = window as any; w.__printed = false; w.print = () => { w.__printed = true; }; w.exportPdfDirect(); });
+  const toast = page.locator('#toast');
+  await expect(toast).toContainText('Preparing PDF');
+  await expect(toast.locator('.toast-spinner')).toHaveCount(1);
+  await toast.locator('.toast-action-btn', { hasText: 'Cancel' }).click();
+  await expect(toast).toContainText('PDF cancelled');
+  await page.waitForTimeout(300);
+  expect(await page.evaluate(() => ({ frame: !!document.getElementById('sakura-print-frame'), busy: (0, eval)('_serverPdfBusy') }))).toEqual({ frame: false, busy: false });
+});
+
+test('a slow PDF says it is still working after 10 seconds', async ({ page }) => {
+  await page.clock.install();
+  await page.route('https://ai.sakura-notes.com/pdf', () => { /* never answers */ });
+  await page.evaluate(() => (window as any).exportPdfDirect());
+  await expect(page.locator('#toast')).toContainText('Preparing PDF');
+  await page.clock.runFor(10500);
+  await expect(page.locator('#toast')).toContainText('Still preparing your PDF');
 });
 
 test('To-Dos PDF takes the same path and is named To-Dos.pdf', async ({ page }) => {

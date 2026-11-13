@@ -450,7 +450,15 @@ initHubTodosState({
     sourceFile: 'src/state/metaMerge.ts',
     testFile: 'tests/unit/metaMerge.test.ts',
     footer: ''
+  },  {
+    // Download PDF: trims the server copy's CSS to the rules the printed page can use, keeping
+    // each kept rule's original text. Pure; called from trimPrintCopyCss.
+    name: 'cssTrim',
+    sourceFile: 'src/utils/cssTrim.ts',
+    testFile: 'tests/unit/cssTrim.test.ts',
+    footer: ''
   },
+
 
 
   {

@@ -494,6 +494,10 @@ mark.row-hl{color:inherit;padding:0 2px;margin:0 -1px}
 .notif-copy-btn.primary:hover{border-color:var(--btn-primary-hover);background:var(--btn-primary-hover);color:var(--btn-primary-fg)}
 .notif-copy-btn:disabled{opacity:.6;cursor:default}
 .notif-copy-btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+/* Download PDF's progress message (showPdfProgress): a small spinner before the words. */
+.toast-spinner{width:12px;height:12px;border:2px solid color-mix(in srgb,var(--fg) 18%,transparent);border-top-color:var(--accent);border-radius:50%;flex-shrink:0;animation:toast-spin .8s linear infinite}
+@keyframes toast-spin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.toast-spinner{animation-duration:2.4s}}
 /* === Sakura Modal === */
 #sakura-modal-overlay{position:fixed;inset:0;z-index:1150;background:rgba(0,0,0,.38);display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .18s}
 #sakura-modal-overlay.open{opacity:1;pointer-events:all}
@@ -23799,9 +23803,12 @@ function serverPdfAvailable(){
 // _serverPdfFailure keeps a short reason for the last failure, said in the message (as other
 // apps show an error code) so a failure can be told apart without the browser's dev tools.
 let _serverPdfFailure='';
-async function saveServerPdf(html,title){
+// `cancel` (an AbortSignal) is the progress message's Cancel: it resolves 'cancelled', and no print dialog follows.
+async function saveServerPdf(html,title,cancel){
   _serverPdfFailure='';
   const ctrl=new AbortController(); const timer=setTimeout(()=>ctrl.abort(),45000);
+  let cancelled=false;
+  if(cancel)cancel.addEventListener('abort',()=>{ cancelled=true; ctrl.abort(); });
   try{
     const token=await currentUser.getIdToken();
     const res=await fetch(AI_VAULT_WORKER_URL+'/pdf',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+token},body:JSON.stringify({html,title}),signal:ctrl.signal});
@@ -23821,6 +23828,7 @@ async function saveServerPdf(html,title){
     setTimeout(()=>window.URL.revokeObjectURL(a.href),60000);
     return 'saved';
   }catch(e){
+    if(cancelled)return 'cancelled';
     console.warn('[sakura] server PDF failed:',e);
     _serverPdfFailure=e&&e.name==='AbortError'?'timed out after 45s':navigator.onLine===false?'offline':'no response from the PDF service';
     return 'failed';
@@ -23858,24 +23866,198 @@ function sakuraPrint(target){
   window.dispatchEvent(new Event('afterprint'));
   if(!viaServer){ printCopyInFrame(frameHtml); return; }
   _serverPdfBusy=true;
-  showToast('Making PDF…','',false,45000);
+  // One progress message with Cancel, as other apps show an export; after 10s it says it's still
+  // working, so a slow connection doesn't look stuck.
+  const cancel=new AbortController();
+  showPdfProgress('Preparing PDF\u2026',cancel);
+  const slow=setTimeout(()=>{ if(_serverPdfBusy&&!cancel.signal.aborted)showPdfProgress('Still preparing your PDF\u2026',cancel); },10000);
   inlineBlobImages(clone)
-    .then(()=>saveServerPdf(buildPrintCopyHtmlFor(clone,frameHtml),title))
+    .then(()=>cancel.signal.aborted?'cancelled':saveServerPdf(buildPrintCopyHtmlFor(clone,frameHtml),title,cancel.signal))
     .then(result=>{
+      clearTimeout(slow);
       _serverPdfBusy=false;
+      if(result==='cancelled'){ showToast('PDF cancelled'); return; }
       if(result==='saved'){ showToast('PDF saved','success'); return; }
       // Say why the print dialog opens instead of a download.
       showToast(result==='limit'?"Today's PDF limit is reached, opening print instead":"Couldn't make the PDF file ("+(_serverPdfFailure||'unknown error')+"), opening print instead",'',false,result==='limit'?4000:7000);
       printCopyInFrame(frameHtml);
     });
 }
+function showPdfProgress(msg,cancel){
+  showActionToast(msg,'Cancel',()=>cancel.abort(),60000);
+  _actionToastUndo=null; // Ctrl/Cmd+Z stays undo
+  const t=el('toast'); if(!t)return;
+  const spin=document.createElement('span'); spin.className='toast-spinner'; spin.setAttribute('aria-hidden','true');
+  t.insertBefore(spin,t.firstChild);
+}
 // The server copy: the frame copy with the cloned target (blob: images inlined) and a <base>, so
 // the font files and relative image addresses resolve against the live site.
 function buildPrintCopyHtmlFor(clone,frameHtml){
   const i=frameHtml.lastIndexOf('<body'); const j=frameHtml.indexOf('>',i)+1;
   const head=frameHtml.slice(0,i).replace('<meta charset="utf-8">',`<meta charset="utf-8"><base href="${PDF_SITE_BASE}">`);
-  return head+frameHtml.slice(i,j)+clone.outerHTML+'</body></html>';
+  return trimPrintCopyCss(head+frameHtml.slice(i,j)+clone.outerHTML+'</body></html>');
 }
+// The server copy carries only the styles the printed page can use (trimCss, src/utils/cssTrim.ts):
+// the rest of the app's ~340 KB of CSS (menus, settings, dialogs…) is left out, so a slow upload
+// (a phone hotspot) takes a fraction of the time. Each kept rule is the original text, so the PDF
+// is the same; anything that can't be checked is kept. On any error the full copy goes.
+function trimPrintCopyCss(html){
+  if(window.__sakuraPdfFullCss)return html;
+  try{
+    const a=html.indexOf('<style>'), b=html.indexOf('</style></head>');
+    if(a<0||b<a)return html;
+    const doc=new DOMParser().parseFromString(html.slice(0,a)+html.slice(b+8),'text/html');
+    const seen=new Map();
+    const matches=sel=>{ if(!seen.has(sel))seen.set(sel,!!doc.querySelector(sel)); return seen.get(sel); };
+    return html.slice(0,a+7)+trimCss(html.slice(a+7,b),matches)+html.slice(b);
+  }catch(e){ console.warn('[sakura] PDF: could not trim styles, sending them all:',e); return html; }
+}
+/* GENERATED:cssTrim:START — DO NOT EDIT BY HAND. Source of truth: src/utils/cssTrim.ts (tests: tests/unit/cssTrim.test.ts). Regenerate with `npm run generate` after changing the source; CI fails if this block drifts from what the generator produces (see .github/workflows/ci.yml and scripts/generate-index-blocks.mjs). */
+/** Splits CSS text into top-level rules, honouring strings, comments and nested braces. */
+function splitCssRules(css) {
+    const out = [];
+    let i = 0;
+    const n = css.length;
+    while (i < n) {
+        // skip whitespace and comments between rules
+        while (i < n) {
+            if (/\s/.test(css[i])) {
+                i++;
+                continue;
+            }
+            if (css.startsWith('/*', i)) {
+                const e = css.indexOf('*/', i + 2);
+                i = e < 0 ? n : e + 2;
+                continue;
+            }
+            break;
+        }
+        if (i >= n)
+            break;
+        const start = i;
+        let depth = 0, bodyStart = -1, quote = '';
+        while (i < n) {
+            const c = css[i];
+            if (quote) {
+                if (c === '\\')
+                    i++;
+                else if (c === quote)
+                    quote = '';
+                i++;
+                continue;
+            }
+            if (c === '"' || c === "'") {
+                quote = c;
+                i++;
+                continue;
+            }
+            if (css.startsWith('/*', i)) {
+                const e = css.indexOf('*/', i + 2);
+                i = e < 0 ? n : e + 2;
+                continue;
+            }
+            if (c === '{') {
+                if (depth === 0)
+                    bodyStart = i;
+                depth++;
+                i++;
+                continue;
+            }
+            if (c === '}') {
+                depth--;
+                i++;
+                if (depth === 0)
+                    break;
+                continue;
+            }
+            if (c === ';' && depth === 0) {
+                i++;
+                break;
+            }
+            i++;
+        }
+        const text = css.slice(start, i);
+        if (bodyStart < 0)
+            out.push({ prelude: text.trim(), body: null, text });
+        else
+            out.push({ prelude: css.slice(start, bodyStart).trim(), body: css.slice(bodyStart + 1, i - 1), text });
+    }
+    return out;
+}
+/** Splits a selector list at top-level commas (not inside :is(), [attr="a,b"] or strings). */
+function splitSelectorList(prelude) {
+    const out = [];
+    let depth = 0, quote = '', cur = '';
+    for (let k = 0; k < prelude.length; k++) {
+        const c = prelude[k];
+        if (quote) {
+            cur += c;
+            if (c === '\\') {
+                cur += prelude[++k] ?? '';
+            }
+            else if (c === quote)
+                quote = '';
+            continue;
+        }
+        if (c === '"' || c === "'") {
+            quote = c;
+            cur += c;
+            continue;
+        }
+        if (c === '(' || c === '[')
+            depth++;
+        if (c === ')' || c === ']')
+            depth--;
+        if (c === ',' && depth === 0) {
+            out.push(cur.trim());
+            cur = '';
+            continue;
+        }
+        cur += c;
+    }
+    if (cur.trim())
+        out.push(cur.trim());
+    return out;
+}
+const STATE_PSEUDO = /::?(?:before|after|placeholder|selection|marker|first-line|first-letter|backdrop|file-selector-button|-webkit-[a-z-]+|-moz-[a-z-]+)|:(?:hover|focus-visible|focus-within|focus|active|visited|link|any-link|target|checked|disabled|enabled|placeholder-shown|indeterminate|default|invalid|valid|in-range|out-of-range|required|optional|read-only|read-write|autofill|user-invalid|user-valid|open|popover-open|modal|fullscreen|playing|paused)\b(?!\()/g;
+/** The part of a selector that can be tested against a static page (states and pseudo-elements removed). */
+function testableSelector(sel) {
+    let s = sel.replace(STATE_PSEUDO, '').trim();
+    s = s.replace(/[>+~]\s*$/, '').trim();
+    return s || '*';
+}
+const KEEP_WHOLE = /^@(font-face|page|keyframes|-webkit-keyframes|import|charset|property|counter-style|namespace|font-feature-values|view-transition)\b/i;
+const RECURSE = /^@(media|supports|layer|container|document|-moz-document|scope|starting-style)\b/i;
+function trimCss(css, matches) {
+    const kept = [];
+    for (const r of splitCssRules(css)) {
+        if (r.prelude.startsWith('@')) {
+            if (r.body === null || KEEP_WHOLE.test(r.prelude) || !RECURSE.test(r.prelude)) {
+                kept.push(r.text);
+                continue;
+            }
+            const inner = trimCss(r.body, matches);
+            if (inner.trim() || /^@layer\b/i.test(r.prelude))
+                kept.push(r.prelude + '{' + inner + '}');
+            continue;
+        }
+        if (r.body === null)
+            continue; // stray text
+        const used = splitSelectorList(r.prelude).some((sel) => {
+            try {
+                return matches(testableSelector(sel));
+            }
+            catch {
+                return true;
+            }
+        });
+        if (used)
+            kept.push(r.text);
+    }
+    return kept.join('\n');
+}
+
+/* GENERATED:cssTrim:END */
 // Same underlying technique as exportPreviewAsPdf (window.print() against a purpose-built,
 // print-only overlay), just generalized: any caller hands in a title + body HTML string and
 // gets a properly paginated, light-themed PDF via the browser's native print-to-PDF, without
