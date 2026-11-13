@@ -2645,7 +2645,7 @@ html.calm-layout #sidebar-reopen-btn{display:none!important}
 /* The rail's Documents icon opens and closes the File Explorer, so its header has no toggle of its own. */
 html.calm-layout #sidebar-toggle{display:none}
 html.calm-layout #account-toggle-label{display:none}
-html.calm-layout #account-toggle:not(:has(#account-toggle-avatar-wrap[style*="inline"]))::before{content:'';width:18px;height:18px;background:currentColor;-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Ccircle cx='12' cy='10' r='3'/%3E%3Cpath d='M7 20.7a7 7 0 0 1 10 0'/%3E%3C/svg%3E") center/contain no-repeat;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Ccircle cx='12' cy='10' r='3'/%3E%3Cpath d='M7 20.7a7 7 0 0 1 10 0'/%3E%3C/svg%3E") center/contain no-repeat}
+html.calm-layout #account-toggle:not(.has-avatar)::before{content:'';width:18px;height:18px;background:currentColor;-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Ccircle cx='12' cy='10' r='3'/%3E%3Cpath d='M7 20.7a7 7 0 0 1 10 0'/%3E%3C/svg%3E") center/contain no-repeat;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Ccircle cx='12' cy='10' r='3'/%3E%3Cpath d='M7 20.7a7 7 0 0 1 10 0'/%3E%3C/svg%3E") center/contain no-repeat}
 /* Rail menus open to the right of their button (the bottom one upwards). */
 html.calm-layout #header-actions .export-menu{top:0;left:calc(100% + 8px);right:auto}
 /* The account menu is fixed like the bell menu, so the rail never clips it (the old app bar's overflow:hidden below 860px
@@ -3625,6 +3625,22 @@ html.calm-layout #sb-auto-rewrite-chip.is-quiet:hover,html.calm-layout #sb-auto-
   html.phone #toast { z-index: 1500; }
   /* Right-click-style menus (a task's ⋯, a table's menu) open over the full-screen panels. */
   html.phone .sb-context-menu { z-index: 1450; }
+
+  /* ---- iPhone Safari (owner 2026-11-13, after trying it). ---- */
+  /* Safari zooms the page in when a field under 16px gets focus, and the zoomed page then scrolls
+     sideways (seen in To-Dos). Every text field is at least 16px on a phone, and the document is
+     16px too, so a row is the same size read and typed in. */
+  /* Left out: the document title (28px) and the row editor (16px from #editor-pane below, and a
+     heading row keeps its larger size while typed in). */
+  html.phone input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=file]):not([type=color]):not(#header-title),
+  html.phone textarea, html.phone select,
+  html.phone [contenteditable="true"]:not(.node-input) { font-size: max(16px, 1em) !important; }
+  html.phone #editor-pane { font-size: calc(16px * var(--editor-scale)); }
+  /* Safari can also enlarge text by itself (text autosizing); the layout sets the sizes. */
+  html.phone { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+  /* The folded-row ring, centred explicitly: Safari places an absolutely positioned pseudo-element
+     at the box's corner rather than its centre, and the phone's dot box is 40px. */
+  html.phone .fold-dot.is-folded::after { left: 50%; top: 50%; transform: translate(-50%, -50%); }
 
   /* ---- Desktop-only parts (the plan's feature table). ---- */
   html.phone #statusbar, html.phone #editor-zen-toggle { display: none !important; }
@@ -15949,6 +15965,10 @@ function updateAccountUI(user){
     if(toggleLabel)toggleLabel.style.display='none';
     if(toggleAvatar&&toggleAvatarWrap){
       toggleAvatarWrap.style.display='inline-block';
+      // A class, not just the inline style, says the avatar is shown: Safari doesn't re-check the CSS
+      // :has([style*="inline"]) when the style attribute changes, so the generic person icon stayed
+      // beside the photo there (owner, 2026-11-13, iPhone and Mac Safari).
+      el('account-toggle')?.classList.add('has-avatar');
       toggleAvatarWrap.style.marginRight='0';
       if(user.photoURL){ toggleAvatar.src=user.photoURL; toggleAvatar.style.display='block'; toggleAvatarWrap.style.background=''; }
       else{ toggleAvatar.style.display='none'; toggleAvatarWrap.style.background='var(--muted)'; toggleAvatarWrap.style.borderRadius='50%'; toggleAvatarWrap.style.width='20px'; toggleAvatarWrap.style.height='20px'; }
@@ -15965,6 +15985,7 @@ function updateAccountUI(user){
     if(signedInEl)signedInEl.style.display='none'; const soWrap=el('account-signout-wrap'); if(soWrap)soWrap.style.display='none';
     if(toggleLabel){toggleLabel.textContent='Sign in'; toggleLabel.style.display='';}
     if(toggleAvatarWrap)toggleAvatarWrap.style.display='none';
+    el('account-toggle')?.classList.remove('has-avatar');
     // Account settings exist only while signed in (sign-in itself lives in the account menu).
     const acctRail=el('settings-rail-account-btn'); if(acctRail)acctRail.style.display='none';
     if(typeof activeSettingsCategory!=='undefined'&&activeSettingsCategory==='account')applySettingsCategory('general');

@@ -156,6 +156,22 @@
   /* Right-click-style menus (a task's ⋯, a table's menu) open over the full-screen panels. */
   html.phone .sb-context-menu { z-index: 1450; }
 
+  /* ---- iPhone Safari (owner 2026-11-13, after trying it). ---- */
+  /* Safari zooms the page in when a field under 16px gets focus, and the zoomed page then scrolls
+     sideways (seen in To-Dos). Every text field is at least 16px on a phone, and the document is
+     16px too, so a row is the same size read and typed in. */
+  /* Left out: the document title (28px) and the row editor (16px from #editor-pane below, and a
+     heading row keeps its larger size while typed in). */
+  html.phone input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=file]):not([type=color]):not(#header-title),
+  html.phone textarea, html.phone select,
+  html.phone [contenteditable="true"]:not(.node-input) { font-size: max(16px, 1em) !important; }
+  html.phone #editor-pane { font-size: calc(16px * var(--editor-scale)); }
+  /* Safari can also enlarge text by itself (text autosizing); the layout sets the sizes. */
+  html.phone { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+  /* The folded-row ring, centred explicitly: Safari places an absolutely positioned pseudo-element
+     at the box's corner rather than its centre, and the phone's dot box is 40px. */
+  html.phone .fold-dot.is-folded::after { left: 50%; top: 50%; transform: translate(-50%, -50%); }
+
   /* ---- Desktop-only parts (the plan's feature table). ---- */
   html.phone #statusbar, html.phone #editor-zen-toggle { display: none !important; }
   /* Hover tooltips: there is no hover on a touch screen, and a tap would leave one stuck. */
