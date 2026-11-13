@@ -33,10 +33,10 @@ test('signed in: saving, saved, and a failed push that retries by itself', async
     w.__pushes = 0;
     const mod = {
       doc: (_db: unknown, ...p: string[]) => ({ path: p.join('/') }),
+      // The first write fails (network down); document writes that land are counted.
       runTransaction: async (_db: unknown, fn: (tx: unknown) => Promise<unknown>) => {
-        w.__pushes++;
         if (fail) { fail = false; throw new Error('network down'); }
-        return fn({ get: async () => ({ exists: () => false, data: () => undefined }), set: () => {} });
+        return fn({ get: async () => ({ exists: () => false, data: () => undefined }), set: (r: { path: string }) => { if (r.path.includes('/docs/')) w.__pushes++; } });
       },
       collection: () => ({}),
       setDoc: async () => {},
@@ -56,5 +56,5 @@ test('signed in: saving, saved, and a failed push that retries by itself', async
   await expect(state).toHaveText('Not synced');
   // Saved: nothing shows (owner 2026-11-12, after the folder path, Notion-style).
   await expect(state).toBeHidden();
-  expect(await page.evaluate(() => (window as unknown as { __pushes: number }).__pushes)).toBe(2);
+  expect(await page.evaluate(() => (window as unknown as { __pushes: number }).__pushes)).toBe(1);
 });

@@ -152,7 +152,11 @@ so those PRs are merged by the owner on purpose.
   unless it was saved there after the delete or has unsaved edits (`deletionWins`): then the edit
   wins, the marker is cleared and it goes back up. Documents with a marker are never sent back up
   as "missing". Account deletion clears the markers too.
-- Still last-save-wins: folders, document order and settings (meta keys). Rare, low impact.
+- Folders, the document list and order, folder membership, settings and To-Dos merge (2026-11-13,
+  `src/state/metaMerge.ts` `merge3`): each device keeps the value it last agreed with the account
+  (`sakura_sync_meta_base_v1`); taking a change merges in this device's own unsent ones, and sending
+  one merges, in a transaction, whatever another device sent since. Same entry changed on both: the
+  newer side wins.
 
 ## Order
 

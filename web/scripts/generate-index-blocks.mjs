@@ -442,7 +442,16 @@ initHubTodosState({
     sourceFile: 'src/state/docRev.ts',
     testFile: 'tests/unit/docRev.test.ts',
     footer: ''
+  },  {
+    // Three-way merge of synced lists/settings (folders, document list/order/folders, prefs,
+    // To-Dos): both devices' changes are kept. Pure; called from applyIncomingMetaData and
+    // pushMetaToCloud.
+    name: 'metaMerge',
+    sourceFile: 'src/state/metaMerge.ts',
+    testFile: 'tests/unit/metaMerge.test.ts',
+    footer: ''
   },
+
 
   {
     // node.images (screenshots as per-node objects) -- pure decisions only: normalization of the

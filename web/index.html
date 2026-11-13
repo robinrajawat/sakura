@@ -15939,6 +15939,12 @@ function getSyncMetaKeys(){return {docsIndex:DOCS_INDEX_KEY,folders:FOLDERS_KEY,
 // apply path both no-op on unknown keys, so they're ignored, never deleted.
 function getIdbSyncMetaKeys(){return {};}
 const SYNC_LOCAL_TS_KEY='sakura_sync_local_ts_v1';
+// The value of each synced list/setting as this device last agreed with the account (sent or
+// taken): the base for merge3, so two devices' changes are both kept (src/state/metaMerge.ts).
+const SYNC_META_BASE_KEY='sakura_sync_meta_base_v1';
+function getMetaBase(metaKey){ try{ const m=JSON.parse(localStorage.getItem(SYNC_META_BASE_KEY)||'{}'); return metaKey in m?m[metaKey]:undefined; }catch(e){ return undefined; } }
+function setMetaBase(metaKey,value){ try{ const m=JSON.parse(localStorage.getItem(SYNC_META_BASE_KEY)||'{}'); m[metaKey]=value; localStorage.setItem(SYNC_META_BASE_KEY,JSON.stringify(m)); }catch(e){} }
+function sameJson(a,b){ return JSON.stringify(a)===JSON.stringify(b); }
 function _loadSyncLocalTs(){ try{const r=localStorage.getItem(SYNC_LOCAL_TS_KEY); return r?JSON.parse(r):{}}catch(e){return {}} }
 function _saveSyncLocalTs(m){ try{localStorage.setItem(SYNC_LOCAL_TS_KEY,JSON.stringify(m))}catch(e){} }
 // Meta keys (folders, doc order, prefs, etc.) have no per-item updatedAt of their own the way
@@ -17482,7 +17488,26 @@ async function pushMetaToCloud(mod,db,metaKey){
     if(raw!==null){ try{value=JSON.parse(raw)}catch(e){value=null} }
   }
   const ts=Date.now(); _lastPushedTs['meta:'+metaKey]=ts;
-  await mod.setDoc(mod.doc(db,'users',currentUser.uid,'meta',metaKey),{value,updatedAt:ts});
+  const ref=mod.doc(db,'users',currentUser.uid,'meta',metaKey);
+  const localKeyName=idbKeyName?null:getSyncMetaKeys()[metaKey];
+  if(!localKeyName||metaKey==='todosRevisions'){ await mod.setDoc(ref,{value,updatedAt:ts}); return; }
+  // Another device changed it since this device's last sync: merge (merge3) instead of writing
+  // over its change, in one transaction so nothing lands in between.
+  const base=getMetaBase(metaKey);
+  let written=value;
+  await mod.runTransaction(db,async tx=>{
+    const snap=await tx.get(ref);
+    const cv=snap.exists()?snap.data().value:undefined;
+    written=(base!==undefined&&cv!==undefined&&cv!==null&&!sameJson(cv,base)&&!sameJson(cv,value))?merge3(base,value,cv,'local'):value;
+    tx.set(ref,{value:written,updatedAt:ts});
+  });
+  setMetaBase(metaKey,written);
+  if(!sameJson(written,value)){
+    try{ localStorage.setItem(localKeyName,JSON.stringify(written)); }catch(e){}
+    if(metaKey==='prefs')loadPrefs();
+    await refreshHubPanelAfterSync(metaKey);
+    renderSidebar();
+  }
 }
 // Shared "should this incoming item overwrite what's local, and how" logic — used by both the
 // periodic pullAndMergeFromCloud() below and the realtime onSnapshot listeners further down, so
@@ -17677,6 +17702,20 @@ async function applyIncomingMetaData(metaKey,cloud){
       }catch(e){}
     }
   }
+  // This device changed it too since the last sync: keep both (merge3), and send the merged
+  // copy back up when it holds something the account's lacks.
+  if(localKeyName&&metaKey!=='todosRevisions'&&cloud.value!==null&&cloud.value!==undefined){
+    const base=getMetaBase(metaKey);
+    let local; try{ const raw=localStorage.getItem(localKeyName); local=raw===null?undefined:JSON.parse(raw); }catch(e){ local=undefined; }
+    if(base!==undefined&&local!==undefined&&!sameJson(local,base)){
+      const merged=merge3(base,local,cloud.value,'cloud');
+      try{ localStorage.setItem(localKeyName,JSON.stringify(merged)); }catch(e){ return false; }
+      localTs[metaKey]=cloudTs; _saveSyncLocalTs(localTs);
+      setMetaBase(metaKey,cloud.value);
+      if(!sameJson(merged,cloud.value))setTimeout(()=>markMetaChanged(metaKey),0);
+      return true;
+    }
+  }
   if(idbKeyName){
     if(cloud.value===null||cloud.value===undefined){ try{await idbDelete(idbKeyName)}catch(e){} }
     else{ try{await idbSet(idbKeyName,cloud.value)}catch(e){return false} }
@@ -17685,6 +17724,7 @@ async function applyIncomingMetaData(metaKey,cloud){
     else localStorage.setItem(localKeyName,JSON.stringify(cloud.value));
   }
   localTs[metaKey]=cloudTs; _saveSyncLocalTs(localTs);
+  if(localKeyName)setMetaBase(metaKey,cloud.value);
   return true;
 }
 // The To-Dos panel keeps its data in an in-memory array/module
@@ -17803,6 +17843,77 @@ function deletionWins(localUpdatedAt, deletedAt, hasUnsavedEdits) {
 }
 
 /* GENERATED:docRev:END */
+/* GENERATED:metaMerge:START — DO NOT EDIT BY HAND. Source of truth: src/state/metaMerge.ts (tests: tests/unit/metaMerge.test.ts). Regenerate with `npm run generate` after changing the source; CI fails if this block drifts from what the generator produces (see .github/workflows/ci.yml and scripts/generate-index-blocks.mjs). */
+function same(a, b) {
+    return JSON.stringify(a) === JSON.stringify(b);
+}
+function isPlainObject(v) {
+    return !!v && typeof v === 'object' && !Array.isArray(v);
+}
+function isIdArray(v) {
+    return Array.isArray(v) && v.every((x) => isPlainObject(x) && (typeof x.id === 'string' || typeof x.id === 'number'));
+}
+function merge3(base, local, cloud, prefer) {
+    if (same(local, cloud))
+        return cloud;
+    if (same(local, base))
+        return cloud; // only the account changed
+    if (same(cloud, base))
+        return local; // only this device changed
+    // Both changed.
+    if (isPlainObject(local) && isPlainObject(cloud)) {
+        const b = isPlainObject(base) ? base : {};
+        const out = {};
+        const keys = new Set([...Object.keys(cloud), ...Object.keys(local), ...Object.keys(b)]);
+        for (const k of keys) {
+            const inL = k in local, inC = k in cloud, inB = k in b;
+            if (inL && inC)
+                out[k] = merge3(b[k], local[k], cloud[k], prefer);
+            else if (inL && !inC) {
+                if (!inB || !same(local[k], b[k]))
+                    out[k] = local[k];
+            } // removed in the account unless changed here
+            else if (!inL && inC) {
+                if (!inB || !same(cloud[k], b[k]))
+                    out[k] = cloud[k];
+            } // removed here unless changed in the account
+        }
+        return out;
+    }
+    if (isIdArray(local) && isIdArray(cloud) && (base === undefined || base === null || isIdArray(base))) {
+        const key = (x) => String(x.id);
+        const bMap = new Map((Array.isArray(base) ? base : []).map((x) => [key(x), x]));
+        const lMap = new Map(local.map((x) => [key(x), x]));
+        const cMap = new Map(cloud.map((x) => [key(x), x]));
+        const out = [];
+        const pick = (id) => {
+            const l = lMap.get(id), c = cMap.get(id), b = bMap.get(id);
+            if (l && c)
+                return merge3(b, l, c, prefer);
+            if (l && !c)
+                return !b || !same(l, b) ? l : null;
+            if (c && !l)
+                return !b || !same(c, b) ? c : null;
+            return null;
+        };
+        for (const x of cloud) {
+            const m = pick(key(x));
+            if (m)
+                out.push(m);
+        }
+        for (const x of local) {
+            if (!cMap.has(key(x))) {
+                const m = pick(key(x));
+                if (m)
+                    out.push(m);
+            }
+        }
+        return out;
+    }
+    return prefer === 'local' ? local : cloud;
+}
+
+/* GENERATED:metaMerge:END */
 let _lastPullAt=0;
 async function pullAndMergeFromCloud(isInitial=false){
   if(!currentUser)return;
@@ -17851,6 +17962,10 @@ async function pullAndMergeFromCloud(isInitial=false){
       if(snap.exists()){
         const cloud=snap.data();
         const applied=await applyIncomingMetaData(metaKey,cloud);
+        if(!applied&&!idbKeyName&&metaKey!=='todosRevisions'&&getMetaBase(metaKey)===undefined){
+          // First catch-up since merging existed: when both copies already agree, that's the base.
+          try{ const raw=localStorage.getItem(localKeyName); if(raw!==null&&sameJson(JSON.parse(raw),cloud.value))setMetaBase(metaKey,cloud.value); }catch(e){}
+        }
         if(applied){
           await refreshHubPanelAfterSync(metaKey);
         }else if(!justRestored){
