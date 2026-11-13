@@ -149,3 +149,19 @@ test('the account menu is a sheet along the bottom', async ({ page }) => {
   expect(Math.round(box.x + box.width)).toBe(vp.width - 8);
   expect(Math.round(box.y + box.height)).toBe(vp.height - 8);
 });
+
+// Owner, 2026-11-13 (iPhone Safari): Safari zooms in on a field under 16px when it gets focus, and
+// the zoomed page then scrolled sideways (seen in To-Dos). On a phone every field is at least 16px,
+// a row is the same size read and typed in, and the document title keeps its own size.
+test('no text field on a phone is under 16px; rows keep their size when typed in', async ({ page }) => {
+  const small = await page.evaluate(() => [...document.querySelectorAll('input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=file]):not([type=color]), textarea, select, [contenteditable="true"]')]
+    .filter((f) => parseFloat(getComputedStyle(f).fontSize) < 16).map((f) => f.id || (f as HTMLElement).className));
+  expect(small).toEqual([]);
+  expect(parseFloat(await page.locator('#header-title').evaluate((e) => getComputedStyle(e).fontSize))).toBeGreaterThan(20);
+  const label = page.locator('.node-row .node-label').first();
+  const read = await label.evaluate((e) => getComputedStyle(e).fontSize);
+  await label.tap();
+  // @ts-expect-error -- bare global from index.html
+  await expect.poll(() => page.evaluate(() => (getEditingInput() ? getComputedStyle(getEditingInput()).fontSize : ''))).toBe(read);
+  expect(parseFloat(read)).toBeGreaterThanOrEqual(16);
+});

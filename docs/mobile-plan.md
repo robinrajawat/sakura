@@ -244,6 +244,27 @@ Guests: the phone works without an account like the desktop does (try first, sig
   event; Backspace inside a row is unchanged), `phone-shell.phone.spec.ts` (+2) and
   `phone-layout-switch.spec.ts` (+1: the desktop still shows the welcome).
 
+### From the owner's first try on an iPhone (2026-11-13)
+
+"Mobile version looks good." It found three things, all Safari-specific (Chrome's phone emulation,
+used for every test, doesn't do them):
+
+- **To-Dos scrolled sideways.** Safari zooms the page in when a text field under 16px gets focus
+  (To-Dos' add box and task text were 13px), and the zoomed page scrolls sideways. On a phone every
+  text field is now at least 16px, and so is the document. The document title (28px) and the row
+  editor are left out of the rule: a row takes 16px from the page, and a heading keeps its size
+  while typed in. Safari's own text enlarging is off (`-webkit-text-size-adjust: 100%`).
+  `phone-shell.phone.spec.ts` checks that no field is under 16px and that a row is the same size
+  read and typed in.
+- **Text slightly under a row's bullet after expanding.** It didn't reproduce in Chrome (14px
+  between dot and text on every row). Most likely Safari's zoom above, or Safari placing the
+  folded ring (an absolutely positioned pseudo-element) at the corner of the phone's 40px dot box.
+  It is now centred explicitly. **Re-check on the iPhone.**
+- **Account button showed the person icon beside the photo** (iPhone and Mac Safari). The icon was
+  hidden by `:has(#account-toggle-avatar-wrap[style*="inline"])`, which Safari doesn't re-check
+  when that style attribute changes. `updateAccountUI` now sets `has-avatar` on the button, and
+  the CSS keys off that class (`account-toggle-avatar.spec.ts`).
+
 ### Faster first load: step 1, minify the build. Done 2026-11-13
 
 - Vite left the page's inline code and styles exactly as written, comments and all: the built page
