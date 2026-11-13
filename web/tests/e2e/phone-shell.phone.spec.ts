@@ -101,6 +101,29 @@ test('Help opens full screen, without the tour or the shortcut sheet', async ({ 
   expect(await panel.boundingBox()).toEqual({ x: 0, y: 0, width: vp.width, height: vp.height });
   await expect(page.locator('#help-tour-replay-row')).toBeHidden();
   await expect(page.locator('#help-cheatsheet-row')).toBeHidden();
+  await expect(page.locator('#help-demo-row')).toBeHidden();
+});
+
+test('search does not offer the tour, demo or shortcut sheet a phone hides', async ({ page }) => {
+  await page.locator('#phone-menu-btn').click();
+  await page.locator('#appbar-qa-slot').click();
+  await page.keyboard.type('demo');
+  await expect(page.locator('#qa-dropdown')).not.toContainText('Watch a demo');
+  await page.keyboard.press('Control+a');
+  await page.keyboard.type('tour');
+  await expect(page.locator('#qa-dropdown')).not.toContainText('Take the tour');
+});
+
+test('a first visit on a phone skips the desktop welcome (tour and demo)', async ({ browser }) => {
+  // A fresh profile: nothing seen, no documents (this file's own setup marks the welcome seen).
+  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+  const p = await ctx.newPage();
+  await p.addInitScript(() => sessionStorage.setItem('sakura_landing_dismissed', 'true'));
+  await p.goto('file://' + indexPath);
+  await p.waitForFunction(() => typeof (window as unknown as { createDoc?: unknown }).createDoc === 'function');
+  await p.waitForTimeout(900);
+  await expect(p.locator('#welcome-overlay')).not.toHaveClass(/open/);
+  await ctx.close();
 });
 
 test('To-Dos opens full screen with a back button', async ({ page }) => {

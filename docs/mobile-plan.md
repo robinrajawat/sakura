@@ -224,6 +224,26 @@ Guests: the phone works without an account like the desktop does (try first, sig
 - Docs updated: `feature-reference.md` ("On a phone", the old phone page, Share to Sakura,
   limits) and `README.md`.
 
+### After phase 5: phone safety and polish (2026-11-13, owner: "make sure that the mobile will not corrupt the documents")
+
+- **Keyboards that send no key event.** Some Android keyboards send Enter and Backspace as an
+  input with no key event (key 229). Enter put a raw line break inside the row: no new row, and
+  later typing ran on in the same row. Backspace at a row's start didn't join it to the row
+  above. On a phone, `phoneKeyboardFallback` refuses that input and gives the row's own key
+  handling the key instead. On the desktop the key event always comes first, so it never fires.
+- **Putting the app away mid-typing** (no blur, no unload, as phones do) keeps what was typed.
+  The row already saves as you type, and the existing `visibilitychange` → hidden handler writes
+  it to storage. Now tested.
+- Everything else goes through the desktop's own save, sync and conflict code: safe writes
+  (`rev`), Version history on a conflict, and Undo.
+- **First visit on a phone** skips the welcome. Its two choices, the guided tour and the demo,
+  walk through the desktop layout. Nothing is marked seen, so a computer still shows it. Help
+  hides "Watch a demo", and search no longer offers the tour, the demo or the shortcut sheet on
+  a phone.
+- Tests: `phone-keyboard-safety.phone.spec.ts` (hidden mid-typing; Enter and Backspace with no key
+  event; Backspace inside a row is unchanged), `phone-shell.phone.spec.ts` (+2) and
+  `phone-layout-switch.spec.ts` (+1: the desktop still shows the welcome).
+
 ### Before or after phase 5: faster first load
 
 Measured in phase 0: the page is 700 KB compressed against hub.html's 81 KB, about 4.5 s on a

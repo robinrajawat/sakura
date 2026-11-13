@@ -3631,9 +3631,10 @@ html.calm-layout #sb-auto-rewrite-chip.is-quiet:hover,html.calm-layout #sb-auto-
   /* Hover tooltips: there is no hover on a touch screen, and a tap would leave one stuck. */
   html.phone #node-timestamp-tip { display: none !important; }
   /* Settings keeps Appearance, Documents, Account and About; AI, keyboard shortcuts and data
-     files are desktop-only. Help loses the guided tour and the shortcut sheet. */
+     files are desktop-only. Help loses the guided tour, the shortcut sheet and the demo (both
+     walk through the desktop layout). */
   html.phone #settings-panel [data-cat="ai"], html.phone #settings-panel [data-cat="shortcuts"], html.phone #settings-panel [data-cat="data"],
-  html.phone #help-tour-replay-row, html.phone #help-cheatsheet-row { display: none !important; }
+  html.phone #help-tour-replay-row, html.phone #help-cheatsheet-row, html.phone #help-demo-row { display: none !important; }
 }
 /* GENERATED:css-phone:END */
 </style>
@@ -18638,7 +18639,9 @@ function collectHelpActionMatches(q){
   ];
   items.forEach(it=>{
     if(out.length>=5)return;
-    if(document.getElementById(it.row) && qaHayMatches(it.hay,tokens)) out.push({group:'Help',label:it.label,labelHtml:buildFullLabelMarkHtml(it.label,q),meta:'',action:it.action});
+    // A phone hides the tour, demo and shortcut sheet (docs/mobile-plan.md), so search doesn't offer them there.
+    const rowEl=document.getElementById(it.row); if(rowEl&&isPhoneLayout()&&getComputedStyle(rowEl).display==='none')return;
+    if(rowEl && qaHayMatches(it.hay,tokens)) out.push({group:'Help',label:it.label,labelHtml:buildFullLabelMarkHtml(it.label,q),meta:'',action:it.action});
   });
   return out;
 }
@@ -22525,6 +22528,7 @@ const aiOutlineBtn=document.getElementById('es-ai-outline-btn'); if(aiOutlineBtn
   // this), just no longer live-previewed while the caret's actually in the node.
   input.innerHTML=rowEditorHtml(node);
   input.addEventListener('keydown',onEditorKeyDown);
+  input.addEventListener('beforeinput',e=>phoneKeyboardFallback(input,e));
   input.addEventListener('beforeinput',e=>rowTypingBeforeInput(input,node.id,e));
   input.addEventListener('input',(e)=>{
     // Words and formatting both come from the editor's DOM (readRowMarksFromDom: text is exactly
@@ -24648,6 +24652,21 @@ function rowTypingStep(input,id,back){
   const from=back?t.undo:t.redo, to=back?t.redo:t.undo; const cur=rowTypingState(input);
   while(from.length){ const st=from.pop(); if(sameRowTypingState(st,cur))continue; to.push(cur); t.lastKind=null; applyRowTypingState(id,st); return true; }
   return false;
+}
+// Phone keyboards (docs/mobile-plan.md): some Android keyboards send Enter and Backspace as an
+// input with no matching key event (key 229), so the row's own Enter (split / new row) and
+// Backspace-at-start (merge with the row above) never ran: the browser put a raw line break inside
+// the row instead, and later typing ran on in the same row. The browser's change is refused and
+// the row's own key handling gets the key instead. Phone layout only; on the desktop the key event
+// always comes first and is handled there, so this never fires.
+function phoneKeyboardFallback(input,e){
+  if(!isPhoneLayout())return;
+  const it=e.inputType||''; let key=null;
+  if(it==='insertParagraph')key='Enter';
+  else if(it==='deleteContentBackward'){ const sel=window.getSelection(); if(sel&&sel.isCollapsed&&getEditableCaretOffset(input)===0)key='Backspace'; }
+  if(!key)return;
+  e.preventDefault();
+  input.dispatchEvent(new KeyboardEvent('keydown',{key,bubbles:true,cancelable:true}));
 }
 function onEditorKeyDown(e){ _undoEditPos={id:Number(e.target.id.replace('in-','')),caret:getEditableCaretOffset(e.target)??-1}; try{ onEditorKeyDownInner(e); } finally { _undoEditPos=null; } }
 function onEditorKeyDownInner(e){const id=Number(e.target.id.replace('in-',''));
@@ -29635,7 +29654,9 @@ document.addEventListener('keydown',e=>{
 try{
   const neverSeen=!localStorage.getItem(WELCOME_SEEN_KEY)&&!localStorage.getItem(TOUR_SEEN_KEY);
   if(neverSeen&&loadActiveDocsIndex().length===0){
-    setTimeout(()=>{ if(!tourActive&&!demoActive) openWelcomeModal(); },500);
+    // Not on a phone: its two choices, the guided tour and the demo, walk through the desktop layout
+    // (docs/mobile-plan.md). Nothing is marked seen, so a computer still shows it the first time.
+    setTimeout(()=>{ if(!tourActive&&!demoActive&&!isPhoneLayout()) openWelcomeModal(); },500);
   }
 }catch(e){}
 
