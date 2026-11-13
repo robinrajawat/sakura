@@ -2890,6 +2890,10 @@ html.calm-layout #help-meta-links button{display:inline-flex;align-items:center;
 html.calm-layout #help-meta-links button:hover{color:var(--fg)}
 html.calm-layout #help-meta-links svg:not(.help-coffee-icon){display:none}
 html.calm-layout #help-meta-links .help-coffee-icon{color:var(--support)}
+/* Auto-rewrite on and idle: only the sparkle, a faint square matching the full-screen button beside it. */
+html.calm-layout #sb-auto-rewrite-chip.is-quiet{width:28px;height:28px;padding:0;margin-bottom:2px;display:inline-flex;align-items:center;justify-content:center;border:1px solid var(--border);background:color-mix(in srgb,var(--edit-bg) 88%,transparent);border-radius:8px;color:var(--hint);opacity:.55;transition:opacity .12s,color .12s}
+html.calm-layout #sb-auto-rewrite-chip.is-quiet:hover,html.calm-layout #sb-auto-rewrite-chip.is-quiet:focus-visible{opacity:1;color:var(--accent);background:color-mix(in srgb,var(--edit-bg) 88%,transparent)}
+
 /* GENERATED:css-app:END */
 </style>
 <style>
@@ -26175,7 +26179,12 @@ async function flushAutoRewriteQueue(){
     scheduleAutoSave(); render();
     const skipped=validIds.length-appliedCount;
     if(appliedCount>0){
-      showToast(`Auto-rewrote ${appliedCount} row${appliedCount===1?'':'s'}${skipped?` (${skipped} skipped — edited again while waiting)`:''} ✦`,'success');
+      // Undo puts the words back, as long as nothing was changed since (then it would undo that instead).
+      const mark=undoStack.length;
+      showActionToast(`Rewrote ${appliedCount} row${appliedCount===1?'':'s'}${skipped?` (${skipped} edited again, left as is)`:''}`,'Undo',()=>{
+        if(undoStack.length===mark){ undo(); showToast('Rewrite undone'); }
+        else showToast('You changed something since. Use Undo (Ctrl/Cmd+Z) to step back to it.');
+      },6000);
     } else {
       undoStack.pop();
     }
@@ -26210,14 +26219,17 @@ function resumeAutoRewriteIfPaused(){
 // state display. That means it can no longer hide itself when the feature is off (a control
 // that disappears exactly when you'd need to turn something back on isn't a control); it now
 // shows "Off" as a state instead.
+const AUTO_REWRITE_SPARKLE='<svg width="15" height="15" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z" fill="currentColor"/></svg>';
 function updateAutoRewriteStatusChip(){
   const chip=el('sb-auto-rewrite-chip'); const divider=el('sb-auto-rewrite-divider');
   if(!chip||!divider)return;
   if(!featureAiEnabled){ chip.style.display='none'; divider.style.display='none'; refreshStatusbarDividers(); return; }
   chip.style.display=''; divider.style.display=''; chip.style.color='';
-  // Off stays out of sight (the switch lives in Settings → AI); on always shows, quietly when idle,
-  // so you can tell from the editor that rows will be rewritten.
+  // Off stays out of sight (the switch lives in Settings → AI). On and idle it's only the sparkle,
+  // a faint square like the full-screen button beside it (owner 2026-11-13: quieter, as Grammarly
+  // marks an automatic mode); words show only while rows wait, are rewritten, or it's paused.
   chip.classList.toggle('is-idle',!autoRewriteEnabled);
+  chip.classList.remove('is-quiet');
   if(!autoRewriteEnabled){
     chip.textContent='✦ Auto-rewrite: Off'; chip.style.color='var(--hint)';
     chip.dataset.tip='Auto-rewrite on commit is off — click to turn on, right-click for its settings (exclusions, minimum word count).';
@@ -26229,13 +26241,12 @@ function updateAutoRewriteStatusChip(){
     chip.dataset.tip=locked?'Secure Storage is locked, so the saved key can\'t be read. These nodes stay queued and send automatically once you unlock — click to unlock now.':'No AI key set. These nodes stay queued and send automatically once one is saved — click to open Settings.';
   } else if(autoRewriteQueue.size>0){
     const remainingSec=_autoRewriteFireAt?Math.max(0,Math.ceil((_autoRewriteFireAt-Date.now())/1000)):0;
-    const parts=['✦ Auto-rewrite'];
-    parts.push(`${autoRewriteQueue.size} queued`);
-    parts.push(`sends in ${remainingSec}s`);
-    chip.textContent=parts.join(' · ');
+    chip.textContent=`✦ ${autoRewriteQueue.size} to rewrite \u00B7 ${remainingSec}s`;
     chip.dataset.tip='These rows will be sent as one batched request once the idle pause elapses — editing another row resets it. Click to turn off, right-click for settings.';
   } else {
-    chip.textContent='✦ Auto-rewrite on'; chip.style.color='var(--hint)'; chip.dataset.tip='On and idle — nothing queued right now. Click to turn off, right-click for settings.';
+    chip.innerHTML=AUTO_REWRITE_SPARKLE; chip.classList.add('is-quiet');
+    chip.setAttribute('aria-label','Auto-rewrite is on');
+    chip.dataset.tip='Auto-rewrite is on: rows you finish are tidied up by AI. Click to turn off, right-click for settings.';
   }
   refreshStatusbarDividers();
 }
