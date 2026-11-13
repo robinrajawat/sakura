@@ -126,3 +126,18 @@ test('migration: the open document never saves over another device\'s copy it ha
   await push(page);
   expect((await cloudDoc(page)).nodes[0].text).toBe('Written on the other device');
 });
+
+test('a save sends no table or diagram pictures (only the old phone page read them)', async ({ page }) => {
+  await page.evaluate(() => {
+    // @ts-expect-error -- bare globals from index.html
+    nodes[0].tables = ['<table><tr><th>A</th></tr><tr><td>1</td></tr></table>'];
+    // @ts-expect-error -- bare globals from index.html
+    diagrams = [{ id: 'dg1', title: 'Flow', anchorNodeId: 1, xml: '<mxfile/>', previewSvg: 'data:image/svg+xml,%3Csvg%2F%3E', _hydrated: true, createdAt: 1, modifiedAt: 1 }];
+    // @ts-expect-error -- bare globals from index.html
+    dirty = true; saveToStorage();
+  });
+  await push(page);
+  const paths = await page.evaluate(() => Object.keys((window as unknown as { __cloud: Record<string, unknown> }).__cloud));
+  expect(paths.some((p) => p.includes('/docs/'))).toBe(true);
+  expect(paths.filter((p) => p.includes('/previews'))).toEqual([]);
+});
