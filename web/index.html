@@ -8349,61 +8349,6 @@ function apiStatusClass(status) {
 }
 
 /* GENERATED:apiRequest:END */
-/* GENERATED:tableSnapshot:START — DO NOT EDIT BY HAND. Source of truth: src/utils/tableSnapshot.ts (tests: tests/unit/tableSnapshot.test.ts). Regenerate with `npm run generate` after changing the source; CI fails if this block drifts from what the generator produces (see .github/workflows/ci.yml and scripts/generate-index-blocks.mjs). */
-/**
- * Tables on the phone look the same as on the computer (owner, 2026-11-03: "unified standard
- * behaviour across platforms; the only thing we need to avoid is corrupting the document").
- *
- * The computer draws each table (plain with its polish, or as cards, a chart, chips, progress
- * bars, a timeline, a status board, pros & cons or an API request) with its own code and sends
- * the result to a separate record, users/{uid}/docs/{id}/previews/tables, beside the diagram
- * pictures. The document itself is never touched. The phone finds a table's copy by a key made
- * from the table's stored HTML, so a table edited after the last copy simply has no copy yet and
- * the phone shows it plain.
- *
- * Wired into index.html (block `tableSnapshot`) and hub.html (block `hubTableSnapshot`).
- */
-/** Copies above this size stay on the computer (one Firestore record holds about 1 MB). */
-const TABLE_SNAPSHOT_MAX_CHARS = 900000;
-/** A short key for a table's stored HTML: its length plus two 32-bit hashes over every character. */
-function tableSnapshotKey(src) {
-    const s = String(src ?? '');
-    let a = 5381;
-    let b = 52711;
-    for (let i = 0; i < s.length; i++) {
-        const c = s.charCodeAt(i);
-        a = (Math.imul(a, 33) ^ c) >>> 0;
-        b = (Math.imul(b, 31) + c) >>> 0;
-    }
-    return 't' + s.length.toString(36) + '_' + a.toString(36) + '_' + b.toString(36);
-}
-/**
- * The copies that fit in one record, smallest first, so one huge chart never pushes out the rest.
- * Returns the kept items keyed as given.
- */
-function fitTableSnapshots(items, maxChars = TABLE_SNAPSHOT_MAX_CHARS) {
-    const out = {};
-    let used = 0;
-    Object.keys(items || {})
-        .map((k) => ({ k, size: k.length + String(items[k].html || '').length + String(items[k].cls || '').length + 32 }))
-        .sort((x, y) => x.size - y.size || (x.k < y.k ? -1 : 1))
-        .forEach(({ k, size }) => {
-        if (used + size > maxChars)
-            return;
-        used += size;
-        out[k] = items[k];
-    });
-    return out;
-}
-/** Only the classes a copy may put on its figure. */
-function tableSnapshotClass(cls) {
-    return String(cls ?? '')
-        .split(/\s+/)
-        .filter((c) => c === 'pv-table-chart-figure' || c === 'pos-center')
-        .join(' ');
-}
-
-/* GENERATED:tableSnapshot:END */
 /* GENERATED:postmanCollection:START — DO NOT EDIT BY HAND. Source of truth: src/utils/postmanCollection.ts (tests: tests/unit/postmanCollection.test.ts). Regenerate with `npm run generate` after changing the source; CI fails if this block drifts from what the generator produces (see .github/workflows/ci.yml and scripts/generate-index-blocks.mjs). */
 /**
  * One API request as a Postman collection file (owner, 2026-10-30: API requests move one at a
@@ -10196,8 +10141,7 @@ function attachTableSelection(wrap,table,api){
   return {layout,handleKey,menuItems,clear,has,detach};
 }
 // How a stored table shows when not being edited: a display (chart, Cards, chips, timeline...)
-// or the plain table with its polish. The outline draws with it, and so does the copy the phone
-// gets (tableSnapshotOf), so a table looks the same on every device.
+// or the plain table with its polish.
 function drawTableDisplay(wrap,src){
   const div=document.createElement('div'); div.innerHTML=tidyTableHtml(src||'');
   const table=div.querySelector('table');
@@ -10219,15 +10163,6 @@ function drawTableDisplay(wrap,src){
   applyTableDisplayPolish(clone);
   applyTableTotalRow(clone);
   wrap.appendChild(clone);
-}
-function tableSnapshotOf(src){
-  try{
-    const wrap=document.createElement('div');
-    drawTableDisplay(wrap,src);
-    const html=wrap.innerHTML;
-    if(!html)return null;
-    return {cls:tableSnapshotClass(wrap.className),html};
-  }catch(e){ return null; }
 }
 function buildNodeTableObject(node,tIdx){
   const wrap=document.createElement('div');
@@ -13755,7 +13690,6 @@ function loadDocFromStorage(id){
 // synchronous read (see loadDocFromStorage, which marks those _hydrated immediately) and never
 // reaches this function at all.
 async function hydrateDiagramBlobsForDoc(id){
-  backfillTablePreviews(id);
   const targets=diagrams.filter(dg=>dg&&!dg._hydrated);
   if(!targets.length){ regenerateMissingDiagramPreviews(); return; }
   let changed=false;
@@ -13785,7 +13719,6 @@ async function hydrateDiagramBlobsForDoc(id){
   }
   if(changed&&currentDocId===id){ render(); }
   if(currentDocId===id)regenerateMissingDiagramPreviews();
-  if(currentDocId===id)backfillDiagramPreviews(id);
 }
 // Re-attempts a single diagram's read after hydrateDiagramBlobsForDoc's own retries above already
 // gave up on it — called from the "Retry" state openDiagramEditor shows instead of silently
@@ -17630,10 +17563,8 @@ async function pushDocToCloud(mod,db,docId){
   // the actual expensive part, size-wise) and the app already has a clean, calm fallback for "xml
   // present, no cached thumbnail yet" (the inline diagram preview's placeholder icon) rather than needing pre-rendered
   // images to cross the wire, now doubly so since a diagram's own subcollection doc still has its
-  // own 1MB ceiling. (Since 2026-11-03 the rendered picture also goes up, separately and
-  // best-effort, for the phone's read-only view only: see pushDiagramPreviews. The computer's own
-  // pull still ignores it and re-renders, as before.)
-  let previewItems=[];
+  // own 1MB ceiling. (2026-11-03 to 2026-11-13 the rendered picture also went up for the old phone
+  // page's read-only view; phones now use this page and draw diagrams themselves.)
   try{
     let diagrams=Array.isArray(data.diagrams)?data.diagrams:[];
     if(diagrams.length){
@@ -17648,7 +17579,6 @@ async function pushDocToCloud(mod,db,docId){
         }catch(e){ return dg; } // best-effort — a diagram whose blob can't be read here pushes with whatever xml it already had (usually none), not a hard failure for the rest of the document
       }));
       await pushDocBlobSubcollection(mod,db,ownerUid,docId,'diagrams',hydrated,['xml']);
-      previewItems=hydrated;
       diagrams=hydrated.map(({xml,previewSvg,pageSvgs,...meta})=>meta);
     }
     // A pre-cutdown local copy may still carry a stale `attachments` array (with inline
@@ -17668,8 +17598,6 @@ async function pushDocToCloud(mod,db,docId){
     });
     if(outcome.conflict){ await resolveDocPushConflict(mod,db,ownerUid,docId,outcome.cloud); return; }
     setDocBaseRev(docId,outcome.rev);
-    if(previewItems.length)await pushDiagramPreviews(mod,db,ownerUid,docId,previewItems); // never throws
-    await pushTablePreviews(mod,db,ownerUid,docId,data.nodes); // never throws
     _docTooLargeToastShown.delete(docId); // clears the one-time-per-incident gate below, so a genuinely new occurrence (after this got fixed once) is reported again rather than staying silently suppressed forever
   }catch(e){
     // Firestore's 1MB-per-document limit still applies to EACH write above — the parent doc, and
@@ -17699,71 +17627,6 @@ async function pushDocToCloud(mod,db,docId){
 // per item regardless of what actually changed. A single
 // writeBatch (atomic, same as a lone setDoc would have been) rather than sequential awaits, so a
 // mid-loop failure can't leave some items pushed and others not.
-// Each diagram's rendered picture (its previewSvg, an svg data URL) also goes up, to its own
-// docs/{docId}/previews/{diagramId} record, so the phone's read-only document view can show it
-// (owner, 2026-11-03). Kept apart from the diagram's source so a big picture can never make the
-// source's write fail, and best-effort per diagram: a picture over Firestore's 1 MB record limit,
-// or any failed write, is skipped and the phone shows the diagram's name instead. A signature per
-// diagram (persisted, so a reload doesn't re-upload) skips pictures that haven't changed.
-const DIAGRAM_PREVIEW_SYNC_KEY='sakura_preview_sync_v1';
-const DIAGRAM_PREVIEW_MAX_CHARS=900000;
-function diagramPreviewSig(svg){ let h=5381; for(let i=0;i<svg.length;i+=7)h=((h*33)^svg.charCodeAt(i))>>>0; return svg.length+':'+h; }
-async function pushDiagramPreviews(mod,db,ownerUid,docId,items){
-  let sigs={}; try{ sigs=JSON.parse(localStorage.getItem(DIAGRAM_PREVIEW_SYNC_KEY)||'{}')||{}; }catch(e){ sigs={}; }
-  let changed=false;
-  for(const dg of (Array.isArray(items)?items:[])){
-    const svg=String(dg&&dg.previewSvg||'');
-    if(!dg||!dg.id||!svg.startsWith('data:image/svg+xml')||svg.length>DIAGRAM_PREVIEW_MAX_CHARS)continue;
-    const key=ownerUid+':'+docId+':'+dg.id, sig=diagramPreviewSig(svg);
-    if(sigs[key]===sig)continue;
-    try{
-      await mod.setDoc(mod.doc(db,'users',ownerUid,'docs',docId,'previews',String(dg.id)),{svg,updatedAt:Date.now()});
-      sigs[key]=sig; changed=true;
-    }catch(e){ console.warn('[sakura] diagram picture not synced (the phone shows its name instead):',docId,dg.id,e); }
-  }
-  if(changed){ try{ localStorage.setItem(DIAGRAM_PREVIEW_SYNC_KEY,JSON.stringify(sigs)); }catch(e){} }
-}
-// Tables for the phone (owner, 2026-11-03: the same look on every device). Each table is drawn
-// here with the outline's own code (tableSnapshotOf) and the copies go up together in one record,
-// docs/{id}/previews/_tables, beside the diagram pictures and never read back by the computer. The
-// phone pairs a table with its copy by tableSnapshotKey of the stored HTML, so an edited table
-// just shows plain until the next save sends its new copy. Best-effort: never throws, and skips
-// the write when nothing changed since the last one (signature in localStorage).
-const TABLE_PREVIEW_SYNC_KEY='sakura_table_preview_sync_v1';
-async function pushTablePreviews(mod,db,ownerUid,docId,docNodes){
-  try{
-    const items={};
-    (Array.isArray(docNodes)?docNodes:[]).forEach(n=>{
-      (Array.isArray(n&&n.tables)?n.tables:[]).forEach(src=>{
-        if(typeof src!=='string'||!src)return;
-        const k=tableSnapshotKey(src); if(items[k])return;
-        const snap=tableSnapshotOf(src); if(snap)items[k]=snap;
-      });
-    });
-    const kept=fitTableSnapshots(items);
-    const keys=Object.keys(kept).sort();
-    let sigs={}; try{ sigs=JSON.parse(localStorage.getItem(TABLE_PREVIEW_SYNC_KEY)||'{}')||{}; }catch(e){ sigs={}; }
-    const key=ownerUid+':'+docId;
-    if(!keys.length&&!sigs[key])return;
-    const sig=tableSnapshotKey(JSON.stringify(keys.map(k=>[k,kept[k].cls,kept[k].html])));
-    if(sigs[key]===sig)return;
-    await mod.setDoc(mod.doc(db,'users',ownerUid,'docs',docId,'previews','_tables'),{items:kept,updatedAt:Date.now()});
-    sigs[key]=sig;
-    try{ localStorage.setItem(TABLE_PREVIEW_SYNC_KEY,JSON.stringify(sigs)); }catch(e){}
-  }catch(e){ console.warn('[sakura] tables not sent to the phone (it shows them plain instead):',docId,e); }
-}
-// Tables saved before this existed go up the first time their document is opened here.
-async function backfillTablePreviews(docId){
-  if(!currentUser||currentDocId!==docId)return;
-  try{ const {mod,db}=await loadFirestoreMods(); if(currentDocId!==docId)return; await pushTablePreviews(mod,db,currentUser.uid,docId,nodes); }catch(e){}
-}
-// Pictures made before they were synced go up the first time their document is opened here.
-async function backfillDiagramPreviews(docId){
-  if(!currentUser||currentDocId!==docId)return;
-  const withPictures=diagrams.filter(d=>d&&d._hydrated&&d.previewSvg);
-  if(!withPictures.length)return;
-  try{ const {mod,db}=await loadFirestoreMods(); await pushDiagramPreviews(mod,db,currentUser.uid,docId,withPictures); }catch(e){}
-}
 async function pushDocBlobSubcollection(mod,db,ownerUid,docId,subcolName,items,blobFields){
   const batch=mod.writeBatch(db);
   let hasWrites=false;

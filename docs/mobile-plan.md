@@ -211,10 +211,14 @@ Guests: the phone works without an account like the desktop does (try first, sig
   To-Dos during start-up threw (a helper it uses is defined further down the script).
 - **Deleted:** the old page's code and tests. That is its 11 generated blocks, `hubTodos.ts`,
   `hubSubtasks.ts`, `docReader.ts`, `src/styles/hub/hub.css`, their unit tests, and nine hub-only
-  browser specs. Shared modules it also used (`todoModel`, `syncApply`, `tableSnapshot`…) stay.
-- **Next (5b):** stop uploading the table and diagram pictures only the old page read
-  (`previews/` in Firestore, `sakura_table_preview_sync_v1`, `sakura_preview_sync_v1`), then the
-  faster first load below.
+  browser specs. Shared modules it also used (`todoModel`, `syncApply`…) stay.
+- **5b, done 2026-11-13:** saves no longer upload the table and diagram pictures that only the
+  old page read. Removed: `pushDiagramPreviews`, `pushTablePreviews`, their backfills on opening a
+  document, `tableSnapshotOf` and `src/utils/tableSnapshot.ts`, with the unit test and
+  `diagram-pictures-for-phone.spec.ts`. `doc-safe-writes.spec.ts` checks a save writes nothing
+  under `previews`. Pictures already uploaded stay until their document is deleted forever,
+  which still clears the `previews` folder; their two localStorage signature keys are simply no
+  longer read.
 - **Still open from phase 3:** a check on a real phone of typing (Enter and Backspace with
   Gboard or iOS autocorrect, the keyboard toolbar, the caret staying in view).
 - Docs updated: `feature-reference.md` ("On a phone", the old phone page, Share to Sakura,

@@ -508,13 +508,6 @@ initAiProvidersState({
     footer: ''
   },
   {
-    // Tables on the phone as the computer draws them: the key that pairs a table with its copy.
-    name: 'tableSnapshot',
-    sourceFile: 'src/utils/tableSnapshot.ts',
-    testFile: 'tests/unit/tableSnapshot.test.ts',
-    footer: ''
-  },
-  {
     // Deleting rows: what goes with them (notes, tables, images, Q&A, remarks, diagrams) and the
     // confirmation wording, split into what Undo restores and what it can't (diagrams). Counting
     // and removing stay hand-written in index.html next to confirmDeleteIfNeeded.
