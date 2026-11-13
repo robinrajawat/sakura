@@ -24,7 +24,7 @@ exists so that distinction is visible without opening every file.
 
 - **`mobile-plan.md`**: approved (2026-11-13). One app for every screen size, with a limited
   phone layout that leaves the desktop untouched, replacing the separate `hub.html`. Six phases,
-  Phases 0 (safety net, performance measured), 1 (layout shell), 2 (reading) and 3 (touch editing, real-device check pending) done.
+  Phases 0 (safety net, performance measured), 1 (layout shell), 2 (reading) 3 (touch editing, real-device check pending) and 4 (To-Dos) done.
 
 ## Closed / historical reference (`history/`)
 

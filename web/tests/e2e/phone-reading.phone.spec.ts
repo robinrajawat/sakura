@@ -50,8 +50,10 @@ async function pinch(page: Page, cx: number, cy: number, from: number, to: numbe
 test('a fold dot is a 40px target that folds and unfolds its row', async ({ page }) => {
   const dot = page.locator('.node-row', { hasText: 'Parent row' }).first().locator('.fold-dot');
   await expect(dot).toBeVisible();
+  // Polled: the outline redraws once just after first paint, and a dot caught mid-swap has no box
+  // (seen once under full-suite load on the Pixel 7 profile).
+  await expect.poll(async () => (await dot.boundingBox())?.width ?? 0).toBeGreaterThanOrEqual(40);
   const box = (await dot.boundingBox())!;
-  expect(box.width).toBeGreaterThanOrEqual(40);
   expect(box.height).toBeGreaterThanOrEqual(40);
   await expect(page.locator('#editor-pane')).toContainText('Child row');
   // A tap near the dot's edge, not on the 18px dot itself, still folds.

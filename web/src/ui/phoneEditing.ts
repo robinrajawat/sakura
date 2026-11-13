@@ -48,3 +48,24 @@ export function createLongPress<T>(onFire: (target: T) => void, timers: LongPres
     fired() { return didFire; }
   };
 }
+
+/**
+ * To-Dos swipe on a phone (docs/mobile-plan.md, phase 4), as on the old phone page: a swipe
+ * right past the threshold completes the task, left deletes it (Undo in the toast). The threshold
+ * is 30% of the row, at most 96px.
+ */
+export function swipeOutcome(dx: number, rowWidth: number): 'complete' | 'delete' | null {
+  const threshold = Math.min(96, rowWidth * 0.3);
+  if (dx > threshold) return 'complete';
+  if (dx < -threshold) return 'delete';
+  return null;
+}
+
+/**
+ * Which way a touch is going once it has moved past `slop` px: 'x' (a swipe), 'y' (a scroll, so
+ * leave it to the browser) or null (not decided yet).
+ */
+export function swipeAxis(dx: number, dy: number, slop = 10): 'x' | 'y' | null {
+  if (Math.abs(dx) < slop && Math.abs(dy) < slop) return null;
+  return Math.abs(dx) > Math.abs(dy) ? 'x' : 'y';
+}

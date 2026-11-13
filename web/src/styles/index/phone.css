@@ -135,6 +135,27 @@
   html.phone #phone-row-menu .prm-headings button { min-width: 52px; text-align: center; font-weight: 600; }
   html.phone #phone-row-menu .prm-danger { color: var(--danger); }
 
+  /* ---- To-Dos (phase 4). ---- */
+  /* No hover on a touch screen: each task's ⋯ (due date, pin, waiting, delete…) stays shown,
+     beside its date rather than over it. */
+  html.phone #todos-body .todo-end { gap: 2px; align-items: center; }
+  html.phone #todos-body .todo-more-btn {
+    position: static; transform: none; opacity: 1; pointer-events: auto; background: none; width: 36px; height: 36px;
+    margin: -8px -6px -8px 0;
+  }
+  html.phone #todos-body .todo-row:hover .todo-end .todo-due { visibility: visible; }
+  /* A task swipes sideways (right completes, left deletes); vertical moves still scroll. */
+  html.phone #todos-body .todo-row { touch-action: pan-y; }
+  html.phone #todos-body .todo-row:not(.todo-swiping) { transition: transform .2s cubic-bezier(.2,.8,.2,1); }
+  html.phone #todos-body .todo-row.swipe-complete { background: color-mix(in srgb, var(--success) 14%, transparent); }
+  html.phone #todos-body .todo-row.swipe-delete { background: color-mix(in srgb, var(--danger) 14%, transparent); }
+
+  /* Toasts (Undo, Saved…) sit above the full-screen panels and sheets, so an Undo after a swipe in
+     To-Dos can be tapped. */
+  html.phone #toast { z-index: 1500; }
+  /* Right-click-style menus (a task's ⋯, a table's menu) open over the full-screen panels. */
+  html.phone .sb-context-menu { z-index: 1450; }
+
   /* ---- Desktop-only parts (the plan's feature table). ---- */
   html.phone #statusbar, html.phone #editor-zen-toggle { display: none !important; }
   /* Hover tooltips: there is no hover on a touch screen, and a tap would leave one stuck. */

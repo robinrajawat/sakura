@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { keyboardInset, createLongPress } from '../../src/ui/phoneEditing';
+import { keyboardInset, createLongPress, swipeOutcome, swipeAxis } from '../../src/ui/phoneEditing';
 
 function fakeTimers() {
   let next = 1; const pending = new Map<number, () => void>();
@@ -45,5 +45,22 @@ describe('createLongPress', () => {
     t.runAll();
     expect(hits).toEqual([]);
     expect(lp.fired()).toBe(false);
+  });
+});
+
+
+describe('To-Dos swipe', () => {
+  it('right past 30% of the row (at most 96px) completes, left deletes', () => {
+    expect(swipeOutcome(100, 390)).toBe('complete');
+    expect(swipeOutcome(-100, 390)).toBe('delete');
+    expect(swipeOutcome(90, 390)).toBe(null);
+    expect(swipeOutcome(70, 200)).toBe('complete');
+    expect(swipeOutcome(-50, 200)).toBe(null);
+  });
+  it('decides between a swipe and a scroll once the finger has moved', () => {
+    expect(swipeAxis(4, 3)).toBe(null);
+    expect(swipeAxis(20, 5)).toBe('x');
+    expect(swipeAxis(-20, 5)).toBe('x');
+    expect(swipeAxis(6, 18)).toBe('y');
   });
 });
