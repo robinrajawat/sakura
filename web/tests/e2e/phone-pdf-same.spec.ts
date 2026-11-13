@@ -38,7 +38,9 @@ async function printCopy(browser: Browser, opts: BrowserContextOptions, query: s
     });
     await page.goto('file://' + indexPath + query);
     await page.waitForFunction(() => typeof (window as unknown as { exportPdfDirect?: unknown }).exportPdfDirect === 'function');
-    await page.evaluate(() => (0, eval)("currentUser = { uid: 'u1', getIdToken: async () => 'token-1' }; exportPdfDirect()"));
+    // lastSavedAt pinned: the cover's "Updated …" comes from the last autosave, and under load one
+    // copy could be exported before its first autosave and the other after.
+    await page.evaluate(() => (0, eval)("currentUser = { uid: 'u1', getIdToken: async () => 'token-1' }; lastSavedAt = 1767225600000; exportPdfDirect()"));
     await expect.poll(() => html.length, { timeout: 20000 }).toBeGreaterThan(0);
     return html;
   } finally {
@@ -51,8 +53,18 @@ async function renderAsPrint(browser: Browser, html: string): Promise<Buffer> {
   // a phone rule that wasn't kept off print would show here.
   const p = await browser.newPage({ javaScriptEnabled: false, viewport: { width: 700, height: 1200 } });
   await p.emulateMedia({ media: 'print' });
+  // Refused outright, not left to time out, so fonts settle the same way in both renders.
+  await p.route(/^https?:/, (route) => route.abort());
   await p.setContent(html, { waitUntil: 'load', timeout: 15000 }).catch(() => undefined);
-  const shot = await p.screenshot({ fullPage: true });
+  await p.evaluate(() => document.fonts.ready).catch(() => undefined);
+  // Settled: two shots in a row the same (pictures can finish decoding after 'load' under load).
+  let shot = await p.screenshot({ fullPage: true });
+  for (let i = 0; i < 10; i++) {
+    await p.waitForTimeout(100);
+    const next = await p.screenshot({ fullPage: true });
+    if (next.equals(shot)) break;
+    shot = next;
+  }
   await p.close();
   return shot;
 }
@@ -66,5 +78,12 @@ test('a PDF made on a phone looks the same as one made on a computer', async ({ 
   expect(phone).toMatch(/<html class="[^"]*\bphone\b/);
   const a = await renderAsPrint(browser, desktop);
   const b = await renderAsPrint(browser, phone);
+  if (!b.equals(a)) {
+    const { writeFileSync } = await import('fs');
+    writeFileSync(test.info().outputPath('desktop.png'), a);
+    writeFileSync(test.info().outputPath('phone.png'), b);
+    writeFileSync(test.info().outputPath('desktop.html'), desktop);
+    writeFileSync(test.info().outputPath('phone.html'), phone);
+  }
   expect(b.equals(a)).toBe(true);
 });

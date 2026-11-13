@@ -48,9 +48,20 @@ async function renderAsPrint(page: Page, html: string): Promise<Buffer> {
   const p = await ctx.browser()!.newPage({ javaScriptEnabled: false, viewport: { width: 900, height: 1200 } });
   await p.emulateMedia({ media: 'print' });
   // Same as the Worker, minus the network: the <base> points at the live site, unreachable here,
-  // so both copies render with the same fallback fonts.
+  // so both copies render with the same fallback fonts. Requests are refused outright rather than
+  // left to time out: under full-suite load a font still pending when the shot was taken left one
+  // copy's text hidden (font block period) and the two renders differed.
+  await p.route(/^https?:/, (route) => route.abort());
   await p.setContent(html, { waitUntil: 'load', timeout: 15000 }).catch(() => undefined);
-  const shot = await p.screenshot({ fullPage: true });
+  await p.evaluate(() => document.fonts.ready).catch(() => undefined);
+  // Settled: two shots in a row the same (pictures can finish decoding after 'load' under load).
+  let shot = await p.screenshot({ fullPage: true });
+  for (let i = 0; i < 10; i++) {
+    await p.waitForTimeout(100);
+    const next = await p.screenshot({ fullPage: true });
+    if (next.equals(shot)) break;
+    shot = next;
+  }
   await p.close();
   return shot;
 }
