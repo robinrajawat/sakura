@@ -58,3 +58,26 @@ test('signed in: saving, saved, and a failed push that retries by itself', async
   await expect(state).toBeHidden();
   expect(await page.evaluate(() => (window as unknown as { __pushes: number }).__pushes)).toBe(1);
 });
+
+test('clicking around and switching windows save nothing to the account; an edit does', async ({ page }) => {
+  // Owner 2026-11-13: "Saving…" showed continuously while only reading.
+  const queued = await page.evaluate(() => {
+    // @ts-expect-error -- bare globals from index.html
+    currentUser = { uid: 'u1' }; nodes = [normalizeNode({ id: 1, depth: 0, text: 'One' }), normalizeNode({ id: 2, depth: 0, text: 'Two' })]; nextId = 3; dirty = true; saveToStorage();
+    // @ts-expect-error -- bare globals from index.html
+    _syncPushQueue.clear(); clearTimeout(_syncPushTimer);
+    const has = () => {
+      // @ts-expect-error -- bare globals from index.html
+      return _syncPushQueue.has('doc:' + currentDocId) as boolean;
+    };
+    // A different row selected, then the save a window switch makes.
+    // @ts-expect-error -- bare globals from index.html
+    selectedId = 2; focusedId = null; saveToStorage();
+    document.dispatchEvent(new Event('visibilitychange'));
+    const afterSelect = has();
+    // @ts-expect-error -- bare globals from index.html
+    nodes[0].text = 'One, edited'; dirty = true; saveToStorage();
+    return { afterSelect, afterEdit: has() };
+  });
+  expect(queued).toEqual({ afterSelect: false, afterEdit: true });
+});

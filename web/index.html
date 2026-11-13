@@ -13322,6 +13322,14 @@ function maybePromptGuestSignIn(savedNodes){
     _actionToastUndo=null; // Ctrl/Cmd+Z stays undo while this shows
   }catch(e){}
 }
+// What of a stored document is its content for syncing: everything but where the selection and
+// caret are (diagram blobs live elsewhere and are compared by their metadata here).
+const DOC_VIEW_ONLY_FIELDS=['selectedId','multiSelectedIds','selectionAnchorId','focusedId'];
+function docSyncSignature(d){
+  if(!d||typeof d!=='object')return '';
+  const o={}; Object.keys(d).forEach(k=>{ if(!DOC_VIEW_ONLY_FIELDS.includes(k))o[k]=d[k]; });
+  return JSON.stringify(o);
+}
 function saveToStorage(){
   try{
     if(!currentDocId)return;
@@ -13412,6 +13420,11 @@ function saveToStorage(){
     // localStorage rather than from `nodes` — would otherwise keep faithfully reporting/backing
     // up the last successful (now stale) version with no warning at all. So this failure is
     // caught here specifically, distinct from the outer catch, and surfaced rather than swallowed.
+    // Only a change to what the document holds goes to the account (as other apps sync): the
+    // selected row, the caret and the like are saved here with it but alone don't count, or every
+    // click and window switch sent the whole document and showed "Saving…" (owner, 2026-11-13).
+    let contentChanged=true;
+    try{ const prevRaw=localStorage.getItem(docKey(currentDocId)); contentChanged=!prevRaw||docSyncSignature(JSON.parse(prevRaw))!==docSyncSignature(payload); }catch(e){}
     try{
       localStorage.setItem(docKey(currentDocId),JSON.stringify(payload));
     }catch(storageErr){
@@ -13424,7 +13437,7 @@ function saveToStorage(){
     // Only bump updatedAt when content is actually dirty; title changes always persist title
     if(dirty) touchDocIndex(currentDocId,titleForIndex);
     else touchDocIndexTitleOnly(currentDocId,titleForIndex);
-    queueSync('doc',currentDocId);
+    if(contentChanged)queueSync('doc',currentDocId);
     // The write above just landed, so whatever made this save fire (an edit, or the 450ms
     // autosave debounce in scheduleAutoSave) is now actually persisted — clear the dirty flag so
     // the tab-strip dot and the "• Sakura" title prefix reflect that. Past this line nothing else
@@ -17132,7 +17145,7 @@ function queueSync(kind,id){
 // A failed push is tried again on its own (cloud-first: the account copy must catch up without
 // waiting for the next edit): after 15s, doubling up to 5 minutes, and at once when the browser
 // comes back online.
-let _syncRetryDelay=15000, _syncRetryTimer=null, _syncInFlight=false;
+let _syncRetryDelay=15000, _syncRetryTimer=null, _syncInFlight=false, _syncInFlightKeys=new Set();
 function scheduleSyncRetry(){
   clearTimeout(_syncRetryTimer);
   _syncRetryTimer=setTimeout(flushSyncQueue,_syncRetryDelay);
@@ -17159,7 +17172,7 @@ function docSaveState(){
   }
   if(navigator.onLine===false)return 'offline';
   if(_syncLastStatus==='error')return 'error';
-  if(_syncInFlight||_syncPushQueue.has('doc:'+currentDocId))return 'saving';
+  if(_syncInFlightKeys.has('doc:'+currentDocId)||_syncPushQueue.has('doc:'+currentDocId))return 'saving';
   return 'saved';
 }
 function renderDocSaveState(){
@@ -17219,7 +17232,7 @@ async function flushSyncQueue(){
   if(!currentUser||_syncPushQueue.size===0||_syncInFlight)return;
   clearTimeout(_syncRetryTimer);
   const items=[..._syncPushQueue.values()]; _syncPushQueue.clear();
-  _syncInFlight=true;
+  _syncInFlight=true; _syncInFlightKeys=new Set(items.map(it=>it.kind+':'+it.id));
   updateSyncStatusUI('syncing');
   const done=new Set();
   try{
@@ -17229,13 +17242,13 @@ async function flushSyncQueue(){
       else if(kind==='meta')await pushMetaToCloud(mod,db,id);
       done.add(kind+':'+id);
     }
-    _syncInFlight=false;
+    _syncInFlight=false; _syncInFlightKeys=new Set();
     _syncRetryDelay=15000;
     updateSyncStatusUI('synced');
     _syncErrorToastShown=false;
     if(_syncPushQueue.size){ clearTimeout(_syncPushTimer); _syncPushTimer=setTimeout(flushSyncQueue,1500); } // edits made while this push ran
   }catch(e){
-    _syncInFlight=false;
+    _syncInFlight=false; _syncInFlightKeys=new Set();
     // Whatever didn't go up goes back in the queue (behind any newer change to the same item).
     items.forEach(it=>{ const k=it.kind+':'+it.id; if(!done.has(k)&&!_syncPushQueue.has(k))_syncPushQueue.set(k,it); });
     scheduleSyncRetry();
