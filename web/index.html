@@ -13606,7 +13606,9 @@ function setDocContentPendingLock(on){
   if(on&&!msg){ msg=document.createElement('div'); msg.id='doc-content-pending-msg'; msg.setAttribute('role','status'); wrap.appendChild(msg); }
   if(!msg)return;
   msg.hidden=!on;
-  if(on)msg.textContent=(currentUser||localStorage.getItem('sakura_account_active')==='true')?'Loading this document from your account\u2026':'This document\u2019s content isn\u2019t on this device.';
+  const tab=findOpenTab(activeTabDocId);
+  if(on)msg.textContent=tab&&tab._missingInAccount?'This document isn\u2019t in your account. It may have been deleted on another device.'
+    :(currentUser||localStorage.getItem('sakura_account_active')==='true')?'Loading this document from your account\u2026':'This document\u2019s content isn\u2019t on this device.';
 }
 // The real content of the placeholder on screen has just been stored: show it in place.
 function replaceGhostTabWithStored(id){
@@ -17320,7 +17322,8 @@ async function resolveDocPushConflict(mod,db,ownerUid,docId,cloud){
     }
   }
   renderSidebar();
-  showToast('This document was changed on another device. Your edits here are kept in Version history.',null,false,6000);
+  showActionToast('Changed on another device. Your edits here are kept in Version history.','Version history',()=>openVersionHistory(docId),8000);
+  _actionToastUndo=null; // Ctrl/Cmd+Z stays undo
 }
 async function pushDocToCloud(mod,db,docId){
   const raw=localStorage.getItem(docKey(docId)); if(raw===null)return;
@@ -17710,6 +17713,7 @@ async function applyIncomingDocData(mod,db,ownerUid,id,cloud,viaRealtime){
 // here goes too, unless it was saved after the delete or has unsaved edits on screen: then the
 // edit wins, the marker is cleared and the document goes back up (deletionWins). Returns true
 // when the copy here was removed.
+const DELETE_MARKER_KEEP_MS=180*24*60*60*1000;
 async function applyIncomingDocDeletion(mod,db,id,deletedAt,quiet){
   const entry=loadDocsIndex().find(d=>d.id===id);
   const stored=localStorage.getItem(docKey(id))!==null;
@@ -18055,7 +18059,13 @@ async function pullAndMergeFromCloud(isInitial=false){
     let deletesOk=false, removedOpenDoc=false;
     try{
       const tomb=await mod.getDocs(mod.collection(db,'users',currentUser.uid,'deletedDocs'));
-      for(const t of tomb.docs){ if(await applyIncomingDocDeletion(mod,db,t.id,t.data().deletedAt,true)==='open')removedOpenDoc=true; }
+      for(const t of tomb.docs){
+        const at=Number(t.data().deletedAt)||0;
+        // Markers older than 180 days are cleared, so this read stays small; a device offline for
+        // longer than that could bring such a document back (as other sync services' delete windows).
+        if(at&&Date.now()-at>DELETE_MARKER_KEEP_MS){ mod.deleteDoc(t.ref).catch(()=>{}); continue; }
+        if(await applyIncomingDocDeletion(mod,db,t.id,at,true)==='open')removedOpenDoc=true;
+      }
       deletesOk=true;
     }catch(e){ console.warn('[sakura] pullAndMergeFromCloud: could not read deletes from other devices; holding back missing-document pushes this round:',e); }
     const localIndex=loadDocsIndex();
@@ -18076,6 +18086,9 @@ async function pullAndMergeFromCloud(isInitial=false){
     // know what the cloud has — an empty cloudIds set caused by the fetch above failing
     // isn't the same as a genuinely empty cloud collection. Also never do this right after a
     // Restore (see justRestored above) — see the top of this function for why.
+    // A placeholder for a document the account doesn't have (and no delete marker removed it): it
+    // won't arrive, so it stops saying "Loading…".
+    if(docsFetchOk){ openTabs.forEach(t=>{ if(t._ghostFallback&&!cloudIds.has(t.docId)){ t._missingInAccount=true; if(t.docId===activeTabDocId)setDocContentPendingLock(true); } }); }
     if(docsFetchOk&&deletesOk&&!justRestored){ const missingDocIds=findIdsMissingFromCloud(localIndex.map(e=>e.id),cloudIds); missingDocIds.forEach(id=>{queueSync('doc',id); pushedUpCount++}); }
 
     loadPrefs();
@@ -26250,7 +26263,7 @@ function updateAutoRewriteStatusChip(){
   // a faint square like the full-screen button beside it (owner 2026-11-13: quieter, as Grammarly
   // marks an automatic mode); words show only while rows wait, are rewritten, or it's paused.
   chip.classList.toggle('is-idle',!autoRewriteEnabled);
-  chip.classList.remove('is-quiet');
+  chip.classList.remove('is-quiet'); chip.removeAttribute('aria-label'); // only the icon-only state needs one
   if(!autoRewriteEnabled){
     chip.textContent='✦ Auto-rewrite: Off'; chip.style.color='var(--hint)';
     chip.dataset.tip='Auto-rewrite on commit is off — click to turn on, right-click for its settings (exclusions, minimum word count).';
@@ -28634,7 +28647,7 @@ async function exportAllData(){
     downloadFileBlob(`sakura-backup-${dateStr}.json`, blob);
     try{ markLastExport(); }catch(e){}
     updateExportStatus();
-    showToast('All data exported');
+    showToast(currentUser?'Your data is downloaded':'Backup saved');
   }catch(e){ showToast('Could not export data'); }
 }
 async function importAllDataFromFile(file){

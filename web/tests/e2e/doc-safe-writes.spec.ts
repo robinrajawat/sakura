@@ -87,7 +87,12 @@ test('a copy based on an older rev never overwrites another device\'s save', asy
   expect(d.nodes[0].text).toBe('Written on the other device');
   // The other device's copy is now on screen, and this device's edit is a version.
   await expect(page.locator('#editor-pane')).toContainText('Written on the other device');
-  await expect(page.locator('#toast, .toast').filter({ hasText: 'changed on another device' }).first()).toBeVisible();
+  const toast = page.locator('#toast');
+  await expect(toast).toContainText('Changed on another device');
+  // Its button opens Version history, where this device's edits are.
+  await toast.locator('.toast-action-btn', { hasText: 'Version history' }).click();
+  await expect(page.locator('#history-modal-overlay')).toHaveClass(/open/);
+  await page.keyboard.press('Escape');
   const reasons = await page.evaluate(async () => {
     // @ts-expect-error -- bare globals from index.html
     const list = await loadDocRevisions(currentDocId);
