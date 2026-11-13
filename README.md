@@ -195,7 +195,7 @@ Settings → Shortcuts lists every shortcut; click one to change it.
 
 **What runs where**
 
-- The app is one static page, `index.html`, with a phone layout below 768px (`docs/mobile-plan.md`); `hub.html`, the old phone page, only forwards to it. It is built with Vite and served by GitHub Pages at `www.sakura-notes.com`. There is no application server: the editor, the PDF renderer, diagram editing and storage all run in the browser.
+- The app is one static page, `index.html`, with a phone layout below 768px (`docs/mobile-plan.md`); `hub.html`, the old phone page, only forwards to it. It is built with Vite (which also minifies the page's inline code and styles, `web/scripts/minify-inline.mjs`) and served by GitHub Pages at `www.sakura-notes.com`. There is no application server: the editor, the PDF renderer, diagram editing and storage all run in the browser.
 - **Storage:** browser `localStorage`, with a service worker for offline use and installing as an app (PWA).
 - **Accounts and sync:** Firebase Authentication (Google, email) and Cloud Firestore, one document per item under `users/{uid}`. Each document carries a version number (`rev`), and a device only saves over the account's copy when nobody else saved since it last loaded it; otherwise its edits are kept in Version history and the newer copy wins. Access rules are in `firebase/firestore.rules`.
 - **Hosted AI:** a Cloudflare Worker (`worker/`) holds the provider keys, enforces the daily quota per account and tries the providers in order. Bring-your-own-key requests go straight from the browser to the provider. A Content-Security-Policy allowlist limits which hosts the page can talk to.

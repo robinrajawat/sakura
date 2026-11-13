@@ -1,6 +1,7 @@
 import { defineConfig } from 'vite';
 import { resolve } from 'path';
 import { execSync } from 'child_process';
+import { minifyInlineHtml } from './scripts/minify-inline.mjs';
 
 // About's version line (Settings → About): the build date and short commit, stamped into the
 // built HTML in place of __SAKURA_VERSION__. Falls back to the CI commit, then to today's date.
@@ -41,9 +42,17 @@ const stampVersion = () => ({
 // these files used to sit at the repo root with a hand-rolled copy script
 // (scripts/copy-static-assets.mjs, now deleted) working around exactly this; moving them into
 // public/ fixes the underlying cause instead.
+// The page's code and styles are inline, which Vite leaves as written; this minifies them in the
+// build only (docs/mobile-plan.md, "faster first load": about 700 KB → 400 KB compressed).
+const minifyInline = () => ({
+  name: 'sakura-minify-inline',
+  apply: 'build',
+  transformIndexHtml: { order: 'post', handler: (html) => minifyInlineHtml(html) }
+});
+
 export default defineConfig({
   base: '/',
-  plugins: [stampVersion()],
+  plugins: [stampVersion(), minifyInline()],
   build: {
     rollupOptions: {
       input: {

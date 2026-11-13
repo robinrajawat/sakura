@@ -1,6 +1,6 @@
 # Mobile plan: one app, a limited phone layout
 
-**Status:** approved (2026-11-13). Phases 0–5 done (phase 3 awaits a real-device check); faster first load next. Owner direction: follow standard practice. One
+**Status:** approved (2026-11-13). Phases 0–5 done (phase 3 awaits a real-device check); faster first load step 1 (minified build) done. Owner direction: follow standard practice. One
 app serves every screen size; the phone gets a deliberately **limited** set of features; and
 **nothing on the desktop changes or breaks**. Each phase below is its own PR, in order.
 
@@ -244,18 +244,32 @@ Guests: the phone works without an account like the desktop does (try first, sig
   event; Backspace inside a row is unchanged), `phone-shell.phone.spec.ts` (+2) and
   `phone-layout-switch.spec.ts` (+1: the desktop still shows the welcome).
 
-### Before or after phase 5: faster first load
+### Faster first load: step 1, minify the build. Done 2026-11-13
 
-Measured in phase 0: the page is 700 KB compressed against hub.html's 81 KB, about 4.5 s on a
-slow phone connection the first time (later visits are cached). The phone-hidden parts are loaded
-on demand, so phones and the desktop's first visit both get faster.
+- Vite left the page's inline code and styles exactly as written, comments and all: the built page
+  was 2.48 MB (701 KB compressed) against a 2.55 MB source. The build now minifies them
+  (`scripts/minify-inline.mjs`, wired in `vite.config.js`, build only). The result is 1.56 MB
+  (403 KB compressed): 43% less to download on a first visit. Later visits are cached anyway.
+- The minifier uses esbuild with no output format, so top-level names (the globals the page's
+  scripts, inline handlers and tests share) are kept. A small scanner, not a regex, finds the
+  blocks: an HTML comment that mentions `<script>` must not be read as one, and only JavaScript
+  scripts are touched. Anything it can't parse is left as written.
+- Checked by running the whole browser suite against the built, minified page. 1004 passed; of
+  the 4 failures, 3 were tests about the source itself (the unbuilt version placeholder, and two
+  that read the source text), and 1 didn't recur (104/104 when repeated under load, minified and
+  source alike). `built-output-works.spec.ts` now drives the built page in CI: it checks the page
+  is minified and under 500 KB compressed, that typing, Enter, Tab and saving work, and that a
+  phone gets the phone layout.
+- **Step 2 if still needed:** load the phone-hidden parts (AI, the table, chart and diagram editors,
+  templates) on demand. That splits the page's single script, so it is a bigger and riskier
+  change; measure on a real phone first.
 
 ## Risks
 
-1. **Phone performance.** Measured in phase 0: the page is about 9 times the size of hub.html
-   (700 KB against 81 KB compressed). Repeat visits are fine (about 1 s, cached), but a first
-   visit on a slow connection takes about 4.5 s. Loading the phone-hidden parts on demand is
-   required before phase 5. It also speeds up the desktop's first visit.
+1. **Phone performance.** Measured in phase 0: 700 KB compressed, about 4.5 s for a first visit on
+   a slow connection (repeat visits about 1 s, cached). Minifying the build (above) brought it to
+   403 KB, about 2.5 s. Loading the phone-hidden parts on demand is the next step if real phones
+   still feel slow.
 2. **Touch editing on iOS.** `contenteditable` on iOS Safari has known quirks (caret jumps,
    the keyboard covering the caret, autocorrect fighting custom Enter handling). Phase 3 is
    the riskiest phase. It needs real-device testing, and it may need to ship as "edit row
