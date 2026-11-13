@@ -3624,6 +3624,27 @@ html.calm-layout #sb-auto-rewrite-chip.is-quiet:hover,html.calm-layout #sb-auto-
   html.phone #phone-row-menu .prm-headings button { min-width: 52px; text-align: center; font-weight: 600; }
   html.phone #phone-row-menu .prm-danger { color: var(--danger); }
 
+  /* ---- To-Dos (phase 4). ---- */
+  /* No hover on a touch screen: each task's ⋯ (due date, pin, waiting, delete…) stays shown,
+     beside its date rather than over it. */
+  html.phone #todos-body .todo-end { gap: 2px; align-items: center; }
+  html.phone #todos-body .todo-more-btn {
+    position: static; transform: none; opacity: 1; pointer-events: auto; background: none; width: 36px; height: 36px;
+    margin: -8px -6px -8px 0;
+  }
+  html.phone #todos-body .todo-row:hover .todo-end .todo-due { visibility: visible; }
+  /* A task swipes sideways (right completes, left deletes); vertical moves still scroll. */
+  html.phone #todos-body .todo-row { touch-action: pan-y; }
+  html.phone #todos-body .todo-row:not(.todo-swiping) { transition: transform .2s cubic-bezier(.2,.8,.2,1); }
+  html.phone #todos-body .todo-row.swipe-complete { background: color-mix(in srgb, var(--success) 14%, transparent); }
+  html.phone #todos-body .todo-row.swipe-delete { background: color-mix(in srgb, var(--danger) 14%, transparent); }
+
+  /* Toasts (Undo, Saved…) sit above the full-screen panels and sheets, so an Undo after a swipe in
+     To-Dos can be tapped. */
+  html.phone #toast { z-index: 1500; }
+  /* Right-click-style menus (a task's ⋯, a table's menu) open over the full-screen panels. */
+  html.phone .sb-context-menu { z-index: 1450; }
+
   /* ---- Desktop-only parts (the plan's feature table). ---- */
   html.phone #statusbar, html.phone #editor-zen-toggle { display: none !important; }
   /* Hover tooltips: there is no hover on a touch screen, and a tap would leave one stuck. */
@@ -28748,6 +28769,28 @@ function createLongPress(onFire, timers, delay = 500, slop = 10) {
         fired() { return didFire; }
     };
 }
+/**
+ * To-Dos swipe on a phone (docs/mobile-plan.md, phase 4), as on the old phone page: a swipe
+ * right past the threshold completes the task, left deletes it (Undo in the toast). The threshold
+ * is 30% of the row, at most 96px.
+ */
+function swipeOutcome(dx, rowWidth) {
+    const threshold = Math.min(96, rowWidth * 0.3);
+    if (dx > threshold)
+        return 'complete';
+    if (dx < -threshold)
+        return 'delete';
+    return null;
+}
+/**
+ * Which way a touch is going once it has moved past `slop` px: 'x' (a swipe), 'y' (a scroll, so
+ * leave it to the browser) or null (not decided yet).
+ */
+function swipeAxis(dx, dy, slop = 10) {
+    if (Math.abs(dx) < slop && Math.abs(dy) < slop)
+        return null;
+    return Math.abs(dx) > Math.abs(dy) ? 'x' : 'y';
+}
 
 /* GENERATED:phoneEditing:END */
 // Editing by touch (docs/mobile-plan.md, phase 3): a row toolbar above the on-screen keyboard while a
@@ -31967,7 +32010,7 @@ function threadEntryMenuItems(node,r,thread,textEl,commit){
   const parent=threadReplyParent(r,thread);
   items.push({label:'Reply', icon:THREAD_REPLY_ICON, onClick:()=>openThreadComposer(node.id,false,(parent||r).id)});
   items.push({divider:true});
-  if(featureAiEnabled)items.push({label:'Rewrite', icon:'<svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z" fill="currentColor"/></svg>', onClick: async()=>{ const current=textEl.textContent||''; if(!current.trim())return; try{ const result=await callAiApi(current); if(!result)return; pushUndo(); r.text=sakuraSanitizeRichHtml(result); markDirty(); scheduleAutoSave(); render(); }catch(err){ showAiErrorModal(aiProvider,err); } }});
+  if(featureAiEnabled&&!isPhoneLayout())items.push({label:'Rewrite', icon:'<svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z" fill="currentColor"/></svg>', onClick: async()=>{ const current=textEl.textContent||''; if(!current.trim())return; try{ const result=await callAiApi(current); if(!result)return; pushUndo(); r.text=sakuraSanitizeRichHtml(result); markDirty(); scheduleAutoSave(); render(); }catch(err){ showAiErrorModal(aiProvider,err); } }});
   items.push({label:'Delete', danger:true, icon:ico('<polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>'), onClick:change(()=>{ const i=remarks.indexOf(r); if(i>=0)remarks.splice(i,1); remarks.forEach(x=>{ if(x.answerTo===r.id)delete x.answerTo; }); })});
   return items;
 }
@@ -32074,7 +32117,7 @@ function threadComposerMenuItems(node,input,ask,submit){
   const hasText=htmlHasVisibleText(input.innerHTML);
   const items=[];
   if(hasText)items.push({label:'Add', icon:ico('<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>'), onClick:()=>submit()});
-  if(featureAiEnabled&&hasText)items.push({label:'Rewrite', icon:'<svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z" fill="currentColor"/></svg>', onClick: async()=>{ const current=input.textContent||''; if(!current.trim())return; try{ const result=await callAiApi(current); if(!result)return; _threadDrafts.set(node.id,sakuraSanitizeRichHtml(result)); _threadComposerNodeId=node.id; _pendingInlineFocus={kind:'threadComposer',nodeId:node.id}; render(); }catch(err){ showToast('Rewrite failed: '+(err&&err.message||err)); } }});
+  if(featureAiEnabled&&hasText&&!isPhoneLayout())items.push({label:'Rewrite', icon:'<svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z" fill="currentColor"/></svg>', onClick: async()=>{ const current=input.textContent||''; if(!current.trim())return; try{ const result=await callAiApi(current); if(!result)return; _threadDrafts.set(node.id,sakuraSanitizeRichHtml(result)); _threadComposerNodeId=node.id; _pendingInlineFocus={kind:'threadComposer',nodeId:node.id}; render(); }catch(err){ showToast('Rewrite failed: '+(err&&err.message||err)); } }});
   items.push({divider:true});
   items.push({label:'Close', icon:ico('<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>'), onClick:()=>{ _threadDrafts.delete(node.id); _threadComposerNodeId=null; setThreadComposerKind(node.id,'comment'); render(); }});
   return items;
@@ -34449,7 +34492,7 @@ function todosHistorySummary(list) {
       items.push({divider:true});
     }
     // Rewrite with AI stays (an earlier AI cut-down kept it on tasks); only shown with AI on.
-    if(!t.done&&(typeof featureAiEnabled==='undefined'||featureAiEnabled)) items.push({label:'Rewrite', icon:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="none"><path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z" fill="currentColor"/></svg>', onClick:()=>rewriteTodo(t.id)});
+    if(!t.done&&(typeof featureAiEnabled==='undefined'||featureAiEnabled)&&!isPhoneLayout()) items.push({label:'Rewrite', icon:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="none"><path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z" fill="currentColor"/></svg>', onClick:()=>rewriteTodo(t.id)});
     items.push({label:'Copy', icon:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>', onClick: async()=>{ await copyTodoText(t.id); }});
     items.push({label:'Delete', icon:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/></svg>', danger:true, onClick: async()=>{ deleteTodo(t.id); }});
     return items;
@@ -34915,6 +34958,40 @@ function todosHistorySummary(list) {
   }
   // On a phone To-Dos is full screen, so it has a back button (docs/mobile-plan.md).
   document.getElementById('todos-phone-back')?.addEventListener('click',closeTodosPanel);
+  // On a phone a task swipes, as on the old phone page (docs/mobile-plan.md, phase 4): right
+  // completes it, left deletes it with Undo in the toast. Touch only; the desktop is unchanged.
+  (function(){
+    const body=document.getElementById('todos-body'); if(!body)return;
+    let sw=null, swallowClick=false;
+    const reset=row=>{ row.classList.remove('todo-swiping','swipe-complete','swipe-delete'); row.style.transform=''; };
+    body.addEventListener('pointerdown',e=>{
+      swallowClick=false;
+      if(!isPhoneLayout()||e.pointerType!=='touch'||!e.isPrimary)return;
+      const row=e.target.closest('.todo-row[data-id]');
+      if(!row||e.target.closest('input,button,select,textarea'))return;
+      // A task's text is editable in place; it swipes like the rest of the row unless it is being typed in.
+      const ce=e.target.closest('[contenteditable="true"]'); if(ce&&ce.contains(document.activeElement))return;
+      sw={row,id:row.dataset.id,x:e.clientX,y:e.clientY,dx:0,axis:null};
+    });
+    body.addEventListener('pointermove',e=>{
+      if(!sw)return;
+      const dx=e.clientX-sw.x, dy=e.clientY-sw.y;
+      if(!sw.axis){ sw.axis=swipeAxis(dx,dy); if(sw.axis==='y'){ sw=null; return; } if(!sw.axis)return; sw.row.classList.add('todo-swiping'); }
+      sw.dx=dx; sw.row.style.transform=`translateX(${dx}px)`;
+      const out=swipeOutcome(dx,sw.row.offsetWidth);
+      sw.row.classList.toggle('swipe-complete',out==='complete'); sw.row.classList.toggle('swipe-delete',out==='delete');
+    });
+    const end=e=>{
+      if(!sw)return; const s=sw; sw=null; reset(s.row);
+      if(s.axis!=='x'||e.type!=='pointerup')return;
+      swallowClick=true; // the lift that ends a swipe is not also a tap on the task
+      const out=swipeOutcome(s.dx,s.row.offsetWidth);
+      if(out==='complete'){ const t=todos.find(x=>x.id===s.id); if(t&&!t.done)toggleTodo(s.id); }
+      else if(out==='delete')deleteTodo(s.id);
+    };
+    body.addEventListener('pointerup',end); body.addEventListener('pointercancel',end);
+    body.addEventListener('click',e=>{ if(swallowClick){ swallowClick=false; e.preventDefault(); e.stopPropagation(); } },true);
+  })();
   // Version history lives inline in the ⋯ menu (owner, 2026-10-20: "keep them inline rather than a
   // popup"): the last 5 versions, newest first, each one click to restore.
   function todosHistoryMenuItems(){

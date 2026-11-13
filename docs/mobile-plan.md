@@ -1,6 +1,6 @@
 # Mobile plan: one app, a limited phone layout
 
-**Status:** approved (2026-11-13). Phases 0–3 built (phase 3 awaits a real-device check); phase 4 next. Owner direction: follow standard practice. One
+**Status:** approved (2026-11-13). Phases 0–4 built (phase 3 awaits a real-device check); phase 5 next. Owner direction: follow standard practice. One
 app serves every screen size; the phone gets a deliberately **limited** set of features; and
 **nothing on the desktop changes or breaks**. Each phase below is its own PR, in order.
 
@@ -177,12 +177,25 @@ Guests: the phone works without an account like the desktop does (try first, sig
   caret staying in view above the toolbar. Anything found is fixed before phase 5 switches
   phones over.
 
-### Phase 4: To-Dos
+### Phase 4: To-Dos. Done 2026-11-13
 
-- Make the existing To-Dos panel full screen on a phone, and bring over what the hub has that
-  the panel doesn't: the swipe gestures, the detail sheet and the open-count heading. The
-  logic is already shared (`todoModel.ts`, `hubTodos.ts`, `hubSubtasks.ts`).
-- The phone opens on Documents or To-Dos, whichever was used last.
+- The desktop To-Dos panel, full screen on a phone (phase 1), already had what the old phone page
+  showed: Pinned, Today, Upcoming, Anytime and Waiting sections, and the "N open" heading.
+- **Swipe**, as on the old phone page: right completes a task, left deletes it with Undo in the
+  toast (`toggleTodo`, `deleteTodo`). It needs 30% of the row, at most 96px (`swipeOutcome`). A
+  mostly-vertical drag is left to scrolling (`swipeAxis`), and a task's text being typed in
+  doesn't swipe. Touch only, so the desktop is unchanged.
+- **A task's ⋯** (Pin, Waiting for, Due date, Repeat, Link, Copy, Delete) is always shown on a
+  phone, beside the date, since there is no hover. It replaces the old phone page's detail sheet
+  with the desktop's own menu. Rewrite (AI) is left out of it, and out of the thread and note
+  menus, on a phone.
+- **Fixed on the way:** toasts (Undo) and ⋯-style menus opened *behind* the full-screen panels
+  on a phone. They now sit above them (toast 1500, menus 1450, panels 1300).
+- Opening on Documents or To-Dos, whichever was last used, already works: the panel remembers
+  being open (`TODOS_OPEN_KEY`).
+- Tests: `phone-todos.phone.spec.ts` (swipes through Chrome's touch input, Undo tapped, a short
+  or vertical drag does nothing, ⋯ visible and its menu on top with no Rewrite) and
+  `phoneEditing.test.ts` (+2).
 
 ### Phase 5: switch over and retire hub.html
 
