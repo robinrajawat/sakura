@@ -277,6 +277,26 @@ the outline, so pictures follow. The PDF builds its own copy and is unchanged.
 `diagram-follows-app-theme.phone.spec.ts` uses a dark device with the app set to Light (it fails
 without the fix).
 
+### Title lost after Download PDF in iPhone Safari (owner, 2026-11-16)
+
+"Download pdf in safari iphone removed the title from the document in the editor. We need to be
+extremely careful about these data loss issues."
+
+- **Not reproduced in Chrome** at iPhone size: export; export then hide and reload; export signed
+  in with a fake cloud then a catch-up. The title survived each time. Nothing in the PDF path
+  writes to the title: it reads `#header-title`, sets `document.title` and restores it.
+- **Leading cause (inference, Safari-only):** form restoration. When Safari reloads a page it left
+  (for example to show the downloaded PDF), it can put an old value back into a text field after
+  the app has loaded the document, and the next save stores it.
+- **Fix, whatever the trigger:** the title and author only change through the app (`setDocTitleField`,
+  `setDocAuthorField`, used by every place that sets them) or while the person is using the field
+  (focus, typing, paste…). Any other change is put back before a save (`guardDocFields()` at the
+  top of `saveToStorage`), on `load`/`pageshow` and on returning to the page, and logged
+  (`src/ui/fieldGuard.ts`). `doc-title-guard.spec.ts` sets the field the way restoration does and
+  checks nothing is saved (it fails without the guard). Renaming, clearing, switching documents
+  and restoring versions are unchanged.
+- To get a lost title back: Version history keeps each version's title.
+
 ### Faster first load: step 1, minify the build. Done 2026-11-13
 
 - Vite left the page's inline code and styles exactly as written, comments and all: the built page

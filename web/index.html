@@ -13531,9 +13531,64 @@ function docSyncSignature(d){
   const o={}; Object.keys(d).forEach(k=>{ if(!DOC_VIEW_ONLY_FIELDS.includes(k))o[k]=d[k]; });
   return JSON.stringify(o);
 }
+/* GENERATED:fieldGuard:START — DO NOT EDIT BY HAND. Source of truth: src/ui/fieldGuard.ts (tests: tests/unit/fieldGuard.test.ts). Regenerate with `npm run generate` after changing the source; CI fails if this block drifts from what the generator produces (see .github/workflows/ci.yml and scripts/generate-index-blocks.mjs). */
+/**
+ * Guards a document field (the title, the author) against changes that neither the person nor the
+ * app made (owner 2026-11-16: Download PDF in iPhone Safari left the title empty; "we need to be
+ * extremely careful about these data loss issues"). It didn't reproduce in Chrome. The leading
+ * Safari-only cause is form restoration: when Safari reloads a page it left (for example after
+ * showing the downloaded PDF), it can put an old value back into a text field after the app has
+ * loaded the document, and the next save would store it. Whatever the cause, the field may only
+ * change through the app (set) or while the person is using it (focus, typing, paste…); any other
+ * change is put back before it can be saved, and logged.
+ *
+ * Wired into index.html via scripts/generate-index-blocks.mjs's `fieldGuard` block.
+ */
+function createFieldGuard(field, name, onRestore) {
+    let known = String(field.value ?? '');
+    let touched = false;
+    // Inside the function, not a module constant: a document can open before this block's place in
+    // the page's script has run.
+    for (const t of ['focus', 'input', 'keydown', 'paste', 'cut', 'drop', 'compositionend', 'beforeinput'])
+        field.addEventListener(t, () => { touched = true; });
+    field.addEventListener('input', () => { known = String(field.value ?? ''); });
+    return {
+        set(value) { known = String(value ?? ''); field.value = known; touched = false; },
+        check() {
+            const now = String(field.value ?? '');
+            if (now === known)
+                return false;
+            if (touched) {
+                known = now;
+                return false;
+            }
+            field.value = known;
+            if (onRestore)
+                onRestore(name, now, known);
+            return true;
+        },
+        known() { return known; }
+    };
+}
+
+/* GENERATED:fieldGuard:END */
+// The document's title and author only change through the app or the person using them
+// (src/ui/fieldGuard.ts; owner 2026-11-16, title lost after Download PDF in iPhone Safari). `var`,
+// not `let`: a document can open before this point in the script runs.
+var _docTitleGuard=null, _docAuthorGuard=null;
+function _reportFieldRestore(name,unexpected,kept){ console.warn('[sakura] '+name+' changed without the app or you ('+JSON.stringify(unexpected)+'); kept '+JSON.stringify(kept)); }
+function docTitleGuard(){ const f=el('header-title'); return f?(_docTitleGuard||(_docTitleGuard=createFieldGuard(f,'title',_reportFieldRestore))):null; }
+function docAuthorGuard(){ const f=el('doc-author'); return f?(_docAuthorGuard||(_docAuthorGuard=createFieldGuard(f,'author',_reportFieldRestore))):null; }
+function setDocTitleField(v){ const g=docTitleGuard(); if(g)g.set(v); }
+function setDocAuthorField(v){ const g=docAuthorGuard(); if(g)g.set(v); }
+function guardDocFields(){ const a=docTitleGuard()?.check(), b=docAuthorGuard()?.check(); if(b&&typeof updateAuthorDisplay==='function')updateAuthorDisplay(); return !!(a||b); }
+// Safari restores form fields around load and when a page comes back from another view.
+['load','pageshow'].forEach(t=>window.addEventListener(t,()=>{ guardDocFields(); setTimeout(guardDocFields,0); }));
+document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible')guardDocFields(); });
 function saveToStorage(){
   try{
     if(!currentDocId)return;
+    guardDocFields(); // a title or author change nobody made is put back before it is saved
     // Safety guard: if this tab is a ghost-fallback placeholder (see warnGhostDocFallback) and
     // still has no real content, refuse to save it — regardless of `dirty`. Unlike the
     // existing-content guard just below, there's no prior localStorage record to compare
@@ -13678,8 +13733,8 @@ function loadDocFromStorage(id){
     collapsedTableNodeIds=new Set(Array.isArray(d.collapsedTables)?d.collapsedTables:[]);
     collapsedImageNodeIds=new Set(Array.isArray(d.collapsedImages)?d.collapsedImages:[]);
     focusedId=Number.isFinite(d.focusedId)&&nodes.some(n=>n.id===d.focusedId)?d.focusedId:null;
-    if(el('header-title'))el('header-title').value=d.title||'';
-    if(el('doc-author'))el('doc-author').value=d.author||'';
+    setDocTitleField(d.title||'');
+    setDocAuthorField(d.author||'');
     setDocStatus(typeof d.docStatus==='string'?d.docStatus:'',false);
     setDocLinkedUrl(typeof d.docLinkedUrl==='string'?d.docLinkedUrl:'',typeof d.docLinkedUrlLabel==='string'?d.docLinkedUrlLabel:'',false);
     qaItems=Array.isArray(d.qa)?d.qa:[];
@@ -13814,7 +13869,7 @@ function applyTabSnapshot(tab){
   hideCrossTabWarning();
   nodes=tab.nodes; nextId=tab.nextId; selectedId=tab.selectedId; multiSelectedIds=tab.multiSelectedIds||[]; selectionAnchorId=tab.selectionAnchorId; collapsedIds=tab.collapsedIds||new Set(); collapsedTableNodeIds=tab.collapsedTableNodeIds||new Set(); collapsedImageNodeIds=tab.collapsedImageNodeIds||new Set(); focusedId=Number.isFinite(tab.focusedId)?tab.focusedId:null; undoStack=tab.undoStack||[]; redoStack=tab.redoStack||[]; dirty=!!tab.dirty;
   editingId=null; selectAllMode=false; flashNodeId=null;
-  if(el('header-title'))el('header-title').value=tab.title||''; if(el('doc-author'))el('doc-author').value=tab.author||'';
+  setDocTitleField(tab.title||''); setDocAuthorField(tab.author||'');
   setDocStatus(typeof tab.docStatus==='string'?tab.docStatus:'',false);
   setDocLinkedUrl(typeof tab.docLinkedUrl==='string'?tab.docLinkedUrl:'',typeof tab.docLinkedUrlLabel==='string'?tab.docLinkedUrlLabel:'',false);
   qaItems=Array.isArray(tab.qa)?tab.qa:[];
@@ -14070,7 +14125,7 @@ function ensureDocumentForEditing(){
   // bar) — without this, code that runs right after ensureDocumentForEditing() (e.g. loading
   // a template into this brand-new doc) would still see an empty author field even though
   // the resolved default was already written to storage above.
-  if(el('doc-author'))el('doc-author').value=resolvedAuthor;
+  setDocAuthorField(resolvedAuthor);
   setDocStatus('',false);
   persistOpenTabs(); renderTabStrip(); renderSidebar();
   if(typeof updateDocShareChipVisibility==='function')updateDocShareChipVisibility();
@@ -14081,7 +14136,7 @@ function clearToNoDocumentState(){
   clearFiltersForDocChange(); setDocContentPendingLock(false); setTimeout(renderDocSaveState,0);
   nodes=[]; nextId=1; selectedId=null; editingId=null; undoStack=[]; redoStack=[]; multiSelectedIds=[]; selectionAnchorId=null; collapsedIds=new Set(); collapsedTableNodeIds=new Set(); collapsedImageNodeIds=new Set(); focusedId=null; dirty=false; selectAllMode=false; flashNodeId=null;
   searchOpen=false; if(el('search-bar'))el('search-bar').hidden=true; searchQuery=''; searchMatches=[]; searchIndex=-1; if(el('search-input'))el('search-input').value='';
-  if(el('header-title'))el('header-title').value=''; if(el('doc-author'))el('doc-author').value=defaultAuthorName||'';
+  setDocTitleField(''); setDocAuthorField(defaultAuthorName||'');
   setDocStatus('',false);
   setDocLinkedUrl('','',false);
   currentDocId=null; activeTabDocId=null; try{localStorage.removeItem(CURRENT_DOC_KEY)}catch(e){}
@@ -14105,7 +14160,7 @@ function renameDoc(id,anchor){
 }
 function applyDocRename(id,name){
   const trimmed=name.trim()||'Untitled';
-  if(id===currentDocId){ if(el('header-title'))el('header-title').value=trimmed; saveToStorage() }
+  if(id===currentDocId){ setDocTitleField(trimmed); saveToStorage() }
   else { touchDocIndex(id,trimmed); try{const raw=localStorage.getItem(docKey(id)); if(raw){const d=JSON.parse(raw); d.title=trimmed; localStorage.setItem(docKey(id),JSON.stringify(d))}}catch(e){showToast('Storage full — rename may not have saved. Free up space or export a backup.')} const openTab=findOpenTab(id); if(openTab)openTab.title=trimmed; renderTabStrip(); }
   renderDocsList(); if(typeof renderSidebar==='function')renderSidebar();
 }
@@ -14358,8 +14413,8 @@ async function restoreDocRevision(docId,ts){
     // Threads come back with their rows (they used to stay as they are now, so comments on rows
     // that came back were gone).
     if(Array.isArray(rev.remarks))remarks=JSON.parse(JSON.stringify(rev.remarks));
-    if(el('header-title'))el('header-title').value=rev.title||'';
-    if('author' in rev&&el('doc-author')){ el('doc-author').value=rev.author||''; if(typeof updateAuthorDisplay==='function')updateAuthorDisplay(); }
+    setDocTitleField(rev.title||'');
+    if('author' in rev&&el('doc-author')){ setDocAuthorField(rev.author||''); if(typeof updateAuthorDisplay==='function')updateAuthorDisplay(); }
     if('docLinkedUrl' in rev)setDocLinkedUrl(rev.docLinkedUrl||'',rev.docLinkedUrlLabel||'',false);
     // Older revisions predate docStatus entirely and simply lack the key — leaving the current
     // status untouched in that case, rather than blanking it, since "unknown" isn't the same as
@@ -25085,7 +25140,7 @@ function updateAuthorDisplay(){const name=String(el('doc-author')?.value||'').tr
 el('sb-author')?.addEventListener('input',()=>{
   const val=el('sb-author').value;
   ensureDocumentForEditing();
-  el('doc-author').value=val.trim();
+  setDocAuthorField(val.trim());
   el('sb-author').classList.toggle('unset',!val.trim());
   scheduleAutoSave();
 });

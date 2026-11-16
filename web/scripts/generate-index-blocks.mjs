@@ -171,6 +171,14 @@ initVaultState({
     footer: ''
   },
   {
+    name: 'fieldGuard',
+    sourceFile: 'src/ui/fieldGuard.ts',
+    testFile: 'tests/unit/fieldGuard.test.ts',
+    // The title and author only change through the app or the person (iPhone Safari lost a title).
+    // Spliced just before saveToStorage, which checks both before every save.
+    footer: ''
+  },
+  {
     name: 'toasts',
     sourceFile: 'src/ui/toasts.ts',
     testFile: 'tests/unit/toasts.test.ts',
