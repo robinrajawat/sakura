@@ -171,6 +171,14 @@ initVaultState({
     footer: ''
   },
   {
+    name: 'threadDrafts',
+    sourceFile: 'src/utils/threadDrafts.ts',
+    testFile: 'tests/unit/threadDrafts.test.ts',
+    // Unsent thread replies are saved on the device and synced to the account. Spliced just before
+    // the thread reply box's state, which keeps its drafts through these helpers.
+    footer: ''
+  },
+  {
     name: 'fieldGuard',
     sourceFile: 'src/ui/fieldGuard.ts',
     testFile: 'tests/unit/fieldGuard.test.ts',

@@ -175,6 +175,8 @@ contradicts README.md or docs/feature-reference.md, trust them.)*
 
 ### Latest changes
 
+- **Unsent thread replies are drafts (2026-11-16, owner: "a standard, cloud first application with 0 risk of data loss").** The standard (3 promises) and a list of every place you can type are at the top of `docs/data-safety-audit.md`. Reply-box text is saved on the device as you type and synced as meta key `threadDrafts` (`src/utils/threadDrafts.ts`; `mergeDrafts` keeps both devices' text instead of merge3's one-side-wins). `_threadDrafts` keeps the Map's has/get/set/delete, keyed by document and row; `revealThreadDrafts()` (from `render()`) reopens a document's threads that hold drafts, and waits until start-up has finished (drawing a thread during start-up throws and stopped the app). Tests: thread-drafts, threadDrafts.
+
 - **Data safety audit (2026-11-16, owner: "we can not afford the data losses"; see `docs/data-safety-audit.md`).** Fixed:
   - the title/author guard (`fieldGuard.ts`);
   - a task's text being edited is saved when the page is hidden (an empty text never deletes);
@@ -187,8 +189,6 @@ contradicts README.md or docs/feature-reference.md, trust them.)*
   Tests: doc-title-guard, phone-background-safety.phone, doc-safe-writes (+2), phone-shell (+1).
 
 - **Title/author guard (2026-11-16, owner: title gone after Download PDF in iPhone Safari; "extremely careful about these data loss issues").** It didn't reproduce in Chrome (export, reload, signed-in catch-up). The leading cause is Safari form restoration writing an old value into `#header-title` after load. `src/ui/fieldGuard.ts`: the title and author change only via `setDocTitleField`/`setDocAuthorField` (all programmatic sets now use them) or while the person uses the field. `guardDocFields()` puts anything else back before every `saveToStorage`, on load/pageshow and on return. Test: doc-title-guard.spec.ts (fails without the guard). Tests and code must set the title via `setDocTitleField` (or a real input event); a silent `.value=` is reverted. Phones get a ⋯ on the top line (`#phone-doc-menu-btn`) for the document menu, incl. Version history (no right-click on phones).
-
-- **Diagram pictures follow the app's Light/Dark (2026-11-16, owner: "always come in dark mode" on the phone).** The old phone page's `readerSvgForScheme` fix went with it in phase 5. `svgForScheme` (`src/utils/svgScheme.ts`) now pins every diagram picture in the outline and the viewer to the app's theme via `appColorScheme()`; the PDF path is unchanged. Test: diagram-follows-app-theme.phone.spec.ts (dark device, app on Light).
 
 ### In progress / not built
 
