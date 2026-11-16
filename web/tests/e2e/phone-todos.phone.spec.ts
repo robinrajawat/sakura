@@ -82,3 +82,17 @@ test("each task's ⋯ menu shows without hover and opens", async ({ page }) => {
   const rowBox = (await row(page, 'Buy milk').locator('.todo-text').boundingBox())!;
   expect(Math.abs((box.y + box.height / 2) - (rowBox.y + rowBox.height / 2))).toBeLessThan(6);
 });
+
+test('"Waiting for" and the name are one size (the name is editable, so 16px on a phone)', async ({ page }) => {
+  await page.evaluate(() => {
+    const list = JSON.parse(localStorage.getItem('sakura_todos_v1') || '[]');
+    list[0].waitingFor = 'Sam';
+    localStorage.setItem('sakura_todos_v1', JSON.stringify(list));
+    // @ts-expect-error -- set by the To-Dos code in index.html
+    window.sakuraTodosReloadFromStorage();
+  });
+  const line = page.locator('#todos-body .todo-waiting-line').first();
+  await expect(line).toBeVisible();
+  const sizes = await line.evaluate((l) => [getComputedStyle(l).fontSize, getComputedStyle(l.querySelector('.todo-waiting-name')!).fontSize]);
+  expect(sizes).toEqual(['16px', '16px']);
+});
