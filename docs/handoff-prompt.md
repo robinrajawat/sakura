@@ -175,11 +175,20 @@ contradicts README.md or docs/feature-reference.md, trust them.)*
 
 ### Latest changes
 
+- **Data safety audit (2026-11-16, owner: "we can not afford the data losses"; see `docs/data-safety-audit.md`).** Fixed:
+  - the title/author guard (`fieldGuard.ts`);
+  - a task's text being edited is saved when the page is hidden (an empty text never deletes);
+  - other save-on-leave fields are left for you when the page is hidden (`_leavingFieldOnHide`);
+  - the "Add a task" draft is kept (`sakura_todos_draft_v1`);
+  - storage full, signed in: the document is uploaded from memory (`unstoredDocPayloads`);
+  - `navigator.storage.persist()` is requested;
+  - a phone ⋯ document menu gives access to Version history.
+
+  Tests: doc-title-guard, phone-background-safety.phone, doc-safe-writes (+2), phone-shell (+1).
+
 - **Title/author guard (2026-11-16, owner: title gone after Download PDF in iPhone Safari; "extremely careful about these data loss issues").** It didn't reproduce in Chrome (export, reload, signed-in catch-up). The leading cause is Safari form restoration writing an old value into `#header-title` after load. `src/ui/fieldGuard.ts`: the title and author change only via `setDocTitleField`/`setDocAuthorField` (all programmatic sets now use them) or while the person uses the field. `guardDocFields()` puts anything else back before every `saveToStorage`, on load/pageshow and on return. Test: doc-title-guard.spec.ts (fails without the guard). Tests and code must set the title via `setDocTitleField` (or a real input event); a silent `.value=` is reverted. Phones get a ⋯ on the top line (`#phone-doc-menu-btn`) for the document menu, incl. Version history (no right-click on phones).
 
 - **Diagram pictures follow the app's Light/Dark (2026-11-16, owner: "always come in dark mode" on the phone).** The old phone page's `readerSvgForScheme` fix went with it in phase 5. `svgForScheme` (`src/utils/svgScheme.ts`) now pins every diagram picture in the outline and the viewer to the app's theme via `appColorScheme()`; the PDF path is unchanged. Test: diagram-follows-app-theme.phone.spec.ts (dark device, app on Light).
-
-- **iPhone Safari fixes from the owner's first try (2026-11-13).** On a phone, text fields are at least 16px (Safari zoomed in on focus and To-Dos then scrolled sideways). The title and the row editor are left out, and the document is 16px so rows match read and typed in. Also on a phone: `-webkit-text-size-adjust: 100%` and the folded ring centred explicitly; "text under the bullet" didn't reproduce in Chrome, so **re-check on the iPhone**. The account button no longer shows the person icon beside the photo in Safari, because `has-avatar` replaced a `:has([style*=inline])` rule Safari didn't re-check. Tests: phone-shell (+1), account-toggle-avatar.spec.ts.
 
 ### In progress / not built
 

@@ -141,3 +141,22 @@ test('a save sends no table or diagram pictures (only the old phone page read th
   expect(paths.some((p) => p.includes('/docs/'))).toBe(true);
   expect(paths.filter((p) => p.includes('/previews'))).toEqual([]);
 });
+
+test('device storage full: the edit still reaches the account, and the person is told', async ({ page }) => {
+  await push(page);
+  await page.evaluate(() => {
+    // The browser refuses to store the document from now on (QuotaExceededError).
+    const orig = Storage.prototype.setItem;
+    Storage.prototype.setItem = function (k: string, v: string) {
+      if (k.startsWith('sakura_doc_v1_')) throw new DOMException('full', 'QuotaExceededError');
+      return orig.call(this, k, v);
+    };
+    // @ts-expect-error -- bare globals from index.html
+    nodes[0].text = 'Written while storage is full'; dirty = true; saveToStorage();
+  });
+  await expect(page.locator('#toast')).toContainText('storage is full');
+  await push(page);
+  const d = await cloudDoc(page);
+  expect(d.nodes[0].text).toBe('Written while storage is full');
+  expect(d.rev).toBe(2);
+});

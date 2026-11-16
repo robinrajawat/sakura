@@ -26,6 +26,9 @@ exists so that distinction is visible without opening every file.
   phone layout that leaves the desktop untouched; hub.html, the old phone page, now only forwards to it.
   Phases 0–5 done; a real-phone typing check and the faster first load remain.
 
+- **`data-safety-audit.md`**: what was checked for data loss on 2026-11-16 (after a title went
+  missing on an iPhone), what was fixed, and what is still open.
+
 ## Closed / historical reference (`history/`)
 
 Real, accurate records of finished work — not stale, just done. Nothing here needs further

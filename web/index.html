@@ -106,7 +106,11 @@ function a(e,t){return n(e)||r(e,t)||o(e,t)||i()}function o(e,n){if(e){if(typeof
 <link rel="icon" type="image/svg+xml" href="flower-glyph.svg">
 <link rel="apple-touch-icon" href="apple-touch-icon.png" media="(prefers-color-scheme: light)">
 <link rel="apple-touch-icon" href="apple-touch-icon-dark.png" media="(prefers-color-scheme: dark)">
-<script>if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js'));}</script>
+<script>if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js'));}
+// Ask the browser to keep this site's data rather than clear it to free space or after a while
+// unused (Safari can clear a site's data after about 7 days without a visit). Granted or not, it
+// is only a request; signing in is what keeps documents safe (owner 2026-11-16).
+try{ if(navigator.storage&&navigator.storage.persist)navigator.storage.persisted().then(p=>{ if(!p)navigator.storage.persist().catch(()=>{}); }).catch(()=>{}); }catch(e){}</script>
   <!-- Icons (owner 2026-10-30: clean, flat, black). flower-glyph.svg is the tab favicon: the bare
   glyph, ink #222, switching to #ececea on dark tab bars via its own prefers-color-scheme rule; a
   vector scales to any tab/bookmark size. apple-touch-icon*, icon-192(-dark) and icon-512-maskable
@@ -13698,9 +13702,17 @@ function saveToStorage(){
       _lastSavedDocSig={id:currentDocId,raw:newRaw,sig:newSig};
     }catch(storageErr){
       storageWriteFailed=true; updateSavedIndicator();
-      showToast('Storage full — this edit was NOT saved. Free up space or export a backup now.');
+      // Signed in, the edit still goes to the account: the push reads this in-memory copy, since
+      // the device's stored copy is the old one (owner 2026-11-16: "we can not afford the data
+      // losses"). Without an account there's nowhere else to put it, so say so plainly.
+      if(currentUser){
+        unstoredDocPayloads().set(currentDocId,newRaw);
+        if(contentChanged)queueSync('doc',currentDocId);
+        showToast("This device's storage is full, so this edit goes to your account only. Free up space on this device.",'',false,8000);
+      } else showToast('Storage full — this edit was NOT saved. Free up space or export a backup now.');
       return;
     }
+    if(_docUnstoredPayload)_docUnstoredPayload.delete(currentDocId);
     storageWriteFailed=false;
     const titleForIndex=payload.title||untitledDocName(payload.nodes)||'Untitled';
     // Only bump updatedAt when content is actually dirty; title changes always persist title
@@ -17673,8 +17685,13 @@ async function resolveDocPushConflict(mod,db,ownerUid,docId,cloud){
   showActionToast('Changed on another device. Your edits here are kept in Version history.','Version history',()=>openVersionHistory(docId),8000);
   _actionToastUndo=null; // Ctrl/Cmd+Z stays undo
 }
+// Documents this device couldn't store (storage full) but that still go to the account: the newest
+// copy is here, not in localStorage (see saveToStorage). Created on first use: a save can run
+// during start-up, before this line of the script has.
+var _docUnstoredPayload;
+function unstoredDocPayloads(){ return _docUnstoredPayload||(_docUnstoredPayload=new Map()); }
 async function pushDocToCloud(mod,db,docId){
-  const raw=localStorage.getItem(docKey(docId)); if(raw===null)return;
+  const raw=(_docUnstoredPayload&&_docUnstoredPayload.get(docId))??localStorage.getItem(docKey(docId)); if(raw===null||raw===undefined)return;
   let data; try{data=JSON.parse(raw)}catch(e){return}
   const ts=Date.now(); _lastPushedTs['doc:'+docId]=ts;
   const ownerUid=currentUser.uid;
@@ -27193,7 +27210,24 @@ window.addEventListener('beforeunload',e=>{
 // caret and selection are exactly where they were. Saving is unaffected: fields save as you
 // type, and the 'hidden' handler below writes everything to storage.
 let _windowBlurKeptEl=null;
+// Data safety (owner 2026-11-16: "we can not afford the data losses"). A phone puts the app away
+// without leaving the field, and several fields only save when you leave them (renaming a document
+// or folder, a task's "waiting for", a thread entry). When the page is hidden, such a field is left
+// for you, so its own save runs. Fields that already save as you type (rows, notes, the title and
+// author, a task's text, handled in the To-Dos code) and search boxes are left as they are.
+let _leavingFieldOnHide=false;
+document.addEventListener('visibilitychange',()=>{
+  if(document.visibilityState!=='hidden')return;
+  const a=document.activeElement;
+  if(!a||a===document.body||a===document.documentElement)return;
+  const editable=a.isContentEditable||a.tagName==='TEXTAREA'||(a.tagName==='INPUT'&&!/^(checkbox|radio|range|file|color|button|submit)$/i.test(a.type||''));
+  if(!editable)return;
+  if(a.closest?.('.node-input,.node-note-line,#header-title,#doc-author,.todo-text,#todos-input,#todos-search-input,#settings-panel,#help-panel,#global-search-wrap,#sidebar-search,.panel-search-wrap'))return;
+  _leavingFieldOnHide=true;
+  try{ a.blur(); }finally{ _leavingFieldOnHide=false; }
+});
 const _keepFieldOnWindowBlur=e=>{
+  if(_leavingFieldOnHide)return;
   if(document.hasFocus()||e.target===window||e.target===document)return;
   _windowBlurKeptEl=e.target; e.stopImmediatePropagation();
 };
@@ -35418,10 +35452,27 @@ function todosHistorySummary(list) {
     if(!input) return;
     addTodo(input.value);
     input.value='';
+    saveTodoDraft();
     autoGrowInput();
     input.focus();
   });
-  document.getElementById('todos-input')?.addEventListener('input', e=>{ autoGrowInput(); handleTodoAtInput(e.target, null); });
+  document.getElementById('todos-input')?.addEventListener('input', e=>{ autoGrowInput(); handleTodoAtInput(e.target, null); saveTodoDraft(); });
+  // Data safety (owner 2026-11-16: "we can not afford the data losses"). A phone puts the app away
+  // without the field losing focus, so anything that only saved on blur was lost:
+  // - a task's text being edited (it saved on blur) is saved when the page is hidden; an empty
+  //   text is left alone, since saving it would delete the task;
+  // - a task typed in "Add a task…" but not added yet is kept as a draft and comes back.
+  const TODO_DRAFT_KEY='sakura_todos_draft_v1';
+  function saveTodoDraft(){ try{ const v=document.getElementById('todos-input')?.value||''; if(v.trim())localStorage.setItem(TODO_DRAFT_KEY,v); else localStorage.removeItem(TODO_DRAFT_KEY); }catch(e){} }
+  try{ const draft=localStorage.getItem(TODO_DRAFT_KEY); const inp=document.getElementById('todos-input'); if(draft&&inp&&!inp.value){ inp.value=draft; autoGrowInput(); } }catch(e){}
+  function saveTodoTextBeingEdited(){
+    const elx=document.activeElement;
+    if(!elx||!elx.classList||!elx.classList.contains('todo-text')||elx.dataset.committed==='1')return;
+    const title=readTodoTitle(elx);
+    if(String(title.text||'').replace(/\u200B/g,'').trim())editTodoText(elx.getAttribute('data-id'),title.text,title.marks);
+  }
+  document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='hidden'){ saveTodoTextBeingEdited(); saveTodoDraft(); } });
+  window.addEventListener('pagehide',()=>{ saveTodoTextBeingEdited(); saveTodoDraft(); });
   function closeTodoDropdowns(except){
     document.querySelectorAll('.todo-dd-menu.open').forEach(menu=>{
       if(menu.id===except) return;
@@ -35501,6 +35552,7 @@ function todosHistorySummary(list) {
       const input=e.target;
       addTodo(input.value);
       input.value='';
+      saveTodoDraft();
       autoGrowInput();
     }
   });
