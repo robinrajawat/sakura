@@ -295,7 +295,12 @@ extremely careful about these data loss issues."
   (`src/ui/fieldGuard.ts`). `doc-title-guard.spec.ts` sets the field the way restoration does and
   checks nothing is saved (it fails without the guard). Renaming, clearing, switching documents
   and restoring versions are unchanged.
-- To get a lost title back: Version history keeps each version's title.
+- To get a lost title back: Version history keeps each version's title. On a phone it was out of
+  reach: the document's menu (Rename, Duplicate, Version history, Send a copy, Move…, Move to Trash)
+  opens by right-clicking, which phones don't have. A ⋯ on the phone's top line
+  (`#phone-doc-menu-btn`) now opens it (`sbDocContextItems`).
+- Test fix: `edit-in-place.spec.ts` set the title by writing the field directly, as form
+  restoration does, so the guard rightly put it back; it now uses `setDocTitleField` like the app.
 
 ### Faster first load: step 1, minify the build. Done 2026-11-13
 

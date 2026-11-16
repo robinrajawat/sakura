@@ -165,3 +165,14 @@ test('no text field on a phone is under 16px; rows keep their size when typed in
   await expect.poll(() => page.evaluate(() => (getEditingInput() ? getComputedStyle(getEditingInput()).fontSize : ''))).toBe(read);
   expect(parseFloat(read)).toBeGreaterThanOrEqual(16);
 });
+
+// Owner, 2026-11-16: "how can I open the versioning in mobile safari". The document's menu opens by
+// right-clicking on a computer; a phone has no right-click, so it gets a ⋯ on the top line.
+test('the ⋯ on the top line opens the document menu, and Version history from it', async ({ page }) => {
+  await page.locator('#phone-doc-menu-btn').tap();
+  const menu = page.locator('.sb-context-menu');
+  await expect(menu).toBeVisible();
+  for (const label of ['Rename', 'Duplicate', 'Version history', 'Move to Trash']) await expect(menu).toContainText(label);
+  await menu.getByText('Version history').tap();
+  await expect(page.locator('#history-modal-overlay')).toHaveClass(/open/);
+});

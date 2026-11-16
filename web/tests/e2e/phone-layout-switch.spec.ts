@@ -39,6 +39,7 @@ test('the desktop has no ☰ button, drawer or phone back button', async ({ page
   await page.setViewportSize({ width: 1280, height: 800 });
   await page.goto('file://' + indexPath);
   await expect(page.locator('#phone-menu-btn')).toBeHidden();
+  await expect(page.locator('#phone-doc-menu-btn')).toBeHidden();
   await expect(page.locator('#phone-drawer-backdrop')).toBeHidden();
   // The back button sits in the To-Dos header, so check it with To-Dos open. (The pixel guard can't
   // see new markup: it shows with or without phone.css. Phone-only elements must be checked here.)

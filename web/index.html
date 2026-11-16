@@ -3499,6 +3499,11 @@ html.calm-layout #sb-auto-rewrite-chip.is-quiet:hover,html.calm-layout #sb-auto-
     width: 40px; height: 40px; margin-left: -4px; border: none; background: none; border-radius: 8px; color: var(--fg);
   }
   html.phone #doc-tab-strip-row { height: 52px; padding: 0 8px 0 8px; gap: 2px; }
+  /* The document's menu: a phone has no right-click on the title (Version history lives there). */
+  html.phone #phone-doc-menu-btn {
+    display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px;
+    border: none; background: none; border-radius: 8px; color: var(--muted);
+  }
   html.phone #doc-path { min-width: 0; flex: 1 1 auto; overflow: hidden; }
   html.phone #doc-path-crumbs { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
@@ -4386,6 +4391,7 @@ html.calm-layout #sb-auto-rewrite-chip.is-quiet:hover,html.calm-layout #sb-auto-
           </div>
         </div>
         <button type="button" class="btn quick-btn" id="doc-help-btn" aria-label="Help" data-tip="Help" aria-pressed="false"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.2a2.6 2.6 0 0 1 5 .9c0 1.7-2.5 2.3-2.5 3.9"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></button>
+          <button type="button" class="quick-btn" id="phone-doc-menu-btn" aria-label="Document menu" aria-haspopup="true" hidden><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg></button>
       </div>
     </div>
     </div>
@@ -28708,6 +28714,16 @@ function setPhoneDrawerOpen(open, root = document.documentElement) {
 function toggleDocumentsPanel(){ if(isPhoneLayout()){ setPhoneDrawerOpen(!isPhoneDrawerOpen()); return; } if(sidebarOpen)setSidebarOpen(false); else openDocumentsPanel(); }
 el('phone-menu-btn')?.addEventListener('click',()=>setPhoneDrawerOpen(!isPhoneDrawerOpen()));
 el('phone-drawer-backdrop')?.addEventListener('click',()=>setPhoneDrawerOpen(false));
+// The document's menu (Rename, Duplicate, Version history, Send a copy, Move…, Move to Trash). On
+// a computer it opens by right-clicking the title or the document in the list; a phone has no
+// right-click, so it gets this ⋯ on the top line (owner 2026-11-16: "how can I open the versioning
+// in mobile safari").
+el('phone-doc-menu-btn')?.addEventListener('click',e=>{
+  e.stopPropagation();
+  const d=loadActiveDocsIndex().find(x=>x.id===currentDocId); if(!d)return;
+  const r=e.currentTarget.getBoundingClientRect();
+  showSbContextMenu(r.right,r.bottom+4,sbDocContextItems(d,loadFolders()));
+});
 // Settings and To-Dos open over the editor, so the drawer gets out of the way; search, the account
 // and notification menus sit over the open drawer.
 el('appbar')?.addEventListener('click',e=>{ if(isPhoneDrawerOpen()&&e.target.closest?.('#rail-settings-btn,#dock-panel-appbar-toggle'))setPhoneDrawerOpen(false); },true);
