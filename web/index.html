@@ -4998,7 +4998,9 @@ function threadDraftText(html) {
     return html.replace(/<[^>]*>/g, ' ').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim();
 }
 function sameThreadDraft(a, b) {
-    return JSON.stringify(a) === JSON.stringify(b);
+    // Key order doesn't count: the account hands drafts back with their keys in its own order.
+    const json = (v) => JSON.stringify(v, (_k, x) => x && typeof x === 'object' && !Array.isArray(x) ? Object.fromEntries(Object.keys(x).sort().map((k) => [k, x[k]])) : x);
+    return json(a) === json(b);
 }
 /**
  * Three-way merge of two devices' drafts. `base` is what both last agreed on (undefined on a
@@ -13719,7 +13721,7 @@ let _lastSavedDocSig={id:null,raw:null,sig:null};
 function docSyncSignature(d){
   if(!d||typeof d!=='object')return '';
   const o={}; Object.keys(d).forEach(k=>{ if(!DOC_VIEW_ONLY_FIELDS.includes(k))o[k]=d[k]; });
-  return JSON.stringify(o);
+  return stableJson(o); // a copy from the account has its keys in another order: not a change
 }
 /* GENERATED:fieldGuard:START — DO NOT EDIT BY HAND. Source of truth: src/ui/fieldGuard.ts (tests: tests/unit/fieldGuard.test.ts). Regenerate with `npm run generate` after changing the source; CI fails if this block drifts from what the generator produces (see .github/workflows/ci.yml and scripts/generate-index-blocks.mjs). */
 /**
@@ -15327,7 +15329,7 @@ function openDiagramEditor(diagramId){
   // it started with; reopening it (or the next diagram you open) picks up the change. Forcing a
   // live reload on theme change was deliberately not done — there'd be no way to tell whether
   // the live draw.io session has unsaved changes, so a reload could silently discard them.
-  iframe.src='https://embed.diagrams.net/?embed=1&proto=json&spin=1&modified=unsavedChanges'+(currentTheme==='dark'?'&ui=dark':'');
+  iframe.src='https://embed.diagrams.net/?embed=1&proto=json&spin=1&modified=unsavedChanges&autosave=1'+(currentTheme==='dark'?'&ui=dark':'');
   wrap.appendChild(iframe);
   const titleInput=el('diagram-editor-title-input'); if(titleInput)titleInput.value=d.title||'';
   updateDiagramEditorAnchorLabel(d);
@@ -15355,7 +15357,7 @@ function openDiagramEditor(diagramId){
       // looks like a normal blank canvas here would have every edit silently discarded, forever,
       // with no indication anything was wrong. Show an explicit failure state with a retry
       // instead.
-      const startLoad=()=>{ if(!iframe.isConnected)return; iframe.contentWindow.postMessage(JSON.stringify({action:'load',xml:d.xml||''}),'*'); if(status)status.textContent=''; };
+      const startLoad=()=>{ if(!iframe.isConnected)return; if(_diagramEditorState&&_diagramEditorState.iframe===iframe)_diagramEditorState.loadedReal=!!d._hydrated; iframe.contentWindow.postMessage(JSON.stringify({action:'load',xml:d.xml||''}),'*'); if(status)status.textContent=''; };
       const showHydrationFailedState=()=>{
         if(!iframe.isConnected)return;
         if(status){ status.textContent='Could not load this diagram'; status.classList.remove('diagram-editor-status-saved'); }
@@ -15383,6 +15385,18 @@ function openDiagramEditor(diagramId){
           setTimeout(pollHydration,40);
         })();
       }
+    } else if(msg.event==='autosave'){
+      // The drawing as it changes (autosave=1 in the URL; owner 2026-11-16: nothing typed or drawn is
+      // lost). Kept like a Save, except the picture, which is made when the editor closes or on Save.
+      // Only once the real diagram was loaded: a blank stand-in (storage still loading, see 'init')
+      // must never be kept over it.
+      if(!msg.xml||!_diagramEditorState||_diagramEditorState.iframe!==iframe||!_diagramEditorState.loadedReal)return;
+      _diagramEditorState.autosaved=true;
+      if(msg.xml===d.xml)return;
+      d.xml=msg.xml; d.modifiedAt=Date.now(); d.pageCount=splitMxfilePages(d.xml).length;
+      markDirty(); scheduleAutoSave();
+      if(status){ status.textContent='Saved'; status.classList.remove('diagram-editor-status-unsaved'); status.classList.add('diagram-editor-status-saved'); }
+      updateDiagramEditorPagesBadge(d);
     } else if(msg.event==='save'){
       d.xml=msg.xml||d.xml;
       d.modifiedAt=Date.now();
@@ -15452,6 +15466,15 @@ function closeDiagramEditorInternal(){
 }
 async function closeDiagramEditor(){
   if(!_diagramEditorState)return;
+  // draw.io has been sending the drawing as it changes (autosave): nothing to lose. Ask it for the
+  // picture (the same safe export a Save makes) and close when it arrives, or after a moment.
+  if(_diagramEditorState.autosaved){
+    const st=_diagramEditorState;
+    st.exitAfterExport=true;
+    try{ st.iframe.contentWindow.postMessage(JSON.stringify({action:'export',format:'xmlsvg',border:DIAGRAM_EXPORT_BORDER}),'*'); }catch(e){}
+    setTimeout(()=>{ if(_diagramEditorState===st)closeDiagramEditorInternal(); },2500);
+    return;
+  }
   // The embed protocol only confirms one save signal — the 'save' event, fired when Save (or
   // Ctrl/Cmd+S) is used *inside* draw.io's own UI. There's no documented way to trigger a save
   // from the host side, so this can't quietly guarantee nothing is lost the way the rest of
@@ -16554,7 +16577,7 @@ const SYNC_LOCAL_TS_KEY='sakura_sync_local_ts_v1';
 const SYNC_META_BASE_KEY='sakura_sync_meta_base_v1';
 function getMetaBase(metaKey){ try{ const m=JSON.parse(localStorage.getItem(SYNC_META_BASE_KEY)||'{}'); return metaKey in m?m[metaKey]:undefined; }catch(e){ return undefined; } }
 function setMetaBase(metaKey,value){ try{ const m=JSON.parse(localStorage.getItem(SYNC_META_BASE_KEY)||'{}'); m[metaKey]=value; localStorage.setItem(SYNC_META_BASE_KEY,JSON.stringify(m)); }catch(e){} }
-function sameJson(a,b){ return JSON.stringify(a)===JSON.stringify(b); }
+function sameJson(a,b){ return stableJson(a)===stableJson(b); } // key order doesn't count (see stableJson)
 function _loadSyncLocalTs(){ try{const r=localStorage.getItem(SYNC_LOCAL_TS_KEY); return r?JSON.parse(r):{}}catch(e){return {}} }
 function _saveSyncLocalTs(m){ try{localStorage.setItem(SYNC_LOCAL_TS_KEY,JSON.stringify(m))}catch(e){} }
 // Meta keys (folders, doc order, prefs, etc.) have no per-item updatedAt of their own the way
@@ -17870,10 +17893,17 @@ async function resolveDocPushConflict(mod,db,ownerUid,docId,cloud){
 // during start-up, before this line of the script has.
 var _docUnstoredPayload;
 function unstoredDocPayloads(){ return _docUnstoredPayload||(_docUnstoredPayload=new Map()); }
+// This device's recent uploads, by key. Only the latest one's time used to be remembered
+// (_lastPushedTs), so when two uploads went close together the first one's echo looked like another
+// device's change: "This document was just updated on another device" with nothing else open
+// (owner 2026-11-16, iPhone).
+const _ownPushTs={};
+function noteOwnPush(key,ts){ const a=_ownPushTs[key]||(_ownPushTs[key]=[]); a.push(ts); if(a.length>20)a.shift(); }
+function isOwnPush(key,ts){ const a=_ownPushTs[key]; return !!a&&a.includes(Number(ts)); }
 async function pushDocToCloud(mod,db,docId){
   const raw=(_docUnstoredPayload&&_docUnstoredPayload.get(docId))??localStorage.getItem(docKey(docId)); if(raw===null||raw===undefined)return;
   let data; try{data=JSON.parse(raw)}catch(e){return}
-  const ts=Date.now(); _lastPushedTs['doc:'+docId]=ts;
+  const ts=Date.now(); _lastPushedTs['doc:'+docId]=ts; noteOwnPush('doc:'+docId,ts);
   const ownerUid=currentUser.uid;
   const ref=mod.doc(db,'users',ownerUid,'docs',docId);
   const localUpdatedAt=Number(loadDocsIndex().find(d=>d.id===docId)?.updatedAt)||0;
@@ -18033,7 +18063,7 @@ async function pushMetaToCloud(mod,db,metaKey){
     const raw=localStorage.getItem(localKeyName);
     if(raw!==null){ try{value=JSON.parse(raw)}catch(e){value=null} }
   }
-  const ts=Date.now(); _lastPushedTs['meta:'+metaKey]=ts;
+  const ts=Date.now(); _lastPushedTs['meta:'+metaKey]=ts; noteOwnPush('meta:'+metaKey,ts);
   const ref=mod.doc(db,'users',currentUser.uid,'meta',metaKey);
   const localKeyName=idbKeyName?null:getSyncMetaKeys()[metaKey];
   if(!localKeyName||metaKey==='todosRevisions'){ await mod.setDoc(ref,{value,updatedAt:ts}); return; }
@@ -18141,6 +18171,9 @@ async function hydrateCloudDocBlobs(mod,db,ownerUid,docId,docData){
   return docData;
 }
 async function applyIncomingDocData(mod,db,ownerUid,id,cloud,viaRealtime){
+  // This device's own upload coming back, or the version this device already has: nothing new.
+  if(isOwnPush('doc:'+id,cloud.updatedAt))return false;
+  { const r=readDocRev(cloud.rev); if(r>0&&r===getDocBaseRev(id)&&localStorage.getItem(docKey(id))!==null)return false; }
   const localIndex=loadDocsIndex();
   const localEntry=localIndex.find(d=>d.id===id);
   // Listed but with no content stored (the list arrived first): always take the cloud copy, so a
@@ -18217,6 +18250,7 @@ async function applyIncomingMetaData(metaKey,cloud){
   const localKeyName=idbKeyName?null:getSyncMetaKeys()[metaKey];
   if(!idbKeyName&&!localKeyName)return false;
   const localTs=_loadSyncLocalTs(); const localT=Number(localTs[metaKey])||0;
+  if(isOwnPush('meta:'+metaKey,cloud.updatedAt))return false; // this device's own upload coming back
   if(!shouldApplyIncomingSyncCore(cloud.updatedAt,localT,_lastPushedTs['meta:'+metaKey]))return false;
   const cloudTs=Number(cloud.updatedAt)||0;
   if(localKeyName&&cloud.value!==null&&cloud.value!==undefined){
@@ -18237,12 +18271,12 @@ async function applyIncomingMetaData(metaKey,cloud){
     if(metaKey==='todos'&&Array.isArray(cloud.value)){
       try{
         const raw=localStorage.getItem(localKeyName); const local=raw?JSON.parse(raw):null;
-        if(Array.isArray(local)&&local.length&&JSON.stringify(local)!==JSON.stringify(cloud.value)){
+        if(Array.isArray(local)&&local.length&&!sameJson(local,cloud.value)){
           const revKey=getSyncMetaKeys().todosRevisions;
           let list=[]; try{ list=JSON.parse(localStorage.getItem(revKey)||'[]'); }catch(e){}
           if(!Array.isArray(list))list=[];
           const last=list[list.length-1];
-          if(!last||JSON.stringify(last.todos)!==raw){
+          if(!last||!sameJson(last.todos,local)){
             const now=Date.now();
             list.push({ts:last&&last.ts>=now?last.ts+1:now,reason:'Before changes from another device',todos:local});
             localStorage.setItem(revKey,JSON.stringify(trimVersions(list,TODOS_VERSIONS_MAX,now)));
@@ -18404,8 +18438,20 @@ function deletionWins(localUpdatedAt, deletedAt, hasUnsavedEdits) {
 
 /* GENERATED:docRev:END */
 /* GENERATED:metaMerge:START — DO NOT EDIT BY HAND. Source of truth: src/state/metaMerge.ts (tests: tests/unit/metaMerge.test.ts). Regenerate with `npm run generate` after changing the source; CI fails if this block drifts from what the generator produces (see .github/workflows/ci.yml and scripts/generate-index-blocks.mjs). */
+/**
+ * JSON text that doesn't depend on the order of an object's keys. The account (Firestore) hands
+ * values back with their keys in its own order, so the same value read from there and saved here
+ * compared unequal as plain JSON: unchanged To-Dos looked edited (and an item deleted on another
+ * device came back), and an opened document looked changed and was sent up again ("Saving…" on
+ * just opening it, owner 2026-11-16).
+ */
+function stableJson(v) {
+    return JSON.stringify(v, (_k, x) => x && typeof x === 'object' && !Array.isArray(x)
+        ? Object.fromEntries(Object.keys(x).sort().map((k) => [k, x[k]]))
+        : x);
+}
 function mmSame(a, b) {
-    return JSON.stringify(a) === JSON.stringify(b);
+    return stableJson(a) === stableJson(b);
 }
 function mmIsObject(v) {
     return !!v && typeof v === 'object' && !Array.isArray(v);
@@ -35675,8 +35721,18 @@ function todosHistorySummary(list) {
     const title=readTodoTitle(elx);
     if(String(title.text||'').replace(/\u200B/g,'').trim())editTodoText(elx.getAttribute('data-id'),title.text,title.marks);
   }
-  document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='hidden'){ saveTodoTextBeingEdited(); saveTodoDraft(); } });
-  window.addEventListener('pagehide',()=>{ saveTodoTextBeingEdited(); saveTodoDraft(); });
+  // A subtask typed but not added yet is added when the app is put away, as a redraw of the list
+  // already does (see renderTodos); Enter is the only other way in, and a phone may never come back.
+  function addSubtaskBeingTyped(){
+    document.querySelectorAll('#todos-body .todo-subtask-input').forEach(inp=>{
+      if(!inp.value.trim())return;
+      const parentId=inp.getAttribute('data-id'), text=inp.value;
+      inp.value=''; // before addSubtask, whose redraw would otherwise add it again
+      addSubtask(parentId,text);
+    });
+  }
+  document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='hidden'){ saveTodoTextBeingEdited(); addSubtaskBeingTyped(); saveTodoDraft(); } });
+  window.addEventListener('pagehide',()=>{ saveTodoTextBeingEdited(); addSubtaskBeingTyped(); saveTodoDraft(); });
   function closeTodoDropdowns(except){
     document.querySelectorAll('.todo-dd-menu.open').forEach(menu=>{
       if(menu.id===except) return;

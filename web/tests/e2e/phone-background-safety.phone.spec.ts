@@ -85,3 +85,21 @@ test('a document rename in progress is saved when the app is put away', async ({
   await hide(page);
   await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('sakura_docs_index_v1') || '[]')[0].title)).toBe('Quarter plan');
 });
+
+test('a subtask typed but not added yet is added when the app is put away', async ({ page }) => {
+  // A task with one subtask already, so its n/m count unfolds it.
+  // (Reloaded from storage in place: a page reload can lose file:// storage under heavy test load.)
+  await page.evaluate(() => {
+    localStorage.setItem('sakura_todos_v1', JSON.stringify([{ id: 't1', text: 'Buy milk', done: false, createdAt: 1, subtasks: [{ id: 's1', text: 'Cow milk', done: false }] }]));
+    (window as unknown as { sakuraTodosReloadFromStorage: () => void }).sakuraTodosReloadFromStorage();
+  });
+  await openTodos(page);
+  await page.locator('#todos-body .todo-subtasks-toggle[data-id="t1"]').tap();
+  await page.locator('#todos-body .todo-subtask-add-btn[data-id="t1"]').tap();
+  const box = page.locator('#todos-body .todo-subtask-input[data-id="t1"]');
+  await expect(box).toBeFocused();
+  await page.keyboard.type('Oat milk');
+  await hide(page);
+  const subs = await page.evaluate(() => (JSON.parse(localStorage.getItem('sakura_todos_v1') || '[]')[0].subtasks || []).map((s: { text: string }) => s.text));
+  expect(subs).toEqual(['Cow milk', 'Oat milk']);
+});

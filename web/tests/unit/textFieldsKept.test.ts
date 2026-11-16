@@ -12,8 +12,7 @@ type Kept =
   | 'as-you-type'   // saved to the document or list on every change
   | 'on-leave'      // saved when you leave the field; the app leaves it for you when it's put away
   | 'draft'         // unsent text in the shared draft store: saved as you type, synced, restored
-  | 'on-hide'       // a form written into the document when the app is put away (it stays open)
-  | 'asks'          // can't be saved from outside (draw.io); closing asks first
+  | 'on-hide'       // written into the document or list when the app is put away
   | 'short-entry'   // a few words applied with Enter or OK (a link, a tag, a name in a dialog)
   | 'setting'       // a setting, applied as it changes; not document content
   | 'not-content';  // search boxes, sign-in, an e-mail address, the clipboard's hidden helper
@@ -58,10 +57,12 @@ const KEPT: Record<string, Kept> = {
   '#todo-text-': 'on-leave',
   '.todo-waiting-name': 'on-leave',
   '.todo-subtask-text': 'on-leave',
-  '.todo-subtask-input': 'short-entry',
+  '.todo-subtask-input': 'on-hide', // added when the app is put away
   // Feedback
   '#feedback-message-input': 'draft',
   '#feedback-email-input': 'not-content',
+  '#share-modal-email-input': 'not-content', // an address to share with
+  '#account-delete-confirm-input': 'not-content', // typing DELETE to confirm
   // Short entries
   '#link-card-addr': 'short-entry',
   '#doc-link-input': 'short-entry',
@@ -70,8 +71,6 @@ const KEPT: Record<string, Kept> = {
   '#tag-popover-input': 'short-entry',
   '#sakura-modal-input': 'short-entry',
   '#sakura-modal-input2': 'short-entry',
-  '#account-delete-confirm-input': 'short-entry',
-  '#share-modal-email-input': 'short-entry',
   // Settings
   '#default-author-input': 'setting',
   '#preview-branding-text-input': 'setting',
