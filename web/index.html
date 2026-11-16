@@ -34974,6 +34974,7 @@ function todosHistorySummary(list) {
   // Remembered across reloads, like the File Explorer (owner 2026-11-02): the left slot shows what it showed.
   const TODOS_OPEN_KEY='sakura_todos_open_v1';
   function openTodosPanel(opts){
+    if(typeof restoreTodoDraft==='function')restoreTodoDraft();
     const panel=document.getElementById('todos-panel');
     if(!panel) return;
     try{ localStorage.setItem(TODOS_OPEN_KEY,'1'); }catch(e){}
@@ -35464,7 +35465,11 @@ function todosHistorySummary(list) {
   // - a task typed in "Add a task…" but not added yet is kept as a draft and comes back.
   const TODO_DRAFT_KEY='sakura_todos_draft_v1';
   function saveTodoDraft(){ try{ const v=document.getElementById('todos-input')?.value||''; if(v.trim())localStorage.setItem(TODO_DRAFT_KEY,v); else localStorage.removeItem(TODO_DRAFT_KEY); }catch(e){} }
-  try{ const draft=localStorage.getItem(TODO_DRAFT_KEY); const inp=document.getElementById('todos-input'); if(draft&&inp&&!inp.value){ inp.value=draft; autoGrowInput(); } }catch(e){}
+  // Put back whenever the box is empty: at start-up, once the page has loaded or comes back, and
+  // when To-Dos opens (anything later in start-up that resets the box must not lose the draft).
+  function restoreTodoDraft(){ try{ const draft=localStorage.getItem(TODO_DRAFT_KEY); const inp=document.getElementById('todos-input'); if(draft&&inp&&!inp.value){ inp.value=draft; autoGrowInput(); } }catch(e){} }
+  restoreTodoDraft();
+  ['load','pageshow'].forEach(t=>window.addEventListener(t,()=>{ restoreTodoDraft(); setTimeout(restoreTodoDraft,0); }));
   function saveTodoTextBeingEdited(){
     const elx=document.activeElement;
     if(!elx||!elx.classList||!elx.classList.contains('todo-text')||elx.dataset.committed==='1')return;
