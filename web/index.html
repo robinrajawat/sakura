@@ -4941,12 +4941,158 @@ let activeDiscussionFilter=null;
 let filterOpened=null; // {docId, folds:Set, threads:Set} while a filter has unfolded anything (unfoldForFilter)
 // Nodes whose whole thread is unfolded this session (a long thread shows only its latest entries).
 let showAllRemarksNodeIds=new Set(); let showClosedQaNodeIds=new Set();
+/* GENERATED:threadDrafts:START — DO NOT EDIT BY HAND. Source of truth: src/utils/threadDrafts.ts (tests: tests/unit/threadDrafts.test.ts). Regenerate with `npm run generate` after changing the source; CI fails if this block drifts from what the generator produces (see .github/workflows/ci.yml and scripts/generate-index-blocks.mjs). */
+/**
+ * Unsent thread replies, kept like Slack or Gmail keep a draft: saved on the device as you type,
+ * synced to the account, restored when you come back, and removed only when it is sent or you
+ * close it. See docs/data-safety-audit.md ("Standard: what a person types is never lost").
+ *
+ * Drafts live in one map, keyed by document and row, synced as the `threadDrafts` meta key. Two
+ * devices' changes are merged here rather than by the generic merge3, because merge3 lets one
+ * side win when both edited the same entry, and a draft is text someone typed: when both devices
+ * changed the same draft, both texts are kept (the newer first).
+ *
+ * Wired into index.html via scripts/generate-index-blocks.mjs's `threadDrafts` block.
+ */
+/** Drafts untouched this long are dropped (as Slack and Gmail eventually do). */
+const THREAD_DRAFT_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000;
+function threadDraftKey(docId, nodeId) {
+    return String(docId ?? '') + '|' + String(nodeId);
+}
+function isThreadDraft(v) {
+    return !!v && typeof v === 'object' && typeof v.html === 'string' && Number.isFinite(v.at);
+}
+function asThreadDraftMap(v) {
+    return v && typeof v === 'object' && !Array.isArray(v) ? v : {};
+}
+/** The drafts of one document, as [row id, draft]. Row ids that look like numbers come back as numbers. */
+function draftsForDoc(map, docId) {
+    const prefix = String(docId ?? '') + '|';
+    const out = [];
+    for (const [k, d] of Object.entries(asThreadDraftMap(map))) {
+        if (!k.startsWith(prefix) || !isThreadDraft(d))
+            continue;
+        const id = k.slice(prefix.length);
+        out.push([/^\d+$/.test(id) ? Number(id) : id, d]);
+    }
+    return out;
+}
+/** Drops anything malformed and drafts older than maxAgeMs. */
+function pruneDrafts(map, now, maxAgeMs = THREAD_DRAFT_MAX_AGE_MS) {
+    const out = {};
+    for (const [k, d] of Object.entries(asThreadDraftMap(map))) {
+        if (isThreadDraft(d) && now - d.at <= maxAgeMs)
+            out[k] = d;
+    }
+    return out;
+}
+function threadDraftText(html) {
+    return html.replace(/<[^>]*>/g, ' ').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim();
+}
+function sameThreadDraft(a, b) {
+    return JSON.stringify(a) === JSON.stringify(b);
+}
+/**
+ * Three-way merge of two devices' drafts. `base` is what both last agreed on (undefined on a
+ * device's first sync: then everything either side has is kept).
+ * - Changed on one side only: that side's.
+ * - Removed on one side (sent or closed) and unchanged on the other: removed.
+ * - Removed on one side but changed on the other: the change is kept (new text is never dropped).
+ * - Changed on both: one draft holding both texts, the newer first, unless the newer already
+ *   contains the older's text.
+ */
+function mergeDrafts(base, local, cloud) {
+    const b = asThreadDraftMap(base), l = asThreadDraftMap(local), c = asThreadDraftMap(cloud);
+    const out = {};
+    const keys = new Set([...Object.keys(c), ...Object.keys(l)]);
+    for (const k of keys) {
+        const ld = isThreadDraft(l[k]) ? l[k] : undefined;
+        const cd = isThreadDraft(c[k]) ? c[k] : undefined;
+        const bd = isThreadDraft(b[k]) ? b[k] : undefined;
+        if (ld && cd) {
+            if (sameThreadDraft(ld, cd) || sameThreadDraft(ld, bd))
+                out[k] = cd;
+            else if (sameThreadDraft(cd, bd))
+                out[k] = ld;
+            else if (ld.html === cd.html)
+                out[k] = ld.at >= cd.at ? ld : cd;
+            else {
+                const [newer, older] = ld.at >= cd.at ? [ld, cd] : [cd, ld];
+                const olderText = threadDraftText(older.html);
+                const html = !olderText || threadDraftText(newer.html).includes(olderText) ? newer.html : newer.html + '<br>' + older.html;
+                out[k] = { ...newer, html };
+            }
+        }
+        else if (ld) {
+            if (!bd || !sameThreadDraft(ld, bd))
+                out[k] = ld;
+        }
+        else if (cd) {
+            if (!bd || !sameThreadDraft(cd, bd))
+                out[k] = cd;
+        }
+    }
+    return out;
+}
+
+/* GENERATED:threadDrafts:END */
 // A node's thread: reply box state and chip icons (see renderNodeThread).
 var _threadComposerNodeId=null;   // the node whose reply box is open even with no entries yet
 var _threadAskNodeIds=new Set();  // reply boxes whose next entry is a question
 var _threadDecisionNodeIds=new Set();  // reply boxes whose next entry is a decision
 var _threadAnswerTo=new Map();  // reply boxes answering a chosen question: nodeId -> question entry id
-var _threadDrafts=new Map();      // node id -> what is typed in its reply box, kept across renders
+// What is typed in a reply box (Slack/Gmail-style drafts): saved on the device as you type, synced
+// to the account (meta key threadDrafts, merged by mergeDrafts so two devices' text is both kept),
+// and removed only when sent or closed. Keyed by the open document and the row; same has/get/set/
+// delete as the Map it replaced.
+var _threadDraftsRevealedFor; // the document whose saved drafts have had their threads opened
+var _threadDrafts=(function(){
+  const KEY='sakura_thread_drafts_v1';
+  let cache=null, syncTimer=null;
+  function load(){
+    if(cache)return cache;
+    try{ cache=pruneDrafts(JSON.parse(localStorage.getItem(KEY)||'{}'),Date.now()); }catch(e){ cache={}; }
+    return cache;
+  }
+  function persist(){
+    try{ localStorage.setItem(KEY,JSON.stringify(cache)); }
+    catch(e){ console.warn('[sakura] saving a reply draft on this device failed:',e); }
+    clearTimeout(syncTimer); syncTimer=setTimeout(()=>{ syncTimer=null; markMetaChanged('threadDrafts'); },1500);
+  }
+  const key=id=>threadDraftKey(currentDocId,id);
+  return {
+    has(id){ return !!load()[key(id)]; },
+    get(id){ const d=load()[key(id)]; return d?d.html:undefined; },
+    set(id,html){
+      const m=load(), d={html:String(html),at:Date.now()};
+      if(_threadDecisionNodeIds.has(id))d.kind='decision'; else if(_threadAskNodeIds.has(id))d.kind='question';
+      if(_threadAnswerTo.has(id))d.answerTo=String(_threadAnswerTo.get(id));
+      const prev=m[key(id)]; if(prev&&prev.html===d.html&&prev.kind===d.kind&&prev.answerTo===d.answerTo)return;
+      m[key(id)]=d; persist();
+    },
+    delete(id){ const m=load(); if(!(key(id) in m))return; delete m[key(id)]; persist(); },
+    // Send a pending change to the account now (the app is being put away).
+    flush(){ if(syncTimer){ clearTimeout(syncTimer); syncTimer=null; markMetaChanged('threadDrafts'); } },
+    // Another device's drafts arrived in storage.
+    reload(){ cache=null; _threadDraftsRevealedFor=undefined; },
+    forDoc(docId){ return draftsForDoc(load(),docId); }
+  };
+})();
+// Opening a document (or a reload) shows its saved drafts: their threads open with the reply box
+// holding the text, kind and reply-to as they were. Runs once per document, from render().
+function revealThreadDrafts(){
+  if(_threadDraftsRevealedFor===currentDocId)return;
+  if(!nodes.length)return; // the document's rows haven't arrived yet
+  // The first render runs while the app is still starting, before the thread code further down has
+  // set up (drawing a thread then would throw and stop the app from starting): try again once it has.
+  try{ _threadKeptQuestions; }catch(e){ setTimeout(()=>{ if(_threadDraftsRevealedFor!==currentDocId&&_threadDrafts.forDoc(currentDocId).length)render(); },0); return; }
+  _threadDraftsRevealedFor=currentDocId;
+  for(const [id,d] of _threadDrafts.forDoc(currentDocId)){
+    inlineExpandRemarksNodeIds.add(id);
+    if(!_threadAskNodeIds.has(id)&&!_threadDecisionNodeIds.has(id)){ if(d.kind==='question')_threadAskNodeIds.add(id); else if(d.kind==='decision')_threadDecisionNodeIds.add(id); }
+    if(d.answerTo&&!_threadAnswerTo.has(id))_threadAnswerTo.set(id,d.answerTo);
+  }
+}
 var _threadAuthor=null;           // who the reply box writes as (null: the last author used)
 var THREAD_FLAG_SVG='<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 22V4"/><path d="M4 4h13l-2 4 2 4H4"/></svg>';
 var THREAD_CHECK_SVG='<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5 10 17 19 7"/></svg>';
@@ -5752,12 +5898,6 @@ function sanitizeHrefUrl(url){
 // not content — it must never be baked into saved note/pad HTML, or the accent border
 // shows up permanently on reload/reopen even though nothing is actually selected.
 // Every place that reads editor.innerHTML for persistence should go through this.
-// Column count of a table's first row — used both to decide whether "Feature as chart" is even
-// offered and, at export time, to shape the chart data pulled from the table.
-function tableColumnCount(table){
-  const row=table?.querySelector('tr');
-  return row?row.cells.length:0;
-}
 // A table's cell text as a grid of trimmed strings, header row first: the shape the pure display
 // rules in src/utils/tableDisplay.ts (cardsAvailability, cardsRows) take.
 function tableTextGrid(table){
@@ -13102,7 +13242,7 @@ function snapshot(withFolds){return JSON.stringify({rowFormat:ROW_FORMAT,nodes,n
 // Folds aren't part of normal undo; Expand all / Collapse all push a snapshot that carries them so
 // Ctrl/Cmd+Z puts every fold back (owner, 2026-10-20). Undo/redo of such a step keeps carrying them.
 function foldState(){return {collapsed:[...collapsedIds],notes:[...inlineExpandNoteNodeIds],qa:[...inlineExpandQaNodeIds],closedQa:[...showClosedQaNodeIds],remarks:[...inlineExpandRemarksNodeIds],allRemarks:[...showAllRemarksNodeIds],diagrams:[...inlineExpandDiagramNodeIds],tables:[...collapsedTableNodeIds],images:[...collapsedImageNodeIds]}}
-function applyFoldState(f){collapsedIds=new Set(f.collapsed||[]);inlineExpandNoteNodeIds=new Set(f.notes||[]);inlineExpandQaNodeIds=new Set(f.qa||[]);showClosedQaNodeIds=new Set(f.closedQa||[]);inlineExpandRemarksNodeIds=new Set(f.remarks||[]);showAllRemarksNodeIds=new Set(f.allRemarks||[]);inlineExpandDiagramNodeIds=new Set(f.diagrams||[]);collapsedTableNodeIds=new Set(f.tables||[]);collapsedImageNodeIds=new Set(f.images||[]);scheduleAutoSave()}
+function applyFoldState(f){collapsedIds=new Set(f.collapsed||[]);inlineExpandNoteNodeIds=new Set(f.notes||[]);inlineExpandQaNodeIds=new Set(f.qa||[]);showClosedQaNodeIds=new Set(f.closedQa||[]);inlineExpandRemarksNodeIds=new Set(f.remarks||[]);showAllRemarksNodeIds=new Set(f.allRemarks||[]);inlineExpandDiagramNodeIds=new Set(f.diagrams||[]);collapsedTableNodeIds=new Set(f.tables||[]);collapsedImageNodeIds=new Set(f.images||[]);_threadDraftsRevealedFor=undefined;scheduleAutoSave()}
 const snapshotHasFolds=s=>s.includes('"folds":{');
 // nextId is intentionally never allowed to move backward here (Math.max, not a straight
 // assignment). diagrams/remarks anchor to nodes by this raw numeric
@@ -16360,7 +16500,7 @@ function restoreAccountSessionIfNeeded(){
 //  - AI_PREFS_KEY (provider API keys). "Settings" sync covers PREFS_KEY only — credentials
 //    don't belong in Firestore even under a locked-down security rule; that's a different risk
 //    profile than the rest of the app's settings.
-function getSyncMetaKeys(){return {docsIndex:DOCS_INDEX_KEY,folders:FOLDERS_KEY,docFolderMap:DOC_FOLDER_KEY,docOrder:DOC_ORDER_KEY,prefs:PREFS_KEY,todos:'sakura_todos_v1',todosSettings:'sakura_todos_settings_v1',todosRevisions:'sakura_todos_revisions_v1'};}
+function getSyncMetaKeys(){return {docsIndex:DOCS_INDEX_KEY,folders:FOLDERS_KEY,docFolderMap:DOC_FOLDER_KEY,docOrder:DOC_ORDER_KEY,prefs:PREFS_KEY,todos:'sakura_todos_v1',todosSettings:'sakura_todos_settings_v1',todosRevisions:'sakura_todos_revisions_v1',threadDrafts:'sakura_thread_drafts_v1'};}
 // Meta keys whose primary store is IndexedDB rather than localStorage, synced with the same
 // push/pull/realtime machinery as the localStorage-backed keys above, just read/written via
 // idbGet/idbSet. Currently none: every Hub item that used this path (Meeting Notes, Journal,
@@ -17867,7 +18007,7 @@ async function pushMetaToCloud(mod,db,metaKey){
   await mod.runTransaction(db,async tx=>{
     const snap=await tx.get(ref);
     const cv=snap.exists()?snap.data().value:undefined;
-    written=(base!==undefined&&cv!==undefined&&cv!==null&&!sameJson(cv,base)&&!sameJson(cv,value))?merge3(base,value,cv,'local'):value;
+    written=(metaKey==='threadDrafts'&&cv!==undefined&&cv!==null&&!sameJson(cv,value))?mergeDrafts(base,value,cv):(base!==undefined&&cv!==undefined&&cv!==null&&!sameJson(cv,base)&&!sameJson(cv,value))?merge3(base,value,cv,'local'):value;
     tx.set(ref,{value:written,updatedAt:ts});
   });
   setMetaBase(metaKey,written);
@@ -18080,8 +18220,9 @@ async function applyIncomingMetaData(metaKey,cloud){
   if(localKeyName&&metaKey!=='todosRevisions'&&cloud.value!==null&&cloud.value!==undefined){
     const base=getMetaBase(metaKey);
     let local; try{ const raw=localStorage.getItem(localKeyName); local=raw===null?undefined:JSON.parse(raw); }catch(e){ local=undefined; }
-    if(base!==undefined&&local!==undefined&&!sameJson(local,base)){
-      const merged=merge3(base,local,cloud.value,'cloud');
+    // Reply drafts merge even on a device's first sync (no base): text typed on either side is kept.
+    if((base!==undefined||metaKey==='threadDrafts')&&local!==undefined&&!sameJson(local,base)){
+      const merged=metaKey==='threadDrafts'?mergeDrafts(base,local,cloud.value):merge3(base,local,cloud.value,'cloud');
       try{ localStorage.setItem(localKeyName,JSON.stringify(merged)); }catch(e){ return false; }
       localTs[metaKey]=cloudTs; _saveSyncLocalTs(localTs);
       setMetaBase(metaKey,cloud.value);
@@ -18113,6 +18254,14 @@ async function refreshHubPanelAfterSync(metaKey){
     // what each loader's own side effects (feature toggle visibility, etc.) already do. Revision
     // history lists are read on-demand when the version-history panel opens, so no live reload
     // hook is needed for those — the fresh copy in storage is enough.
+    // Reply drafts from another device: show them, unless you're typing (a redraw would move the caret).
+    // A reply box on screen takes the merged text at once (the caret goes to its end), so typing on
+    // doesn't save over the other device's words.
+    else if(metaKey==='threadDrafts'){
+      _threadDrafts.reload();
+      document.querySelectorAll('.thread-composer-input').forEach(box=>{ const id=/^\d+$/.test(box.dataset.nodeId||'')?Number(box.dataset.nodeId):box.dataset.nodeId; const html=_threadDrafts.get(id); if(html===undefined||html===sakuraSanitizeRichHtml(box.innerHTML))return; box.innerHTML=html; if(document.activeElement===box){ const r=document.createRange(); r.selectNodeContents(box); r.collapse(false); const sel=getSelection(); sel.removeAllRanges(); sel.addRange(r); } });
+      const ae=document.activeElement; if(!(ae&&(ae.isContentEditable||/^(INPUT|TEXTAREA)$/.test(ae.tagName))))render();
+    }
     else if(metaKey==='todosSettings'){ if(typeof window.sakuraTodosReloadSettingsFromStorage==='function')window.sakuraTodosReloadSettingsFromStorage(); }
   }catch(e){ console.warn('[sakura] Hub panel refresh after sync failed:',e); }
 }
@@ -22629,7 +22778,7 @@ function updateRowSelectionPill(){
   pill.querySelector('.rsp-hint').innerHTML='<kbd>'+mod+'+C</kbd>copy · <kbd>Del</kbd>delete · <kbd>Tab</kbd>indent';
   pill.classList.add('show');
 }
-function render(){const _keptInlineSel=_inlineFieldSelection(); if(_apiEd)apiEditorFinish({cancelIfInvalid:true,focusBack:false}); ensureQaMigratedToDiscussion(); ensureSelection(); pruneCollapsedIds(); pruneInlineExpandIds(); pruneFocus(); updateRowSelectionPill(); if(typeof updateRowsFmtBar==='function')updateRowsFmtBar();
+function render(){const _keptInlineSel=_inlineFieldSelection(); if(_apiEd)apiEditorFinish({cancelIfInvalid:true,focusBack:false}); ensureQaMigratedToDiscussion(); ensureSelection(); pruneCollapsedIds(); revealThreadDrafts(); pruneInlineExpandIds(); pruneFocus(); updateRowSelectionPill(); if(typeof updateRowsFmtBar==='function')updateRowsFmtBar();
   // Runs over EVERY node, not just the ones the per-row loop below actually builds DOM for --
   // a node inside a collapsed branch never reaches that loop at all, and renderPreviewBody() reads
   // node.tables directly rather than re-deriving it from node.note, so a table living inside a
@@ -27251,6 +27400,7 @@ document.addEventListener('visibilitychange',()=>{
   if(document.visibilityState==='hidden'){
     if(!suppressSaveToStorageOnUnload)saveToStorage();
     if(!suppressPrefsSaveOnUnload)savePrefs();
+    _threadDrafts.flush();
   }
 })
 
@@ -31745,6 +31895,7 @@ function openThreadComposer(nodeId,ask,answerTo){
   inlineExpandRemarksNodeIds.add(nodeId);
   _threadComposerNodeId=nodeId; setThreadComposerKind(nodeId,ask?'question':'comment');
   if(answerTo&&!ask)_threadAnswerTo.set(nodeId,answerTo); else _threadAnswerTo.delete(nodeId);
+  if(_threadDrafts.has(nodeId))_threadDrafts.set(nodeId,_threadDrafts.get(nodeId));
   _pendingInlineFocus={kind:'threadComposer',nodeId};
   render();
 }
@@ -32146,6 +32297,7 @@ function renderThreadComposer(node,thread,place,commit){
 function setThreadComposerKind(nodeId,k){
   _threadAskNodeIds.delete(nodeId); _threadDecisionNodeIds.delete(nodeId);
   if(k==='question')_threadAskNodeIds.add(nodeId); else if(k==='decision')_threadDecisionNodeIds.add(nodeId);
+  if(_threadDrafts.has(nodeId))_threadDrafts.set(nodeId,_threadDrafts.get(nodeId)); // the saved draft keeps its kind
 }
 // The reply line's right-click (off the typed words): add it, rewrite it, or close the line. The kind
 // is picked under the line.
