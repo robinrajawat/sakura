@@ -175,20 +175,11 @@ contradicts README.md or docs/feature-reference.md, trust them.)*
 
 ### Latest changes
 
+- **"Saving…" and "updated on another device" on just opening a document (2026-11-16, owner, iPhone, signed in).** The account hands a copy back with its keys in its own order; plain-JSON comparisons read that as a change, so opening sent the document up again, and with two uploads close together the first's echo looked like another device's. Now `stableJson` (metaMerge.ts) is used by `docSyncSignature`, `sameJson`, merge3 and mergeDrafts; `noteOwnPush`/`isOwnPush` remember recent uploads; a copy at this device's base rev is ignored. Also: draw.io `autosave=1` (kept as you draw; closing exports the picture and closes without asking once autosave has arrived), and a typed subtask is added when the app is put away. Tests: sync-own-echo, diagram-autosave, phone-background-safety (+1), metaMerge (+2), threadDrafts (+1).
+
 - **Every place you can type says how it's kept (2026-11-16, owner: "a standard, cloud first application with 0 risk of data loss").** `tests/unit/textFieldsKept.test.ts` scans `index.html` (`textFieldScan.ts`) and fails on a field it doesn't list, so a new field needs a decision. The draft store is now general (`typedDrafts`; `fieldDraftSave` / `fieldDraftRestore` / `fieldDraftShowSynced`): "Add a task…" (moved from the device-only `sakura_todos_draft_v1`) and the feedback message use it, synced. The API request editor writes its form into the document when the app is put away (`apiEditorApplyOnHide`). Left open in `docs/data-safety-audit.md`: draw.io autosave, short entries.
 
 - **Unsent thread replies are drafts (2026-11-16, owner: "a standard, cloud first application with 0 risk of data loss").** The standard (3 promises) and a list of every place you can type are at the top of `docs/data-safety-audit.md`. Reply-box text is saved on the device as you type and synced as meta key `threadDrafts` (`src/utils/threadDrafts.ts`; `mergeDrafts` keeps both devices' text instead of merge3's one-side-wins). `_threadDrafts` keeps the Map's has/get/set/delete, keyed by document and row; `revealThreadDrafts()` (from `render()`) reopens a document's threads that hold drafts, and waits until start-up has finished (drawing a thread during start-up throws and stopped the app). Tests: thread-drafts, threadDrafts.
-
-- **Data safety audit (2026-11-16, owner: "we can not afford the data losses"; see `docs/data-safety-audit.md`).** Fixed:
-  - the title/author guard (`fieldGuard.ts`);
-  - a task's text being edited is saved when the page is hidden (an empty text never deletes);
-  - other save-on-leave fields are left for you when the page is hidden (`_leavingFieldOnHide`);
-  - the "Add a task" draft is kept (`sakura_todos_draft_v1`);
-  - storage full, signed in: the document is uploaded from memory (`unstoredDocPayloads`);
-  - `navigator.storage.persist()` is requested;
-  - a phone ⋯ document menu gives access to Version history.
-
-  Tests: doc-title-guard, phone-background-safety.phone, doc-safe-writes (+2), phone-shell (+1).
 
 ### In progress / not built
 

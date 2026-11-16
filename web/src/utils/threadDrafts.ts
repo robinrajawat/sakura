@@ -67,7 +67,10 @@ function threadDraftText(html: string): string {
   return html.replace(/<[^>]*>/g, ' ').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim();
 }
 function sameThreadDraft(a: unknown, b: unknown): boolean {
-  return JSON.stringify(a) === JSON.stringify(b);
+  // Key order doesn't count: the account hands drafts back with their keys in its own order.
+  const json = (v: unknown) => JSON.stringify(v, (_k, x) =>
+    x && typeof x === 'object' && !Array.isArray(x) ? Object.fromEntries(Object.keys(x).sort().map((k) => [k, x[k]])) : x);
+  return json(a) === json(b);
 }
 
 /**

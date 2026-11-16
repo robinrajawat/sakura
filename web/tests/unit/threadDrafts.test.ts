@@ -53,4 +53,11 @@ describe('threadDrafts', () => {
     // A field draft never shows up among a document's reply drafts.
     expect(draftsForDoc({ [k]: d('x', 1) }, 'dmwivi4eskdcb3')).toEqual([]);
   });
+
+  it('a draft held here in another key order counts as unchanged (the other device\'s rewrite wins whole)', () => {
+    const base = { k: { at: 1, html: 'first try' } }; // as the account sent it
+    const local = { k: { html: 'first try', at: 1 } };
+    const cloud = { k: d('a different reply', 5) };
+    expect(mergeDrafts(base, local, cloud)).toEqual({ k: d('a different reply', 5) });
+  });
 });

@@ -31,10 +31,10 @@ without deciding how its text is kept. In short:
 | **As you type**, into the document or list (synced, Version history) | Rows, notes, title, author, diagram title |
 | **When you leave the field**; the app leaves it for you when it's put away | Thread entries and their author, table cells, renames, image captions and labels, diagram names, To-Do text, "waiting for", subtasks, the link's label |
 | **Draft** (shared store: saved as you type, synced, back after a reload, kept from both devices) | Thread reply box, "Add a task…", the feedback message |
-| **Written into the document when the app is put away**, the form staying open | API request editor |
-| **Asks before closing** | The draw.io diagram editor (it can't be saved from outside; edits since its last Save are lost if the app itself is closed) |
-| **Short entries**, applied with Enter or OK | Link addresses, tags, names in dialogs, a pasted cURL, a new subtask |
-| Settings, or not content | Settings, search boxes, sign-in, e-mail addresses |
+| **Written into the document or list when the app is put away** | API request editor (the form stays open), a subtask typed but not added |
+| **Kept as you draw** (draw.io's autosave; closing no longer asks) | The diagram editor |
+| **Short entries**, applied with Enter or OK | Link addresses, tags, names in dialogs, a pasted cURL |
+| Settings, or not content | Settings, search boxes, sign-in, e-mail addresses, typing DELETE to confirm |
 
 **Drafts (2026-11-16).** One store for unsent text (`typedDrafts` in `index.html`;
 `fieldDraftSave` / `fieldDraftRestore` for a plain field). Thread replies, as in Slack: saved on the device as you type, synced to the
@@ -57,6 +57,8 @@ over once. Tests: `thread-drafts.spec.ts`, `threadDrafts.test.ts`, `table-api.sp
 | Device storage full (iPhone Safari allows about 5 MB) | Each save said "NOT saved", but nothing reached the account either, because the upload read the old stored copy. | Signed in, the newest copy is kept in memory and uploaded to the account; the message says so. | `doc-safe-writes.spec.ts` |
 | Safari clearing a site's data after about 7 days without a visit | A guest's only copy is on the device. | The app asks the browser to keep its data (`navigator.storage.persist()`). Safari often declines for sites not added to the home screen, so signing in is the real protection. | (no browser test: the browser decides) |
 | Android keyboards sending Enter/Backspace with no key event (key 229) | A raw line break inside a row; typing then ran on in the same row. | Refused, and the row's own key handling gets the key (#870). | `phone-keyboard-safety.phone.spec.ts` |
+| Just opening a document, signed in, showed "Saving…" and sent it up again; on the phone, "This document was just updated on another device" with nothing else open | The account hands a copy back with its keys in its own order, and comparing as plain JSON read that as a change. With two uploads close together, the first one's echo was then taken for another device's | Comparisons ignore key order (`stableJson`, also in the To-Dos/settings/draft merges, where an item deleted on another device could come back). Every recent upload is remembered, and a copy at the version this device already has is nothing new | `sync-own-echo.spec.ts`, `metaMerge.test.ts`, `threadDrafts.test.ts` |
+| A drawing in the diagram editor, not yet Saved inside draw.io | Lost when closing (it asked first) or when the app was closed | draw.io sends the drawing as it changes (`autosave=1`); kept like a Save, only once the real diagram was loaded; closing makes the picture and closes | `diagram-autosave.spec.ts` (draw.io's messages played by the test; check once by hand) |
 | Version history on a phone | Unreachable, because it opens by right-clicking. | A ⋯ document menu on the phone's top line. | `phone-shell.phone.spec.ts` |
 
 ## Checked and safe
@@ -84,8 +86,9 @@ over once. Tests: `thread-drafts.spec.ts`, `threadDrafts.test.ts`, `table-api.sp
 - **The iPhone itself.** Safari behaviour is checked with Chrome's phone emulation; Safari isn't
   available in this environment. The title fix is aimed at the most likely cause. If a field ever
   changes without you, the app logs `[sakura] title changed without the app or you`.
-- **The draw.io editor** keeps edits only when Save is used inside it (closing asks). draw.io's
-  embed can send its changes as you draw (`autosave`), which would close this; it can't be tested
-  here (the editor loads from embed.diagrams.net), so it's left for a change that can be checked by hand.
-- **Short entries** (a link address, a tag, a name in a dialog) are gone if the app closes mid-entry.
-  Accepted: they're a few words, and keeping them would bring back half-finished popovers.
+- **The diagram editor's autosave** is tested by playing draw.io's messages, since draw.io can't
+  load in this environment. Worth one check by hand: draw something, close without Save, reopen.
+- **Short entries** (a link address, a tag, a name in a dialog, a pasted cURL) are gone if the app
+  closes mid-entry. Accepted: a few words or a paste, and bringing them back would reopen
+  half-finished popovers against whatever is selected later. A new subtask isn't one of these any
+  more: it's added when the app is put away.

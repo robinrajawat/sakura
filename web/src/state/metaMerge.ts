@@ -19,8 +19,21 @@
  */
 export type Side = 'local' | 'cloud';
 
+/**
+ * JSON text that doesn't depend on the order of an object's keys. The account (Firestore) hands
+ * values back with their keys in its own order, so the same value read from there and saved here
+ * compared unequal as plain JSON: unchanged To-Dos looked edited (and an item deleted on another
+ * device came back), and an opened document looked changed and was sent up again ("Saving…" on
+ * just opening it, owner 2026-11-16).
+ */
+export function stableJson(v: unknown): string {
+  return JSON.stringify(v, (_k, x) =>
+    x && typeof x === 'object' && !Array.isArray(x)
+      ? Object.fromEntries(Object.keys(x).sort().map((k) => [k, (x as Record<string, unknown>)[k]]))
+      : x);
+}
 function mmSame(a: unknown, b: unknown): boolean {
-  return JSON.stringify(a) === JSON.stringify(b);
+  return stableJson(a) === stableJson(b);
 }
 function mmIsObject(v: unknown): v is Record<string, unknown> {
   return !!v && typeof v === 'object' && !Array.isArray(v);
