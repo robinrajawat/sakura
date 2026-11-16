@@ -164,6 +164,21 @@ initVaultState({
     footer: ''
   },
   {
+    name: 'svgScheme',
+    sourceFile: 'src/utils/svgScheme.ts',
+    testFile: 'tests/unit/svgScheme.test.ts',
+    // Diagram pictures follow the app's Light/Dark, not the device's. Spliced before openDiagramViewer.
+    footer: ''
+  },
+  {
+    name: 'fieldGuard',
+    sourceFile: 'src/ui/fieldGuard.ts',
+    testFile: 'tests/unit/fieldGuard.test.ts',
+    // The title and author only change through the app or the person (iPhone Safari lost a title).
+    // Spliced just before saveToStorage, which checks both before every save.
+    footer: ''
+  },
+  {
     name: 'toasts',
     sourceFile: 'src/ui/toasts.ts',
     testFile: 'tests/unit/toasts.test.ts',

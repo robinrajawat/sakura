@@ -175,11 +175,20 @@ contradicts README.md or docs/feature-reference.md, trust them.)*
 
 ### Latest changes
 
-- **iPhone Safari fixes from the owner's first try (2026-11-13).** On a phone, text fields are at least 16px (Safari zoomed in on focus and To-Dos then scrolled sideways). The title and the row editor are left out, and the document is 16px so rows match read and typed in. Also on a phone: `-webkit-text-size-adjust: 100%` and the folded ring centred explicitly; "text under the bullet" didn't reproduce in Chrome, so **re-check on the iPhone**. The account button no longer shows the person icon beside the photo in Safari, because `has-avatar` replaced a `:has([style*=inline])` rule Safari didn't re-check. Tests: phone-shell (+1), account-toggle-avatar.spec.ts.
+- **Data safety audit (2026-11-16, owner: "we can not afford the data losses"; see `docs/data-safety-audit.md`).** Fixed:
+  - the title/author guard (`fieldGuard.ts`);
+  - a task's text being edited is saved when the page is hidden (an empty text never deletes);
+  - other save-on-leave fields are left for you when the page is hidden (`_leavingFieldOnHide`);
+  - the "Add a task" draft is kept (`sakura_todos_draft_v1`);
+  - storage full, signed in: the document is uploaded from memory (`unstoredDocPayloads`);
+  - `navigator.storage.persist()` is requested;
+  - a phone ⋯ document menu gives access to Version history.
 
-- **Faster first load, step 1: minified build (2026-11-13).** Vite left the inline code and styles unminified (2.48 MB built from a 2.55 MB source). `scripts/minify-inline.mjs` (esbuild, no output format so the shared top-level names stay; a scanner that skips HTML comments) now runs in the build only. The page is 1.56 MB, 403 KB compressed (was 701 KB). The whole suite was run against the built page (1004 pass; the 4 failures were source-only tests or did not recur). `built-output-works.spec.ts` drives the built page in CI. Step 2 (on-demand loading of phone-hidden parts) is only if real phones still feel slow.
+  Tests: doc-title-guard, phone-background-safety.phone, doc-safe-writes (+2), phone-shell (+1).
 
-- **Phone safety and polish (2026-11-13, owner: "make sure that the mobile will not corrupt the documents").** `phoneKeyboardFallback` (phone only): Android keyboards that send Enter or Backspace with no key event (229) used to put a raw line break inside a row or not join rows; now the row's own key handling gets the key. Typing then putting the app away is kept (row saves as you type, plus the hidden handler); now tested. First visit on a phone skips the desktop welcome (tour and demo), Help hides "Watch a demo", and search doesn't offer the tour, demo or shortcut sheet on a phone. Tests: phone-keyboard-safety.phone.spec.ts, phone-shell (+2), phone-layout-switch (+1).
+- **Title/author guard (2026-11-16, owner: title gone after Download PDF in iPhone Safari; "extremely careful about these data loss issues").** It didn't reproduce in Chrome (export, reload, signed-in catch-up). The leading cause is Safari form restoration writing an old value into `#header-title` after load. `src/ui/fieldGuard.ts`: the title and author change only via `setDocTitleField`/`setDocAuthorField` (all programmatic sets now use them) or while the person uses the field. `guardDocFields()` puts anything else back before every `saveToStorage`, on load/pageshow and on return. Test: doc-title-guard.spec.ts (fails without the guard). Tests and code must set the title via `setDocTitleField` (or a real input event); a silent `.value=` is reverted. Phones get a ⋯ on the top line (`#phone-doc-menu-btn`) for the document menu, incl. Version history (no right-click on phones).
+
+- **Diagram pictures follow the app's Light/Dark (2026-11-16, owner: "always come in dark mode" on the phone).** The old phone page's `readerSvgForScheme` fix went with it in phase 5. `svgForScheme` (`src/utils/svgScheme.ts`) now pins every diagram picture in the outline and the viewer to the app's theme via `appColorScheme()`; the PDF path is unchanged. Test: diagram-follows-app-theme.phone.spec.ts (dark device, app on Light).
 
 ### In progress / not built
 

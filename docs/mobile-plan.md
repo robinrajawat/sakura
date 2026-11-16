@@ -265,6 +265,43 @@ used for every test, doesn't do them):
   when that style attribute changes. `updateAccountUI` now sets `has-avatar` on the button, and
   the CSS keys off that class (`account-toggle-avatar.spec.ts`).
 
+### Diagram pictures followed the device's dark mode (owner, 2026-11-16)
+
+"Diagram previews in mobile are not respecting light or dark theme, they always come in dark mode."
+draw.io pictures declare `color-scheme: light dark`, and Safari follows the device's setting
+inside an image. The old phone page pinned them to the app's theme (`readerSvgForScheme`, since
+2026-11-03), and that went with it in phase 5. Now `svgForScheme` (`src/utils/svgScheme.ts`,
+remembered per picture) pins every diagram picture the app shows (the outline's preview and the
+full-screen viewer) to the app's Light/Dark, on phones and computers alike. Switching theme redraws
+the outline, so pictures follow. The PDF builds its own copy and is unchanged.
+`diagram-follows-app-theme.phone.spec.ts` uses a dark device with the app set to Light (it fails
+without the fix).
+
+### Title lost after Download PDF in iPhone Safari (owner, 2026-11-16)
+
+"Download pdf in safari iphone removed the title from the document in the editor. We need to be
+extremely careful about these data loss issues."
+
+- **Not reproduced in Chrome** at iPhone size: export; export then hide and reload; export signed
+  in with a fake cloud then a catch-up. The title survived each time. Nothing in the PDF path
+  writes to the title: it reads `#header-title`, sets `document.title` and restores it.
+- **Leading cause (inference, Safari-only):** form restoration. When Safari reloads a page it left
+  (for example to show the downloaded PDF), it can put an old value back into a text field after
+  the app has loaded the document, and the next save stores it.
+- **Fix, whatever the trigger:** the title and author only change through the app (`setDocTitleField`,
+  `setDocAuthorField`, used by every place that sets them) or while the person is using the field
+  (focus, typing, paste…). Any other change is put back before a save (`guardDocFields()` at the
+  top of `saveToStorage`), on `load`/`pageshow` and on returning to the page, and logged
+  (`src/ui/fieldGuard.ts`). `doc-title-guard.spec.ts` sets the field the way restoration does and
+  checks nothing is saved (it fails without the guard). Renaming, clearing, switching documents
+  and restoring versions are unchanged.
+- To get a lost title back: Version history keeps each version's title. On a phone it was out of
+  reach: the document's menu (Rename, Duplicate, Version history, Send a copy, Move…, Move to Trash)
+  opens by right-clicking, which phones don't have. A ⋯ on the phone's top line
+  (`#phone-doc-menu-btn`) now opens it (`sbDocContextItems`).
+- Test fix: `edit-in-place.spec.ts` set the title by writing the field directly, as form
+  restoration does, so the guard rightly put it back; it now uses `setDocTitleField` like the app.
+
 ### Faster first load: step 1, minify the build. Done 2026-11-13
 
 - Vite left the page's inline code and styles exactly as written, comments and all: the built page

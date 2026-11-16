@@ -19,7 +19,7 @@ test.beforeEach(async ({ page }) => {
   await page.evaluate(() => (window as any).eval(`ensureDocumentForEditing();
     const n = (id, depth, text) => ({ id, depth, text, parentId: null, isCheckbox: false, checked: false, note: '', tags: [], styles: {} });
     nodes = [n(1, 0, 'Alpha'), n(2, 0, 'Bravo')].map(normalizeNode); rebuildParentIds(); nextId = 3;
-    el('header-title').value = 'Plan'; saveToStorage(); renderTabStrip(); renderSidebar(); collapsedIds = new Set(); selectedId = null; editingId = null; render();`));
+    setDocTitleField('Plan'); saveToStorage(); renderTabStrip(); renderSidebar(); collapsedIds = new Set(); selectedId = null; editingId = null; render();`));
 });
 test.afterEach(() => { expect(errors).toEqual([]); });
 

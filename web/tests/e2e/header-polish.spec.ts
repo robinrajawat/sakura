@@ -71,7 +71,8 @@ test('the byline is Status · author · link; the top line ends with Share and t
     return {
       linkSep: dot('doc-link-wrap', '::before'),
       inByline: ['doc-share-wrap'].filter((id) => document.getElementById(id)!.closest('#editor-meta-row')),
-      order: [...fold.children].map((c) => c.id || c.className),
+      // Visible items only: the phone's document-menu ⋯ (#phone-doc-menu-btn) sits here hidden on a computer.
+      order: [...fold.children].filter((c) => !(c as HTMLElement).hidden).map((c) => c.id || c.className),
       menuRight: getComputedStyle(document.getElementById('share-dd-menu')!).right
     };
   });

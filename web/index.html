@@ -106,7 +106,11 @@ function a(e,t){return n(e)||r(e,t)||o(e,t)||i()}function o(e,n){if(e){if(typeof
 <link rel="icon" type="image/svg+xml" href="flower-glyph.svg">
 <link rel="apple-touch-icon" href="apple-touch-icon.png" media="(prefers-color-scheme: light)">
 <link rel="apple-touch-icon" href="apple-touch-icon-dark.png" media="(prefers-color-scheme: dark)">
-<script>if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js'));}</script>
+<script>if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js'));}
+// Ask the browser to keep this site's data rather than clear it to free space or after a while
+// unused (Safari can clear a site's data after about 7 days without a visit). Granted or not, it
+// is only a request; signing in is what keeps documents safe (owner 2026-11-16).
+try{ if(navigator.storage&&navigator.storage.persist)navigator.storage.persisted().then(p=>{ if(!p)navigator.storage.persist().catch(()=>{}); }).catch(()=>{}); }catch(e){}</script>
   <!-- Icons (owner 2026-10-30: clean, flat, black). flower-glyph.svg is the tab favicon: the bare
   glyph, ink #222, switching to #ececea on dark tab bars via its own prefers-color-scheme rule; a
   vector scales to any tab/bookmark size. apple-touch-icon*, icon-192(-dark) and icon-512-maskable
@@ -3499,6 +3503,11 @@ html.calm-layout #sb-auto-rewrite-chip.is-quiet:hover,html.calm-layout #sb-auto-
     width: 40px; height: 40px; margin-left: -4px; border: none; background: none; border-radius: 8px; color: var(--fg);
   }
   html.phone #doc-tab-strip-row { height: 52px; padding: 0 8px 0 8px; gap: 2px; }
+  /* The document's menu: a phone has no right-click on the title (Version history lives there). */
+  html.phone #phone-doc-menu-btn {
+    display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px;
+    border: none; background: none; border-radius: 8px; color: var(--muted);
+  }
   html.phone #doc-path { min-width: 0; flex: 1 1 auto; overflow: hidden; }
   html.phone #doc-path-crumbs { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
@@ -4386,6 +4395,7 @@ html.calm-layout #sb-auto-rewrite-chip.is-quiet:hover,html.calm-layout #sb-auto-
           </div>
         </div>
         <button type="button" class="btn quick-btn" id="doc-help-btn" aria-label="Help" data-tip="Help" aria-pressed="false"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.2a2.6 2.6 0 0 1 5 .9c0 1.7-2.5 2.3-2.5 3.9"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></button>
+          <button type="button" class="quick-btn" id="phone-doc-menu-btn" aria-label="Document menu" aria-haspopup="true" hidden><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg></button>
       </div>
     </div>
     </div>
@@ -13531,9 +13541,64 @@ function docSyncSignature(d){
   const o={}; Object.keys(d).forEach(k=>{ if(!DOC_VIEW_ONLY_FIELDS.includes(k))o[k]=d[k]; });
   return JSON.stringify(o);
 }
+/* GENERATED:fieldGuard:START — DO NOT EDIT BY HAND. Source of truth: src/ui/fieldGuard.ts (tests: tests/unit/fieldGuard.test.ts). Regenerate with `npm run generate` after changing the source; CI fails if this block drifts from what the generator produces (see .github/workflows/ci.yml and scripts/generate-index-blocks.mjs). */
+/**
+ * Guards a document field (the title, the author) against changes that neither the person nor the
+ * app made (owner 2026-11-16: Download PDF in iPhone Safari left the title empty; "we need to be
+ * extremely careful about these data loss issues"). It didn't reproduce in Chrome. The leading
+ * Safari-only cause is form restoration: when Safari reloads a page it left (for example after
+ * showing the downloaded PDF), it can put an old value back into a text field after the app has
+ * loaded the document, and the next save would store it. Whatever the cause, the field may only
+ * change through the app (set) or while the person is using it (focus, typing, paste…); any other
+ * change is put back before it can be saved, and logged.
+ *
+ * Wired into index.html via scripts/generate-index-blocks.mjs's `fieldGuard` block.
+ */
+function createFieldGuard(field, name, onRestore) {
+    let known = String(field.value ?? '');
+    let touched = false;
+    // Inside the function, not a module constant: a document can open before this block's place in
+    // the page's script has run.
+    for (const t of ['focus', 'input', 'keydown', 'paste', 'cut', 'drop', 'compositionend', 'beforeinput'])
+        field.addEventListener(t, () => { touched = true; });
+    field.addEventListener('input', () => { known = String(field.value ?? ''); });
+    return {
+        set(value) { known = String(value ?? ''); field.value = known; touched = false; },
+        check() {
+            const now = String(field.value ?? '');
+            if (now === known)
+                return false;
+            if (touched) {
+                known = now;
+                return false;
+            }
+            field.value = known;
+            if (onRestore)
+                onRestore(name, now, known);
+            return true;
+        },
+        known() { return known; }
+    };
+}
+
+/* GENERATED:fieldGuard:END */
+// The document's title and author only change through the app or the person using them
+// (src/ui/fieldGuard.ts; owner 2026-11-16, title lost after Download PDF in iPhone Safari). `var`,
+// not `let`: a document can open before this point in the script runs.
+var _docTitleGuard=null, _docAuthorGuard=null;
+function _reportFieldRestore(name,unexpected,kept){ console.warn('[sakura] '+name+' changed without the app or you ('+JSON.stringify(unexpected)+'); kept '+JSON.stringify(kept)); }
+function docTitleGuard(){ const f=el('header-title'); return f?(_docTitleGuard||(_docTitleGuard=createFieldGuard(f,'title',_reportFieldRestore))):null; }
+function docAuthorGuard(){ const f=el('doc-author'); return f?(_docAuthorGuard||(_docAuthorGuard=createFieldGuard(f,'author',_reportFieldRestore))):null; }
+function setDocTitleField(v){ const g=docTitleGuard(); if(g)g.set(v); }
+function setDocAuthorField(v){ const g=docAuthorGuard(); if(g)g.set(v); }
+function guardDocFields(){ const a=docTitleGuard()?.check(), b=docAuthorGuard()?.check(); if(b&&typeof updateAuthorDisplay==='function')updateAuthorDisplay(); return !!(a||b); }
+// Safari restores form fields around load and when a page comes back from another view.
+['load','pageshow'].forEach(t=>window.addEventListener(t,()=>{ guardDocFields(); setTimeout(guardDocFields,0); }));
+document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible')guardDocFields(); });
 function saveToStorage(){
   try{
     if(!currentDocId)return;
+    guardDocFields(); // a title or author change nobody made is put back before it is saved
     // Safety guard: if this tab is a ghost-fallback placeholder (see warnGhostDocFallback) and
     // still has no real content, refuse to save it — regardless of `dirty`. Unlike the
     // existing-content guard just below, there's no prior localStorage record to compare
@@ -13637,9 +13702,17 @@ function saveToStorage(){
       _lastSavedDocSig={id:currentDocId,raw:newRaw,sig:newSig};
     }catch(storageErr){
       storageWriteFailed=true; updateSavedIndicator();
-      showToast('Storage full — this edit was NOT saved. Free up space or export a backup now.');
+      // Signed in, the edit still goes to the account: the push reads this in-memory copy, since
+      // the device's stored copy is the old one (owner 2026-11-16: "we can not afford the data
+      // losses"). Without an account there's nowhere else to put it, so say so plainly.
+      if(currentUser){
+        unstoredDocPayloads().set(currentDocId,newRaw);
+        if(contentChanged)queueSync('doc',currentDocId);
+        showToast("This device's storage is full, so this edit goes to your account only. Free up space on this device.",'',false,8000);
+      } else showToast('Storage full — this edit was NOT saved. Free up space or export a backup now.');
       return;
     }
+    if(_docUnstoredPayload)_docUnstoredPayload.delete(currentDocId);
     storageWriteFailed=false;
     const titleForIndex=payload.title||untitledDocName(payload.nodes)||'Untitled';
     // Only bump updatedAt when content is actually dirty; title changes always persist title
@@ -13678,8 +13751,8 @@ function loadDocFromStorage(id){
     collapsedTableNodeIds=new Set(Array.isArray(d.collapsedTables)?d.collapsedTables:[]);
     collapsedImageNodeIds=new Set(Array.isArray(d.collapsedImages)?d.collapsedImages:[]);
     focusedId=Number.isFinite(d.focusedId)&&nodes.some(n=>n.id===d.focusedId)?d.focusedId:null;
-    if(el('header-title'))el('header-title').value=d.title||'';
-    if(el('doc-author'))el('doc-author').value=d.author||'';
+    setDocTitleField(d.title||'');
+    setDocAuthorField(d.author||'');
     setDocStatus(typeof d.docStatus==='string'?d.docStatus:'',false);
     setDocLinkedUrl(typeof d.docLinkedUrl==='string'?d.docLinkedUrl:'',typeof d.docLinkedUrlLabel==='string'?d.docLinkedUrlLabel:'',false);
     qaItems=Array.isArray(d.qa)?d.qa:[];
@@ -13814,7 +13887,7 @@ function applyTabSnapshot(tab){
   hideCrossTabWarning();
   nodes=tab.nodes; nextId=tab.nextId; selectedId=tab.selectedId; multiSelectedIds=tab.multiSelectedIds||[]; selectionAnchorId=tab.selectionAnchorId; collapsedIds=tab.collapsedIds||new Set(); collapsedTableNodeIds=tab.collapsedTableNodeIds||new Set(); collapsedImageNodeIds=tab.collapsedImageNodeIds||new Set(); focusedId=Number.isFinite(tab.focusedId)?tab.focusedId:null; undoStack=tab.undoStack||[]; redoStack=tab.redoStack||[]; dirty=!!tab.dirty;
   editingId=null; selectAllMode=false; flashNodeId=null;
-  if(el('header-title'))el('header-title').value=tab.title||''; if(el('doc-author'))el('doc-author').value=tab.author||'';
+  setDocTitleField(tab.title||''); setDocAuthorField(tab.author||'');
   setDocStatus(typeof tab.docStatus==='string'?tab.docStatus:'',false);
   setDocLinkedUrl(typeof tab.docLinkedUrl==='string'?tab.docLinkedUrl:'',typeof tab.docLinkedUrlLabel==='string'?tab.docLinkedUrlLabel:'',false);
   qaItems=Array.isArray(tab.qa)?tab.qa:[];
@@ -14070,7 +14143,7 @@ function ensureDocumentForEditing(){
   // bar) — without this, code that runs right after ensureDocumentForEditing() (e.g. loading
   // a template into this brand-new doc) would still see an empty author field even though
   // the resolved default was already written to storage above.
-  if(el('doc-author'))el('doc-author').value=resolvedAuthor;
+  setDocAuthorField(resolvedAuthor);
   setDocStatus('',false);
   persistOpenTabs(); renderTabStrip(); renderSidebar();
   if(typeof updateDocShareChipVisibility==='function')updateDocShareChipVisibility();
@@ -14081,7 +14154,7 @@ function clearToNoDocumentState(){
   clearFiltersForDocChange(); setDocContentPendingLock(false); setTimeout(renderDocSaveState,0);
   nodes=[]; nextId=1; selectedId=null; editingId=null; undoStack=[]; redoStack=[]; multiSelectedIds=[]; selectionAnchorId=null; collapsedIds=new Set(); collapsedTableNodeIds=new Set(); collapsedImageNodeIds=new Set(); focusedId=null; dirty=false; selectAllMode=false; flashNodeId=null;
   searchOpen=false; if(el('search-bar'))el('search-bar').hidden=true; searchQuery=''; searchMatches=[]; searchIndex=-1; if(el('search-input'))el('search-input').value='';
-  if(el('header-title'))el('header-title').value=''; if(el('doc-author'))el('doc-author').value=defaultAuthorName||'';
+  setDocTitleField(''); setDocAuthorField(defaultAuthorName||'');
   setDocStatus('',false);
   setDocLinkedUrl('','',false);
   currentDocId=null; activeTabDocId=null; try{localStorage.removeItem(CURRENT_DOC_KEY)}catch(e){}
@@ -14105,7 +14178,7 @@ function renameDoc(id,anchor){
 }
 function applyDocRename(id,name){
   const trimmed=name.trim()||'Untitled';
-  if(id===currentDocId){ if(el('header-title'))el('header-title').value=trimmed; saveToStorage() }
+  if(id===currentDocId){ setDocTitleField(trimmed); saveToStorage() }
   else { touchDocIndex(id,trimmed); try{const raw=localStorage.getItem(docKey(id)); if(raw){const d=JSON.parse(raw); d.title=trimmed; localStorage.setItem(docKey(id),JSON.stringify(d))}}catch(e){showToast('Storage full — rename may not have saved. Free up space or export a backup.')} const openTab=findOpenTab(id); if(openTab)openTab.title=trimmed; renderTabStrip(); }
   renderDocsList(); if(typeof renderSidebar==='function')renderSidebar();
 }
@@ -14358,8 +14431,8 @@ async function restoreDocRevision(docId,ts){
     // Threads come back with their rows (they used to stay as they are now, so comments on rows
     // that came back were gone).
     if(Array.isArray(rev.remarks))remarks=JSON.parse(JSON.stringify(rev.remarks));
-    if(el('header-title'))el('header-title').value=rev.title||'';
-    if('author' in rev&&el('doc-author')){ el('doc-author').value=rev.author||''; if(typeof updateAuthorDisplay==='function')updateAuthorDisplay(); }
+    setDocTitleField(rev.title||'');
+    if('author' in rev&&el('doc-author')){ setDocAuthorField(rev.author||''); if(typeof updateAuthorDisplay==='function')updateAuthorDisplay(); }
     if('docLinkedUrl' in rev)setDocLinkedUrl(rev.docLinkedUrl||'',rev.docLinkedUrlLabel||'',false);
     // Older revisions predate docStatus entirely and simply lack the key — leaving the current
     // status untouched in that case, rather than blanking it, since "unknown" isn't the same as
@@ -14979,6 +15052,49 @@ function _dvFit(animate){
   _dvState.fit=fit; _dvState.scale=fit; _dvState.tx=(W-w*fit)/2; _dvState.ty=(H-h*fit)/2;
   _dvApply(animate);
 }
+/* GENERATED:svgScheme:START — DO NOT EDIT BY HAND. Source of truth: src/utils/svgScheme.ts (tests: tests/unit/svgScheme.test.ts). Regenerate with `npm run generate` after changing the source; CI fails if this block drifts from what the generator produces (see .github/workflows/ci.yml and scripts/generate-index-blocks.mjs). */
+/**
+ * A draw.io picture follows the app's Light/Dark, not the device's (owner 2026-11-16: "diagram
+ * previews in mobile ... always come in dark mode"; first fixed for the old phone page on
+ * 2026-11-03 and lost with it in phase 5 of docs/mobile-plan.md). draw.io exports declare
+ * `color-scheme: light dark` and colour with light-dark(), so the picture follows the system
+ * setting, and Safari does that even inside an <img> on a light page. This pins the declared
+ * scheme to the app's. Anything that isn't an SVG data URL, or declares no scheme, comes back
+ * unchanged. Results are remembered (the outline redraws often and pictures can be large).
+ *
+ * Wired into index.html via scripts/generate-index-blocks.mjs's `svgScheme` block.
+ */
+const _svgSchemeCache = new Map();
+function svgForScheme(dataUrl, scheme) {
+    const url = String(dataUrl || '');
+    const m = /^data:image\/svg\+xml([^,]*),/i.exec(url);
+    if (!m)
+        return url;
+    const key = scheme + '|' + url;
+    const hit = _svgSchemeCache.get(key);
+    if (hit !== undefined)
+        return hit;
+    const body = url.slice(m[0].length);
+    let text;
+    try {
+        text = /;base64$/i.test(m[1])
+            ? new TextDecoder().decode(Uint8Array.from(atob(body), (c) => c.charCodeAt(0)))
+            : decodeURIComponent(body);
+    }
+    catch {
+        return url;
+    }
+    const pinned = text.replace(/color-scheme\s*:\s*(light\s+dark|dark\s+light|normal)/gi, 'color-scheme: ' + scheme);
+    const out = pinned === text ? url : 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(pinned);
+    if (_svgSchemeCache.size >= 40)
+        _svgSchemeCache.delete(_svgSchemeCache.keys().next().value);
+    _svgSchemeCache.set(key, out);
+    return out;
+}
+
+/* GENERATED:svgScheme:END */
+// The app's own Light/Dark (not the device's), for pictures that would otherwise follow the device.
+function appColorScheme(){ return document.body.classList.contains('theme-dark')?'dark':'light'; }
 function openDiagramViewer(diagramId){
   const d=findDiagram(diagramId); if(!d)return;
   if(!d.previewSvg){ openDiagramEditor(diagramId); return; }
@@ -14992,7 +15108,7 @@ function openDiagramViewer(diagramId){
   // of our own); an older picture without draw.io's margin gets the same 12px from us instead.
   ov.style.setProperty('--dv-pad',(d.previewBorder?0:DIAGRAM_EXPORT_BORDER)+'px');
   img.onload=()=>{ if(!_dvState||_dvState.id!==d.id)return; const nw=img.naturalWidth||800, nh=img.naturalHeight||600, pad=parseFloat(getComputedStyle(img).paddingLeft)||0; img.style.width=nw+'px'; img.style.height=nh+'px'; _dvState.w=nw+2*pad; _dvState.h=nh+2*pad; _dvFit(); };
-  img.src=d.previewSvg;
+  img.src=svgForScheme(d.previewSvg,appColorScheme());
   ov.classList.add('open'); ov.tabIndex=-1; ov.focus();
   _dvRefreshCounter(); replayPreviewHint(ov);
 }
@@ -17569,8 +17685,13 @@ async function resolveDocPushConflict(mod,db,ownerUid,docId,cloud){
   showActionToast('Changed on another device. Your edits here are kept in Version history.','Version history',()=>openVersionHistory(docId),8000);
   _actionToastUndo=null; // Ctrl/Cmd+Z stays undo
 }
+// Documents this device couldn't store (storage full) but that still go to the account: the newest
+// copy is here, not in localStorage (see saveToStorage). Created on first use: a save can run
+// during start-up, before this line of the script has.
+var _docUnstoredPayload;
+function unstoredDocPayloads(){ return _docUnstoredPayload||(_docUnstoredPayload=new Map()); }
 async function pushDocToCloud(mod,db,docId){
-  const raw=localStorage.getItem(docKey(docId)); if(raw===null)return;
+  const raw=(_docUnstoredPayload&&_docUnstoredPayload.get(docId))??localStorage.getItem(docKey(docId)); if(raw===null||raw===undefined)return;
   let data; try{data=JSON.parse(raw)}catch(e){return}
   const ts=Date.now(); _lastPushedTs['doc:'+docId]=ts;
   const ownerUid=currentUser.uid;
@@ -22919,7 +23040,7 @@ const aiOutlineBtn=document.getElementById('es-ai-outline-btn'); if(aiOutlineBtn
       const card=document.createElement('div'); card.className='node-diagram-preview-card';
       const thumb=document.createElement('div'); thumb.className='node-diagram-preview-thumb'+(d.previewSvg&&d.previewBorder?' has-export-border':''); thumb.dataset.tip='Click to preview · right-click for more';
       if(d.previewSvg){
-        const img=document.createElement('img'); img.src=d.previewSvg; img.alt='';
+        const img=document.createElement('img'); img.src=svgForScheme(d.previewSvg,appColorScheme()); img.alt='';
         img.addEventListener('error',()=>{ thumb.classList.add('node-diagram-preview-empty'); thumb.innerHTML='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="8.5" y="14" width="7" height="7" rx="1"/></svg>'; thumb.dataset.tip='Preview failed to load — click to open and regenerate it'; },{once:true});
         thumb.appendChild(img);
       } else {
@@ -25042,7 +25163,7 @@ function updateAuthorDisplay(){const name=String(el('doc-author')?.value||'').tr
 el('sb-author')?.addEventListener('input',()=>{
   const val=el('sb-author').value;
   ensureDocumentForEditing();
-  el('doc-author').value=val.trim();
+  setDocAuthorField(val.trim());
   el('sb-author').classList.toggle('unset',!val.trim());
   scheduleAutoSave();
 });
@@ -27089,7 +27210,24 @@ window.addEventListener('beforeunload',e=>{
 // caret and selection are exactly where they were. Saving is unaffected: fields save as you
 // type, and the 'hidden' handler below writes everything to storage.
 let _windowBlurKeptEl=null;
+// Data safety (owner 2026-11-16: "we can not afford the data losses"). A phone puts the app away
+// without leaving the field, and several fields only save when you leave them (renaming a document
+// or folder, a task's "waiting for", a thread entry). When the page is hidden, such a field is left
+// for you, so its own save runs. Fields that already save as you type (rows, notes, the title and
+// author, a task's text, handled in the To-Dos code) and search boxes are left as they are.
+let _leavingFieldOnHide=false;
+document.addEventListener('visibilitychange',()=>{
+  if(document.visibilityState!=='hidden')return;
+  const a=document.activeElement;
+  if(!a||a===document.body||a===document.documentElement)return;
+  const editable=a.isContentEditable||a.tagName==='TEXTAREA'||(a.tagName==='INPUT'&&!/^(checkbox|radio|range|file|color|button|submit)$/i.test(a.type||''));
+  if(!editable)return;
+  if(a.closest?.('.node-input,.node-note-line,#header-title,#doc-author,.todo-text,#todos-input,#todos-search-input,#settings-panel,#help-panel,#global-search-wrap,#sidebar-search,.panel-search-wrap'))return;
+  _leavingFieldOnHide=true;
+  try{ a.blur(); }finally{ _leavingFieldOnHide=false; }
+});
 const _keepFieldOnWindowBlur=e=>{
+  if(_leavingFieldOnHide)return;
   if(document.hasFocus()||e.target===window||e.target===document)return;
   _windowBlurKeptEl=e.target; e.stopImmediatePropagation();
 };
@@ -28610,6 +28748,16 @@ function setPhoneDrawerOpen(open, root = document.documentElement) {
 function toggleDocumentsPanel(){ if(isPhoneLayout()){ setPhoneDrawerOpen(!isPhoneDrawerOpen()); return; } if(sidebarOpen)setSidebarOpen(false); else openDocumentsPanel(); }
 el('phone-menu-btn')?.addEventListener('click',()=>setPhoneDrawerOpen(!isPhoneDrawerOpen()));
 el('phone-drawer-backdrop')?.addEventListener('click',()=>setPhoneDrawerOpen(false));
+// The document's menu (Rename, Duplicate, Version history, Send a copy, Move…, Move to Trash). On
+// a computer it opens by right-clicking the title or the document in the list; a phone has no
+// right-click, so it gets this ⋯ on the top line (owner 2026-11-16: "how can I open the versioning
+// in mobile safari").
+el('phone-doc-menu-btn')?.addEventListener('click',e=>{
+  e.stopPropagation();
+  const d=loadActiveDocsIndex().find(x=>x.id===currentDocId); if(!d)return;
+  const r=e.currentTarget.getBoundingClientRect();
+  showSbContextMenu(r.right,r.bottom+4,sbDocContextItems(d,loadFolders()));
+});
 // Settings and To-Dos open over the editor, so the drawer gets out of the way; search, the account
 // and notification menus sit over the open drawer.
 el('appbar')?.addEventListener('click',e=>{ if(isPhoneDrawerOpen()&&e.target.closest?.('#rail-settings-btn,#dock-panel-appbar-toggle'))setPhoneDrawerOpen(false); },true);
@@ -34826,6 +34974,7 @@ function todosHistorySummary(list) {
   // Remembered across reloads, like the File Explorer (owner 2026-11-02): the left slot shows what it showed.
   const TODOS_OPEN_KEY='sakura_todos_open_v1';
   function openTodosPanel(opts){
+    if(typeof restoreTodoDraft==='function')restoreTodoDraft();
     const panel=document.getElementById('todos-panel');
     if(!panel) return;
     try{ localStorage.setItem(TODOS_OPEN_KEY,'1'); }catch(e){}
@@ -35304,10 +35453,31 @@ function todosHistorySummary(list) {
     if(!input) return;
     addTodo(input.value);
     input.value='';
+    saveTodoDraft();
     autoGrowInput();
     input.focus();
   });
-  document.getElementById('todos-input')?.addEventListener('input', e=>{ autoGrowInput(); handleTodoAtInput(e.target, null); });
+  document.getElementById('todos-input')?.addEventListener('input', e=>{ autoGrowInput(); handleTodoAtInput(e.target, null); saveTodoDraft(); });
+  // Data safety (owner 2026-11-16: "we can not afford the data losses"). A phone puts the app away
+  // without the field losing focus, so anything that only saved on blur was lost:
+  // - a task's text being edited (it saved on blur) is saved when the page is hidden; an empty
+  //   text is left alone, since saving it would delete the task;
+  // - a task typed in "Add a task…" but not added yet is kept as a draft and comes back.
+  const TODO_DRAFT_KEY='sakura_todos_draft_v1';
+  function saveTodoDraft(){ try{ const v=document.getElementById('todos-input')?.value||''; if(v.trim())localStorage.setItem(TODO_DRAFT_KEY,v); else localStorage.removeItem(TODO_DRAFT_KEY); }catch(e){} }
+  // Put back whenever the box is empty: at start-up, once the page has loaded or comes back, and
+  // when To-Dos opens (anything later in start-up that resets the box must not lose the draft).
+  function restoreTodoDraft(){ try{ const draft=localStorage.getItem(TODO_DRAFT_KEY); const inp=document.getElementById('todos-input'); if(draft&&inp&&!inp.value){ inp.value=draft; autoGrowInput(); } }catch(e){} }
+  restoreTodoDraft();
+  ['load','pageshow'].forEach(t=>window.addEventListener(t,()=>{ restoreTodoDraft(); setTimeout(restoreTodoDraft,0); }));
+  function saveTodoTextBeingEdited(){
+    const elx=document.activeElement;
+    if(!elx||!elx.classList||!elx.classList.contains('todo-text')||elx.dataset.committed==='1')return;
+    const title=readTodoTitle(elx);
+    if(String(title.text||'').replace(/\u200B/g,'').trim())editTodoText(elx.getAttribute('data-id'),title.text,title.marks);
+  }
+  document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='hidden'){ saveTodoTextBeingEdited(); saveTodoDraft(); } });
+  window.addEventListener('pagehide',()=>{ saveTodoTextBeingEdited(); saveTodoDraft(); });
   function closeTodoDropdowns(except){
     document.querySelectorAll('.todo-dd-menu.open').forEach(menu=>{
       if(menu.id===except) return;
@@ -35387,6 +35557,7 @@ function todosHistorySummary(list) {
       const input=e.target;
       addTodo(input.value);
       input.value='';
+      saveTodoDraft();
       autoGrowInput();
     }
   });
