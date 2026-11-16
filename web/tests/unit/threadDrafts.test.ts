@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { threadDraftKey, draftsForDoc, pruneDrafts, mergeDrafts, THREAD_DRAFT_MAX_AGE_MS } from '../../src/utils/threadDrafts';
+import { fieldDraftKey, threadDraftKey, draftsForDoc, pruneDrafts, mergeDrafts, THREAD_DRAFT_MAX_AGE_MS } from '../../src/utils/threadDrafts';
 
 const d = (html: string, at: number, extra: object = {}) => ({ html, at, ...extra });
 
@@ -44,5 +44,13 @@ describe('threadDrafts', () => {
   it('keeps everything both sides have on a first sync (no base)', () => {
     expect(mergeDrafts(undefined, { a: d('mine', 1) }, { b: d('theirs', 2) })).toEqual({ a: d('mine', 1), b: d('theirs', 2) });
     expect(mergeDrafts(undefined, { a: d('mine', 1) }, { a: d('theirs', 2) })).toEqual({ a: d('theirs<br>mine', 2) });
+  });
+
+  it('keeps both texts of a plain-text field on separate lines', () => {
+    const k = fieldDraftKey('todos-add');
+    expect(k).toBe('field|todos-add');
+    expect(mergeDrafts({}, { [k]: d('Call the bank', 2) }, { [k]: d('Book flights', 3) })).toEqual({ [k]: d('Book flights\nCall the bank', 3) });
+    // A field draft never shows up among a document's reply drafts.
+    expect(draftsForDoc({ [k]: d('x', 1) }, 'dmwivi4eskdcb3')).toEqual([]);
   });
 });

@@ -342,3 +342,35 @@ test('the card shows a long body and response in full: no height cap, long lines
   expect(m.sh).toBeLessThanOrEqual(m.ch);
   expect(m.sw).toBeLessThanOrEqual(m.cw);
 });
+
+// Data-safety standard (docs/data-safety-audit.md): the form is written into the document when the
+// app is put away, so a phone closing the app doesn't lose it; the form stays open.
+test('the API request form is saved into the document when the app is put away', async ({ page }) => {
+  await page.setViewportSize({ width: 1200, height: 900 });
+  await page.goto('file://' + indexPath);
+  await page.evaluate(() => {
+    // @ts-expect-error -- bare globals from index.html
+    nodes[0].tables[0] = nodes[0].tables[0].replace('<table>', '<table data-table-display="api">'); render();
+  });
+  await page.locator('.pv-api').dblclick();
+  await page.locator('#api-ed-desc').fill('Lists the orders still open.');
+  await page.evaluate(() => {
+    Object.defineProperty(document, 'visibilityState', { value: 'hidden', configurable: true });
+    Object.defineProperty(document, 'hidden', { value: true, configurable: true });
+    document.dispatchEvent(new Event('visibilitychange'));
+  });
+  // @ts-expect-error -- bare global from index.html
+  expect(await page.evaluate(() => nodes[0].tables[0])).toContain('Lists the orders still open.');
+  const stored = await page.evaluate(() => localStorage.getItem('sakura_doc_v1_apidoc') || '');
+  expect(stored).toContain('Lists the orders still open.');
+  await expect(page.locator('#api-editor')).toBeVisible();
+  // Back in the app and finished: the card shows it, and one undo step takes it back.
+  await page.evaluate(() => {
+    Object.defineProperty(document, 'visibilityState', { value: 'visible', configurable: true });
+    Object.defineProperty(document, 'hidden', { value: false, configurable: true });
+  });
+  await page.locator('#api-ed-url').focus();
+  await page.keyboard.press('Escape');
+  await expect(page.locator('#api-editor')).toHaveCount(0);
+  await expect(page.locator('.pv-api')).toContainText('Lists the orders still open.');
+});

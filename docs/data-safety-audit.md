@@ -22,24 +22,29 @@ typed offline or on a bad connection would have nowhere to go. Direction for the
 
 ### Where you can type, and how each is kept
 
-| Where | Kept on the device | Synced | Notes |
-|---|---|---|---|
-| Rows, notes, title, author | As you type | Yes (the document) | Version history; `rev`-checked writes |
-| Thread entries (editing one) | When you leave the field; left for you when the app is put away | Yes (the document) | |
-| **Thread reply box (unsent)** | As you type (`sakura_thread_drafts_v1`) | Yes (`threadDrafts`) | New: see below |
-| To-Dos tasks | As you change them | Yes (`todos`, merged per task) | Version history |
-| "Add a task…" box (unsent) | As you type (`sakura_todos_draft_v1`) | No | Gap: device only |
-| Renames, "waiting for", image captions and labels | When you leave the field; left for you when the app is put away | Yes | |
-| Diagram editor, API request editor | When you finish or close | Yes (the document) | Not yet checked against the standard |
-| Feedback message, dialogs | Not kept | No | Short; closing asks nothing yet. Not yet checked |
-| Search, settings, sign-in fields | Not content | — | |
+Every field is listed, with how it's kept, in `web/tests/unit/textFieldsKept.test.ts`. That test
+reads `index.html` and fails when a field appears that isn't listed, so a new field can't ship
+without deciding how its text is kept. In short:
 
-**Unsent thread replies (2026-11-16).** As in Slack: saved on the device as you type, synced to the
+| How it's kept | Fields |
+|---|---|
+| **As you type**, into the document or list (synced, Version history) | Rows, notes, title, author, diagram title |
+| **When you leave the field**; the app leaves it for you when it's put away | Thread entries and their author, table cells, renames, image captions and labels, diagram names, To-Do text, "waiting for", subtasks, the link's label |
+| **Draft** (shared store: saved as you type, synced, back after a reload, kept from both devices) | Thread reply box, "Add a task…", the feedback message |
+| **Written into the document when the app is put away**, the form staying open | API request editor |
+| **Asks before closing** | The draw.io diagram editor (it can't be saved from outside; edits since its last Save are lost if the app itself is closed) |
+| **Short entries**, applied with Enter or OK | Link addresses, tags, names in dialogs, a pasted cURL, a new subtask |
+| Settings, or not content | Settings, search boxes, sign-in, e-mail addresses |
+
+**Drafts (2026-11-16).** One store for unsent text (`typedDrafts` in `index.html`;
+`fieldDraftSave` / `fieldDraftRestore` for a plain field). Thread replies, as in Slack: saved on the device as you type, synced to the
 account a moment after you stop (and at once when the app is put away), back with its thread open
 after a reload or on your other devices, removed only when sent or closed, dropped after 30 days
 untouched. When two devices changed the same draft, both texts are kept in it, the newer first
-(`src/utils/threadDrafts.ts`, `mergeDrafts`; the generic merge would let one side win). Tests:
-`thread-drafts.spec.ts`, `threadDrafts.test.ts`.
+(one per line for a plain field) (`src/utils/threadDrafts.ts`, `mergeDrafts`; the generic merge
+would let one side win). A field on screen takes the merged text at once, so typing on doesn't save
+over the other device's words. "Add a task…" moved here from its device-only key, which is carried
+over once. Tests: `thread-drafts.spec.ts`, `threadDrafts.test.ts`, `table-api.spec.ts` (API editor).
 
 ## Fixed
 
@@ -79,8 +84,8 @@ untouched. When two devices changed the same draft, both texts are kept in it, t
 - **The iPhone itself.** Safari behaviour is checked with Chrome's phone emulation; Safari isn't
   available in this environment. The title fix is aimed at the most likely cause. If a field ever
   changes without you, the app logs `[sakura] title changed without the app or you`.
-- **"Add a task…" box** is kept on the device only, not synced.
-- **Diagram editor, API request editor, feedback and dialogs** haven't been checked against the
-  standard yet.
-- **Not enforced by a test yet:** a new text field could be added without being kept. The next
-  step is one shared draft helper for every field, and a test that fails when a field isn't covered.
+- **The draw.io editor** keeps edits only when Save is used inside it (closing asks). draw.io's
+  embed can send its changes as you draw (`autosave`), which would close this; it can't be tested
+  here (the editor loads from embed.diagrams.net), so it's left for a change that can be checked by hand.
+- **Short entries** (a link address, a tag, a name in a dialog) are gone if the app closes mid-entry.
+  Accepted: they're a few words, and keeping them would bring back half-finished popovers.

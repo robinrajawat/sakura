@@ -129,3 +129,43 @@ test('Another device\'s draft arrives and shows; when both devices changed it, b
   await expect(page.locator('.thread-composer .thread-composer-input')).toContainText('From the laptop.');
   expect(errors).toEqual([]);
 });
+
+// Other unsent text uses the same store: the feedback message and the "Add a task" box.
+test('A feedback message started and closed is back after a reload', async ({ page }) => {
+  const errors = await open(page, true);
+  await page.evaluate('openFeedbackModal()');
+  await page.locator('#feedback-message-input').fill('The outline jumps when I paste.');
+  await page.evaluate('closeFeedbackModal()');
+  expect((await drafts(page))['field|feedback']?.html).toBe('The outline jumps when I paste.');
+  await page.reload();
+  await expect.poll(() => page.evaluate('typeof openFeedbackModal === "function"')).toBe(true);
+  await page.evaluate('openFeedbackModal()');
+  await expect(page.locator('#feedback-message-input')).toHaveValue('The outline jumps when I paste.');
+  // Emptying it removes the draft.
+  await page.locator('#feedback-message-input').fill('');
+  expect((await drafts(page))['field|feedback']).toBeUndefined();
+  expect(errors).toEqual([]);
+});
+
+test('"Add a task" text typed on two devices: both are kept, one per line', async ({ page }) => {
+  const errors = await open(page, true);
+  await page.evaluate(`document.getElementById('todos-input').value = 'Call the bank'; document.getElementById('todos-input').dispatchEvent(new Event('input', { bubbles: true }))`);
+  expect((await drafts(page))['field|todos-add']?.html).toBe('Call the bank');
+  await page.evaluate(`setMetaBase('threadDrafts', {})`);
+  await page.evaluate(`(async () => {
+    await applyIncomingMetaData('threadDrafts', { value: { 'field|todos-add': { html: 'Book flights', at: Date.now() + 5000 } }, updatedAt: Date.now() + 5000 });
+    await refreshHubPanelAfterSync('threadDrafts');
+  })()`);
+  expect((await drafts(page))['field|todos-add']?.html).toBe('Book flights\nCall the bank');
+  await expect(page.locator('#todos-input')).toHaveValue('Book flights\nCall the bank');
+  expect(errors).toEqual([]);
+});
+
+test('An "Add a task" draft kept the older way (this device only) moves into the synced store', async ({ page }) => {
+  await page.addInitScript(() => { try { if (!sessionStorage.getItem('legacySeeded')) { localStorage.setItem('sakura_todos_draft_v1', 'Water the plants'); sessionStorage.setItem('legacySeeded', '1'); } } catch { /* storage unavailable */ } });
+  const errors = await open(page, false);
+  expect((await drafts(page))['field|todos-add']?.html).toBe('Water the plants');
+  expect(await page.evaluate(`localStorage.getItem('sakura_todos_draft_v1')`)).toBeNull();
+  await expect(page.locator('#todos-input')).toHaveValue('Water the plants');
+  expect(errors).toEqual([]);
+});

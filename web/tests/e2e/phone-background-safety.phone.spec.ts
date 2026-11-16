@@ -54,13 +54,16 @@ test('clearing a task\'s text and then putting the app away does not delete the 
   expect(await todoTexts(page)).toEqual(['Buy milk']);
 });
 
+// The box's draft, in the shared draft store (synced to the account; see thread-drafts.spec.ts).
+const todosDraft = (page: Page) => page.evaluate(() => (JSON.parse(localStorage.getItem('sakura_thread_drafts_v1') || '{}')['field|todos-add'] || {}).html) as Promise<string | undefined>;
+
 test('a task typed in "Add a task…" but not added comes back after the app is closed', async ({ page }) => {
   await openTodos(page);
   await page.locator('#todos-input').tap();
   await page.keyboard.type('Call the bank');
   await hide(page);
   // Stored before the app goes (so a failure below is about putting it back, not about saving it).
-  expect(await page.evaluate(() => localStorage.getItem('sakura_todos_draft_v1'))).toBe('Call the bank');
+  expect(await todosDraft(page)).toBe('Call the bank');
   await page.reload();
   await page.waitForFunction(() => typeof (window as unknown as { createDoc?: unknown }).createDoc === 'function');
   await expect(page.locator('#todos-input')).toHaveValue('Call the bank');
@@ -69,7 +72,7 @@ test('a task typed in "Add a task…" but not added comes back after the app is 
   await page.locator('#todos-input').focus();
   await page.keyboard.press('Enter');
   await expect.poll(() => todoTexts(page)).toEqual(['Buy milk', 'Call the bank']);
-  expect(await page.evaluate(() => localStorage.getItem('sakura_todos_draft_v1'))).toBeNull();
+  expect(await todosDraft(page)).toBeUndefined();
 });
 
 test('a document rename in progress is saved when the app is put away', async ({ page }) => {
