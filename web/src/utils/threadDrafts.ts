@@ -1,9 +1,12 @@
 /**
- * Unsent thread replies, kept like Slack or Gmail keep a draft: saved on the device as you type,
+ * Unsent text — thread replies, the "Add a task" box, the feedback message — kept like Slack or
+ * Gmail keep a draft: saved on the device as you type,
  * synced to the account, restored when you come back, and removed only when it is sent or you
  * close it. See docs/data-safety-audit.md ("Standard: what a person types is never lost").
  *
- * Drafts live in one map, keyed by document and row, synced as the `threadDrafts` meta key. Two
+ * Drafts live in one map, synced as the `threadDrafts` meta key (its name predates the other
+ * fields). A reply's key is document and row (`threadDraftKey`); any other field's is
+ * `fieldDraftKey(name)`, and holds plain text rather than HTML. Two
  * devices' changes are merged here rather than by the generic merge3, because merge3 lets one
  * side win when both edited the same entry, and a draft is text someone typed: when both devices
  * changed the same draft, both texts are kept (the newer first).
@@ -21,6 +24,12 @@ export type ThreadDraftMap = Record<string, ThreadDraft>;
 
 /** Drafts untouched this long are dropped (as Slack and Gmail eventually do). */
 export const THREAD_DRAFT_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000;
+
+/** Keys of drafts that aren't thread replies; their text is plain, not HTML. */
+export const FIELD_DRAFT_PREFIX = 'field|';
+export function fieldDraftKey(name: string): string {
+  return FIELD_DRAFT_PREFIX + name;
+}
 
 export function threadDraftKey(docId: unknown, nodeId: unknown): string {
   return String(docId ?? '') + '|' + String(nodeId);
@@ -85,7 +94,8 @@ export function mergeDrafts(base: unknown, local: unknown, cloud: unknown): Thre
       else {
         const [newer, older] = ld.at >= cd.at ? [ld, cd] : [cd, ld];
         const olderText = threadDraftText(older.html);
-        const html = !olderText || threadDraftText(newer.html).includes(olderText) ? newer.html : newer.html + '<br>' + older.html;
+        const join = k.startsWith(FIELD_DRAFT_PREFIX) ? '\n' : '<br>';
+        const html = !olderText || threadDraftText(newer.html).includes(olderText) ? newer.html : newer.html + join + older.html;
         out[k] = { ...newer, html };
       }
     } else if (ld) {

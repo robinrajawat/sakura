@@ -175,6 +175,8 @@ contradicts README.md or docs/feature-reference.md, trust them.)*
 
 ### Latest changes
 
+- **Every place you can type says how it's kept (2026-11-16, owner: "a standard, cloud first application with 0 risk of data loss").** `tests/unit/textFieldsKept.test.ts` scans `index.html` (`textFieldScan.ts`) and fails on a field it doesn't list, so a new field needs a decision. The draft store is now general (`typedDrafts`; `fieldDraftSave` / `fieldDraftRestore` / `fieldDraftShowSynced`): "Add a task…" (moved from the device-only `sakura_todos_draft_v1`) and the feedback message use it, synced. The API request editor writes its form into the document when the app is put away (`apiEditorApplyOnHide`). Left open in `docs/data-safety-audit.md`: draw.io autosave, short entries.
+
 - **Unsent thread replies are drafts (2026-11-16, owner: "a standard, cloud first application with 0 risk of data loss").** The standard (3 promises) and a list of every place you can type are at the top of `docs/data-safety-audit.md`. Reply-box text is saved on the device as you type and synced as meta key `threadDrafts` (`src/utils/threadDrafts.ts`; `mergeDrafts` keeps both devices' text instead of merge3's one-side-wins). `_threadDrafts` keeps the Map's has/get/set/delete, keyed by document and row; `revealThreadDrafts()` (from `render()`) reopens a document's threads that hold drafts, and waits until start-up has finished (drawing a thread during start-up throws and stopped the app). Tests: thread-drafts, threadDrafts.
 
 - **Data safety audit (2026-11-16, owner: "we can not afford the data losses"; see `docs/data-safety-audit.md`).** Fixed:
@@ -187,8 +189,6 @@ contradicts README.md or docs/feature-reference.md, trust them.)*
   - a phone ⋯ document menu gives access to Version history.
 
   Tests: doc-title-guard, phone-background-safety.phone, doc-safe-writes (+2), phone-shell (+1).
-
-- **Title/author guard (2026-11-16, owner: title gone after Download PDF in iPhone Safari; "extremely careful about these data loss issues").** It didn't reproduce in Chrome (export, reload, signed-in catch-up). The leading cause is Safari form restoration writing an old value into `#header-title` after load. `src/ui/fieldGuard.ts`: the title and author change only via `setDocTitleField`/`setDocAuthorField` (all programmatic sets now use them) or while the person uses the field. `guardDocFields()` puts anything else back before every `saveToStorage`, on load/pageshow and on return. Test: doc-title-guard.spec.ts (fails without the guard). Tests and code must set the title via `setDocTitleField` (or a real input event); a silent `.value=` is reverted. Phones get a ⋯ on the top line (`#phone-doc-menu-btn`) for the document menu, incl. Version history (no right-click on phones).
 
 ### In progress / not built
 

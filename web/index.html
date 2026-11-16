@@ -4943,11 +4943,14 @@ let filterOpened=null; // {docId, folds:Set, threads:Set} while a filter has unf
 let showAllRemarksNodeIds=new Set(); let showClosedQaNodeIds=new Set();
 /* GENERATED:threadDrafts:START — DO NOT EDIT BY HAND. Source of truth: src/utils/threadDrafts.ts (tests: tests/unit/threadDrafts.test.ts). Regenerate with `npm run generate` after changing the source; CI fails if this block drifts from what the generator produces (see .github/workflows/ci.yml and scripts/generate-index-blocks.mjs). */
 /**
- * Unsent thread replies, kept like Slack or Gmail keep a draft: saved on the device as you type,
+ * Unsent text — thread replies, the "Add a task" box, the feedback message — kept like Slack or
+ * Gmail keep a draft: saved on the device as you type,
  * synced to the account, restored when you come back, and removed only when it is sent or you
  * close it. See docs/data-safety-audit.md ("Standard: what a person types is never lost").
  *
- * Drafts live in one map, keyed by document and row, synced as the `threadDrafts` meta key. Two
+ * Drafts live in one map, synced as the `threadDrafts` meta key (its name predates the other
+ * fields). A reply's key is document and row (`threadDraftKey`); any other field's is
+ * `fieldDraftKey(name)`, and holds plain text rather than HTML. Two
  * devices' changes are merged here rather than by the generic merge3, because merge3 lets one
  * side win when both edited the same entry, and a draft is text someone typed: when both devices
  * changed the same draft, both texts are kept (the newer first).
@@ -4956,6 +4959,11 @@ let showAllRemarksNodeIds=new Set(); let showClosedQaNodeIds=new Set();
  */
 /** Drafts untouched this long are dropped (as Slack and Gmail eventually do). */
 const THREAD_DRAFT_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000;
+/** Keys of drafts that aren't thread replies; their text is plain, not HTML. */
+const FIELD_DRAFT_PREFIX = 'field|';
+function fieldDraftKey(name) {
+    return FIELD_DRAFT_PREFIX + name;
+}
 function threadDraftKey(docId, nodeId) {
     return String(docId ?? '') + '|' + String(nodeId);
 }
@@ -5019,7 +5027,8 @@ function mergeDrafts(base, local, cloud) {
             else {
                 const [newer, older] = ld.at >= cd.at ? [ld, cd] : [cd, ld];
                 const olderText = threadDraftText(older.html);
-                const html = !olderText || threadDraftText(newer.html).includes(olderText) ? newer.html : newer.html + '<br>' + older.html;
+                const join = k.startsWith(FIELD_DRAFT_PREFIX) ? '\n' : '<br>';
+                const html = !olderText || threadDraftText(newer.html).includes(olderText) ? newer.html : newer.html + join + older.html;
                 out[k] = { ...newer, html };
             }
         }
@@ -5041,12 +5050,12 @@ var _threadComposerNodeId=null;   // the node whose reply box is open even with 
 var _threadAskNodeIds=new Set();  // reply boxes whose next entry is a question
 var _threadDecisionNodeIds=new Set();  // reply boxes whose next entry is a decision
 var _threadAnswerTo=new Map();  // reply boxes answering a chosen question: nodeId -> question entry id
-// What is typed in a reply box (Slack/Gmail-style drafts): saved on the device as you type, synced
-// to the account (meta key threadDrafts, merged by mergeDrafts so two devices' text is both kept),
-// and removed only when sent or closed. Keyed by the open document and the row; same has/get/set/
-// delete as the Map it replaced.
+// Unsent text, kept as drafts like Slack or Gmail do (docs/data-safety-audit.md): saved on the device
+// as you type, synced to the account (meta key threadDrafts, merged by mergeDrafts so two devices'
+// text is both kept), removed only when sent or closed. One store for every such field: thread
+// replies (_threadDrafts below) and plain-text fields (fieldDraftSave/fieldDraftRestore).
 var _threadDraftsRevealedFor; // the document whose saved drafts have had their threads opened
-var _threadDrafts=(function(){
+var typedDrafts=(function(){
   const KEY='sakura_thread_drafts_v1';
   let cache=null, syncTimer=null;
   function load(){
@@ -5056,21 +5065,13 @@ var _threadDrafts=(function(){
   }
   function persist(){
     try{ localStorage.setItem(KEY,JSON.stringify(cache)); }
-    catch(e){ console.warn('[sakura] saving a reply draft on this device failed:',e); }
+    catch(e){ console.warn('[sakura] saving a draft on this device failed:',e); }
     clearTimeout(syncTimer); syncTimer=setTimeout(()=>{ syncTimer=null; markMetaChanged('threadDrafts'); },1500);
   }
-  const key=id=>threadDraftKey(currentDocId,id);
   return {
-    has(id){ return !!load()[key(id)]; },
-    get(id){ const d=load()[key(id)]; return d?d.html:undefined; },
-    set(id,html){
-      const m=load(), d={html:String(html),at:Date.now()};
-      if(_threadDecisionNodeIds.has(id))d.kind='decision'; else if(_threadAskNodeIds.has(id))d.kind='question';
-      if(_threadAnswerTo.has(id))d.answerTo=String(_threadAnswerTo.get(id));
-      const prev=m[key(id)]; if(prev&&prev.html===d.html&&prev.kind===d.kind&&prev.answerTo===d.answerTo)return;
-      m[key(id)]=d; persist();
-    },
-    delete(id){ const m=load(); if(!(key(id) in m))return; delete m[key(id)]; persist(); },
+    get(k){ const d=load()[k]; return d?d.html:undefined; },
+    put(k,d){ const m=load(), prev=m[k]; if(prev&&prev.html===d.html&&prev.kind===d.kind&&prev.answerTo===d.answerTo)return; m[k]=d; persist(); },
+    remove(k){ const m=load(); if(!(k in m))return; delete m[k]; persist(); },
     // Send a pending change to the account now (the app is being put away).
     flush(){ if(syncTimer){ clearTimeout(syncTimer); syncTimer=null; markMetaChanged('threadDrafts'); } },
     // Another device's drafts arrived in storage.
@@ -5078,6 +5079,26 @@ var _threadDrafts=(function(){
     forDoc(docId){ return draftsForDoc(load(),docId); }
   };
 })();
+// A reply box's draft: keyed by the open document and the row, with its kind and what it replies to.
+var _threadDrafts={
+  has(id){ return typedDrafts.get(threadDraftKey(currentDocId,id))!==undefined; },
+  get(id){ return typedDrafts.get(threadDraftKey(currentDocId,id)); },
+  set(id,html){
+    const d={html:String(html),at:Date.now()};
+    if(_threadDecisionNodeIds.has(id))d.kind='decision'; else if(_threadAskNodeIds.has(id))d.kind='question';
+    if(_threadAnswerTo.has(id))d.answerTo=String(_threadAnswerTo.get(id));
+    typedDrafts.put(threadDraftKey(currentDocId,id),d);
+  },
+  delete(id){ typedDrafts.remove(threadDraftKey(currentDocId,id)); }
+};
+// A plain-text field's draft ("Add a task", the feedback message). Empty text removes it.
+function fieldDraftGet(name){ return typedDrafts.get(fieldDraftKey(name)); }
+function fieldDraftSave(name,value){ const k=fieldDraftKey(name), v=String(value||''); if(v.trim())typedDrafts.put(k,{html:v,at:Date.now()}); else typedDrafts.remove(k); }
+// Puts a saved draft into an empty field (on opening it, or coming back). True when it did.
+function fieldDraftRestore(input,name){ const v=fieldDraftGet(name); if(v===undefined||!input||input.value)return false; input.value=v; return true; }
+// After a sync the field shows the merged draft, which holds both devices' text (or nothing once
+// sent elsewhere), so typing on doesn't save over the other device's words. True when it changed.
+function fieldDraftShowSynced(input,name){ const v=fieldDraftGet(name)??''; if(!input||input.value===v)return false; input.value=v; return true; }
 // Opening a document (or a reload) shows its saved drafts: their threads open with the reply box
 // holding the text, kind and reply-to as they were. Runs once per document, from render().
 function revealThreadDrafts(){
@@ -5085,9 +5106,9 @@ function revealThreadDrafts(){
   if(!nodes.length)return; // the document's rows haven't arrived yet
   // The first render runs while the app is still starting, before the thread code further down has
   // set up (drawing a thread then would throw and stop the app from starting): try again once it has.
-  try{ _threadKeptQuestions; }catch(e){ setTimeout(()=>{ if(_threadDraftsRevealedFor!==currentDocId&&_threadDrafts.forDoc(currentDocId).length)render(); },0); return; }
+  try{ _threadKeptQuestions; }catch(e){ setTimeout(()=>{ if(_threadDraftsRevealedFor!==currentDocId&&typedDrafts.forDoc(currentDocId).length)render(); },0); return; }
   _threadDraftsRevealedFor=currentDocId;
-  for(const [id,d] of _threadDrafts.forDoc(currentDocId)){
+  for(const [id,d] of typedDrafts.forDoc(currentDocId)){
     inlineExpandRemarksNodeIds.add(id);
     if(!_threadAskNodeIds.has(id)&&!_threadDecisionNodeIds.has(id)){ if(d.kind==='question')_threadAskNodeIds.add(id); else if(d.kind==='decision')_threadDecisionNodeIds.add(id); }
     if(d.answerTo&&!_threadAnswerTo.has(id))_threadAnswerTo.set(id,d.answerTo);
@@ -5178,8 +5199,11 @@ function openFeedbackModal(){
   const ov=el('feedback-modal-overlay'); if(!ov)return;
   ov.classList.add('open');
   el('feedback-modal-status').textContent='';
+  fieldDraftRestore(el('feedback-message-input'),'feedback'); // a message started earlier, here or on another device
   el('feedback-message-input')?.focus();
 }
+el('feedback-message-input')?.addEventListener('input',e=>fieldDraftSave('feedback',e.target.value));
+document.addEventListener('sakura:drafts-synced',()=>fieldDraftShowSynced(el('feedback-message-input'),'feedback'));
 function closeFeedbackModal(){
   el('feedback-modal-overlay')?.classList.remove('open');
 }
@@ -5212,6 +5236,7 @@ el('feedback-modal-send-btn')?.addEventListener('click',async()=>{
   btn.disabled=false;
   if(result.ok){
     if(el('feedback-message-input'))el('feedback-message-input').value='';
+    fieldDraftSave('feedback','');
     if(el('feedback-email-input'))el('feedback-email-input').value='';
     closeFeedbackModal();
     showToast('Thanks — feedback sent.');
@@ -6457,30 +6482,42 @@ function apiEditorOutside(e){
 // Ends the inline form: writes the request back as one undo step when it changed and shows the
 // card again. An empty URL keeps the form open (returns false), unless cancelIfInvalid (Esc), which
 // leaves the table as it was.
+// Writes the request editor's form into its table; null when nothing changed. Used when the editor
+// finishes, and when the app is put away with the editor open (the form would otherwise be lost
+// with the page; the editor stays open).
+function apiEditorApply(ed,url){
+  let html=null;
+  const idx=getIndex(nodes,ed.nodeId); const node=nodes[idx];
+  if(idx>=0&&node.tables?.[ed.tIdx]){
+    const req={method:el('api-ed-method').value,url,query:apiEditorPairs('query'),paramNotes:apiEditorParamNotes(),headers:apiEditorPairs('headers'),
+      auth:el('api-ed-auth').value.trim(),body:el('api-ed-body').value.trim(),responses:apiEditorResponses(),
+      description:el('api-ed-desc').value.trim(),extras:ed.extras||[]};
+    const old=document.createElement('div'); old.innerHTML=node.tables[ed.tIdx];
+    const oldTable=old.querySelector('table');
+    const fresh=document.createElement('div'); fresh.innerHTML=apiGridToTableHtml(apiRequestToGrid(req));
+    const table=fresh.querySelector('table');
+    // Keep how the table was set up (display, position...) and make sure it shows as a request.
+    [...(oldTable?.attributes||[])].forEach(a=>table.setAttribute(a.name,a.value));
+    table.setAttribute('data-table-display','api');
+    html=sakuraSanitizeRichHtml(table.outerHTML);
+    if(html===node.tables[ed.tIdx])html=null;
+    else{ pushUndo(); node.tables[ed.tIdx]=html; node.modifiedAt=Date.now(); markDirty(); scheduleAutoSave(); }
+  }
+  return html;
+}
+function apiEditorApplyOnHide(){
+  if(!_apiEd)return;
+  const url=el('api-ed-url')?.value.trim()||''; if(!url)return;
+  const html=apiEditorApply(_apiEd,url); if(html!==null)_apiEd.applied=html;
+}
 function apiEditorFinish({cancelIfInvalid=false,focusBack=true}={}){
   const ed=_apiEd; if(!ed)return true;
   const url=el('api-ed-url')?.value.trim()||'';
   let html=null;
   if(!url){
     if(!cancelIfInvalid){ el('api-ed-url').classList.add('invalid'); el('api-ed-url-err').hidden=false; el('api-ed-url').focus(); return false; }
-  }else{
-    const idx=getIndex(nodes,ed.nodeId); const node=nodes[idx];
-    if(idx>=0&&node.tables?.[ed.tIdx]){
-      const req={method:el('api-ed-method').value,url,query:apiEditorPairs('query'),paramNotes:apiEditorParamNotes(),headers:apiEditorPairs('headers'),
-        auth:el('api-ed-auth').value.trim(),body:el('api-ed-body').value.trim(),responses:apiEditorResponses(),
-        description:el('api-ed-desc').value.trim(),extras:ed.extras||[]};
-      const old=document.createElement('div'); old.innerHTML=node.tables[ed.tIdx];
-      const oldTable=old.querySelector('table');
-      const fresh=document.createElement('div'); fresh.innerHTML=apiGridToTableHtml(apiRequestToGrid(req));
-      const table=fresh.querySelector('table');
-      // Keep how the table was set up (display, position...) and make sure it shows as a request.
-      [...(oldTable?.attributes||[])].forEach(a=>table.setAttribute(a.name,a.value));
-      table.setAttribute('data-table-display','api');
-      html=sakuraSanitizeRichHtml(table.outerHTML);
-      if(html===node.tables[ed.tIdx])html=null;
-      else{ pushUndo(); node.tables[ed.tIdx]=html; node.modifiedAt=Date.now(); markDirty(); scheduleAutoSave(); }
-    }
-  }
+  }else html=apiEditorApply(ed,url);
+  if(html===null&&ed.applied)html=ed.applied; // applied earlier (the app was put away): draw it
   _apiEd=null;
   document.removeEventListener('mousedown',apiEditorOutside,true);
   window.removeEventListener('resize',apiEditorRegrow);
@@ -18258,7 +18295,8 @@ async function refreshHubPanelAfterSync(metaKey){
     // A reply box on screen takes the merged text at once (the caret goes to its end), so typing on
     // doesn't save over the other device's words.
     else if(metaKey==='threadDrafts'){
-      _threadDrafts.reload();
+      typedDrafts.reload();
+      document.dispatchEvent(new CustomEvent('sakura:drafts-synced'));
       document.querySelectorAll('.thread-composer-input').forEach(box=>{ const id=/^\d+$/.test(box.dataset.nodeId||'')?Number(box.dataset.nodeId):box.dataset.nodeId; const html=_threadDrafts.get(id); if(html===undefined||html===sakuraSanitizeRichHtml(box.innerHTML))return; box.innerHTML=html; if(document.activeElement===box){ const r=document.createRange(); r.selectNodeContents(box); r.collapse(false); const sel=getSelection(); sel.removeAllRanges(); sel.addRange(r); } });
       const ae=document.activeElement; if(!(ae&&(ae.isContentEditable||/^(INPUT|TEXTAREA)$/.test(ae.tagName))))render();
     }
@@ -27398,9 +27436,10 @@ window.addEventListener('focus',_keepFieldOnWindowFocus,true);
 
 document.addEventListener('visibilitychange',()=>{
   if(document.visibilityState==='hidden'){
+    apiEditorApplyOnHide();
     if(!suppressSaveToStorageOnUnload)saveToStorage();
     if(!suppressPrefsSaveOnUnload)savePrefs();
-    _threadDrafts.flush();
+    typedDrafts.flush();
   }
 })
 
@@ -35618,11 +35657,16 @@ function todosHistorySummary(list) {
   // - a task's text being edited (it saved on blur) is saved when the page is hidden; an empty
   //   text is left alone, since saving it would delete the task;
   // - a task typed in "Add a task…" but not added yet is kept as a draft and comes back.
+  // The box's draft is in the shared draft store (synced); this device-only key held it before.
   const TODO_DRAFT_KEY='sakura_todos_draft_v1';
-  function saveTodoDraft(){ try{ const v=document.getElementById('todos-input')?.value||''; if(v.trim())localStorage.setItem(TODO_DRAFT_KEY,v); else localStorage.removeItem(TODO_DRAFT_KEY); }catch(e){} }
+  function saveTodoDraft(){ fieldDraftSave('todos-add',document.getElementById('todos-input')?.value||''); }
   // Put back whenever the box is empty: at start-up, once the page has loaded or comes back, and
   // when To-Dos opens (anything later in start-up that resets the box must not lose the draft).
-  function restoreTodoDraft(){ try{ const draft=localStorage.getItem(TODO_DRAFT_KEY); const inp=document.getElementById('todos-input'); if(draft&&inp&&!inp.value){ inp.value=draft; autoGrowInput(); } }catch(e){} }
+  function restoreTodoDraft(){
+    try{ const old=localStorage.getItem(TODO_DRAFT_KEY); if(old!==null){ if(fieldDraftGet('todos-add')===undefined)fieldDraftSave('todos-add',old); localStorage.removeItem(TODO_DRAFT_KEY); } }catch(e){}
+    if(fieldDraftRestore(document.getElementById('todos-input'),'todos-add'))autoGrowInput();
+  }
+  document.addEventListener('sakura:drafts-synced',()=>{ if(fieldDraftShowSynced(document.getElementById('todos-input'),'todos-add'))autoGrowInput(); });
   restoreTodoDraft();
   ['load','pageshow'].forEach(t=>window.addEventListener(t,()=>{ restoreTodoDraft(); setTimeout(restoreTodoDraft,0); }));
   function saveTodoTextBeingEdited(){
