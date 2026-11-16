@@ -4,6 +4,7 @@ import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const indexPath = path.resolve(__dirname, '../../index.html');
+const probePath = path.resolve(__dirname, 'fixtures/storage-probe.html');
 
 // Unsent thread replies are drafts, as in Slack or Gmail (docs/data-safety-audit.md): saved on the
 // device as you type, back after a reload, synced to the account with both devices' text kept, and
@@ -12,12 +13,35 @@ const indexPath = path.resolve(__dirname, '../../index.html');
 const KNOWN_NOISE = /ServiceWorker|cdnjs\.cloudflare\.com|cdn\.jsdelivr\.net|embed\.diagrams\.net|CORS policy|Failed to load resource|net::ERR/i;
 const DRAFTS_KEY = 'sakura_thread_drafts_v1';
 
+// Under heavy parallel load a file:// page's localStorage occasionally never reaches the context's
+// shared store, and a reload then comes back empty (no app code involved; see
+// backup-simplified.spec.ts). Check with a second page first, and start again when it didn't.
+async function gotoWithSharedStorage(page: Page) {
+  for (let attempt = 1; ; attempt++) {
+    await page.goto('file://' + indexPath);
+    const marker = 'm' + Date.now() + '-' + attempt;
+    await page.evaluate((m) => localStorage.setItem('sakura_e2e_storage_probe', m), marker);
+    let shared = false;
+    for (let i = 0; i < 20 && !shared; i++) {
+      const probe = await page.context().newPage();
+      try { await probe.goto('file://' + probePath); shared = (await probe.evaluate(() => localStorage.getItem('sakura_e2e_storage_probe'))) === marker; }
+      finally { await probe.close(); }
+      if (!shared) await page.waitForTimeout(150);
+    }
+    if (shared || attempt >= 5) {
+      expect(shared, 'page localStorage never reached the shared store').toBe(true);
+      await page.evaluate(() => localStorage.removeItem('sakura_e2e_storage_probe'));
+      return;
+    }
+  }
+}
+
 async function open(page: Page, seed: boolean) {
   const errors: string[] = [];
   page.on('pageerror', (err) => { if (!KNOWN_NOISE.test(err.message)) errors.push(err.message); });
   await page.addInitScript(() => { try { localStorage.setItem('sakura_welcome_seen', '1'); sessionStorage.setItem('sakura_landing_dismissed', 'true'); } catch { /* storage unavailable */ } });
   await page.setViewportSize({ width: 1300, height: 900 });
-  await page.goto('file://' + indexPath);
+  await gotoWithSharedStorage(page);
   await expect.poll(() => page.evaluate('typeof render === "function"')).toBe(true);
   if (seed) {
     await page.evaluate(`
