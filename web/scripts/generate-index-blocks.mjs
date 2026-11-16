@@ -164,6 +164,13 @@ initVaultState({
     footer: ''
   },
   {
+    name: 'svgScheme',
+    sourceFile: 'src/utils/svgScheme.ts',
+    testFile: 'tests/unit/svgScheme.test.ts',
+    // Diagram pictures follow the app's Light/Dark, not the device's. Spliced before openDiagramViewer.
+    footer: ''
+  },
+  {
     name: 'toasts',
     sourceFile: 'src/ui/toasts.ts',
     testFile: 'tests/unit/toasts.test.ts',

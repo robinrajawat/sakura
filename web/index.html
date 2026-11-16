@@ -14979,6 +14979,49 @@ function _dvFit(animate){
   _dvState.fit=fit; _dvState.scale=fit; _dvState.tx=(W-w*fit)/2; _dvState.ty=(H-h*fit)/2;
   _dvApply(animate);
 }
+/* GENERATED:svgScheme:START — DO NOT EDIT BY HAND. Source of truth: src/utils/svgScheme.ts (tests: tests/unit/svgScheme.test.ts). Regenerate with `npm run generate` after changing the source; CI fails if this block drifts from what the generator produces (see .github/workflows/ci.yml and scripts/generate-index-blocks.mjs). */
+/**
+ * A draw.io picture follows the app's Light/Dark, not the device's (owner 2026-11-16: "diagram
+ * previews in mobile ... always come in dark mode"; first fixed for the old phone page on
+ * 2026-11-03 and lost with it in phase 5 of docs/mobile-plan.md). draw.io exports declare
+ * `color-scheme: light dark` and colour with light-dark(), so the picture follows the system
+ * setting, and Safari does that even inside an <img> on a light page. This pins the declared
+ * scheme to the app's. Anything that isn't an SVG data URL, or declares no scheme, comes back
+ * unchanged. Results are remembered (the outline redraws often and pictures can be large).
+ *
+ * Wired into index.html via scripts/generate-index-blocks.mjs's `svgScheme` block.
+ */
+const _svgSchemeCache = new Map();
+function svgForScheme(dataUrl, scheme) {
+    const url = String(dataUrl || '');
+    const m = /^data:image\/svg\+xml([^,]*),/i.exec(url);
+    if (!m)
+        return url;
+    const key = scheme + '|' + url;
+    const hit = _svgSchemeCache.get(key);
+    if (hit !== undefined)
+        return hit;
+    const body = url.slice(m[0].length);
+    let text;
+    try {
+        text = /;base64$/i.test(m[1])
+            ? new TextDecoder().decode(Uint8Array.from(atob(body), (c) => c.charCodeAt(0)))
+            : decodeURIComponent(body);
+    }
+    catch {
+        return url;
+    }
+    const pinned = text.replace(/color-scheme\s*:\s*(light\s+dark|dark\s+light|normal)/gi, 'color-scheme: ' + scheme);
+    const out = pinned === text ? url : 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(pinned);
+    if (_svgSchemeCache.size >= 40)
+        _svgSchemeCache.delete(_svgSchemeCache.keys().next().value);
+    _svgSchemeCache.set(key, out);
+    return out;
+}
+
+/* GENERATED:svgScheme:END */
+// The app's own Light/Dark (not the device's), for pictures that would otherwise follow the device.
+function appColorScheme(){ return document.body.classList.contains('theme-dark')?'dark':'light'; }
 function openDiagramViewer(diagramId){
   const d=findDiagram(diagramId); if(!d)return;
   if(!d.previewSvg){ openDiagramEditor(diagramId); return; }
@@ -14992,7 +15035,7 @@ function openDiagramViewer(diagramId){
   // of our own); an older picture without draw.io's margin gets the same 12px from us instead.
   ov.style.setProperty('--dv-pad',(d.previewBorder?0:DIAGRAM_EXPORT_BORDER)+'px');
   img.onload=()=>{ if(!_dvState||_dvState.id!==d.id)return; const nw=img.naturalWidth||800, nh=img.naturalHeight||600, pad=parseFloat(getComputedStyle(img).paddingLeft)||0; img.style.width=nw+'px'; img.style.height=nh+'px'; _dvState.w=nw+2*pad; _dvState.h=nh+2*pad; _dvFit(); };
-  img.src=d.previewSvg;
+  img.src=svgForScheme(d.previewSvg,appColorScheme());
   ov.classList.add('open'); ov.tabIndex=-1; ov.focus();
   _dvRefreshCounter(); replayPreviewHint(ov);
 }
@@ -22919,7 +22962,7 @@ const aiOutlineBtn=document.getElementById('es-ai-outline-btn'); if(aiOutlineBtn
       const card=document.createElement('div'); card.className='node-diagram-preview-card';
       const thumb=document.createElement('div'); thumb.className='node-diagram-preview-thumb'+(d.previewSvg&&d.previewBorder?' has-export-border':''); thumb.dataset.tip='Click to preview · right-click for more';
       if(d.previewSvg){
-        const img=document.createElement('img'); img.src=d.previewSvg; img.alt='';
+        const img=document.createElement('img'); img.src=svgForScheme(d.previewSvg,appColorScheme()); img.alt='';
         img.addEventListener('error',()=>{ thumb.classList.add('node-diagram-preview-empty'); thumb.innerHTML='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="8.5" y="14" width="7" height="7" rx="1"/></svg>'; thumb.dataset.tip='Preview failed to load — click to open and regenerate it'; },{once:true});
         thumb.appendChild(img);
       } else {

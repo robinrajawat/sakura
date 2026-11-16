@@ -265,6 +265,18 @@ used for every test, doesn't do them):
   when that style attribute changes. `updateAccountUI` now sets `has-avatar` on the button, and
   the CSS keys off that class (`account-toggle-avatar.spec.ts`).
 
+### Diagram pictures followed the device's dark mode (owner, 2026-11-16)
+
+"Diagram previews in mobile are not respecting light or dark theme, they always come in dark mode."
+draw.io pictures declare `color-scheme: light dark`, and Safari follows the device's setting
+inside an image. The old phone page pinned them to the app's theme (`readerSvgForScheme`, since
+2026-11-03), and that went with it in phase 5. Now `svgForScheme` (`src/utils/svgScheme.ts`,
+remembered per picture) pins every diagram picture the app shows (the outline's preview and the
+full-screen viewer) to the app's Light/Dark, on phones and computers alike. Switching theme redraws
+the outline, so pictures follow. The PDF builds its own copy and is unchanged.
+`diagram-follows-app-theme.phone.spec.ts` uses a dark device with the app set to Light (it fails
+without the fix).
+
 ### Faster first load: step 1, minify the build. Done 2026-11-13
 
 - Vite left the page's inline code and styles exactly as written, comments and all: the built page
