@@ -3978,7 +3978,7 @@ html.calm-layout #sb-auto-rewrite-chip.is-quiet:hover,html.calm-layout #sb-auto-
           </div>
           <div class="settings-section" data-cat="account" id="settings-section-account-danger" data-feature-hidden="1" style="display:none">
             <div class="settings-list">
-              <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Delete my account</span><span class="settings-row-desc">Deletes the documents and settings synced to the cloud, and signs you out. Documents on this device stay. Can't be undone.</span></div><button type="button" class="btn settings-danger-btn" id="account-delete-open-btn">Delete…</button></div>
+              <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Delete my account</span><span class="settings-row-desc">Deletes everything this account has in the cloud (documents, version history, settings, profile), and signs you out. Documents on this device stay. Can't be undone.</span></div><button type="button" class="btn settings-danger-btn" id="account-delete-open-btn">Delete…</button></div>
             </div>
           </div>
           <div class="settings-section" data-cat="ai" id="settings-section-ai-capabilities">
@@ -16719,31 +16719,54 @@ document.addEventListener('DOMContentLoaded',()=>{
   try{ if(sessionStorage.getItem('sakura_cleared_after_sign_out')!=='1')return; sessionStorage.removeItem('sakura_cleared_after_sign_out'); }catch(e){ return; }
   setTimeout(()=>showToast('Signed out. Your documents are in your account and were removed from this device.','success',false,6000),300);
 });
-// Deletes every cloud-synced document, template, and settings blob this account has (the three
-// subcollections under users/{uid} — see the sync layout comment further down), then the
-// Firebase Auth account itself. Mirrors cricket-scorer's deleteUserAccount(): best-effort cleanup
-// of everything reachable, individual failures logged rather than aborting the whole operation,
-// then the actual auth deletion with a reauth-and-retry if Firebase demands a fresh sign-in for
-// it (auth/requires-recent-login fires whenever the existing session is more than a few minutes
-// old, regardless of how the person got here).
+// Deletes everything this account has in Firestore, then the Firebase Auth account itself (with a
+// reauth-and-retry if Firebase demands a fresh sign-in: auth/requires-recent-login fires whenever
+// the session is more than a few minutes old). Everything means (owner 2026-11-17, for the privacy
+// policy; GDPR's right to erasure): documents with the records Firestore keeps under each one
+// when the document itself goes (version history, diagrams, previews, older attachments),
+// templates, settings, deletion markers, the profile (name, email), notifications, copies other
+// people sent, and the users/{uid} record. If anything can't be removed, the sign-in account is
+// kept and the deletion fails, so trying again finds the rest instead of leaving it unreachable.
 //
 // Deliberately scoped to the cloud side only -- this device's local documents and
 // settings are untouched and keep working exactly as before, just without anywhere to sync to
 // once the account's gone. Sakura's account is a sync mirror, not the source of truth the way
 // cricket-scorer's account-owned matches/clubs are, so there's no equivalent of that app's
 // "you're the sole owner of a club, deleting leaves it stuck" warning to carry over here.
+// The records Firestore keeps under a synced document (it never deletes them with the document).
+const DOC_SUBCOLLECTIONS=['diagrams','previews','attachments','versions'];
+// Deletes every record in one collection, in batches under Firestore's 500-write limit.
+async function deleteWholeCollection(mod,db,path){
+  const snap=await mod.getDocs(mod.collection(db,...path));
+  for(let i=0;i<snap.docs.length;i+=400){
+    const batch=mod.writeBatch(db);
+    snap.docs.slice(i,i+400).forEach(d=>batch.delete(d.ref));
+    await batch.commit();
+  }
+}
+// Resolves the number of places that couldn't be cleared (0 = everything is gone).
 async function deleteAccountCloudData(uid){
   const {mod,db}=await loadFirestoreMods();
-  for(const sub of ['docs','templates','meta','deletedDocs']){
-    let snap; try{ snap=await mod.getDocs(mod.collection(db,'users',uid,sub)); }catch(e){ console.error('[sakura] delete account: could not list',sub,e); continue; }
-    await Promise.all(snap.docs.map(d=>mod.deleteDoc(d.ref).catch(e=>console.error('[sakura] delete account: failed to delete',sub,d.id,e))));
+  let failed=0;
+  const clear=async path=>{ try{ await deleteWholeCollection(mod,db,path); }catch(e){ failed++; console.error('[sakura] delete account: could not clear',path.join('/'),e); } };
+  let docIds=[];
+  try{ docIds=(await mod.getDocs(mod.collection(db,'users',uid,'docs'))).docs.map(d=>d.id); }
+  catch(e){ failed++; console.error('[sakura] delete account: could not list documents',e); }
+  for(const docId of docIds)for(const sub of DOC_SUBCOLLECTIONS)await clear(['users',uid,'docs',docId,sub]);
+  for(const sub of ['docs','templates','meta','deletedDocs'])await clear(['users',uid,sub]);
+  await clear(['notifications',uid,'items']);
+  await clear(['copies',uid,'items']);
+  for(const path of [['profiles',uid],['users',uid]]){
+    try{ await mod.deleteDoc(mod.doc(db,...path)); }catch(e){ failed++; console.error('[sakura] delete account: could not delete',path.join('/'),e); }
   }
+  return failed;
 }
 async function deleteAccountPermanently(){
   const {auth,authMod}=await loadFirebaseMods();
   const uid=auth.currentUser?.uid; if(!uid)throw new Error('Not signed in');
   stopRealtimeSync();
-  await deleteAccountCloudData(uid);
+  const failed=await deleteAccountCloudData(uid);
+  if(failed)throw new Error('Some account data could not be removed ('+failed+')');
   try{
     await authMod.deleteUser(auth.currentUser);
   }catch(e){
@@ -18268,7 +18291,7 @@ async function deleteDocFromCloud(docId){
     // the parent delete below: each subcollection is listed then batch-deleted, and a failure on
     // either just means this device's next sign-in retries the whole thing (deleteDocFromCloud
     // always runs again for anything still locally marked for deletion), not silent data loss.
-    for(const subcol of ['diagrams','previews','attachments','versions']){
+    for(const subcol of DOC_SUBCOLLECTIONS){
       try{
         const snap=await mod.getDocs(mod.collection(db,'users',currentUser.uid,'docs',docId,subcol));
         if(snap.empty)continue;

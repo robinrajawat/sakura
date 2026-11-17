@@ -177,11 +177,11 @@ contradicts README.md or docs/feature-reference.md, trust them.)*
 
 ### Latest changes
 
+- **Deleting the account erases all of it (2026-11-17, for the privacy policy; GDPR erasure).** `deleteAccountCloudData` used to leave each document's subcollections (`DOC_SUBCOLLECTIONS`: versions, diagrams, previews, attachments; Firestore never cascades), `profiles/{uid}`, `notifications/{uid}`, `copies/{uid}` and `users/{uid}`. It now clears all of them in batches of 400 and returns how many places failed; `deleteAccountPermanently` then keeps the sign-in account and throws, so a retry finishes. Test: delete-account-erases-cloud (2).
+
 - **Firestore rules tested in CI (2026-11-17, owner: close the gaps before launch).** New `verify-rules` job runs `firebase/rules.test.mjs` in the Firestore emulator (`firebase/` has its own package.json and lockfile, not a workspace). Added checks for every collection another account can touch: profiles (private invisible, also to the email query), notifications and copies (sender stamped with own uid, known shape only, recipient-only read/delete, no edits), feedback (anyone files, admins triage), admins (no listing, no client writes): 20 → 59. Rules are still published by hand in the Console, so CI checks the repo's copy; after publishing, the Console and the repo must match.
 
 - **PDF files pause when the free plan's day runs out (2026-11-17, owner: stay on the free plan, fall back to print).** When Cloudflare refuses a browser with its daily time-limit 429 (`isDailyBrowserLimit`), the Worker sets `pdf-paused:<UTC date>` in KV until midnight UTC and answers every `/pdf` with 429 `{ paused: true }` before touching the per-user count. The app stores `sakura_pdf_paused_until` and opens print straight away with "PDF files are paused until tomorrow, opening print". Merging redeploys the Worker. Tests: worker pdf.test.ts (+4), pdf-server-download (+1).
-
-- **Signing out clears this device (2026-11-17, owner: "Privacy matters").** `signOutOfAccount` first runs `sendEverythingBeforeSignOut` (save, drafts, a catch-up, the queue until empty, failed version uploads; false when offline, on a sync error or anything still waiting). Safe: sign out, set `sakura_clear_on_load` in sessionStorage and reload; a script at the top of the page removes every `sakura*` key except welcome/tour seen and deletes `sakura_backup_db` before anything reads them, so the closing page's own writes are gone too. Not safe: "Stay signed in" (default) or "Sign out, keep them here". Every open tab follows (BroadcastChannel `sakura-account`: `save-before-sign-out` before the check, `signed-out` {clear} after). Deleting the account still keeps the local copy. Test: sign-out-clears-device (7).
 
 ### In progress / not built
 
@@ -202,6 +202,12 @@ contradicts README.md or docs/feature-reference.md, trust them.)*
 
 ### Parked / open questions for the owner
 
+- **Firestore backups, before public launch (owner, 2026-11-17: later, no computer at hand).** Upgrade
+  the Firebase project `sakura-4cdae` to Blaze (needed for any managed backup), set a $5/month budget
+  alert the same day (Blaze has no hard cap; anonymous feedback writes are the abuse path, App Check
+  later), then Firestore → Disaster recovery: daily backup schedule, 14-day retention; optionally
+  point-in-time recovery (7 days). Restores go to a new database. Not urgent while every device keeps
+  a local copy and documents keep version history; remind the owner at session start.
 - Zoom row as title: breadcrumb shows only ancestors, the zoomed row becomes the larger title.
 - Record the date a document is set to Approved or Rejected and show it on the PDF (needs a new
   saved field such as `docStatusAt`; undecided whether in the stamp or the cover's meta line).
