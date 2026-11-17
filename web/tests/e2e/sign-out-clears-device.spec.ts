@@ -147,3 +147,14 @@ test('kept on this device: another open tab just shows signed out, and keeps its
   expect(await other.evaluate(`sessionStorage.getItem('sakura_clear_on_load')`)).toBeNull();
   expect(errors).toEqual([]);
 });
+
+test('a second Sign out while the first is checking does nothing; the checking message goes with the check', async ({ page }) => {
+  const errors = await signedInWithADocument(page, false);
+  await page.evaluate(`window.__checks = 0; sendEverythingBeforeSignOut = async () => { window.__checks++; await new Promise((r) => setTimeout(r, 300)); return false; }`);
+  await page.evaluate('void signOutOfAccount(); void signOutOfAccount();');
+  await expect(page.getByText('Some changes haven’t reached your account')).toBeVisible();
+  expect(await page.evaluate('window.__checks')).toBe(1);
+  await expect(page.locator('#toast')).not.toHaveClass(/show/);
+  await page.getByRole('button', { name: 'Stay signed in' }).click();
+  expect(errors).toEqual([]);
+});

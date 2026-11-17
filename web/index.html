@@ -16680,11 +16680,19 @@ if(_accountChannel)_accountChannel.addEventListener('message',e=>{
     updateAccountUI(null);
   }
 });
+// One sign-out at a time: a second click while one is checking the account does nothing.
+let _signingOut=false;
 async function signOutOfAccount(){
+  if(_signingOut)return;
+  _signingOut=true;
+  try{ await signOutOfAccountOnce(); }finally{ _signingOut=false; }
+}
+async function signOutOfAccountOnce(){
   el('account-menu')?.classList.remove('open');
   showToast('Making sure everything is in your account\u2026','info',false,20000);
   await otherTabsSaveFirst();
   const safe=await sendEverythingBeforeSignOut();
+  el('toast')?.classList.remove('show'); // the check is over; its message goes
   let clear=true;
   if(!safe){
     const keep=await sakuraConfirm({
