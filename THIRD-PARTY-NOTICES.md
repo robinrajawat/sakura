@@ -2,8 +2,8 @@
 
 Sakura is all-rights-reserved (see [LICENSE](LICENSE)), but it relies on a
 third-party open-source projects: draw.io, embedded for diagram editing,
-DOMPurify, which ships inside the app to clean stored HTML, and the Inter,
-Public Sans and Fira Code typefaces, which ship with the app — see their entries below. (Earlier versions also loaded
+DOMPurify, which ships inside the app to clean stored HTML, and the Inter
+and Fira Code typefaces, which ship with the app — see their entries below. (Earlier versions also loaded
 CDN libraries for Word import/export, PowerPoint export, and Excel export;
 those features and libraries have been removed.)
 
@@ -52,19 +52,6 @@ Used for: the app's interface and document text. The variable font files
 - Repository: https://github.com/rsms/inter
 
 Copyright 2016 The Inter Project Authors (https://github.com/rsms/inter).
-
----
-
-## Public Sans (typeface)
-
-Used for: a fallback for interface text Inter doesn't cover. The Latin and Latin Extended
-subsets (weights 400–700) ship with Sakura in `web/public/fonts/`, taken from the
-Fontsource package `@fontsource/public-sans` 5.3.0.
-
-- License: SIL Open Font License 1.1
-- Repository: https://github.com/uswds/public-sans
-
-Copyright 2015 The Public Sans Project Authors (https://github.com/uswds/public-sans).
 
 ---
 

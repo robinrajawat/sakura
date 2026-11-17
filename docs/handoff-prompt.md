@@ -179,11 +179,11 @@ contradicts README.md or docs/feature-reference.md, trust them.)*
 
 ### Latest changes
 
+- **Public Sans dropped; account row names the profile (2026-11-17, polish).** Public Sans was only a fallback behind Inter, so its 8 files, faces and stack entries are gone (Fira Code stays; selfHostedFont asserts no Public Sans). Settings → About → Privacy & data → Your account now says the profile (name, email) is kept, Private unless made Public, instead of "Nothing else is kept".
+
 - **A refused PDF doesn't use the person's count (2026-11-17, polish).** When Cloudflare refuses a browser for the day (the pause in #882), `handlePdf` gives the request back with `refundQuota` (`worker/src/quota.ts`); other render failures still count, since a browser ran and refunding them would let broken requests burn the shared browser time. Tests: quota (+2), pdf (+2 assertions).
 
 - **No emoji arrows on iPhone (2026-11-17, owner report from iPhone Safari).** Settings link buttons' `::after` arrow is a CSS mask of an inline SVG in `--hint` instead of U+2197 (`calm-layout.css`); the context menu's Insert above/below glyphs carry U+FE0E. Other emoji-prone characters in index.html are only used for matching typed text or mapping emoji to icons. Not testable on real iOS here.
-
-- **Privacy policy and terms (2026-11-17, owner: before public launch).** `web/public/privacy.html`, `terms.html`, `legal.css`; operator Robin Singh Rajawat (Denmark), GDPR, Danish law, Datatilsynet. Linked from the sign-in screen and Settings → About → Privacy & data, which also gained a PDF row and lost the stale Cerebras mention (hosted chain is Groq + Gemini). README and help brought current (Download all data, account deletion, PDF pause). Not reviewed by a lawyer. Test: legal-pages.
 
 ### In progress / not built
 
