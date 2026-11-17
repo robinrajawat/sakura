@@ -1,8 +1,11 @@
 # Cloud-first plan
 
-**Status:** proposed (2026-11-12), not started. Owner direction: Sakura becomes cloud-first, while
-anyone can still try it without an account. Nothing here is built yet; each phase below is meant
-to land as its own PR (or small series), in order.
+**Status (2026-11-17):** built, except PDF reliability. Owner direction (2026-11-12): Sakura becomes
+cloud-first, while anyone can still try it without an account. Phases 1, 2, 3, 4 and 5b are built
+(each section says what and when); Phase 6's wording was brought up to date on 2026-11-17. Still
+open: Phase 5's PDF file download, which needs the failure's cause and a decision on the Workers
+plan (see "PDF"; changes under `worker/` are the owner's to merge). The data-safety standard that
+grew out of this work is in `docs/data-safety-audit.md`.
 
 ## Why
 
@@ -51,14 +54,16 @@ fake Firestore for "two devices edit the same document".
 
 Cost: one extra read per push (inside the transaction). Pushes are already debounced (1.5s).
 
-### 2. Version history in the account (mostly built already)
+### 2. Version history in the account (built; finished 2026-11-17)
 
 Correction (2026-11-12): document versions already sync. Each version is also written to
 `users/{uid}/docs/{docId}/versions/{ts}`, and Version history joins the cloud's versions with
-this device's (docs/feature-reference.md, Version History). What's left: Phase 1's conflict
-version ("Your changes on this device") goes through the same path, and a version over
-Firestore's 1MB record limit, which today stays on the device that made it, gets the diagram
-split so it reaches the account too.
+this device's (docs/feature-reference.md, Version History). Finished 2026-11-17: Phase 1's
+conflict version ("Your changes on this device") already went through the same path; a version
+whose upload fails is now remembered and sent after the next successful sync
+(`retryPendingVersionPushes`), not only when History is next opened on that device; and a version
+over one record's size (Firestore's 1 MiB, now counted in bytes, not characters) is stored as a
+head and parts (`src/utils/versionChunks.ts`) instead of staying on the device that made it.
 
 ### 3. Open documents from the account (save state and automatic retry built 2026-11-12)
 
@@ -111,13 +116,12 @@ most of it is a second safety system for signed-in people. Proposal:
 Do this after Phase 1 (safe writes) is live, so the account copy is trustworthy before the
 file-based safety net is narrowed. Owner decision needed before building.
 
-### 6. Docs and privacy wording
+### 6. Docs and privacy wording (done 2026-11-17)
 
-README.md and docs/feature-reference.md were reworded on 2026-11-12 to lead with the account
-(sign in and your documents are kept in your account; or try it without one and they stay in
-this browser), which is already true. Still to update as the phases land: the in-app sign-in
-screen ("Optional: sign in…"), Settings → About → Privacy & data, and the Data & Backup section
-once 5b ships.
+README.md and docs/feature-reference.md lead with the account (2026-11-12). The sign-in screen says
+"Sign in to keep your documents in your account and on every device", and Settings → About →
+Privacy & data lists what the account keeps: documents and their version history, folders, To-Dos,
+settings and unsent drafts (2026-11-17). Data & backup was cut down in 5b.
 
 ## PDF (decide before Phase 5)
 

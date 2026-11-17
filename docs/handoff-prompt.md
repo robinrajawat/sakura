@@ -171,15 +171,15 @@ contradicts README.md or docs/feature-reference.md, trust them.)*
 
 **Open work:** none open; everything from 2026-11-03 is merged and deployed (#816–#826). Owner confirmed live (2026-11-03): Google sign-in on the phone works without 'unsafe-eval' (#823), and AI rewrite works on the Worker redeployed with wrangler 4 (#825). Not built: the AI code still loads at startup inside index.html; split it out only if first load is measured as slow. Check `mcp__github__list_pull_requests` at session start.
 
-**Direction (owner, 2026-11-12):** Sakura is going cloud-first, with try-without-an-account kept. Plan: `docs/cloud-first-plan.md` (proposed, not started; Phase 1 = versioned cloud writes). Read it before touching sync.
+**Direction (owner, 2026-11-12):** Sakura is going cloud-first, with try-without-an-account kept. Plan: `docs/cloud-first-plan.md` (built except PDF reliability, 2026-11-17). Read it and `docs/data-safety-audit.md` before touching sync.
 
 ### Latest changes
+
+- **Every version reaches the account (2026-11-17, owner: close the remaining one-device gaps).** A version over one Firestore record is stored as a head and parts (`src/utils/versionChunks.ts`; the size is now counted in UTF-8 bytes, since a character count let non-Latin text past the 1 MiB limit); removal finds a version's records by `ts`. A failed version upload is remembered (`sakura_version_push_pending_v1`) and retried after the next successful sync (`retryPendingVersionPushes`), so "Your changes on this device" after a conflict still reaches the account. Privacy & data now lists version history and drafts; the cloud-first plan's status is current. Tests: version-cloud-sync, versionChunks.
 
 - **Folding isn't an edit (2026-11-17, owner: "When I expand a table on phone or any dot then it triggers a save? Why?").** `collapsed`, `collapsedTables` and `collapsedImages` joined `DOC_VIEW_ONLY_FIELDS`: kept with the document here, sent with the next real edit, but alone no upload, no new rev, no conflict for another device's edit. `saveDocsIndex` and `savePrefs` mark the account copy changed only when the stored value changed (every document save re-sent both). Test: sync-own-echo (+1).
 
 - **"Saving…" and "updated on another device" on just opening a document (2026-11-16, owner, iPhone, signed in).** The account hands a copy back with its keys in its own order; plain-JSON comparisons read that as a change, so opening sent the document up again, and with two uploads close together the first's echo looked like another device's. Now `stableJson` (metaMerge.ts) is used by `docSyncSignature`, `sameJson`, merge3 and mergeDrafts; `noteOwnPush`/`isOwnPush` remember recent uploads; a copy at this device's base rev is ignored. Also: draw.io `autosave=1` (kept as you draw; closing exports the picture and closes without asking once autosave has arrived), and a typed subtask is added when the app is put away. Tests: sync-own-echo, diagram-autosave, phone-background-safety (+1), metaMerge (+2), threadDrafts (+1).
-
-- **Every place you can type says how it's kept (2026-11-16, owner: "a standard, cloud first application with 0 risk of data loss").** `tests/unit/textFieldsKept.test.ts` scans `index.html` (`textFieldScan.ts`) and fails on a field it doesn't list, so a new field needs a decision. The draft store is now general (`typedDrafts`; `fieldDraftSave` / `fieldDraftRestore` / `fieldDraftShowSynced`): "Add a task…" (moved from the device-only `sakura_todos_draft_v1`) and the feedback message use it, synced. The API request editor writes its form into the document when the app is put away (`apiEditorApplyOnHide`). Left open in `docs/data-safety-audit.md`: draw.io autosave, short entries.
 
 ### In progress / not built
 
