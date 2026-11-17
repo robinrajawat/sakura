@@ -19,7 +19,7 @@
  */
 import puppeteer, { type Browser } from '@cloudflare/puppeteer';
 import type { QuotaKV } from './quota';
-import { consumeQuota } from './quota';
+import { consumeQuota, refundQuota } from './quota';
 
 export const MAX_PDF_HTML_BYTES = 20 * 1024 * 1024;
 /** How long to wait for the page's load event before printing what is there. */
@@ -99,7 +99,7 @@ export async function handlePdf(
   // Checked before the person's own count, so a paused day doesn't use it up.
   if (await kv.get(pdfPausedKey(now()))) return json(PAUSED_BODY, 429);
 
-  const quota = await consumeQuota(kv, pdfQuotaUid(uid), dailyLimit);
+  const quota = await consumeQuota(kv, pdfQuotaUid(uid), dailyLimit, now());
   if (!quota.allowed) return json({ error: 'Daily PDF limit reached' }, 429);
 
   let pdf: Uint8Array;
@@ -109,6 +109,10 @@ export async function handlePdf(
     if (isDailyBrowserLimit(err)) {
       const t = now();
       await kv.put(pdfPausedKey(t), '1', { expirationTtl: secondsUntilUtcMidnight(t) });
+      // No browser ran, so this request doesn't count against the person's own daily PDFs. Other
+      // failures still count: a browser did run, and refunding them would let broken requests
+      // use up the app's shared browser time for free.
+      await refundQuota(kv, pdfQuotaUid(uid), t);
       return json(PAUSED_BODY, 429);
     }
     return json({ error: 'PDF rendering failed', details: [err instanceof Error ? err.message : String(err)] }, 502);

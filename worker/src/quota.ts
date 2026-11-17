@@ -63,3 +63,11 @@ export async function consumeQuota(
   }
   return result;
 }
+
+/** Gives back one request counted by consumeQuota on the same UTC day, for a request that turned
+ * out to cost nothing (e.g. Cloudflare refused to start a browser). Same narrow race as above. */
+export async function refundQuota(kv: QuotaKV, uid: string, now: Date = new Date()): Promise<void> {
+  const key = quotaKeyFor(uid, now);
+  const count = parseInt((await kv.get(key)) || '0', 10) || 0;
+  if (count > 0) await kv.put(key, String(count - 1), { expirationTtl: QUOTA_TTL_SECONDS });
+}

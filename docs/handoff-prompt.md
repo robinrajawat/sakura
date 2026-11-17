@@ -179,11 +179,11 @@ contradicts README.md or docs/feature-reference.md, trust them.)*
 
 ### Latest changes
 
+- **A refused PDF doesn't use the person's count (2026-11-17, polish).** When Cloudflare refuses a browser for the day (the pause in #882), `handlePdf` gives the request back with `refundQuota` (`worker/src/quota.ts`); other render failures still count, since a browser ran and refunding them would let broken requests burn the shared browser time. Tests: quota (+2), pdf (+2 assertions).
+
 - **No emoji arrows on iPhone (2026-11-17, owner report from iPhone Safari).** Settings link buttons' `::after` arrow is a CSS mask of an inline SVG in `--hint` instead of U+2197 (`calm-layout.css`); the context menu's Insert above/below glyphs carry U+FE0E. Other emoji-prone characters in index.html are only used for matching typed text or mapping emoji to icons. Not testable on real iOS here.
 
 - **Privacy policy and terms (2026-11-17, owner: before public launch).** `web/public/privacy.html`, `terms.html`, `legal.css`; operator Robin Singh Rajawat (Denmark), GDPR, Danish law, Datatilsynet. Linked from the sign-in screen and Settings → About → Privacy & data, which also gained a PDF row and lost the stale Cerebras mention (hosted chain is Groq + Gemini). README and help brought current (Download all data, account deletion, PDF pause). Not reviewed by a lawyer. Test: legal-pages.
-
-- **No Google Fonts (2026-11-17, owner, for the privacy policy).** Public Sans (400–700) and Fira Code (400/500/700, incl. its box-drawing subset for tree prefixes) ship in `web/public/fonts/` from Fontsource 5.3.0 (OFL, THIRD-PARTY-NOTICES.md), declared with `unicode-range` so a page fetches only what it uses; CSP `font-src 'self'`, no googleapis in style-src; service worker `sakura-shell-v12`. Checked in a real browser: zero requests to Google. Test: selfHostedFont (+2).
 
 ### In progress / not built
 
