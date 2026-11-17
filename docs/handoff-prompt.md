@@ -202,6 +202,12 @@ contradicts README.md or docs/feature-reference.md, trust them.)*
 
 ### Parked / open questions for the owner
 
+- **Firestore backups, before public launch (owner, 2026-11-17: later, no computer at hand).** Upgrade
+  the Firebase project `sakura-4cdae` to Blaze (needed for any managed backup), set a $5/month budget
+  alert the same day (Blaze has no hard cap; anonymous feedback writes are the abuse path, App Check
+  later), then Firestore → Disaster recovery: daily backup schedule, 14-day retention; optionally
+  point-in-time recovery (7 days). Restores go to a new database. Not urgent while every device keeps
+  a local copy and documents keep version history; remind the owner at session start.
 - Zoom row as title: breadcrumb shows only ancestors, the zoomed row becomes the larger title.
 - Record the date a document is set to Approved or Rejected and show it on the PDF (needs a new
   saved field such as `docStatusAt`; undecided whether in the stamp or the cover's meta line).
