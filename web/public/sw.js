@@ -25,7 +25,7 @@ const CACHE_NAME = 'sakura-shell-v12';
 
 // The app shell and the assets it always needs, precached on install so the very first offline
 // visit already has them. Every font is served from the site itself (no Google Fonts since
-// 2026-11-17); the Public Sans and Fira Code files are cached on first use (below), since a page
+// 2026-11-17); the Fira Code files are cached on first use (below), since a page
 // only downloads the subsets its text needs.
 const PRECACHE_URLS = [
   './',
