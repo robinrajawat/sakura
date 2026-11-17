@@ -1,10 +1,11 @@
 # Cloud-first plan
 
-**Status (2026-11-17):** built, except PDF reliability. Owner direction (2026-11-12): Sakura becomes
-cloud-first, while anyone can still try it without an account. Phases 1, 2, 3, 4 and 5b are built
-(each section says what and when); Phase 6's wording was brought up to date on 2026-11-17. Still
-open: Phase 5's PDF file download, which needs the failure's cause and a decision on the Workers
-plan (see "PDF"; changes under `worker/` are the owner's to merge). The data-safety standard that
+**Status (2026-11-17):** built. Owner direction (2026-11-12): Sakura becomes cloud-first, while
+anyone can still try it without an account. Phases 1, 2, 3, 4, 5 and 5b are built (each section says
+what and when); Phase 6's wording was brought up to date on 2026-11-17. PDF files work and stay on
+Cloudflare's free plan, pausing until midnight UTC when its daily browser time runs out (#882; see
+"PDF"). Still to do before launch, outside the code: Firestore backups (Blaze plan; see the
+handoff's Parked list). The data-safety standard that
 grew out of this work is in `docs/data-safety-audit.md`.
 
 ## Why
