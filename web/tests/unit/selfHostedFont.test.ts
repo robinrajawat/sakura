@@ -21,3 +21,18 @@ describe('Inter is self-hosted', () => {
     expect(SW).not.toMatch(/family=Inter/);
   });
 });
+
+// Public Sans and Fira Code ship with the app too (owner 2026-11-17, for the privacy policy):
+// Google Fonts gave Google every visitor's IP address. Nothing may load from Google Fonts again.
+describe('every font is self-hosted', () => {
+  it('declares each face from fonts/ and each file exists', () => {
+    const faces = [...PAGE.matchAll(/@font-face\{font-family:'(Public Sans|Fira Code)';[^}]*src:url\(fonts\/([^)]+\.woff2)\)/g)];
+    expect(new Set(faces.map((m) => m[1]))).toEqual(new Set(['Public Sans', 'Fira Code']));
+    expect(faces.length).toBe(4 * 2 + 3 * 3); // Public Sans 400-700 x 2 subsets; Fira Code 400/500/700 x 3
+    for (const m of faces) expect(FONTS).toContain('../../public/fonts/' + m[2]);
+  });
+  it('nothing loads from Google Fonts, and the page policy no longer allows it', () => {
+    for (const src of [PAGE, SW]) expect(src).not.toMatch(/fonts\.(googleapis|gstatic)\.com/);
+    expect(PAGE).toContain("font-src 'self';");
+  });
+});
