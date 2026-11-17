@@ -12,6 +12,10 @@
  * cap. On the Workers Free plan Cloudflare allows 10 browser-minutes a day and one new browser
  * every 20 seconds, so a warm browser session is reused when one is free (kept warm for 10s). Any failure returns an
  * error and the page falls back to the print dialog.
+ *
+ * When Cloudflare says the day's browser time is used up, PDF files pause for everyone until
+ * midnight UTC (when Cloudflare's allowance resets): a KV flag answers every later request at once
+ * with 429 `{ paused: true }`, so nobody waits for a browser that can't start (owner, 2026-11-17).
  */
 import puppeteer, { type Browser } from '@cloudflare/puppeteer';
 import type { QuotaKV } from './quota';
@@ -29,6 +33,27 @@ export function isTimeout(err: unknown): boolean {
   return !!err && typeof err === 'object' && ((err as { name?: string }).name === 'TimeoutError' || /timeout/i.test(String((err as { message?: string }).message ?? '')));
 }
 export const DEFAULT_DAILY_PDF_QUOTA = 50;
+
+/** Cloudflare refusing a browser because the account's daily browser time is used up, as
+ * @cloudflare/puppeteer reports it ("Unable to create new browser: code: 429: message: Browser
+ * time limit exceeded for today"). The other 429, starting browsers too often, is not this. */
+export function isDailyBrowserLimit(err: unknown): boolean {
+  const msg = String((err as { message?: string } | null)?.message ?? err ?? '');
+  return /code:\s*429/.test(msg) && /time limit|for today|daily/i.test(msg);
+}
+
+/** The flag that pauses PDF files until the UTC day ends (one key per day). */
+export function pdfPausedKey(now: Date = new Date()): string {
+  return `pdf-paused:${now.toISOString().slice(0, 10)}`;
+}
+
+/** Seconds until the next midnight UTC, at least 60 (KV's shortest expiry). */
+export function secondsUntilUtcMidnight(now: Date = new Date()): number {
+  const next = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1);
+  return Math.max(60, Math.ceil((next - now.getTime()) / 1000));
+}
+
+const PAUSED_BODY = { error: 'PDF files are paused until tomorrow', paused: true };
 
 /** Renders print-ready HTML to PDF bytes. Injected so the handler is testable without a browser. */
 export type RenderPdf = (html: string) => Promise<Uint8Array>;
@@ -55,7 +80,8 @@ export async function handlePdf(
   uid: string,
   kv: QuotaKV,
   dailyLimit: number,
-  render: RenderPdf
+  render: RenderPdf,
+  now: () => Date = () => new Date()
 ): Promise<Response> {
   const length = Number(request.headers.get('Content-Length') || 0);
   if (length > MAX_PDF_HTML_BYTES) return json({ error: 'Document too large for a PDF file' }, 413);
@@ -70,6 +96,9 @@ export async function handlePdf(
   if (!html.trim()) return json({ error: 'html is required' }, 400);
   if (html.length > MAX_PDF_HTML_BYTES) return json({ error: 'Document too large for a PDF file' }, 413);
 
+  // Checked before the person's own count, so a paused day doesn't use it up.
+  if (await kv.get(pdfPausedKey(now()))) return json(PAUSED_BODY, 429);
+
   const quota = await consumeQuota(kv, pdfQuotaUid(uid), dailyLimit);
   if (!quota.allowed) return json({ error: 'Daily PDF limit reached' }, 429);
 
@@ -77,6 +106,11 @@ export async function handlePdf(
   try {
     pdf = await render(html);
   } catch (err) {
+    if (isDailyBrowserLimit(err)) {
+      const t = now();
+      await kv.put(pdfPausedKey(t), '1', { expirationTtl: secondsUntilUtcMidnight(t) });
+      return json(PAUSED_BODY, 429);
+    }
     return json({ error: 'PDF rendering failed', details: [err instanceof Error ? err.message : String(err)] }, 502);
   }
   return new Response(pdf, {
