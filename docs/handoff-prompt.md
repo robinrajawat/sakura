@@ -171,17 +171,19 @@ keep only the last 3 entries, and delete older ones (git history and the PRs kee
 anything still unbuilt or undecided into "In progress / not built" or "Parked". If this section
 contradicts README.md or docs/feature-reference.md, trust them.)*
 
-**Open work:** none open; everything from 2026-11-03 is merged and deployed (#816–#826). Owner confirmed live (2026-11-03): Google sign-in on the phone works without 'unsafe-eval' (#823), and AI rewrite works on the Worker redeployed with wrangler 4 (#825). Not built: the AI code still loads at startup inside index.html; split it out only if first load is measured as slow. Check `mcp__github__list_pull_requests` at session start.
+**Open work:** none open; everything from 2026-11-17 is merged and deployed (#882–#887). Owner to check on an iPhone that Settings → About link arrows are no longer emoji (#887), and to read the live `privacy.html` / `terms.html`. Not built: the AI code still loads at startup inside index.html; split it out only if first load is measured as slow. Check `mcp__github__list_pull_requests` at session start, and remind the owner of the launch checklist below.
 
 **Direction (owner, 2026-11-12):** Sakura is going cloud-first, with try-without-an-account kept. Plan: `docs/cloud-first-plan.md` (built; PDF stays on Cloudflare's free plan, owner 2026-11-17). Read it and `docs/data-safety-audit.md` before touching sync.
 
+**Positioning (owner, 2026-11-17):** a *private workspace for one professional's own thinking*: where a solution design, architecture or analysis gets worked out before anything goes to a client or team. Not a team tool, not a consulting-firm product, not where final Office deliverables are made, so no co-editing, SSO or firm-approval work. Suggested lead: **"Think in an outline. Hand over a polished document."** (outline + professional objects inside + one-click PDF), privacy as the supporting reason. First audience: solution architects, analysts, consultants, PMs. Biggest adoption risks: switching cost (only OPML import today; Markdown import likely matters most) and trust in a one-person product (make export, version history, privacy policy and the 30-day shutdown notice visible). Draft pitch was given in chat; the owner is to test it with 3–5 target users ("who is this for?", "what would make you try it this week?") before any building in this direction.
+
 ### Latest changes
+
+- **No emoji arrows on iPhone (2026-11-17, owner report from iPhone Safari).** Settings link buttons' `::after` arrow is a CSS mask of an inline SVG in `--hint` instead of U+2197 (`calm-layout.css`); the context menu's Insert above/below glyphs carry U+FE0E. Other emoji-prone characters in index.html are only used for matching typed text or mapping emoji to icons. Not testable on real iOS here.
 
 - **Privacy policy and terms (2026-11-17, owner: before public launch).** `web/public/privacy.html`, `terms.html`, `legal.css`; operator Robin Singh Rajawat (Denmark), GDPR, Danish law, Datatilsynet. Linked from the sign-in screen and Settings → About → Privacy & data, which also gained a PDF row and lost the stale Cerebras mention (hosted chain is Groq + Gemini). README and help brought current (Download all data, account deletion, PDF pause). Not reviewed by a lawyer. Test: legal-pages.
 
 - **No Google Fonts (2026-11-17, owner, for the privacy policy).** Public Sans (400–700) and Fira Code (400/500/700, incl. its box-drawing subset for tree prefixes) ship in `web/public/fonts/` from Fontsource 5.3.0 (OFL, THIRD-PARTY-NOTICES.md), declared with `unicode-range` so a page fetches only what it uses; CSP `font-src 'self'`, no googleapis in style-src; service worker `sakura-shell-v12`. Checked in a real browser: zero requests to Google. Test: selfHostedFont (+2).
-
-- **Deleting the account erases all of it (2026-11-17, for the privacy policy; GDPR erasure).** `deleteAccountCloudData` used to leave each document's subcollections (`DOC_SUBCOLLECTIONS`: versions, diagrams, previews, attachments; Firestore never cascades), `profiles/{uid}`, `notifications/{uid}`, `copies/{uid}` and `users/{uid}`. It now clears all of them in batches of 400 and returns how many places failed; `deleteAccountPermanently` then keeps the sign-in account and throws, so a retry finishes. Test: delete-account-erases-cloud (2).
 
 ### In progress / not built
 
@@ -202,6 +204,13 @@ contradicts README.md or docs/feature-reference.md, trust them.)*
 
 ### Parked / open questions for the owner
 
+- **Launch checklist (owner, 2026-11-17), besides the backups below:** (1) a lawyer's read of
+  `privacy.html` / `terms.html` if possible (drafted, not reviewed); (2) test the positioning pitch
+  with 3–5 target users; (3) then decide the name. Advice given: "Sakura" is crowded (Sakura Editor,
+  SAKURA Internet, many apps) and hard to search; leaning **"Sakura Notes"** (matches the domain, keeps
+  everything) unless a check (TMview software classes 9/42, app stores, web search) clears a clearly
+  better new name. Avoid anything close to "OneNote" (Microsoft trademark; it was only a reference
+  point). A rename touches the app name, manifests, policy pages and docs in one PR.
 - **Firestore backups, before public launch (owner, 2026-11-17: later, no computer at hand).** Upgrade
   the Firebase project `sakura-4cdae` to Blaze (needed for any managed backup), set a $5/month budget
   alert the same day (Blaze has no hard cap; anonymous feedback writes are the abuse path, App Check
