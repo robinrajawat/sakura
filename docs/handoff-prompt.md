@@ -177,11 +177,11 @@ contradicts README.md or docs/feature-reference.md, trust them.)*
 
 ### Latest changes
 
+- **Privacy policy and terms (2026-11-17, owner: before public launch).** `web/public/privacy.html`, `terms.html`, `legal.css`; operator Robin Singh Rajawat (Denmark), GDPR, Danish law, Datatilsynet. Linked from the sign-in screen and Settings → About → Privacy & data, which also gained a PDF row and lost the stale Cerebras mention (hosted chain is Groq + Gemini). README and help brought current (Download all data, account deletion, PDF pause). Not reviewed by a lawyer. Test: legal-pages.
+
 - **No Google Fonts (2026-11-17, owner, for the privacy policy).** Public Sans (400–700) and Fira Code (400/500/700, incl. its box-drawing subset for tree prefixes) ship in `web/public/fonts/` from Fontsource 5.3.0 (OFL, THIRD-PARTY-NOTICES.md), declared with `unicode-range` so a page fetches only what it uses; CSP `font-src 'self'`, no googleapis in style-src; service worker `sakura-shell-v12`. Checked in a real browser: zero requests to Google. Test: selfHostedFont (+2).
 
 - **Deleting the account erases all of it (2026-11-17, for the privacy policy; GDPR erasure).** `deleteAccountCloudData` used to leave each document's subcollections (`DOC_SUBCOLLECTIONS`: versions, diagrams, previews, attachments; Firestore never cascades), `profiles/{uid}`, `notifications/{uid}`, `copies/{uid}` and `users/{uid}`. It now clears all of them in batches of 400 and returns how many places failed; `deleteAccountPermanently` then keeps the sign-in account and throws, so a retry finishes. Test: delete-account-erases-cloud (2).
-
-- **Firestore rules tested in CI (2026-11-17, owner: close the gaps before launch).** New `verify-rules` job runs `firebase/rules.test.mjs` in the Firestore emulator (`firebase/` has its own package.json and lockfile, not a workspace). Added checks for every collection another account can touch: profiles (private invisible, also to the email query), notifications and copies (sender stamped with own uid, known shape only, recipient-only read/delete, no edits), feedback (anyone files, admins triage), admins (no listing, no client writes): 20 → 59. Rules are still published by hand in the Console, so CI checks the repo's copy; after publishing, the Console and the repo must match.
 
 ### In progress / not built
 
@@ -216,6 +216,9 @@ contradicts README.md or docs/feature-reference.md, trust them.)*
 
 ### Standing lessons
 
+- `web/public/privacy.html` is a promise to users: any change to what Sakura stores, sends where (AI
+  providers, Cloudflare, Google, GitHub, diagrams.net), keeps how long, or deletes, updates it and its
+  "Effective" date in the same PR. Adding a third-party host to the CSP is the usual sign it's needed.
 - Merging anything under `worker/` (package.json included) redeploys the live Worker (`deploy-worker.yml` on push to main): say so in the PR and let the owner merge on purpose.
 - npm 10.9 (this environment's) can crash with "Cannot read properties of null (reading 'edgesOut')" on peer-dependency upgrades; `npx npm@11.6.2 install` works, and npm 10's `npm ci` reads its lockfile. Don't delete node_modules to "fix" it: the crash stays and the install is gone (`git stash` + `npm ci` restores).
 - e2e: `undo-not-confirm.spec.ts` "Reset settings … Undo" reloads the page twice within a 30s budget and can time out under the full parallel suite; it passes alone. Rerun it alone before blaming a change.
