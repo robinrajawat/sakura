@@ -112,3 +112,49 @@ test('"everything is in the account" means: online, queue sent without error, no
   await context.setOffline(false);
   expect(errors).toEqual([]);
 });
+
+// Owner 2026-11-17: "We should follow the standard practice": every open tab signs out together.
+async function secondTab(page: Page) {
+  const other = await page.context().newPage();
+  await other.goto('file://' + indexPath);
+  await expect.poll(() => other.evaluate('typeof render === "function" && !!currentDocId')).toBe(true);
+  await other.evaluate(`currentUser = { uid: 'u1' }`);
+  return other;
+}
+
+test('another open tab saves what it holds first, then clears and reloads with the sign-out', async ({ page }) => {
+  const errors = await signedInWithADocument(page, true);
+  const other = await secondTab(page);
+  // An edit in the other tab that it hasn't saved yet.
+  await other.evaluate(`nodes[0].text = 'Edited in the other tab';`);
+  // The check runs after the other tabs were told to save: it sees that edit in storage.
+  await page.evaluate(`sendEverythingBeforeSignOut = async () => { if ((localStorage.getItem('sakura_doc_v1_' + currentDocId) || '').includes('Edited in the other tab')) sessionStorage.setItem('sakura_saw_other_tab', '1'); return true; }`);
+  await Promise.all([page.waitForNavigation(), other.waitForNavigation(), page.evaluate('void signOutOfAccount()')]);
+  await expect.poll(() => other.evaluate('typeof render === "function"')).toBe(true);
+  expect(await page.evaluate(`sessionStorage.getItem('sakura_saw_other_tab')`)).toBe('1');
+  expect(await other.evaluate(() => Object.keys(localStorage).filter((k) => k.startsWith('sakura_doc_v1_')))).toEqual([]);
+  expect(await other.evaluate('!!currentUser')).toBe(false);
+  expect(errors).toEqual([]);
+});
+
+test('kept on this device: another open tab just shows signed out, and keeps its data', async ({ page }) => {
+  const errors = await signedInWithADocument(page, false);
+  const other = await secondTab(page);
+  await page.evaluate('void signOutOfAccount()');
+  await page.getByRole('button', { name: 'Sign out, keep them here' }).click();
+  await expect.poll(() => other.evaluate('!!currentUser')).toBe(false);
+  expect(await other.evaluate(() => Object.keys(localStorage).some((k) => k.startsWith('sakura_doc_v1_')))).toBe(true);
+  expect(await other.evaluate(`sessionStorage.getItem('sakura_clear_on_load')`)).toBeNull();
+  expect(errors).toEqual([]);
+});
+
+test('a second Sign out while the first is checking does nothing; the checking message goes with the check', async ({ page }) => {
+  const errors = await signedInWithADocument(page, false);
+  await page.evaluate(`window.__checks = 0; sendEverythingBeforeSignOut = async () => { window.__checks++; await new Promise((r) => setTimeout(r, 300)); return false; }`);
+  await page.evaluate('void signOutOfAccount(); void signOutOfAccount();');
+  await expect(page.getByText('Some changes haven’t reached your account')).toBeVisible();
+  expect(await page.evaluate('window.__checks')).toBe(1);
+  await expect(page.locator('#toast')).not.toHaveClass(/show/);
+  await page.getByRole('button', { name: 'Stay signed in' }).click();
+  expect(errors).toEqual([]);
+});

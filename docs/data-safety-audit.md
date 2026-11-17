@@ -81,6 +81,8 @@ over once. Tests: `thread-drafts.spec.ts`, `threadDrafts.test.ts`, `table-api.sp
   removed from this device: on a reload, before anything reads it, so nothing the closing page
   writes survives. If something can't be sent, the person chooses "Stay signed in" (the default)
   or "Sign out, keep them here"; nothing unsent is removed (`sign-out-clears-device.spec.ts`).
+  Every open tab signs out together (BroadcastChannel `sakura-account`): the others save what they
+  hold before the check, then clear and reload, or just show signed out when the data is kept.
   Deleting the account still keeps this device's copy: then it's the only one left.
 - **A document opened before its content has loaded from the account:** typing is locked until it
   arrives, so an empty placeholder never saves over the real copy (`doc-content-pending.spec.ts`).
