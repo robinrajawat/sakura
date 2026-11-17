@@ -125,11 +125,12 @@ settings and unsent drafts (2026-11-17). Data & backup was cut down in 5b.
 
 ## PDF (decide before Phase 5)
 
-The server PDF currently fails for the owner with "Couldn't make the PDF file" (not the daily
-limit). Cause unknown until the `/pdf` request's status and response are seen (browser dev tools
-→ Network, or `wrangler tail`). Separately, Cloudflare's Workers Free plan allows about 10
-browser-minutes a day for the whole app, and each PDF keeps a browser warm for 60s
-(`keep_alive` in `worker/src/pdf.ts`), so it can't carry real use either way. Cloud-first PDF
+The server PDF works (owner, 2026-11-17). Owner decision the same day: stay on Cloudflare's
+Workers Free plan, which allows about 10 browser-minutes a day for the whole app (an idle browser
+stays warm 10s, `KEEP_ALIVE_MS` in `worker/src/pdf.ts`). When Cloudflare refuses because that
+time is used up, the Worker pauses PDF files until midnight UTC (a KV flag) and the app opens the
+print dialog straight away until then, saying why. Its other limit, one new browser every 20
+seconds, still sends an unlucky second request to print with an error message. Cloud-first PDF
 realistically means the Workers Paid plan (about $5/month plus usage, per Cloudflare's published
 pricing; check current numbers). Any change under `worker/` redeploys the live Worker on merge,
 so those PRs are merged by the owner on purpose.

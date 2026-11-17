@@ -171,15 +171,15 @@ contradicts README.md or docs/feature-reference.md, trust them.)*
 
 **Open work:** none open; everything from 2026-11-03 is merged and deployed (#816–#826). Owner confirmed live (2026-11-03): Google sign-in on the phone works without 'unsafe-eval' (#823), and AI rewrite works on the Worker redeployed with wrangler 4 (#825). Not built: the AI code still loads at startup inside index.html; split it out only if first load is measured as slow. Check `mcp__github__list_pull_requests` at session start.
 
-**Direction (owner, 2026-11-12):** Sakura is going cloud-first, with try-without-an-account kept. Plan: `docs/cloud-first-plan.md` (built except PDF reliability, 2026-11-17). Read it and `docs/data-safety-audit.md` before touching sync.
+**Direction (owner, 2026-11-12):** Sakura is going cloud-first, with try-without-an-account kept. Plan: `docs/cloud-first-plan.md` (built; PDF stays on Cloudflare's free plan, owner 2026-11-17). Read it and `docs/data-safety-audit.md` before touching sync.
 
 ### Latest changes
+
+- **PDF files pause when the free plan's day runs out (2026-11-17, owner: stay on the free plan, fall back to print).** When Cloudflare refuses a browser with its daily time-limit 429 (`isDailyBrowserLimit`), the Worker sets `pdf-paused:<UTC date>` in KV until midnight UTC and answers every `/pdf` with 429 `{ paused: true }` before touching the per-user count. The app stores `sakura_pdf_paused_until` and opens print straight away with "PDF files are paused until tomorrow, opening print". Merging redeploys the Worker. Tests: worker pdf.test.ts (+4), pdf-server-download (+1).
 
 - **Signing out clears this device (2026-11-17, owner: "Privacy matters").** `signOutOfAccount` first runs `sendEverythingBeforeSignOut` (save, drafts, a catch-up, the queue until empty, failed version uploads; false when offline, on a sync error or anything still waiting). Safe: sign out, set `sakura_clear_on_load` in sessionStorage and reload; a script at the top of the page removes every `sakura*` key except welcome/tour seen and deletes `sakura_backup_db` before anything reads them, so the closing page's own writes are gone too. Not safe: "Stay signed in" (default) or "Sign out, keep them here". Every open tab follows (BroadcastChannel `sakura-account`: `save-before-sign-out` before the check, `signed-out` {clear} after). Deleting the account still keeps the local copy. Test: sign-out-clears-device (7).
 
 - **Every version reaches the account (2026-11-17, owner: close the remaining one-device gaps).** A version over one Firestore record is stored as a head and parts (`src/utils/versionChunks.ts`; the size is now counted in UTF-8 bytes, since a character count let non-Latin text past the 1 MiB limit); removal finds a version's records by `ts`. A failed version upload is remembered (`sakura_version_push_pending_v1`) and retried after the next successful sync (`retryPendingVersionPushes`), so "Your changes on this device" after a conflict still reaches the account. Privacy & data now lists version history and drafts; the cloud-first plan's status is current. Tests: version-cloud-sync, versionChunks.
-
-- **Folding isn't an edit (2026-11-17, owner: "When I expand a table on phone or any dot then it triggers a save? Why?").** `collapsed`, `collapsedTables` and `collapsedImages` joined `DOC_VIEW_ONLY_FIELDS`: kept with the document here, sent with the next real edit, but alone no upload, no new rev, no conflict for another device's edit. `saveDocsIndex` and `savePrefs` mark the account copy changed only when the stored value changed (every document save re-sent both). Test: sync-own-echo (+1).
 
 ### In progress / not built
 

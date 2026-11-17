@@ -24665,8 +24665,19 @@ async function inlineBlobImages(root){
 function serverPdfAvailable(){
   return !window.__sakuraNoServerPdf&&!!currentUser&&navigator.onLine!==false&&typeof AI_VAULT_WORKER_URL==='string'&&!!AI_VAULT_WORKER_URL;
 }
+// When the PDF service says PDF files are paused (the free plan's daily browser time is used up),
+// Download PDF opens print straight away until midnight UTC, when that allowance resets.
+const PDF_PAUSED_UNTIL_KEY='sakura_pdf_paused_until';
+function serverPdfPaused(){
+  try{ return Date.now()<Number(localStorage.getItem(PDF_PAUSED_UNTIL_KEY)||0); }catch(e){ return false; }
+}
+function pauseServerPdfUntilTomorrow(){
+  const n=new Date();
+  try{ localStorage.setItem(PDF_PAUSED_UNTIL_KEY,String(Date.UTC(n.getUTCFullYear(),n.getUTCMonth(),n.getUTCDate()+1))); }catch(e){}
+}
+const PDF_PAUSED_MSG='PDF files are paused until tomorrow, opening print';
 // Asks the Worker for the PDF and downloads it. Resolves 'saved', or 'limit' when today's PDF
-// count is used up, or 'failed' for anything else (the caller then opens the print dialog).
+// count is used up, 'paused' when the service is paused for today, or 'failed' for anything else (the caller then opens the print dialog).
 // _serverPdfFailure keeps a short reason for the last failure, said in the message (as other
 // apps show an error code) so a failure can be told apart without the browser's dev tools.
 let _serverPdfFailure='';
@@ -24682,7 +24693,9 @@ async function saveServerPdf(html,title,cancel){
     if(!res.ok){
       const body=await res.text().catch(()=>'');
       console.warn('[sakura] server PDF failed:',res.status,body);
-      let why=''; try{ const j=JSON.parse(body); why=[j.error,...(Array.isArray(j.details)?j.details:[])].filter(Boolean).join(': '); }catch(e){}
+      let why='', paused=false;
+      try{ const j=JSON.parse(body); paused=j.paused===true; why=[j.error,...(Array.isArray(j.details)?j.details:[])].filter(Boolean).join(': '); }catch(e){}
+      if(res.status===429&&paused){ pauseServerPdfUntilTomorrow(); return 'paused'; }
       _serverPdfFailure='error '+res.status+(why?' \u2014 '+why.slice(0,140):'');
       return res.status===429?'limit':'failed';
     }
@@ -24724,8 +24737,10 @@ function printCopyInFrame(html){
 // True while a server PDF is being made: a second Download PDF click then does nothing.
 let _serverPdfBusy=false;
 function sakuraPrint(target){
-  const viaServer=!!target&&serverPdfAvailable();
+  const paused=!!target&&serverPdfAvailable()&&serverPdfPaused();
+  const viaServer=!!target&&serverPdfAvailable()&&!paused;
   const viaFrame=!!target&&(PRINT_VIA_FRAME||!!window.__sakuraPrintViaFrame);
+  if(paused){ showToast(PDF_PAUSED_MSG,'',false,4000); showWaitingToast(4200); }
   if(!viaServer&&!viaFrame){ window.print(); return; }
   const title=document.title;
   const frameHtml=buildPrintCopyHtml(target);
@@ -24748,6 +24763,7 @@ function sakuraPrint(target){
       if(result==='cancelled'){ showToast('PDF cancelled'); waiting(); return; }
       if(result==='saved'){ showToast('PDF saved','success'); waiting(); return; }
       // Say why the print dialog opens instead of a download.
+      if(result==='paused'){ showToast(PDF_PAUSED_MSG,'',false,4000); waiting(4200); printCopyInFrame(frameHtml); return; }
       showToast(result==='limit'?"Today's PDF limit is reached, opening print instead":"Couldn't make the PDF file ("+(_serverPdfFailure||'unknown error')+"), opening print instead",'',false,result==='limit'?4000:7000);
       waiting(result==='limit'?4200:7200);
       printCopyInFrame(frameHtml);

@@ -180,3 +180,45 @@ test('To-Dos PDF takes the same path and is named To-Dos.pdf', async ({ page }) 
   expect((await download).suggestedFilename()).toBe('To-Dos.pdf');
   expect(await page.evaluate(() => !!document.getElementById('gpe-overlay'))).toBe(false);
 });
+
+// Owner 2026-11-17: once Cloudflare's free daily browser time is used up, the Worker answers
+// { paused: true }; print opens with a calm message, and later clicks skip the server until
+// midnight UTC instead of waiting on "Preparing PDF…" again.
+test('service paused for today: prints now, and later clicks skip the server', async ({ page }) => {
+  let calls = 0;
+  await page.route('https://ai.sakura-notes.com/pdf', (route) => {
+    calls++;
+    return route.fulfill({ status: 429, contentType: 'application/json', headers: { 'Access-Control-Allow-Origin': '*' }, body: '{"error":"PDF files are paused until tomorrow","paused":true}' });
+  });
+  const r = await page.evaluate(() => new Promise<any>((resolve) => {
+    new MutationObserver((_m, obs) => {
+      const f = document.getElementById('sakura-print-frame') as HTMLIFrameElement | null;
+      if (!f) return;
+      obs.disconnect();
+      (f.contentWindow as any).print = () => resolve({ text: f.contentDocument!.getElementById('preview-body')?.textContent || '' });
+    }).observe(document.body, { childList: true });
+    (window as any).exportPdfDirect();
+  }));
+  expect(r.text).toContain('Body of section 1');
+  await expect(page.locator('#toast')).toContainText('PDF files are paused until tomorrow');
+  const until = await page.evaluate(() => Number(localStorage.getItem('sakura_pdf_paused_until')));
+  const n = new Date();
+  expect(until).toBe(Date.UTC(n.getUTCFullYear(), n.getUTCMonth(), n.getUTCDate() + 1));
+
+  // Second click: no request, print opens straight away.
+  const printed = await page.evaluate(() => new Promise<boolean>((resolve) => {
+    const w = window as any;
+    w.print = () => resolve(true);
+    new MutationObserver((_m, obs) => {
+      const f = document.getElementById('sakura-print-frame') as HTMLIFrameElement | null;
+      if (!f) return;
+      obs.disconnect();
+      (f.contentWindow as any).print = () => resolve(true);
+    }).observe(document.body, { childList: true });
+    document.getElementById('sakura-print-frame')?.remove();
+    w.exportPdfDirect();
+  }));
+  expect(printed).toBe(true);
+  expect(calls).toBe(1);
+  await expect(page.locator('#toast')).toContainText('PDF files are paused until tomorrow');
+});
