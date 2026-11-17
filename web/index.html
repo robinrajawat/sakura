@@ -13356,7 +13356,8 @@ function genDocId(){return generateId('d');}
 /* GENERATED:generateId:END */
 function docKey(id){return DOC_KEY_PREFIX+id}
 function loadDocsIndex(){try{const raw=localStorage.getItem(DOCS_INDEX_KEY); const arr=raw?JSON.parse(raw):[]; return Array.isArray(arr)?arr:[]}catch(e){return []}}
-function saveDocsIndex(list){try{localStorage.setItem(DOCS_INDEX_KEY,JSON.stringify(list)); markMetaChanged('docsIndex');}catch(e){}}
+// Sent to the account only when the list really changed (every save of a document rewrote it).
+function saveDocsIndex(list){try{const json=JSON.stringify(list); if(localStorage.getItem(DOCS_INDEX_KEY)===json)return; localStorage.setItem(DOCS_INDEX_KEY,json); markMetaChanged('docsIndex');}catch(e){}}
 function touchDocIndex(id,title,at){const when=Number(at)||Date.now(); const list=loadDocsIndex(); const i=list.findIndex(d=>d.id===id); const entry=i>=0?{...list[i],title:title||'Untitled',updatedAt:when}:{id,title:title||'Untitled',updatedAt:when}; if(i>=0)list[i]=entry; else list.push(entry); saveDocsIndex(list); return list}
 // Update title only — does NOT change updatedAt (prevents list from re-sorting on every autosave)
 // A document with no title is listed by its first row's words (like Apple Notes), so two new documents
@@ -13716,7 +13717,11 @@ function maybePromptGuestSignIn(savedNodes){
 }
 // What of a stored document is its content for syncing: everything but where the selection and
 // caret are (diagram blobs live elsewhere and are compared by their metadata here).
-const DOC_VIEW_ONLY_FIELDS=['selectedId','multiSelectedIds','selectionAnchorId','focusedId'];
+// How the document is being looked at, not what it holds: saved with it here, and sent to the account
+// with the next real edit, but alone not a change. Folding a row or a table once sent the whole
+// document up ("Saving…"), moved its version on, and could turn a real edit on another device into
+// a conflict (owner 2026-11-17: "when I expand a table on phone or any dot then it triggers a save?").
+const DOC_VIEW_ONLY_FIELDS=['selectedId','multiSelectedIds','selectionAnchorId','focusedId','collapsed','collapsedTables','collapsedImages'];
 let _lastSavedDocSig={id:null,raw:null,sig:null};
 function docSyncSignature(d){
   if(!d||typeof d!=='object')return '';
@@ -15804,6 +15809,8 @@ function savePrefs(){
   try{
     const payload={ctxQuickRow:ctxQuickRowCustom,theme:currentTheme,themeMode,editorScale,outlineNumbering,treeIndentWidth,spellcheckEnabled,noteMatchEditorBg,codeMatchEditorBg,pdfMark:previewBrandingText,defaultAuthorName,trashRetentionDays,searchIncludesTrash,featureNoteEnabled,featureCodeEnabled,featureAiEnabled,qaSearchResultsEnabled,qaSearchHiddenCategories,sectionMarkingsEnabled,svgSectionIconsEnabled,rowHighlightStyle,coverPageEnabled,contentsPageEnabled,openItemsPageEnabled,searchMatchCase,searchWholeWord,autoRewriteEnabled,qaLocation,autoErrorReportEnabled};
     const json=JSON.stringify(payload);
+    // Unchanged (every save of a document also saves the settings): nothing to send to the account.
+    if(localStorage.getItem(PREFS_KEY)===json)return;
     localStorage.setItem(PREFS_KEY,json);
     // Verification pass — catches the "write silently didn't stick" failure mode (private-mode
     // storage quirks, quota, a browser extension intercepting storage, etc.) that a bare
