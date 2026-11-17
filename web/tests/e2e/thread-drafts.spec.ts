@@ -46,6 +46,9 @@ async function open(page: Page, seed: boolean) {
   if (seed) {
     await page.evaluate(`
       createDoc();
+      // A titled document: an empty new one focuses its title on the next frame, which on a slow
+      // machine came after the reply box below had taken focus (CI, 2026-11-17).
+      setDocTitleField('Cutover plan');
       const n = (id, depth, text) => ({ id, depth, text, parentId: null, isCheckbox: false, checked: false, note: '', tables: [], images: [], tags: [], styles: {} });
       nodes = [n(1, 0, 'Cutover'), n(2, 0, 'Rollback')]; rebuildParentIds(); nextId = 3;
       remarks = [{ id: 'c1', anchorNodeId: 1, person: 'Ana', text: 'Weekend works for ops.', createdAt: 1 }];
