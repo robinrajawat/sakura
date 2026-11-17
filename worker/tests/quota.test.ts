@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { quotaKeyFor, evaluateQuota, consumeQuota, type QuotaKV } from '../src/quota';
+import { quotaKeyFor, evaluateQuota, consumeQuota, refundQuota, type QuotaKV } from '../src/quota';
 
 function fakeKv(initial: Record<string, string> = {}): QuotaKV & { store: Record<string, string> } {
   const store = { ...initial };
@@ -111,5 +111,22 @@ describe('consumeQuota (KV-touching)', () => {
     const kv = fakeKv({ 'quota:user123:2026-09-01': 'not-a-number' });
     const result = await consumeQuota(kv, 'user123', 3, new Date('2026-09-01T00:00:00Z'));
     expect(result).toEqual({ allowed: true, count: 1, remaining: 2 });
+  });
+});
+
+describe('refundQuota', () => {
+  const now = new Date('2026-09-01T12:00:00Z');
+  it('gives back one counted request on the same day', async () => {
+    const kv = fakeKv();
+    await consumeQuota(kv, 'user123', 3, now);
+    await consumeQuota(kv, 'user123', 3, now);
+    await refundQuota(kv, 'user123', now);
+    expect(kv.store['quota:user123:2026-09-01']).toBe('1');
+  });
+  it('never goes below zero or touches another day', async () => {
+    const kv = fakeKv({ 'quota:user123:2026-08-31': '2' });
+    await refundQuota(kv, 'user123', now);
+    expect(kv.store['quota:user123:2026-09-01']).toBeUndefined();
+    expect(kv.store['quota:user123:2026-08-31']).toBe('2');
   });
 });

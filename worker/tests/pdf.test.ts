@@ -126,6 +126,8 @@ describe('daily browser time used up', () => {
     expect(first.status).toBe(429);
     expect(await first.json()).toMatchObject({ paused: true });
     expect(kv.store[pdfPausedKey(noon())]).toBe('1');
+    // The refused request gave its count back.
+    expect(Object.entries(kv.store).filter(([k]) => k.includes(pdfQuotaUid('u1'))).map(([, v]) => v)).toEqual(['0']);
 
     let rendered = false;
     const second = await handlePdf(post({ html: '<p>Hi</p>' }), 'u2', kv, 5, async () => {
@@ -148,5 +150,7 @@ describe('daily browser time used up', () => {
     const res = await handlePdf(post({ html: '<p>Hi</p>' }), 'u1', kv, 5, fail(new Error('boom')), noon);
     expect(res.status).toBe(502);
     expect(kv.store[pdfPausedKey(noon())]).toBeUndefined();
+    // A browser did run, so it still counts.
+    expect(Object.entries(kv.store).filter(([k]) => k.includes(pdfQuotaUid('u1'))).map(([, v]) => v)).toEqual(['1']);
   });
 });
