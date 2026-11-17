@@ -16631,10 +16631,7 @@ wireEmailAuthForm('account');
 // unsent is ever removed.
 async function sendEverythingBeforeSignOut(){
   if(!currentUser)return true;
-  try{ commitEdit(); }catch(e){}
-  try{ apiEditorApplyOnHide(); }catch(e){}
-  try{ saveToStorage(); }catch(e){}
-  try{ typedDrafts.flush(); }catch(e){}
+  saveEverythingInThisTab();
   if(navigator.onLine===false)return false;
   // A catch-up also queues documents saved here after the account's copy, or missing there.
   try{ await pullAndMergeFromCloud(); }catch(e){ return false; }
@@ -16650,9 +16647,43 @@ async function sendEverythingBeforeSignOut(){
   try{ if(Object.keys(JSON.parse(localStorage.getItem(VERSION_PUSH_PENDING_KEY)||'{}')).length)return false; }catch(e){}
   return true;
 }
+// Every open Sakura tab signs out together, as Gmail, Slack and Notion do (owner 2026-11-17: "We
+// should follow the standard practice"): before the check, the other tabs save what they hold, so
+// the upload includes it; once signed out, they clear this device the same way and reload, or, when
+// the person kept the data here, just show signed out. BroadcastChannel reaches every tab of this
+// site in this browser; where it's missing, the other tabs only see Firebase's signed-out state.
+const _accountChannel=(()=>{ try{ return typeof BroadcastChannel==='function'?new BroadcastChannel('sakura-account'):null; }catch(e){ return null; } })();
+function tellOtherTabs(msg){ try{ if(_accountChannel)_accountChannel.postMessage(msg); }catch(e){} }
+function saveEverythingInThisTab(){
+  try{ commitEdit(); }catch(e){}
+  try{ apiEditorApplyOnHide(); }catch(e){}
+  try{ saveToStorage(); }catch(e){}
+  try{ typedDrafts.flush(); }catch(e){}
+}
+// Nothing from this tab may be written back: the reload clears storage before anything reads it.
+function clearThisDeviceAndReload(){
+  suppressSaveToStorageOnUnload=true; suppressPrefsSaveOnUnload=true; suppressBeforeUnloadOnce=true;
+  try{ sessionStorage.setItem('sakura_clear_on_load','1'); }catch(e){}
+  location.reload();
+}
+async function otherTabsSaveFirst(){
+  if(!_accountChannel)return;
+  tellOtherTabs({type:'save-before-sign-out'});
+  await new Promise(r=>setTimeout(r,400)); // each tab saves at once on the message; this covers a busy one
+}
+if(_accountChannel)_accountChannel.addEventListener('message',e=>{
+  const m=e.data||{};
+  if(m.type==='save-before-sign-out')saveEverythingInThisTab();
+  else if(m.type==='signed-out'){
+    if(m.clear){ clearThisDeviceAndReload(); return; }
+    try{ stopRealtimeSync(); }catch(err){}
+    updateAccountUI(null);
+  }
+});
 async function signOutOfAccount(){
   el('account-menu')?.classList.remove('open');
   showToast('Making sure everything is in your account\u2026','info',false,20000);
+  await otherTabsSaveFirst();
   const safe=await sendEverythingBeforeSignOut();
   let clear=true;
   if(!safe){
@@ -16670,13 +16701,8 @@ async function signOutOfAccount(){
     await authMod.signOut(auth);
   }catch(e){ console.warn('[sakura] sign-out error:',e); }
   try{localStorage.removeItem('sakura_account_active')}catch(e){}
-  if(clear){
-    // Nothing from this page may be written back now: the reload clears storage before reading it.
-    suppressSaveToStorageOnUnload=true; suppressPrefsSaveOnUnload=true; suppressBeforeUnloadOnce=true;
-    try{ sessionStorage.setItem('sakura_clear_on_load','1'); }catch(e){}
-    location.reload();
-    return;
-  }
+  tellOtherTabs({type:'signed-out',clear});
+  if(clear){ clearThisDeviceAndReload(); return; }
   updateAccountUI(null);
   showToast('Signed out. Your documents are still on this device.');
 }
