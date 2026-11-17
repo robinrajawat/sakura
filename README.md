@@ -151,11 +151,12 @@ Two ways to run it:
 - **Sign in** (Google or email) and your documents, folders, To-Dos and settings are kept in your account, on every device, with version history.
 - **Try it without an account.** Everything then stays in your browser and works offline once loaded; signing in later brings it into your account. Sakura can also be installed as an app from the browser's address bar.
 - **Send a copy** of a document to another Sakura user. It becomes their own document; nothing stays linked.
-- **Backup** saves everything to one file, and **Restore** brings it back (with one-step undo).
+- **Download all data** saves everything to one file at any time. Without an account it's **Backup**, and **Restore** brings it back (with one-step undo).
 - **Secure storage** locks your AI keys with a passphrase.
-- **No analytics or tracking.** Crash reports are off unless you turn them on, and never include your content.
+- **No analytics or tracking.** Crash reports are off unless you turn them on, and never include your content. Every font is served by Sakura itself.
+- **Delete your account** and everything it has in the cloud goes with it: documents, version history, settings and profile.
 
-Settings → About → Privacy & data in the app explains exactly what goes where.
+Settings → About → Privacy & data in the app explains exactly what goes where. The full [privacy policy](https://www.sakura-notes.com/privacy.html) and [terms of use](https://www.sakura-notes.com/terms.html) are on the site (source: `web/public/privacy.html`, `web/public/terms.html`).
 
 ## Security
 
