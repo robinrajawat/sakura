@@ -63,3 +63,18 @@ test('this device\'s own earlier upload, or a copy at the version it already has
   expect(await page.evaluate('crossTabWarningDocId')).not.toBe(await page.evaluate('currentDocId'));
   expect(errors).toEqual([]);
 });
+
+// Owner 2026-11-17: "When I expand a table on phone or any dot then it triggers a save? Why?" Folding
+// is how the document is looked at, not an edit: kept with it here, sent with the next real edit.
+test('folding a row or a table, or opening a dot, sends nothing to the account', async ({ page }) => {
+  const errors = await open(page);
+  await page.evaluate(`saveToStorage(); window.__queued = [];`); // the first save after start-up writes the settings once
+  await page.evaluate(`toggleCollapse(1); collapsedTableNodeIds.add(2); inlineExpandNoteNodeIds.add(1); inlineExpandRemarksNodeIds.add(1); render(); saveToStorage();`);
+  expect(await page.evaluate('window.__queued')).toEqual([]);
+  // Kept here with the document.
+  expect(await page.evaluate(`JSON.parse(localStorage.getItem('sakura_doc_v1_' + currentDocId)).collapsed`)).toEqual([1]);
+  // The next real edit takes it along.
+  await page.evaluate(`nodes[1].text = 'Step one'; saveToStorage();`);
+  expect(await page.evaluate('window.__queued.filter((k) => k.startsWith("doc:")).length')).toBe(1);
+  expect(errors).toEqual([]);
+});
