@@ -21,12 +21,12 @@
 // origin's Cache Storage, only the OS-level shortcut, so the newly-redesigned icon on the
 // server was never actually seen. Bump the version suffix whenever an asset in
 // PRECACHE_URLS (or anything else served under a STATIC_DESTINATIONS type) changes.
-const CACHE_NAME = 'sakura-shell-v11';
+const CACHE_NAME = 'sakura-shell-v12';
 
-// Assets whose content is effectively immutable for a given URL -- Google Fonts'
-// own CSS is stable enough in practice that unconditional long-term caching is the right
-// trade-off here. Precached on install so the very first offline visit already has them,
-// rather than waiting for a second online visit to have fetched them once.
+// The app shell and the assets it always needs, precached on install so the very first offline
+// visit already has them. Every font is served from the site itself (no Google Fonts since
+// 2026-11-17); the Public Sans and Fira Code files are cached on first use (below), since a page
+// only downloads the subsets its text needs.
 const PRECACHE_URLS = [
   './',
   './index.html',
@@ -42,12 +42,11 @@ const PRECACHE_URLS = [
   './icon-glyph-192.png',
   './fonts/inter-latin.woff2',
   './fonts/inter-latin-ext.woff2',
-  'https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&family=Fira+Code:wght@400;500;700&display=swap',
 ];
 
 // Request destinations treated as static assets (cache-first, opportunistically cached on
-// first fetch even when not in PRECACHE_URLS -- covers the actual .woff2 files Google Fonts'
-// CSS references via @font-face, whose exact URLs aren't knowable ahead of time). Deliberately
+// first fetch even when not in PRECACHE_URLS -- covers the font subsets (unicode-range) a page
+// happens to download). Deliberately
 // narrow: this must never include plain fetch()/XHR calls (destination ''), since those are
 // how Firestore sync, AI providers, and Feedback Inbox talk to their APIs, and serving those
 // from a stale cache would be a correctness bug, not a convenience.
