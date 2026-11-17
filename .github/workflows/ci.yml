@@ -9,7 +9,9 @@ name: CI
 # FOLDERS_KEY-class TDZ crashes, and the RAWTEXT-hijack class
 # web/scripts/validate_html_structure.py guards against).
 # verify-worker covers worker/ (docs/ai-hosted-vault-design.md's Cloudflare Worker) —
-# typecheck/lint/unit tests only, no wrangler dev or deploy. The real deploy runs from a
+# typecheck/lint/unit tests only, no wrangler dev or deploy. verify-rules runs firebase/rules.test.mjs
+# against firebase/firestore.rules in the Firestore emulator (the rules themselves are published by
+# hand in the Firebase Console, so this checks the repo's copy). The real deploy runs from a
 # separate workflow, deploy-worker.yml, triggered by a push to main that touches worker/ (not
 # by this workflow) — see that file for the Cloudflare credentials it needs.
 #
@@ -122,3 +124,37 @@ jobs:
 
       - name: Unit tests
         run: npm run test:unit -w sakura-worker
+
+  verify-rules:
+    needs: changes
+    if: needs.changes.outputs.docs_only != 'true'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: firebase
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: firebase/package-lock.json
+
+      # The Firestore emulator is a Java program.
+      - uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: Cache the Firestore emulator download
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/firebase/emulators
+          key: firestore-emulator-${{ hashFiles('firebase/package-lock.json') }}
+
+      - name: Install the emulator tools (firebase/ has its own lockfile, not a workspace)
+        run: npm ci
+
+      - name: Firestore rules tests (emulator)
+        run: npm test

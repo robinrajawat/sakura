@@ -115,7 +115,9 @@ npm run test:e2e -w sakura-web
 (`generate:verify` catches drift between `web/src/` and the generated
 blocks spliced into `index.html`/`hub.html` at build time — a real, silent
 failure mode if skipped.) CI (`.github/workflows/ci.yml`, `verify-web`
-job) runs the same checks plus an HTML-structure validation script
+job) runs the same checks plus an HTML-structure validation script, and `verify-rules` runs the
+Firestore rules tests in the emulator (`cd firebase && npm ci && npm test`, needs Java 11+; run it
+locally whenever `firebase/firestore.rules` changes)
 (`web/scripts/validate_html_structure.py`) — safe to rely on CI for that
 last one rather than running it locally every time, but never skip the rest.
 Exception: when every changed file is under `docs/` or ends in `.md`, skip
@@ -175,11 +177,11 @@ contradicts README.md or docs/feature-reference.md, trust them.)*
 
 ### Latest changes
 
+- **Firestore rules tested in CI (2026-11-17, owner: close the gaps before launch).** New `verify-rules` job runs `firebase/rules.test.mjs` in the Firestore emulator (`firebase/` has its own package.json and lockfile, not a workspace). Added checks for every collection another account can touch: profiles (private invisible, also to the email query), notifications and copies (sender stamped with own uid, known shape only, recipient-only read/delete, no edits), feedback (anyone files, admins triage), admins (no listing, no client writes): 20 → 59. Rules are still published by hand in the Console, so CI checks the repo's copy; after publishing, the Console and the repo must match.
+
 - **PDF files pause when the free plan's day runs out (2026-11-17, owner: stay on the free plan, fall back to print).** When Cloudflare refuses a browser with its daily time-limit 429 (`isDailyBrowserLimit`), the Worker sets `pdf-paused:<UTC date>` in KV until midnight UTC and answers every `/pdf` with 429 `{ paused: true }` before touching the per-user count. The app stores `sakura_pdf_paused_until` and opens print straight away with "PDF files are paused until tomorrow, opening print". Merging redeploys the Worker. Tests: worker pdf.test.ts (+4), pdf-server-download (+1).
 
 - **Signing out clears this device (2026-11-17, owner: "Privacy matters").** `signOutOfAccount` first runs `sendEverythingBeforeSignOut` (save, drafts, a catch-up, the queue until empty, failed version uploads; false when offline, on a sync error or anything still waiting). Safe: sign out, set `sakura_clear_on_load` in sessionStorage and reload; a script at the top of the page removes every `sakura*` key except welcome/tour seen and deletes `sakura_backup_db` before anything reads them, so the closing page's own writes are gone too. Not safe: "Stay signed in" (default) or "Sign out, keep them here". Every open tab follows (BroadcastChannel `sakura-account`: `save-before-sign-out` before the check, `signed-out` {clear} after). Deleting the account still keeps the local copy. Test: sign-out-clears-device (7).
-
-- **Every version reaches the account (2026-11-17, owner: close the remaining one-device gaps).** A version over one Firestore record is stored as a head and parts (`src/utils/versionChunks.ts`; the size is now counted in UTF-8 bytes, since a character count let non-Latin text past the 1 MiB limit); removal finds a version's records by `ts`. A failed version upload is remembered (`sakura_version_push_pending_v1`) and retried after the next successful sync (`retryPendingVersionPushes`), so "Your changes on this device" after a conflict still reaches the account. Privacy & data now lists version history and drafts; the cloud-first plan's status is current. Tests: version-cloud-sync, versionChunks.
 
 ### In progress / not built
 
