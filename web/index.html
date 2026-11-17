@@ -98,6 +98,20 @@ function a(e,t){return n(e)||r(e,t)||o(e,t)||i()}function o(e,n){if(e){if(typeof
 `+f),V&&(f=Nn(f)),P&&It?at(f):f},t.setConfig=function(){let e=arguments.length>0&&arguments[0]!==void 0?arguments[0]:{};un(e),jt=!0,Mt=L,Nt=R},t.clearConfig=function(){sn=null,jt=!1,Mt=null,Nt=null,P=tt,F=``},t.isValidAttribute=function(e,t,n){sn||un({});let r=Y(e),i=Y(t);return typeof n==`string`&&(Jn(t,n)||!At&&w(Ge,n))?!1:Un(r,i,n)},t.addHook=function(e,t){typeof t==`function`&&S(I,e)&&ie(I[e],t)},t.removeHook=function(e,t){if(S(I,e)){if(t!==void 0){let n=ne(I[e],t);return n===-1?void 0:oe(I[e],n,1)[0]}return re(I[e])}},t.removeHooks=function(e){S(I,e)&&(I[e]=[])},t.removeAllHooks=function(){I=Ye()},t}return Ze()});
 /* GENERATED:dompurify:END */</script>
 <script>
+// Signing out removes the account's data from this device (owner 2026-11-17: "Privacy matters"; as
+// Gmail, Slack and Notion do). signOutOfAccount sets the marker once everything has reached the
+// account, then reloads; the data goes here, before anything reads it, so whatever the closing page
+// wrote on its way out goes too. Kept: whether the welcome and the tour were seen.
+(function(){try{
+  if(sessionStorage.getItem('sakura_clear_on_load')!=='1')return;
+  sessionStorage.removeItem('sakura_clear_on_load');
+  var keep={sakura_welcome_seen:1,sakura_tour_seen:1};
+  Object.keys(localStorage).forEach(function(k){ if(/^sakura/i.test(k)&&!keep[k])localStorage.removeItem(k); });
+  try{ indexedDB.deleteDatabase('sakura_backup_db'); }catch(e){} // opens wait until this is done
+  sessionStorage.setItem('sakura_cleared_after_sign_out','1');
+}catch(e){}})();
+</script>
+<script>
 // The installed app's title bar takes its colour from theme-color as soon as it is parsed. It used to
 // stay light until the main script ran, so a dark reload flashed white up there (owner 2026-11-02).
 // Same decision as the body script below: the last saved theme, or the system's when none is saved.
@@ -16610,17 +16624,67 @@ function wireEmailAuthForm(prefix){
 }
 wireEmailAuthForm('sakura-landing');
 wireEmailAuthForm('account');
+// Signing out (owner 2026-11-17: "Privacy matters"): everything still on its way goes to the account
+// first; then the account's documents, To-Dos, drafts and versions are removed from this device, so
+// the next person on a shared computer can't read them. If something can't reach the account, the
+// person chooses: stay signed in (the default), or sign out and keep it on this device. Nothing
+// unsent is ever removed.
+async function sendEverythingBeforeSignOut(){
+  if(!currentUser)return true;
+  try{ commitEdit(); }catch(e){}
+  try{ apiEditorApplyOnHide(); }catch(e){}
+  try{ saveToStorage(); }catch(e){}
+  try{ typedDrafts.flush(); }catch(e){}
+  if(navigator.onLine===false)return false;
+  // A catch-up also queues documents saved here after the account's copy, or missing there.
+  try{ await pullAndMergeFromCloud(); }catch(e){ return false; }
+  const deadline=Date.now()+20000;
+  while(_syncPushQueue.size||_syncInFlight){
+    if(Date.now()>deadline)return false;
+    if(!_syncInFlight){ clearTimeout(_syncPushTimer); try{ await flushSyncQueue(); }catch(e){} }
+    if(_syncLastStatus==='error')return false;
+    if(_syncPushQueue.size||_syncInFlight)await new Promise(r=>setTimeout(r,200));
+  }
+  if(_syncLastStatus==='error')return false;
+  try{ await retryPendingVersionPushes(); }catch(e){}
+  try{ if(Object.keys(JSON.parse(localStorage.getItem(VERSION_PUSH_PENDING_KEY)||'{}')).length)return false; }catch(e){}
+  return true;
+}
 async function signOutOfAccount(){
+  el('account-menu')?.classList.remove('open');
+  showToast('Making sure everything is in your account\u2026','info',false,20000);
+  const safe=await sendEverythingBeforeSignOut();
+  let clear=true;
+  if(!safe){
+    const keep=await sakuraConfirm({
+      title:'Some changes haven\u2019t reached your account',
+      body:'They\u2019re saved on this device. Stay signed in and they\u2019ll be sent when the connection is back. Or sign out and keep your documents on this device until you sign in again; anyone using this browser could then read them.',
+      confirmLabel:'Sign out, keep them here', cancelLabel:'Stay signed in', confirmCls:'danger'
+    });
+    if(!keep){ showToast('Still signed in. Your changes will be sent when they can.'); return; }
+    clear=false;
+  }
   stopRealtimeSync();
   try{
     const {auth,authMod}=await loadFirebaseMods();
     await authMod.signOut(auth);
   }catch(e){ console.warn('[sakura] sign-out error:',e); }
   try{localStorage.removeItem('sakura_account_active')}catch(e){}
+  if(clear){
+    // Nothing from this page may be written back now: the reload clears storage before reading it.
+    suppressSaveToStorageOnUnload=true; suppressPrefsSaveOnUnload=true; suppressBeforeUnloadOnce=true;
+    try{ sessionStorage.setItem('sakura_clear_on_load','1'); }catch(e){}
+    location.reload();
+    return;
+  }
   updateAccountUI(null);
-  el('account-menu')?.classList.remove('open');
-  showToast('Signed out');
+  showToast('Signed out. Your documents are still on this device.');
 }
+// After the reload that cleared this device (the script at the top of the page).
+document.addEventListener('DOMContentLoaded',()=>{
+  try{ if(sessionStorage.getItem('sakura_cleared_after_sign_out')!=='1')return; sessionStorage.removeItem('sakura_cleared_after_sign_out'); }catch(e){ return; }
+  setTimeout(()=>showToast('Signed out. Your documents are in your account and were removed from this device.','success',false,6000),300);
+});
 // Deletes every cloud-synced document, template, and settings blob this account has (the three
 // subcollections under users/{uid} — see the sync layout comment further down), then the
 // Firebase Auth account itself. Mirrors cricket-scorer's deleteUserAccount(): best-effort cleanup
@@ -25716,7 +25780,7 @@ el('account-signout-btn')?.addEventListener('click',async e=>{
   const ok=await sakuraConfirm({
     icon:'<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>',
     title:'Sign out?',
-    body:'Documents on this device stay exactly as they are — signing out just stops them syncing to the cloud until you sign back in.',
+    body:'Your documents stay in your account. They\u2019re removed from this device, and come back when you sign in again.',
     confirmLabel:'Sign out',
     confirmCls:'danger'
   });
