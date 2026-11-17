@@ -179,6 +179,14 @@ initVaultState({
     footer: ''
   },
   {
+    name: 'versionChunks',
+    sourceFile: 'src/utils/versionChunks.ts',
+    testFile: 'tests/unit/versionChunks.test.ts',
+    // How a version is stored in the account, split when it's over one record's size. Spliced just
+    // before pushDocVersionsToCloud.
+    footer: ''
+  },
+  {
     name: 'fieldGuard',
     sourceFile: 'src/ui/fieldGuard.ts',
     testFile: 'tests/unit/fieldGuard.test.ts',
