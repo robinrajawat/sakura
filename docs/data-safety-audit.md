@@ -76,8 +76,12 @@ over once. Tests: `thread-drafts.spec.ts`, `threadDrafts.test.ts`, `table-api.sp
   the other both survive (`metaMerge.test.ts`).
 - **Deleted forever on one device:** removed on the others, unless it was edited there afterwards
   (then the edit wins) (`sync-offline-and-deletes.spec.ts`).
-- **Signing out:** nothing on the device is removed. Edits not yet uploaded go up at the next
-  sign-in.
+- **Signing out (2026-11-17, owner: "Privacy matters"):** everything still on its way is sent to
+  the account first (a catch-up, the queue, failed version uploads). Then the account's data is
+  removed from this device: on a reload, before anything reads it, so nothing the closing page
+  writes survives. If something can't be sent, the person chooses "Stay signed in" (the default)
+  or "Sign out, keep them here"; nothing unsent is removed (`sign-out-clears-device.spec.ts`).
+  Deleting the account still keeps this device's copy: then it's the only one left.
 - **A document opened before its content has loaded from the account:** typing is locked until it
   arrives, so an empty placeholder never saves over the real copy (`doc-content-pending.spec.ts`).
 - **Download PDF:** reads the document and never writes it. Checked with an export, an export then
