@@ -1,11 +1,15 @@
 # Third-Party Notices
 
-Sakura is all-rights-reserved (see [LICENSE](LICENSE)), but it relies on a
+Sakura is all-rights-reserved (see [LICENSE](LICENSE)), but it relies on
 third-party open-source projects: draw.io, embedded for diagram editing,
 DOMPurify, which ships inside the app to clean stored HTML, and the Inter
 and Fira Code typefaces, which ship with the app — see their entries below. (Earlier versions also loaded
 CDN libraries for Word import/export, PowerPoint export, and Excel export;
 those features and libraries have been removed.)
+
+The same notices, with the full Apache 2.0 and OFL 1.1 license texts, are published on the site at
+`web/public/third-party-notices.html` (Settings → About → Open-source notices). Change both together:
+`web/tests/unit/legalPages.test.ts` checks every entry and copyright line here appears there.
 
 ---
 

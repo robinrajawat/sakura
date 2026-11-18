@@ -9,6 +9,8 @@ const raw = (g: Record<string, unknown>) => Object.values(g)[0] as string;
 const PAGE = raw(import.meta.glob('../../index.html', { query: '?raw', import: 'default', eager: true }));
 const PRIVACY = raw(import.meta.glob('../../public/privacy.html', { query: '?raw', import: 'default', eager: true }));
 const TERMS = raw(import.meta.glob('../../public/terms.html', { query: '?raw', import: 'default', eager: true }));
+const NOTICES = raw(import.meta.glob('../../public/third-party-notices.html', { query: '?raw', import: 'default', eager: true }));
+const NOTICES_MD = raw(import.meta.glob('../../../THIRD-PARTY-NOTICES.md', { query: '?raw', import: 'default', eager: true }));
 const CSS = raw(import.meta.glob('../../public/legal.css', { query: '?raw', import: 'default', eager: true }));
 
 describe('privacy policy and terms', () => {
@@ -24,14 +26,14 @@ describe('privacy policy and terms', () => {
   it('link to each other and load nothing from another site', () => {
     expect(PRIVACY).toContain('href="terms.html"');
     expect(TERMS).toContain('href="privacy.html"');
-    for (const p of [PRIVACY, TERMS]) {
+    for (const p of [PRIVACY, TERMS, NOTICES]) {
       expect(p).not.toMatch(/<(script|img|iframe)\b/i);
       expect(p).not.toMatch(/<link[^>]+href="https?:/i);
     }
     expect(CSS).not.toMatch(/url\(\s*['"]?https?:/i);
   });
   it('name the site at the top instead of a "Back" link', () => {
-    for (const p of [PRIVACY, TERMS]) {
+    for (const p of [PRIVACY, TERMS, NOTICES]) {
       expect(p).toContain('<p class="site"><a href="./">Sakura Notes</a></p>');
       expect(p).not.toMatch(/Back to/);
     }
@@ -43,5 +45,20 @@ describe('privacy policy and terms', () => {
   it('keep the hosted AI providers the app names in step with the policy', () => {
     expect(PAGE).toContain('(currently Groq or Gemini)');
     expect(PRIVACY).toContain('currently Groq or Google (Gemini)');
+  });
+  it('publish the open-source notices on the site, in step with THIRD-PARTY-NOTICES.md', () => {
+    // Standard practice (owner 2026-11-18): notices live on the site, not only in the repo, and
+    // Settings has no "License" row (users are governed by the Terms, which say who owns Sakura).
+    expect(PAGE).toContain('href="third-party-notices.html" target="_blank"');
+    expect(PAGE).not.toContain('settings-switch-text">License<');
+    expect(PAGE).not.toContain('github.com/robinrajawat/sakura/blob/');
+    const entries = [...NOTICES_MD.matchAll(/^## (.+?)(?: \(|$)/gm)].map(m => m[1].trim());
+    expect(entries.length).toBeGreaterThanOrEqual(4);
+    for (const name of entries) expect(NOTICES).toContain(`<h2>${name}</h2>`);
+    for (const line of NOTICES_MD.match(/^Copyright .+$/gm) ?? []) expect(NOTICES).toContain(line.replace(/\s+$/, ''));
+    expect(NOTICES).toContain('TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION');
+    expect(NOTICES).toContain('SIL OPEN FONT LICENSE');
+    for (const p of [PRIVACY, TERMS]) expect(p).toContain('href="third-party-notices.html"');
+    expect(TERMS).toContain('<h2>Sakura itself</h2>');
   });
 });

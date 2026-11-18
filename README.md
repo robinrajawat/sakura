@@ -250,4 +250,4 @@ Every merge to `main` is built and published by `.github/workflows/deploy.yml`. 
 
 All rights reserved. See [LICENSE](LICENSE). The repository is public so the code can be read, which doesn't grant permission to reuse or redistribute it.
 
-Sakura embeds draw.io (diagrams.net, Apache 2.0) for diagram editing. See [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
+Sakura uses draw.io (diagrams.net), DOMPurify and the Inter and Fira Code typefaces under their own open-source licenses. See [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md), also published in the app at Settings → About → Open-source notices.
