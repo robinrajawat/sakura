@@ -90,5 +90,25 @@
 
 <p class="foot"><a href="terms.html">Terms of use</a> · <a href="./">Sakura Notes</a></p>
 </main>
+<script>
+// Opened from inside the app (?from=app), this page is a tab of its own: "Back to Sakura Notes"
+// closes it, returning to the app tab instead of opening a second copy of the app. A browser that
+// won't close it (e.g. after moving between the two policy pages) gets the ordinary link. Arriving
+// any other way, nothing changes. Inline and self-contained: these pages load nothing from
+// another site.
+(function () {
+  if (!/[?&]from=app(&|$)/.test(location.search)) return;
+  document.querySelectorAll('a[href="privacy.html"], a[href="terms.html"]').forEach(function (a) {
+    a.setAttribute('href', a.getAttribute('href') + '?from=app');
+  });
+  var back = document.querySelector('.back a');
+  if (!back) return;
+  back.addEventListener('click', function (e) {
+    e.preventDefault();
+    window.close();
+    setTimeout(function () { location.href = back.getAttribute('href'); }, 200);
+  });
+})();
+</script>
 </body>
 </html>

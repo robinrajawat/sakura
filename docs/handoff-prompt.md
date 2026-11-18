@@ -179,11 +179,11 @@ contradicts README.md or docs/feature-reference.md, trust them.)*
 
 ### Latest changes
 
+- **Policy pages' Back closes their tab (2026-11-18, owner: "it opens a duplicate tab").** The app's four links to `privacy.html`/`terms.html` carry `?from=app` (new tab, as before). With that mark, an inline script on each page turns "← Back to Sakura Notes" into `window.close()` (falling back to the link after 200ms if the browser refuses, e.g. once the tab has history) and keeps the mark on the links between the two pages. Reached directly, nothing changes. `legalPages` now allows an inline script but no external ones. Test: legal-pages-back (2).
+
 - **The app is called Sakura Notes (2026-11-18, owner).** One name on every identity surface: `<title>` (and the unsaved-changes `• Sakura Notes`), og/twitter titles, both manifests' `name` (`short_name` stays "Sakura" for the home-screen label), the brand on the sign-in screen, welcome dialog, "What Sakura is for" and About, the policy pages' titles and first mention ('Sakura Notes ("Sakura")'), README, the guided tour's first step, the social card (`web/public/social-card.png`: only the name redrawn, in the card's own Inter 600 24px −0.01em, pixel-matched) and the feature reference's heading. The PDF mark stays "SAKURA" by default (a short mark, like the icon label). Running prose keeps "Sakura" as the short form. Internal keys (`sakura_*`), the domain and the repo name are unchanged. Test: calm-layout's tab-title test.
 
 - **Public Sans dropped; account row names the profile (2026-11-17, polish).** Public Sans was only a fallback behind Inter, so its 8 files, faces and stack entries are gone (Fira Code stays; selfHostedFont asserts no Public Sans). Settings → About → Privacy & data → Your account now says the profile (name, email) is kept, Private unless made Public, instead of "Nothing else is kept".
-
-- **A refused PDF doesn't use the person's count (2026-11-17, polish).** When Cloudflare refuses a browser for the day (the pause in #882), `handlePdf` gives the request back with `refundQuota` (`worker/src/quota.ts`); other render failures still count, since a browser ran and refunding them would let broken requests burn the shared browser time. Tests: quota (+2), pdf (+2 assertions).
 
 ### In progress / not built
 

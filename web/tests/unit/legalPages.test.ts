@@ -24,14 +24,17 @@ describe('privacy policy and terms', () => {
     expect(PRIVACY).toContain('href="terms.html"');
     expect(TERMS).toContain('href="privacy.html"');
     for (const p of [PRIVACY, TERMS]) {
-      expect(p).not.toMatch(/<(script|img|iframe)\b/i);
+      // Only an inline script (the back link, see below); nothing loaded from anywhere.
+      expect(p).not.toMatch(/<script[^>]*\bsrc=/i);
+      expect(p).not.toMatch(/<(img|iframe)\b/i);
       expect(p).not.toMatch(/<link[^>]+href="https?:/i);
     }
     expect(CSS).not.toMatch(/url\(\s*['"]?https?:/i);
   });
-  it('are linked from the sign-in screen and Settings', () => {
-    expect(PAGE.match(/href="privacy\.html"/g)?.length).toBe(2);
-    expect(PAGE.match(/href="terms\.html"/g)?.length).toBe(2);
+  it('are linked from the sign-in screen and Settings, marked as opened from the app', () => {
+    expect(PAGE.match(/href="privacy\.html\?from=app" target="_blank"/g)?.length).toBe(2);
+    expect(PAGE.match(/href="terms\.html\?from=app" target="_blank"/g)?.length).toBe(2);
+    expect(PAGE).not.toMatch(/href="(privacy|terms)\.html"/);
   });
   it('keep the hosted AI providers the app names in step with the policy', () => {
     expect(PAGE).toContain('(currently Groq or Gemini)');
