@@ -171,7 +171,7 @@ keep only the last 3 entries, and delete older ones (git history and the PRs kee
 anything still unbuilt or undecided into "In progress / not built" or "Parked". If this section
 contradicts README.md or docs/feature-reference.md, trust them.)*
 
-**Open work:** none open; everything from 2026-11-17/18 is merged and deployed (#882–#890, plus the Sakura Notes rename). Owner to check on an iPhone that Settings → About link arrows are no longer emoji (#887), and to read the live `privacy.html` / `terms.html`. Not built: the AI code still loads at startup inside index.html; split it out only if first load is measured as slow. Check `mcp__github__list_pull_requests` at session start, and remind the owner of the launch checklist below.
+**Open work:** none open; everything from 2026-11-17/18 is merged and deployed (#882–#892). Owner to check on an iPhone that Settings → About link arrows are no longer emoji (#887), and to read the live `privacy.html` / `terms.html`. Not built: the AI code still loads at startup inside index.html; split it out only if first load is measured as slow. Check `mcp__github__list_pull_requests` at session start, and remind the owner of the launch checklist below.
 
 **Direction (owner, 2026-11-12):** Sakura is going cloud-first, with try-without-an-account kept. Plan: `docs/cloud-first-plan.md` (built; PDF stays on Cloudflare's free plan, owner 2026-11-17). Read it and `docs/data-safety-audit.md` before touching sync.
 
@@ -179,11 +179,11 @@ contradicts README.md or docs/feature-reference.md, trust them.)*
 
 ### Latest changes
 
+- **Policy pages' Back closes the tab when the app opened them (2026-11-18, owner).** The app's Privacy policy / Terms links add `?from=app` (still a new tab); `web/public/legal.js` (same-origin, the pages' only script) makes "← Back to Sakura Notes" call `window.close()`, falling back to `./` if the browser refuses (e.g. after moving between the two pages, or an installed app's in-app browser). Direct visits keep the plain link. Test: legalPages (scripts now allowed only as `legal.js`).
+
 - **The app is called Sakura Notes (2026-11-18, owner).** One name on every identity surface: `<title>` (and the unsaved-changes `• Sakura Notes`), og/twitter titles, both manifests' `name` (`short_name` stays "Sakura" for the home-screen label), the brand on the sign-in screen, welcome dialog, "What Sakura is for" and About, the policy pages' titles and first mention ('Sakura Notes ("Sakura")'), README, the guided tour's first step, the social card (`web/public/social-card.png`: only the name redrawn, in the card's own Inter 600 24px −0.01em, pixel-matched) and the feature reference's heading. The PDF mark stays "SAKURA" by default (a short mark, like the icon label). Running prose keeps "Sakura" as the short form. Internal keys (`sakura_*`), the domain and the repo name are unchanged. Test: calm-layout's tab-title test.
 
 - **Public Sans dropped; account row names the profile (2026-11-17, polish).** Public Sans was only a fallback behind Inter, so its 8 files, faces and stack entries are gone (Fira Code stays; selfHostedFont asserts no Public Sans). Settings → About → Privacy & data → Your account now says the profile (name, email) is kept, Private unless made Public, instead of "Nothing else is kept".
-
-- **A refused PDF doesn't use the person's count (2026-11-17, polish).** When Cloudflare refuses a browser for the day (the pause in #882), `handlePdf` gives the request back with `refundQuota` (`worker/src/quota.ts`); other render failures still count, since a browser ran and refunding them would let broken requests burn the shared browser time. Tests: quota (+2), pdf (+2 assertions).
 
 ### In progress / not built
 
