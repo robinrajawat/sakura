@@ -1,4 +1,4 @@
-# Sakura — detailed feature reference
+# Sakura Notes — detailed feature reference
 
 > The project [README](../README.md) says what Sakura is and what it is for. This file is the long, behaviour-by-behaviour reference (every key, menu and edge case) that sessions working on the code check before changing user-facing behaviour. Some sections lag the app; where they disagree with the app, the app wins and this file should be corrected.
 
