@@ -1,4 +1,4 @@
-# Sakura
+# Sakura Notes
 
 **Outline your work, and follow it through.**
 
