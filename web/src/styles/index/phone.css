@@ -123,8 +123,11 @@
     border: none; background: none; border-radius: 8px; color: var(--fg); font: 600 var(--fs-xl) 'Inter', sans-serif;
   }
   html.phone #phone-edit-bar button:active { background: var(--hover); }
-  html.phone #phone-edit-bar .peb-spacer { flex: 1; }
-  html.phone #phone-edit-bar .peb-done { padding: 0 14px; color: var(--accent); }
+  html.phone #phone-edit-bar .peb-spacer { flex: 1 0 0; }
+  /* Seven controls fit the narrowest phone (320px): the icon buttons may narrow to 36px (still 44px
+     tall), Done keeps its width. */
+  html.phone #phone-edit-bar button:not(.peb-done) { flex: 0 1 44px; min-width: 36px; }
+  html.phone #phone-edit-bar .peb-done { flex: 0 0 auto; padding: 0 12px; color: var(--accent); }
   html.phone.phone-editing #editor-pane { padding-bottom: 56px; }
   /* Long-press on a row opens its menu, so the system's own callout and text selection stay off
      rows that aren't being typed in. */
@@ -148,6 +151,12 @@
   html.phone #phone-row-menu .prm-headings { display: flex; align-items: center; gap: 4px; padding-left: 12px; font: 500 var(--fs-xl) 'Inter', sans-serif; color: var(--fg); }
   html.phone #phone-row-menu .prm-headings span { flex: 1; }
   html.phone #phone-row-menu .prm-headings button { min-width: 52px; text-align: center; font-weight: 600; }
+  /* Status (owner 2026-11-19): a label line, then the three statuses as pills that wrap on a narrow
+     phone; the row's current one is highlighted, and tapping it again clears it (as on desktop). */
+  html.phone #phone-row-menu .prm-markers { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 2px 12px 8px; }
+  html.phone #phone-row-menu .prm-markers span { flex: 0 0 100%; padding-top: 6px; color: var(--muted); font: 500 var(--fs-md) 'Inter', sans-serif; }
+  html.phone #phone-row-menu .prm-markers button { min-height: 44px; padding: 0 14px; border: 1px solid var(--border); border-radius: 999px; text-align: center; font: 500 var(--fs-md) 'Inter', sans-serif; }
+  html.phone #phone-row-menu .prm-markers button[aria-pressed="true"] { background: color-mix(in srgb, var(--accent) 14%, transparent); border-color: var(--accent); }
   html.phone #phone-row-menu .prm-danger { color: var(--danger); }
 
   /* ---- To-Dos (phase 4). ---- */
