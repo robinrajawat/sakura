@@ -101,3 +101,14 @@ test('Settings \u2192 About \u2192 Storage on this device opens the same check a
   await expect(page.locator('#sakura-modal-body')).toContainText('Storage test now: no answer from the browser');
   await expect(page.locator('#sakura-modal-body')).toContainText('Browser: ');
 });
+
+test('Details always finishes: an answer the browser gives in an unexpected shape is shown, never left on "Checking…"', async ({ page }) => {
+  await page.evaluate(() => {
+    navigator.storage.estimate = () => Promise.resolve(undefined as unknown as StorageEstimate);
+    document.getElementById('about-storage-check-btn')!.click();
+  });
+  const body = page.locator('#sakura-modal-body');
+  await expect(body).toContainText('Storage used: unknown of unknown allowed');
+  await expect(body).toContainText('Browser: ');
+  await expect(body).not.toContainText('Checking');
+});
