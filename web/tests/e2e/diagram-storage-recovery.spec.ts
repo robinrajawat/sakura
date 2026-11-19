@@ -62,3 +62,17 @@ test('several saves failing on a lost connection at once all recover on one fres
   });
   expect(r).toEqual({ saved: [true, true, true, true], read: [1, 2, 3, 4] });
 });
+
+test('the warning\'s Details shows what the browser said, so a failure on someone\'s phone can be read', async ({ page }) => {
+  await page.evaluate(async () => {
+    // @ts-expect-error -- bare globals from index.html
+    idbOpen = () => Promise.reject(Object.assign(new Error('Connection to Indexed Database server lost. Refresh the page to try again'), { name: 'UnknownError' }));
+    // @ts-expect-error -- bare globals from index.html
+    await idbSet('test:k', 1); warnDiagramBlobWriteFailed();
+  });
+  await page.locator('#toast button').filter({ hasText: 'Details' }).click();
+  await expect(page.locator('#sakura-modal-title')).toHaveText('Storage details');
+  const body = page.locator('#sakura-modal-body');
+  await expect(body).toContainText('save (after reconnecting): UnknownError — Connection to Indexed Database server lost');
+  await expect(body).toContainText('Browser: ');
+});
