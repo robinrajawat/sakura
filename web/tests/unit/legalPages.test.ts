@@ -11,6 +11,10 @@ const PRIVACY = raw(import.meta.glob('../../public/privacy.html', { query: '?raw
 const TERMS = raw(import.meta.glob('../../public/terms.html', { query: '?raw', import: 'default', eager: true }));
 const NOTICES = raw(import.meta.glob('../../public/third-party-notices.html', { query: '?raw', import: 'default', eager: true }));
 const NOTICES_MD = raw(import.meta.glob('../../../THIRD-PARTY-NOTICES.md', { query: '?raw', import: 'default', eager: true }));
+const NOT_FOUND = raw(import.meta.glob('../../public/404.html', { query: '?raw', import: 'default', eager: true }));
+const SECURITY = raw(import.meta.glob('../../public/.well-known/security.txt', { query: '?raw', import: 'default', eager: true }));
+const ROBOTS = raw(import.meta.glob('../../public/robots.txt', { query: '?raw', import: 'default', eager: true }));
+const HUB = raw(import.meta.glob('../../hub.html', { query: '?raw', import: 'default', eager: true }));
 const CSS = raw(import.meta.glob('../../public/legal.css', { query: '?raw', import: 'default', eager: true }));
 
 describe('privacy policy and terms', () => {
@@ -26,9 +30,10 @@ describe('privacy policy and terms', () => {
   it('link to each other and load nothing from another site', () => {
     expect(PRIVACY).toContain('href="terms.html"');
     expect(TERMS).toContain('href="privacy.html"');
-    for (const p of [PRIVACY, TERMS, NOTICES]) {
+    for (const p of [PRIVACY, TERMS, NOTICES, NOT_FOUND]) {
       expect(p).not.toMatch(/<(script|img|iframe)\b/i);
-      expect(p).not.toMatch(/<link[^>]+href="https?:/i);
+      // rel="canonical" only names the page's address; it loads nothing.
+      expect(p).not.toMatch(/<link(?![^>]*rel="canonical")[^>]+href="https?:/i);
     }
     expect(CSS).not.toMatch(/url\(\s*['"]?https?:/i);
   });
@@ -60,5 +65,28 @@ describe('privacy policy and terms', () => {
     expect(NOTICES).toContain('SIL OPEN FONT LICENSE');
     for (const p of [PRIVACY, TERMS]) expect(p).toContain('href="third-party-notices.html"');
     expect(TERMS).toContain('<h2>Sakura itself</h2>');
+  });
+  it('cover the standard site basics (owner 2026-11-19)', () => {
+    // Privacy policy names what is kept on the device and why no consent is asked.
+    expect(PRIVACY).toContain('<h2>Cookies and storage on your device</h2>');
+    expect(PRIVACY).toContain('Sakura sets no cookies.');
+    // Each policy page has its own canonical address and link-preview tags.
+    for (const [p, name] of [[PRIVACY, 'privacy'], [TERMS, 'terms'], [NOTICES, 'third-party-notices']] as const) {
+      expect(p).toContain(`<link rel="canonical" href="https://www.sakura-notes.com/${name}.html">`);
+      expect(p).toContain('<meta property="og:title"');
+    }
+    // A PNG icon for browsers without SVG icons, after the SVG one.
+    for (const p of [PAGE, HUB, PRIVACY, TERMS, NOTICES, NOT_FOUND]) expect(p).toMatch(/rel="icon" type="image\/png"/);
+    // Branded 404 (GitHub Pages serves /404.html), kept out of search, with a way into the app.
+    expect(NOT_FOUND).toContain('<meta name="robots" content="noindex">');
+    expect(NOT_FOUND).toContain('<a href="/">Open Sakura Notes</a>');
+    // security.txt (RFC 9116): a contact and an expiry no more than a year ahead. When this fails
+    // because Expires has passed, renew the date — an expired file tells researchers to ignore it.
+    expect(SECURITY).toMatch(/^Contact: mailto:\S+@\S+$/m);
+    const expires = Date.parse(SECURITY.match(/^Expires: (\S+)$/m)?.[1] ?? '');
+    expect(expires).toBeGreaterThan(Date.now());
+    expect(expires - Date.now()).toBeLessThan(366 * 24 * 3600 * 1000);
+    expect(SECURITY).toContain('Canonical: https://www.sakura-notes.com/.well-known/security.txt');
+    expect(ROBOTS).toContain('User-agent: *');
   });
 });
