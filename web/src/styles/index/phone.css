@@ -83,6 +83,10 @@
     width: 40px; height: 40px;
     margin: calc((var(--row-line) - 18px) / 2 - 11px) -5px -11px -11px;
   }
+  /* Touch has no hover, but Safari keeps :hover on after a tap; the 40px box's grey would then sit
+     over the row's first letters after every fold or unfold. The dot itself is the only feedback. */
+  html.phone .fold-dot, html.phone .fold-toggle { -webkit-tap-highlight-color: transparent; }
+  html.phone .fold-dot:hover, html.phone .fold-toggle:hover { background: none; color: var(--muted); }
   /* A row's object icons (note, table, picture, diagram, thread): the same icon, a 40px target. */
   html.phone .node-note-dot { position: relative; }
   html.phone .node-note-dot::after { content: ''; position: absolute; inset: -11px; }

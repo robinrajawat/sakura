@@ -146,3 +146,13 @@ test('the editing toolbar fits the narrowest phone (320px) with Done fully on sc
   expect(r.right).toBeLessThanOrEqual(320);
   expect(r.minW).toBeGreaterThanOrEqual(36);
 });
+
+test('folding a row leaves no grey box over its first letters (Safari keeps :hover after a tap)', async ({ page }) => {
+  // @ts-expect-error -- bare globals from index.html
+  await page.evaluate(() => { nodes.push({ ...nodes[5], id: 7, depth: 1, text: 'Child row', marker: '' }); nextId = 8; rebuildParentIds(); render(); });
+  const dot = page.locator('.node-row', { hasText: 'Status row' }).first().locator('.fold-dot');
+  await dot.tap();
+  await dot.hover();
+  const bg = await dot.evaluate((d) => getComputedStyle(d).backgroundColor);
+  expect(bg).toBe('rgba(0, 0, 0, 0)');
+});
