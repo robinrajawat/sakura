@@ -18317,7 +18317,9 @@ async function pushMetaToCloud(mod,db,metaKey){
   await mod.runTransaction(db,async tx=>{
     const snap=await tx.get(ref);
     const cv=snap.exists()?snap.data().value:undefined;
-    written=(metaKey==='threadDrafts'&&cv!==undefined&&cv!==null&&!sameJson(cv,value))?mergeDrafts(base,value,cv):(base!==undefined&&cv!==undefined&&cv!==null&&!sameJson(cv,base)&&!sameJson(cv,value))?merge3(base,value,cv,'local'):value;
+    // A first push from this device (no base) combines with the account's copy, the account
+    // winning where they disagree, rather than writing over it.
+    written=(metaKey==='threadDrafts'&&cv!==undefined&&cv!==null&&!sameJson(cv,value))?mergeDrafts(base,value,cv):(cv!==undefined&&cv!==null&&!sameJson(cv,value)&&(base===undefined||!sameJson(cv,base)))?merge3(base,value,cv,base===undefined?'cloud':'local'):value;
     tx.set(ref,{value:written,updatedAt:ts});
   });
   setMetaBase(metaKey,written);
@@ -18494,7 +18496,12 @@ async function applyIncomingMetaData(metaKey,cloud){
   if(!idbKeyName&&!localKeyName)return false;
   const localTs=_loadSyncLocalTs(); const localT=Number(localTs[metaKey])||0;
   if(isOwnPush('meta:'+metaKey,cloud.updatedAt))return false; // this device's own upload coming back
-  if(!shouldApplyIncomingSyncCore(cloud.updatedAt,localT,_lastPushedTs['meta:'+metaKey]))return false;
+  // A device's first sync of a list (a cleared browser, a new device): it has never agreed with the
+  // account, so "newer timestamp wins" can't apply: a routine save made here before syncing (clearing
+  // away a blank document re-saves the folder links) would look newer than the account's real copy.
+  // The first sync always combines the two below (merge3 with no base), whatever the timestamps.
+  const firstSync=!!localKeyName&&metaKey!=='todosRevisions'&&getMetaBase(metaKey)===undefined&&localStorage.getItem(localKeyName)!==null;
+  if(!firstSync&&!shouldApplyIncomingSyncCore(cloud.updatedAt,localT,_lastPushedTs['meta:'+metaKey]))return false;
   const cloudTs=Number(cloud.updatedAt)||0;
   if(localKeyName&&cloud.value!==null&&cloud.value!==undefined){
     // To-Dos version lists from two devices are joined, not replaced: each device keeps its own
@@ -18534,8 +18541,9 @@ async function applyIncomingMetaData(metaKey,cloud){
   if(localKeyName&&metaKey!=='todosRevisions'&&cloud.value!==null&&cloud.value!==undefined){
     const base=getMetaBase(metaKey);
     let local; try{ const raw=localStorage.getItem(localKeyName); local=raw===null?undefined:JSON.parse(raw); }catch(e){ local=undefined; }
-    // Reply drafts merge even on a device's first sync (no base): text typed on either side is kept.
-    if((base!==undefined||metaKey==='threadDrafts')&&local!==undefined&&!sameJson(local,base)){
+    // On a device's first sync (no base) both copies are kept, the account's winning where they
+    // disagree; reply drafts merge their own way.
+    if(local!==undefined&&!sameJson(local,base)){
       const merged=metaKey==='threadDrafts'?mergeDrafts(base,local,cloud.value):merge3(base,local,cloud.value,'cloud');
       try{ localStorage.setItem(localKeyName,JSON.stringify(merged)); }catch(e){ return false; }
       localTs[metaKey]=cloudTs; _saveSyncLocalTs(localTs);
