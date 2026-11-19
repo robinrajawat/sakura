@@ -25,8 +25,6 @@ async function showSignedIn(page) {
     document.getElementById('account-email')!.textContent = 'robin@example.com';
     // @ts-expect-error — global from index.html
     updateSyncStatusUI('synced');
-    // @ts-expect-error — global from index.html
-    updateProfileDiscoverableToggleUi();
   });
 }
 
@@ -53,15 +51,15 @@ test('signed out: only Sign in; feedback and support are in Help', async ({ page
   await expect(page.locator('#feedback-modal-overlay')).toHaveClass(/open/);
 });
 
-test('signed in: sync and visibility share one line, sign out is last', async ({ page }) => {
+test('signed in: sync shows as a ring and the second line takes no space, sign out is last', async ({ page }) => {
   await showSignedIn(page);
   await page.locator('#account-toggle').click();
   expect(await visibleItems(page)).toEqual(['account-signout-btn']);
   // Synced shows as a ring on the avatar, not as text, so the line doesn't change width.
   await expect(page.locator('#account-manage-btn')).toHaveClass(/sync-synced/);
   await expect(page.locator('#account-sync-status')).toBeHidden();
-  await expect(page.locator('#account-meta-sep')).toBeHidden();
-  await expect(page.locator('#account-visibility-badge')).toHaveText(/Private profile/);
+  // The profile badge is gone (2026-11-19), so the line under the email shows only a sync error.
+  await expect(page.locator('#account-signed-in .account-meta')).toBeHidden();
 });
 
 test('a sync error still shows words next to the red ring', async ({ page }) => {
@@ -71,14 +69,12 @@ test('a sync error still shows words next to the red ring', async ({ page }) => 
   await page.locator('#account-toggle').click();
   await expect(page.locator('#account-manage-btn')).toHaveClass(/sync-error/);
   await expect(page.locator('#account-sync-status')).toHaveText('Sync error');
-  await expect(page.locator('#account-meta-sep')).toBeVisible();
+  await expect(page.locator('#account-signed-in .account-meta')).toBeVisible();
 });
 
-test('header opens Settings → Account; visibility link does not', async ({ page }) => {
+test('header opens Settings → Account', async ({ page }) => {
   await showSignedIn(page);
   await page.locator('#account-toggle').click();
-  await page.locator('#account-visibility-badge').click();
-  await expect(page.locator('#settings-panel')).not.toHaveClass(/open/);
   await page.locator('#account-name').click();
   await expect(page.locator('#settings-panel')).toHaveClass(/open/);
   await expect(page.locator('#settings-panel .settings-rail-btn[data-cat="account"]')).toHaveClass(/active/);

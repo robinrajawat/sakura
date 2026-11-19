@@ -55,17 +55,26 @@ service cloud.firestore {
       }
     }
 
+    // Retired 2026-11-19 (owner): public profiles and the name search. Only leftovers remain; each
+    // account may read and delete its own (the app removes it on sign-in), nobody can look anyone up.
     match /profiles/{uid} {
-      // For `list` (the email-lookup query the share dialog runs), Firestore evaluates this
-      // same condition against EACH candidate document individually via `resource` — so a
-      // query for profiles where email==X is only ever allowed to actually return documents
-      // that are the requester's own, or that already have visibility=='public'. A private
-      // profile can never come back from that query, full stop — not filtered client-side,
-      // actually inaccessible.
-      allow get, list: if request.auth != null && (
-        request.auth.uid == uid || resource.data.visibility == 'public'
-      );
-      allow write: if request.auth != null && request.auth.uid == uid;
+      allow read, delete: if request.auth != null && request.auth.uid == uid;
+    }
+
+    // Send a copy finds its recipient by exact email (owner 2026-11-19). One entry per verified
+    // email, keyed by the SHA-256 hex of the lowercased address, holding only the account's uid.
+    // - get, never list: only someone who already knows the exact email can reach the entry.
+    // - an account can write only the entry for its OWN verified email (email_verified in its
+    //   token), so nobody can claim an address they haven't proven is theirs.
+    // - only the account it points to can delete it (Delete account does).
+    match /emailIndex/{id} {
+      allow get: if request.auth != null;
+      allow create, update: if request.auth != null
+        && request.auth.token.email_verified == true
+        && id == hashing.sha256(request.auth.token.email.lower()).toHexString().lower()
+        && request.resource.data.keys().hasOnly(['uid'])
+        && request.resource.data.uid == request.auth.uid;
+      allow delete: if request.auth != null && resource.data.uid == request.auth.uid;
     }
 
     match /notifications/{uid}/items/{itemId} {

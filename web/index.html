@@ -430,7 +430,6 @@ body.feature-off-ai [data-feature-item="ai"]{display:none!important}
 #account-manage-btn.sync-error #account-avatar,#account-manage-btn.sync-error .account-avatar-fallback{box-shadow:0 0 0 2px var(--bg),0 0 0 4px var(--danger)!important}
 .account-meta{display:flex;align-items:center;gap:6px;margin-top:4px;font:500 11px 'Inter',sans-serif;color:var(--hint);white-space:nowrap}
 #account-sync-status{align-items:center;gap:4px}
-.account-meta-sep{color:var(--hint)}
 
 .account-danger-item:hover{background:color-mix(in srgb,var(--danger) 12%,transparent);color:var(--danger)}
 .account-status-dot{position:absolute;bottom:-1px;right:-1px;width:7px;height:7px;border-radius:50%;border:1.5px solid var(--bg);background:transparent;transition:background .15s}
@@ -1236,22 +1235,9 @@ body.theme-light .segmented-btn.active{background:color-mix(in srgb,var(--accent
 .share-dd-doctitle{font:400 12px 'Inter',sans-serif;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:1px}
 .share-dd-help{margin:2px 0 8px;font-size:var(--fs-sm);line-height:1.5}
 .share-search-wrap{flex:1;min-width:0;position:relative;display:flex;align-items:center}
-.share-search-icon{position:absolute;left:8px;color:var(--hint);pointer-events:none;display:flex}
-.share-search-wrap .meta-input{width:100%;padding-left:26px}
+.share-search-wrap .meta-input{width:100%}
+.share-send-btn{flex:0 0 auto}
 .share-modal-error{font:400 12px 'Inter',sans-serif;color:var(--danger)}
-.account-visibility-badge{display:inline-flex;align-items:center;gap:4px;font:500 11px 'Inter',sans-serif;padding:0;border:none;background:none;color:var(--hint);cursor:pointer;appearance:none;border-radius:4px}
-.account-visibility-badge:hover{color:var(--fg);text-decoration:underline}
-.account-visibility-badge:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-.account-visibility-badge svg{display:inline-block;flex-shrink:0}
-.share-modal-results{max-height:220px;overflow-y:auto;margin:0 -6px}
-.share-result-empty{padding:12px 10px;font:400 13px 'Inter',sans-serif;color:var(--hint);text-align:center}
-.share-result-item{display:flex;align-items:center;gap:8px;width:100%;padding:6px 8px;border:none;background:none;border-radius:8px;cursor:pointer;text-align:left}
-.share-result-item:hover{background:var(--hover)}
-.share-result-avatar{width:26px;height:26px;border-radius:50%;flex:0 0 auto;object-fit:cover}
-.share-result-avatar-fallback{display:flex;align-items:center;justify-content:center;background:var(--accent);color:#fff;font:600 12px 'Inter',sans-serif}
-.share-result-text{flex:1;min-width:0;display:flex;flex-direction:column}
-.share-result-name{font:500 13px 'Inter',sans-serif;color:var(--fg);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.share-result-email{font:400 11px 'Inter',sans-serif;color:var(--hint);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .history-modal-footer-hint{flex:1;font:400 11px 'Inter',sans-serif;color:var(--muted)}
 /* Bulk-select action bar */
 .sb-bulk-bar{display:none;align-items:center;gap:4px;margin:0 8px 6px;padding:5px 6px 5px 10px;border-radius:8px;background:color-mix(in srgb,var(--accent) 14%,transparent);border:1px solid color-mix(in srgb,var(--accent) 30%,transparent);font:500 11px 'Inter',sans-serif;color:var(--fg);flex-shrink:0}
@@ -3806,7 +3792,7 @@ html.calm-layout #sb-auto-rewrite-chip.is-quiet:hover,html.calm-layout #sb-auto-
               <div style="min-width:0">
                 <div id="account-name" style="font:600 13.5px 'Inter',sans-serif;color:var(--fg);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-bottom:1px"></div>
                 <div id="account-email" style="font:400 11.5px 'Inter',sans-serif;color:var(--hint);overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></div>
-                <div class="account-meta"><span id="account-sync-status" style="display:none"></span><span class="account-meta-sep" id="account-meta-sep" style="display:none">·</span><button type="button" id="account-visibility-badge" class="account-visibility-badge" data-tip="Click to change who can find you when someone sends you a copy"></button></div>
+                <div class="account-meta" style="display:none"><span id="account-sync-status" style="display:none"></span></div>
               </div>
             </div>
           </div>
@@ -3990,7 +3976,8 @@ html.calm-layout #sb-auto-rewrite-chip.is-quiet:hover,html.calm-layout #sb-auto-
           </div>
           <div class="settings-section" data-cat="account" id="settings-section-account-danger" data-feature-hidden="1" style="display:none">
             <div class="settings-list">
-              <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Delete my account</span><span class="settings-row-desc">Deletes everything this account has in the cloud (documents, version history, settings, profile), and signs you out. Documents on this device stay. Can't be undone.</span></div><button type="button" class="btn settings-danger-btn" id="account-delete-open-btn">Delete…</button></div>
+              <div class="settings-list-row" id="settings-verify-email-row" style="display:none"><div class="settings-row-text"><span class="settings-switch-text">Verify your email</span><span class="settings-row-desc">Others can send you a copy of a document once your email address is verified.</span></div><button type="button" class="btn settings-link-btn" id="settings-verify-email-btn">Send link</button></div>
+              <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Delete my account</span><span class="settings-row-desc">Deletes everything this account has in the cloud (documents, version history, settings, received copies), and signs you out. Documents on this device stay. Can't be undone.</span></div><button type="button" class="btn settings-danger-btn" id="account-delete-open-btn">Delete…</button></div>
             </div>
           </div>
           <div class="settings-section" data-cat="ai" id="settings-section-ai-capabilities">
@@ -4269,7 +4256,7 @@ html.calm-layout #sb-auto-rewrite-chip.is-quiet:hover,html.calm-layout #sb-auto-
 <h4>Share and PDF</h4>
 <ul>
 <li>Share → Download PDF saves the whole document as a PDF file, with notes, threads, tables and images (signed out or offline, or once the day's PDF files are used up, the print dialog opens: choose Save as PDF). Cover page and PDF mark are in Settings → Documents</li>
-<li>Share → Send a copy (signed in) gives another Sakura user their own copy to edit and keep. It arrives in their notifications with Add to my documents and Decline; nothing is added until they choose</li>
+<li>Share → Send a copy (signed in) gives another Sakura user their own copy to edit and keep: type the exact email their account uses (it must be verified). It arrives in their notifications with Add to my documents and Decline; nothing is added until they choose</li>
 <li>Share → Export saves the outline as an OPML file; the File Explorer's + → Import (.opml)… opens one, or drop a .opml file on the File Explorer or the page</li>
 </ul>
 </div>
@@ -4412,14 +4399,13 @@ html.calm-layout #sb-auto-rewrite-chip.is-quiet:hover,html.calm-layout #sb-auto-
                 <div class="share-dd-doctitle" id="share-dd-doctitle"></div>
               </div>
             </div>
-            <div class="muted-help share-dd-help">They get their own copy to edit and keep. Only people with a public profile can be found.</div>
+            <div class="muted-help share-dd-help">They get their own copy to edit and keep. Type the email address their Sakura account uses.</div>
             <div style="display:flex;gap:6px;position:relative">
               <div class="share-search-wrap">
-                <span class="share-search-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></span>
-                <input id="share-modal-email-input" type="text" class="meta-input" placeholder="Search by name or email" autocomplete="off" />
+                <input id="share-modal-email-input" type="email" class="meta-input" placeholder="name@example.com" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Their email address" />
               </div>
+              <button type="button" class="btn primary share-send-btn" id="share-modal-send-btn">Send</button>
             </div>
-            <div id="share-modal-results" class="share-modal-results" style="display:none"></div>
             <div id="share-modal-error" class="share-modal-error" style="display:none"></div>
           </div>
         </div>
@@ -16426,8 +16412,8 @@ function updateAccountUI(user){
   // All three sign-in paths (Google popup, email/password, and restored-session
   // onAuthStateChanged) funnel through here uniformly, so this is the one place that needs to
   // know "a user just became signed in" rather than repeating the hook at each call site.
-  if(user){ ensureUserProfile(user); startNotificationsListener(); }
-  else { stopNotificationsListener(); resetProfileUiState(); }
+  if(user){ ensureEmailIndex(user); startNotificationsListener(); }
+  else { stopNotificationsListener(); updateVerifyEmailRow(null); }
   if(typeof updateDocShareChipVisibility==='function')updateDocShareChipVisibility();
   if(typeof updateAiHostedStatusUI==='function')updateAiHostedStatusUI();
   if(typeof resumeAutoRewriteIfPaused==='function')resumeAutoRewriteIfPaused();
@@ -16602,11 +16588,14 @@ function wireEmailAuthForm(prefix){
         ? await authMod.createUserWithEmailAndPassword(auth,email,password)
         : await authMod.signInWithEmailAndPassword(auth,email,password);
       try{localStorage.setItem('sakura_account_active','true')}catch(e){}
+      // Standard for email-and-password accounts, and needed to receive copies (only verified
+      // emails can be found). Best-effort: the account works either way.
+      if(mode==='signup'&&!result.user.emailVerified){ try{ await authMod.sendEmailVerification(result.user); }catch(e){ console.warn('[sakura] sendEmailVerification failed:',e); } }
       updateAccountUI(result.user);
       el('account-menu')?.classList.remove('open');
       hideLandingOverlay();
       passwordInput.value='';
-      showToast((mode==='signup'?'Account created — signed in as ':'Signed in as ')+(result.user.email||'your account'));
+      showToast(mode==='signup'?'Account created. We sent a link to '+(result.user.email||'your email')+' to verify it.':'Signed in as '+(result.user.email||'your account'));
       pullAndMergeFromCloud(true);
       startRealtimeSync();
     }catch(e){
@@ -16768,6 +16757,15 @@ async function deleteAccountCloudData(uid){
   for(const sub of ['docs','templates','meta','deletedDocs'])await clear(['users',uid,sub]);
   await clear(['notifications',uid,'items']);
   await clear(['copies',uid,'items']);
+  // The lookup entry that let others send this account a copy.
+  const email=(currentUser&&currentUser.uid===uid&&currentUser.email)||'';
+  if(email){
+    try{
+      const ref=mod.doc(db,'emailIndex',await emailIndexId(email));
+      const snap=await mod.getDoc(ref);
+      if(snap.exists()&&snap.data().uid===uid)await mod.deleteDoc(ref);
+    }catch(e){ failed++; console.error('[sakura] delete account: could not delete the email lookup entry',e); }
+  }
   for(const path of [['profiles',uid],['users',uid]]){
     try{ await mod.deleteDoc(mod.doc(db,...path)); }catch(e){ failed++; console.error('[sakura] delete account: could not delete',path.join('/'),e); }
   }
@@ -16881,122 +16879,69 @@ async function loadFirestoreMods(){
   return firestoreMods;
 }
 
-// ---------- Profiles (email discoverability for sharing) ----------
-// One doc per account at /profiles/{uid} — see firestore.rules for the actual access model.
-// A private profile (the default) is genuinely invisible to every query but its own owner's;
-// public only ever means "findable by exact email", nothing more is exposed by turning it on.
-let profileVisibility='private';
-let _profileLoadedForUid=null;
-// Called from updateAccountUI on every sign-in (fresh or restored) — keeps email/displayName/
-// photoURL current on the profile doc without ever touching visibility once it's been set by
-// the person themselves, and without needing a separate "first time?" check: an update merge
-// with visibility only present in the initial-create branch does this naturally.
-async function ensureUserProfile(user){
+// ---------- Finding someone to send a copy to: exact, verified email ----------
+// Owner 2026-11-19: public profiles and the name search are gone (any signed-in user could page
+// through every Public profile's name, email and photo). Instead each account with a verified
+// email has one entry at emailIndex/{sha256(lowercased email)} = {uid}. firestore.rules allows a
+// signed-in user to get an entry only by its exact id (never list), and lets an account write only
+// the entry for its own verified email, so typing someone's exact email is the only way to reach
+// them and nobody can claim an address they don't own. Nothing else about the recipient is stored.
+async function emailIndexId(email){
+  const bytes=await crypto.subtle.digest('SHA-256',new TextEncoder().encode((email||'').trim().toLowerCase()));
+  return [...new Uint8Array(bytes)].map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+const PROFILE_RETIRED_KEY='sakura_profile_retired_v1_';
+// Called on every sign-in (fresh or restored): removes the account's old /profiles doc once, picks up
+// a just-verified email, and keeps its emailIndex entry in place.
+async function ensureEmailIndex(user){
   if(!user)return;
   try{
     const {mod,db}=await loadFirestoreMods();
-    const ref=mod.doc(db,'profiles',user.uid);
-    const snap=await mod.getDoc(ref);
-    const base={
-      email:(user.email||'').toLowerCase(),
-      displayName:user.displayName||'',
-      // Lowercased, indexed copy purely for the prefix-range search findPublicProfilesByQuery
-      // runs (Firestore has no case-insensitive or full-text search — a >=/<= range on a
-      // lowercased field is the standard workaround for "starts with").
-      displayNameLower:(user.displayName||'').toLowerCase(),
-      photoURL:user.photoURL||'',
-      updatedAt:Date.now()
-    };
-    if(snap.exists()){
-      await mod.setDoc(ref,base,{merge:true}); // merge — never overwrites the existing visibility
-      profileVisibility=snap.data().visibility==='public'?'public':'private';
-    }else{
-      await mod.setDoc(ref,{...base,visibility:'private'});
-      profileVisibility='private';
+    let retired=false; try{ retired=localStorage.getItem(PROFILE_RETIRED_KEY+user.uid)==='1'; }catch(e){}
+    if(!retired){
+      try{ await mod.deleteDoc(mod.doc(db,'profiles',user.uid)); try{ localStorage.setItem(PROFILE_RETIRED_KEY+user.uid,'1'); }catch(e){} }
+      catch(e){ console.warn('[sakura] could not remove the old profile:',e); }
     }
-    _profileLoadedForUid=user.uid;
-  }catch(e){ console.warn('[sakura] ensureUserProfile failed:',e); }
-  updateProfileDiscoverableToggleUi();
+    // A link opened in the verification email only shows up after a reload and a fresh token
+    // (the rules read email_verified from the token).
+    if(user.email&&!user.emailVerified&&typeof user.reload==='function'){
+      try{ await user.reload(); if(user.emailVerified)await user.getIdToken(true); }catch(e){}
+    }
+    if(user.email&&user.emailVerified){
+      // Written once per device and address; Delete account removes it.
+      const id=await emailIndexId(user.email), key='sakura_email_index_v1_'+user.uid;
+      let done=false; try{ done=localStorage.getItem(key)===id; }catch(e){}
+      if(!done){ await mod.setDoc(mod.doc(db,'emailIndex',id),{uid:user.uid}); try{ localStorage.setItem(key,id); }catch(e){} }
+    }
+  }catch(e){ console.warn('[sakura] ensureEmailIndex failed:',e); }
+  updateVerifyEmailRow(user);
 }
-function resetProfileUiState(){
-  profileVisibility='private'; _profileLoadedForUid=null;
-  updateProfileDiscoverableToggleUi();
+// Settings → Account: only an email-and-password account can be unverified (Google's are verified).
+function updateVerifyEmailRow(user){
+  const row=el('settings-verify-email-row'); if(!row)return;
+  const needs=!!(user&&user.email&&!user.emailVerified&&(user.providerData||[]).some(p=>p&&p.providerId==='password'));
+  row.style.display=needs?'':'none';
 }
-function updateProfileDiscoverableToggleUi(){
-  const badge=el('account-visibility-badge');
-  if(badge){
-    const isPublic=profileVisibility==='public';
-    badge.className='account-visibility-badge '+(isPublic?'is-public':'is-private');
-    badge.innerHTML=(isPublic
-      ?'<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3a15 15 0 0 1 0 18a15 15 0 0 1 0-18"/></svg>'
-      :'<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>')
-      +'<span>'+(isPublic?'Public profile':'Private profile')+'</span>';
-    badge.dataset.tip=isPublic?'Click to make private — no longer discoverable by name or email':'Click to make public — discoverable by name or email when someone sends you a copy';
-  }
-}
-el('account-visibility-badge')?.addEventListener('click',e=>{e.stopPropagation(); setProfileDiscoverable(profileVisibility!=='public')});
-async function setProfileDiscoverable(on){
-  if(!currentUser)return;
-  const prev=profileVisibility;
-  profileVisibility=on?'public':'private';
-  updateProfileDiscoverableToggleUi();
+el('settings-verify-email-btn')?.addEventListener('click',async e=>{
+  const b=e.currentTarget; if(!currentUser)return;
+  b.disabled=true;
   try{
-    const {mod,db}=await loadFirestoreMods();
-    await mod.setDoc(mod.doc(db,'profiles',currentUser.uid),{visibility:profileVisibility,updatedAt:Date.now()},{merge:true});
-    showToast(on?'Your profile is now public — discoverable by name or email when someone shares a document with you':'Your profile is now private — no longer discoverable by name or email',null,false,2600);
-  }catch(e){
-    console.warn('[sakura] setProfileDiscoverable failed:',e);
-    profileVisibility=prev; updateProfileDiscoverableToggleUi();
-    showToast('Could not update — try again');
-  }
-}
-
-// Looks up a public profile by exact email — the only lookup path that exists (see
-// firestore.rules: a private profile can never be returned by this query, not just filtered
-// after the fact). Returns null for "no account", "private account", or any error — those are
-// deliberately indistinguishable to the caller, same reasoning as the rule itself.
-async function findPublicProfileByEmail(email){
-  const clean=(email||'').trim().toLowerCase();
-  if(!clean)return null;
-  try{
-    const {mod,db}=await loadFirestoreMods();
-    const q=mod.query(mod.collection(db,'profiles'),mod.where('email','==',clean),mod.where('visibility','==','public'),mod.limit(1));
-    const snap=await mod.getDocs(q);
-    if(snap.empty)return null;
-    const d=snap.docs[0];
-    return {uid:d.id,...d.data()};
-  }catch(e){ console.warn('[sakura] findPublicProfileByEmail failed:',e); return null; }
-}
-// Live search-as-you-type for the Share dialog — matches by name prefix OR exact email, merged
-// and deduped. Two separate Firestore queries rather than one: an exact-email equality filter
-// alongside visibility=='public' needs no extra index (Firestore satisfies pure equality-on-
-// equality queries automatically), but the displayNameLower prefix range (>=/<= ...) combined
-// with the visibility equality filter needs its own composite index (profiles: visibility ASC,
-// displayNameLower ASC) — NOT auto-created, has to be added once in Firebase Console →
-// Firestore → Indexes (or via the direct link Firestore prints in the browser console the first
-// time this query runs and the index doesn't exist yet). Only the name-prefix query can hit
-// that; the exact-email one keeps working regardless, so a name search failing before the index
-// exists degrades to "no name matches" rather than breaking sharing entirely.
-async function searchPublicProfiles(queryStr){
-  const clean=(queryStr||'').trim().toLowerCase();
-  if(clean.length<2)return [];
-  try{
-    const {mod,db}=await loadFirestoreMods();
-    const results=new Map();
-    const emailQ=mod.query(mod.collection(db,'profiles'),mod.where('email','==',clean),mod.where('visibility','==','public'),mod.limit(5));
-    const nameQ=mod.query(mod.collection(db,'profiles'),
-      mod.where('visibility','==','public'),
-      mod.where('displayNameLower','>=',clean),
-      mod.where('displayNameLower','<=',clean+'\uf8ff'),
-      mod.limit(8));
-    const [emailSnap,nameSnap]=await Promise.all([
-      mod.getDocs(emailQ).catch(e=>{ console.warn('[sakura] email-match profile search failed:',e); return {docs:[]}; }),
-      mod.getDocs(nameQ).catch(e=>{ console.warn('[sakura] name-prefix profile search failed — likely needs a composite index (profiles: visibility, displayNameLower), see Firebase Console → Firestore → Indexes:',e); return {docs:[]}; })
-    ]);
-    [...emailSnap.docs,...nameSnap.docs].forEach(d=>{ if(!results.has(d.id))results.set(d.id,{uid:d.id,...d.data()}); });
-    if(currentUser)results.delete(currentUser.uid); // never suggest sharing with yourself
-    return [...results.values()].slice(0,8);
-  }catch(e){ console.warn('[sakura] searchPublicProfiles failed:',e); return []; }
+    const {authMod}=await loadFirebaseMods();
+    await authMod.sendEmailVerification(currentUser);
+    showToast('Verification link sent to '+currentUser.email+'. Open it, then come back here.');
+  }catch(err){
+    console.warn('[sakura] sendEmailVerification failed:',err);
+    showToast(err&&err.code==='auth/too-many-requests'?'A link was sent recently. Check your inbox, or try again later.':'Could not send the link. Try again.');
+  }finally{ b.disabled=false; }
+});
+// Resolves {uid} for an exact, verified email; null when no account uses it; throws when the lookup
+// itself fails (offline), so the sender isn't told "no account" by mistake.
+async function findAccountByEmail(email){
+  const {mod,db}=await loadFirestoreMods();
+  const snap=await mod.getDoc(mod.doc(db,'emailIndex',await emailIndexId(email)));
+  if(!snap.exists())return null;
+  const uid=snap.data()&&snap.data().uid;
+  return uid?{uid}:null;
 }
 
 // ---------- Send a copy ----------
@@ -17091,7 +17036,6 @@ function openShareDropdown(docId,docTitle){
   el('share-dd-doctitle').textContent=shareModalDocTitle;
   el('share-modal-email-input').value='';
   el('share-modal-error').style.display='none';
-  hideShareResults();
   menu.classList.add('open');
   el('doc-share-chip')?.setAttribute('aria-expanded','true');
   setTimeout(()=>el('share-modal-email-input')?.focus(),0);
@@ -17099,67 +17043,38 @@ function openShareDropdown(docId,docTitle){
 function closeShareDropdown(){
   el('share-dd-menu')?.classList.remove('open');
   el('doc-share-chip')?.setAttribute('aria-expanded','false');
-  shareModalDocId=null; hideShareResults();
+  shareModalDocId=null;
 }
-function shareAvatarHtml(profile){
-  const initial=(profile.displayName||profile.email||'?').trim().charAt(0).toUpperCase();
-  if(profile.photoURL)return `<img src="${esc(profile.photoURL)}" class="share-result-avatar" alt="" />`;
-  return `<span class="share-result-avatar share-result-avatar-fallback">${esc(initial)}</span>`;
-}
-function hideShareResults(){ const r=el('share-modal-results'); if(r){ r.style.display='none'; r.innerHTML=''; } }
 async function sendCopyFromDropdown(profile){
   const errorEl=el('share-modal-error');
   errorEl.style.display='none';
   const res=await sendDocCopy(shareModalDocId,shareModalDocTitle,profile);
   if(!res.ok){ errorEl.textContent=res.error; errorEl.style.display='block'; return; }
   closeShareDropdown();
-  showToast('Copy sent to '+(profile.displayName||profile.email));
+  showToast('Copy sent to '+profile.email);
 }
-function renderShareResults(results){
-  const box=el('share-modal-results'); if(!box)return;
-  if(!results.length){ box.style.display='block'; box.innerHTML='<div class="share-result-empty">No matching discoverable accounts</div>'; return; }
-  box.innerHTML='';
-  results.forEach(profile=>{
-    const item=document.createElement('button'); item.type='button'; item.className='share-result-item';
-    item.innerHTML=shareAvatarHtml(profile)+
-      `<span class="share-result-text"><span class="share-result-name">${esc(profile.displayName||'(no name set)')}</span><span class="share-result-email">${esc(profile.email||'')}</span></span>`;
-    item.addEventListener('click',()=>{
-      hideShareResults();
-      el('share-modal-email-input').value='';
-      sendCopyFromDropdown(profile);
-    });
-    box.appendChild(item);
-  });
-  box.style.display='block';
-}
-let _shareSearchDebounce=null;
-function onShareEmailInput(){
-  const input=el('share-modal-email-input'); if(!input)return;
-  const q=input.value;
-  clearTimeout(_shareSearchDebounce);
-  if(q.trim().length<2){ hideShareResults(); return; }
-  _shareSearchDebounce=setTimeout(async()=>{
-    const results=await searchPublicProfiles(q);
-    // Guard against a slow, now-stale response landing after the input changed again.
-    if(el('share-modal-email-input')?.value===q)renderShareResults(results);
-  },300);
-}
+const SHARE_EMAIL_RE=/^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 async function submitShareModal(){
-  // Enter-key fallback: a full email typed without picking a result is looked up exactly.
-  const emailInput=el('share-modal-email-input'), errorEl=el('share-modal-error');
+  const emailInput=el('share-modal-email-input'), errorEl=el('share-modal-error'), sendBtn=el('share-modal-send-btn');
   if(!emailInput||!shareModalDocId)return;
-  const val=emailInput.value.trim();
+  const val=emailInput.value.trim().toLowerCase();
+  const fail=msg=>{ errorEl.textContent=msg; errorEl.style.display='block'; };
   errorEl.style.display='none';
-  if(!val||!val.includes('@')){ errorEl.textContent='Type a full email to press Enter, or pick a name from the results.'; errorEl.style.display='block'; return; }
-  hideShareResults();
-  const profile=await findPublicProfileByEmail(val);
-  if(!profile){ errorEl.textContent='No discoverable Sakura account for that email — they may not have an account, or their profile is private.'; errorEl.style.display='block'; return; }
-  emailInput.value='';
-  await sendCopyFromDropdown(profile);
+  if(!SHARE_EMAIL_RE.test(val)){ fail('Type their full email address.'); return; }
+  if(currentUser&&val===(currentUser.email||'').toLowerCase()){ fail("That's your own email."); return; }
+  if(sendBtn){ sendBtn.disabled=true; sendBtn.textContent='Sending\u2026'; }
+  try{
+    let account;
+    try{ account=await findAccountByEmail(val); }
+    catch(e){ console.warn('[sakura] findAccountByEmail failed:',e); fail('Could not check that email. Check your connection and try again.'); return; }
+    if(!account){ fail('No Sakura account uses that email. They need to sign up, and verify their email if they used a password.'); return; }
+    emailInput.value='';
+    await sendCopyFromDropdown({uid:account.uid,email:val});
+  }finally{ if(sendBtn){ sendBtn.disabled=false; sendBtn.textContent='Send'; } }
 }
-el('share-modal-email-input')?.addEventListener('input',onShareEmailInput);
+el('share-modal-send-btn')?.addEventListener('click',e=>{ e.stopPropagation(); submitShareModal(); });
 el('share-modal-email-input')?.addEventListener('click',e=>e.stopPropagation());
-el('share-modal-email-input')?.addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); submitShareModal(); } else if(e.key==='Escape'){ e.stopPropagation(); hideShareResults(); } });
+el('share-modal-email-input')?.addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); submitShareModal(); } else if(e.key==='Escape'){ e.stopPropagation(); closeShareDropdown(); } });
 el('share-dd-menu')?.addEventListener('mousedown',e=>e.stopPropagation());
 document.addEventListener('mousedown',e=>{
   if(!e.target.closest('#doc-share-wrap'))closeShareDropdown();
@@ -18084,7 +17999,9 @@ function updateSyncStatusUI(status){
     if(status==='error'){el2.style.display='inline-flex'; el2.style.color='var(--danger)'; el2.innerHTML=ICONS.error+'Sync error'; el2.dataset.tip='Sync failed — trying again on its own';}
     else{el2.style.display='none'; el2.innerHTML='';}
     if(status!=='error')el2.style.color='';
-    const sep=el('account-meta-sep'); if(sep)sep.style.display=el2.style.display==='none'?'none':'';
+    // The line holds only the sync error now (the profile badge was removed 2026-11-19), so it
+    // takes no space otherwise.
+    if(el2.parentElement)el2.parentElement.style.display=el2.style.display==='none'?'none':'';
   }
   const dot=el('account-toggle-status-dot'); if(!dot)return;
   clearTimeout(_syncDotFadeTimer);

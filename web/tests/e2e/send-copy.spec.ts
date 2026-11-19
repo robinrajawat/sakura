@@ -154,3 +154,65 @@ test('Decline deletes the sent copy', async ({ page }) => {
   });
   expect(left).toEqual([]);
 });
+
+// Finding the recipient (owner 2026-11-19): exact email only, looked up at emailIndex/{sha256(email)}.
+// No search, no list of people; clear feedback when no account uses the address.
+async function openShareBox(page: import('@playwright/test').Page, lookupFails = false) {
+  await page.evaluate(async (fails) => {
+    // @ts-expect-error -- bare globals from index.html
+    currentUser = { uid: 'alice', displayName: 'Alice', email: 'alice@example.com' };
+    // @ts-expect-error -- bare globals from index.html
+    const id = await emailIndexId('Bob@Example.com ');
+    // @ts-expect-error -- test hook
+    window.__store['emailIndex/' + id] = { uid: 'bob' };
+    if (fails) {
+      // @ts-expect-error -- bare globals from index.html
+      const real = loadFirestoreMods;
+      // @ts-expect-error -- bare globals from index.html
+      loadFirestoreMods = async () => { const m = await real(); return { ...m, mod: { ...m.mod, getDoc: async () => { throw new Error('offline'); } } }; };
+    }
+    // @ts-expect-error -- bare globals from index.html
+    sendDocCopy = async (_id: string, _t: string, p: { uid: string; email: string }) => { (window as any).__sentTo = p; return { ok: true }; };
+    // @ts-expect-error -- bare globals from index.html
+    openShareDropdown('d1', 'Roadmap');
+  }, lookupFails);
+}
+const typeAndSend = async (page: import('@playwright/test').Page, email: string) => {
+  await page.locator('#share-modal-email-input').fill(email);
+  await page.locator('#share-modal-send-btn').click();
+};
+
+test('an exact email with an account gets the copy, whatever its case and spaces', async ({ page }) => {
+  await openShareBox(page);
+  await typeAndSend(page, '  BOB@example.COM ');
+  await expect.poll(() => page.evaluate(() => (window as any).__sentTo)).toEqual({ uid: 'bob', email: 'bob@example.com' });
+});
+
+test('an email no account uses says so plainly, and sends nothing', async ({ page }) => {
+  await openShareBox(page);
+  await typeAndSend(page, 'carol@example.com');
+  await expect(page.locator('#share-modal-error')).toHaveText(/No Sakura account uses that email/);
+  expect(await page.evaluate(() => (window as any).__sentTo)).toBeUndefined();
+});
+
+test('a partial address or your own email is caught before any lookup', async ({ page }) => {
+  await openShareBox(page);
+  await typeAndSend(page, 'bob');
+  await expect(page.locator('#share-modal-error')).toHaveText('Type their full email address.');
+  await typeAndSend(page, 'Alice@Example.com');
+  await expect(page.locator('#share-modal-error')).toHaveText("That's your own email.");
+});
+
+test('a failed lookup is not reported as "no account"', async ({ page }) => {
+  await openShareBox(page, true);
+  await typeAndSend(page, 'bob@example.com');
+  await expect(page.locator('#share-modal-error')).toHaveText(/Could not check that email/);
+});
+
+test('the lookup id is the SHA-256 of the trimmed, lowercased email', async ({ page }) => {
+  // Must match firestore.rules: hashing.sha256(token.email.lower()).toHexString().lower().
+  // @ts-expect-error -- bare globals from index.html
+  const id = await page.evaluate(() => emailIndexId(' A@B.co '));
+  expect(id).toBe('80305c9bb1bb2480e03894350e0a8a366dcbdeb302e69e0817aa0743abd77054'); // sha256('a@b.co')
+});
+
