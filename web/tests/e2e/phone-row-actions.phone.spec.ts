@@ -156,3 +156,59 @@ test('folding a row leaves no grey box over its first letters (Safari keeps :hov
   const bg = await dot.evaluate((d) => getComputedStyle(d).backgroundColor);
   expect(bg).toBe('rgba(0, 0, 0, 0)');
 });
+
+test('the menu says "Start a thread" on a row without one, "Add to thread" once it has one', async ({ page }) => {
+  const item = page.locator('#phone-row-menu [data-act="thread"]');
+  await label(page, 'Status row').tap();
+  await page.locator('#phone-edit-bar [data-act="more"]').tap();
+  await expect(item).toHaveText('Start a thread');
+  await item.tap();
+  const input = page.locator('.thread-composer-input').first();
+  await input.tap();
+  await page.keyboard.insertText('First point');
+  await input.press('Enter');
+  // @ts-expect-error -- bare global from index.html
+  await expect.poll(() => page.evaluate(() => nodeThread(6).length)).toBe(1);
+  await label(page, 'Status row').tap();
+  await page.locator('#phone-edit-bar [data-act="more"]').tap();
+  await expect(item).toHaveText('Add to thread');
+});
+
+test('an empty reply box closes when another row is tapped, and that row is edited; a typed reply stays', async ({ page }) => {
+  await label(page, 'Status row').tap();
+  await page.locator('#phone-edit-bar [data-act="more"]').tap();
+  await page.locator('#phone-row-menu [data-act="thread"]').tap();
+  await expect(page.locator('.thread-composer-input')).toHaveCount(1);
+  await label(page, 'Plain note').tap();
+  await expect(page.locator('.thread-composer-input')).toHaveCount(0);
+  // @ts-expect-error -- bare global from index.html
+  expect(await page.evaluate(() => editingId)).toBe(5);
+  // Words typed in the box are never thrown away by tapping elsewhere.
+  await label(page, 'Status row').tap();
+  await page.locator('#phone-edit-bar [data-act="more"]').tap();
+  await page.locator('#phone-row-menu [data-act="thread"]').tap();
+  await page.locator('.thread-composer-input').first().tap();
+  await page.keyboard.insertText('Half a thought');
+  await label(page, 'Plain note').tap();
+  await expect(page.locator('.thread-composer-input')).toHaveCount(1);
+  await expect(page.locator('.thread-composer-input').first()).toContainText('Half a thought');
+});
+
+test('deleting a row on a phone offers Undo, which brings it back; not after something else changed', async ({ page }) => {
+  const del = async (name: string) => {
+    await label(page, name).tap();
+    await page.locator('#phone-edit-bar [data-act="more"]').tap();
+    await page.locator('#phone-row-menu [data-act="delete"]').tap();
+  };
+  await del('Status row');
+  await expect(page.locator('.node-row', { hasText: 'Status row' })).toHaveCount(0);
+  await page.locator('#toast button').filter({ hasText: 'Undo' }).first().tap();
+  await expect(page.locator('.node-row', { hasText: 'Status row' })).toHaveCount(1);
+  // Undo takes back only that delete: after another change it says so and changes nothing.
+  await del('Status row');
+  // @ts-expect-error -- bare globals from index.html
+  await page.evaluate(() => { pushUndo(); nodes[0].text = 'Table row edited'; render(); });
+  await page.locator('#toast button').filter({ hasText: 'Undo' }).first().tap();
+  expect(await toasts(page)).toContain('Something else has changed since, so this delete can’t be undone here.');
+  await expect(page.locator('.node-row', { hasText: 'Status row' })).toHaveCount(0);
+});

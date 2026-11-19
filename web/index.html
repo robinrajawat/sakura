@@ -13347,6 +13347,16 @@ function snapshotWithEdit(withFolds){ const s=snapshot(withFolds);
   return pos?s.slice(0,-1)+',"edit":'+JSON.stringify(pos)+'}':s; }
 function resumeEditFrom(s,wasEditing){ if(!wasEditing)return; let d=null; try{ d=JSON.parse(s).edit; }catch(e){} if(d&&getIndex(nodes,d.id)>=0)beginEditAt(d.id,d.caret); }
 function pushUndo(){undoStack.push(snapshotWithEdit()); if(undoStack.length>200)undoStack.shift(); redoStack=[]}
+// A phone has no Ctrl+Z, so its delete message carries Undo (as Gmail and Notion do). Undo only
+// takes back that delete: once anything else has changed, it says so instead.
+function showDeletedRowsToast(msg){
+  if(!isPhoneLayout()){ showToast(msg); return; }
+  const depth=undoStack.length;
+  showActionToast(msg,'Undo',()=>{
+    if(undoStack.length!==depth||!depth){ showToast('Something else has changed since, so this delete can\u2019t be undone here.'); return; }
+    undo();
+  },6000);
+}
 function undo(){if(!undoStack.length)return; const wasEditing=editingId!==null; const s=undoStack.pop(); redoStack.push(snapshotWithEdit(snapshotHasFolds(s))); restoreFromSnapshot(s); dirty=true; render(); resumeEditFrom(s,wasEditing)}
 function redo(){if(!redoStack.length)return; const wasEditing=editingId!==null; const s=redoStack.pop(); undoStack.push(snapshotWithEdit(snapshotHasFolds(s))); restoreFromSnapshot(s); dirty=true; render(); resumeEditFrom(s,wasEditing)}
 // Contextual dispatcher: routes to whichever stack matches what's currently focused.
@@ -13896,7 +13906,7 @@ function diagramBlobWriteMissed(d,docId){
 function warnDiagramBlobWriteFailed(){
   if(diagramBlobWriteFailed)return;
   diagramBlobWriteFailed=true;
-  showToast('Diagrams couldn\u2019t be saved to this browser\u2019s storage just now, so your changes are being kept another way. If a diagram looks blank, tap its Retry button instead of drawing over it.');
+  showActionToast('Diagrams couldn\u2019t be saved to this browser\u2019s storage just now, so your changes are being kept another way. If a diagram looks blank, tap its Retry button instead of drawing over it.','Details',()=>showStorageDiagnostics(),12000);
 }
 // A guest's gentle sign-in prompt (cloud-first plan, Phase 4), the way try-first apps ask:
 // never a wall, once real work exists. The first time a guest saves a document with words in it is
@@ -16330,19 +16340,27 @@ const FIREBASE_SDK_VERSION="10.14.1";
 const AI_VAULT_WORKER_URL="https://ai.sakura-notes.com";
 let currentUser=null;
 let _firebaseModsPromise=null;
+let _firebaseMods=null; // set once loaded, so a sign-in tap can open Google's window at once
 function loadFirebaseMods(){
   if(_firebaseModsPromise)return _firebaseModsPromise;
-  _firebaseModsPromise=(async()=>{
+  const p=(async()=>{
     const [appMod,authMod]=await Promise.all([
       import(`https://www.gstatic.com/firebasejs/${FIREBASE_SDK_VERSION}/firebase-app.js`),
       import(`https://www.gstatic.com/firebasejs/${FIREBASE_SDK_VERSION}/firebase-auth.js`)
     ]);
     const app=appMod.initializeApp(FIREBASE_CONFIG);
     const auth=authMod.getAuth(app);
-    return {app,auth,authMod};
+    _firebaseMods={app,auth,authMod};
+    return _firebaseMods;
   })();
-  return _firebaseModsPromise;
+  _firebaseModsPromise=p;
+  p.catch(()=>{ if(_firebaseModsPromise===p)_firebaseModsPromise=null; }); // a failed download is tried again next time
+  return p;
 }
+// Sign-in code loads as soon as a sign-in button is on screen (the landing page, the account menu),
+// as sign-in pages do, so the tap itself opens Google's window. Safari only lets a page open a
+// window during the tap; waiting for the download first made the first tap do nothing on iPhones.
+function warmUpSignIn(){ if(!_firebaseMods&&!currentUser)loadFirebaseMods().catch(()=>{}); }
 // ===== Admin status (feedback inbox access) =====
 // State and logic live in src/state/admin.ts (Phase 2, docs/architecture-plan.md), generated
 // into the block below.
@@ -16577,7 +16595,11 @@ function shouldShowLandingOverlay(){
 function showLandingOverlay(){
   document.documentElement.classList.remove('presetup-landing');
   const ov=el('sakura-landing-overlay'); if(ov)ov.style.display='flex';
+  warmUpSignIn();
 }
+// The landing page can be on screen from the first paint (presetup-landing), before showLandingOverlay.
+if(document.documentElement.classList.contains('presetup-landing'))warmUpSignIn();
+['sakura-landing-google-signin-btn','account-google-signin-btn'].forEach(id=>el(id)?.addEventListener('pointerdown',warmUpSignIn));
 function hideLandingOverlay(){
   document.documentElement.classList.remove('presetup-landing');
   const ov=el('sakura-landing-overlay'); if(ov)ov.style.display='none';
@@ -16598,12 +16620,13 @@ document.addEventListener('keydown',e=>{
   if(e.key==='Escape'&&el('sakura-landing-overlay')?.style.display==='flex')dismissLandingOverlay();
 });
 async function signInWithGoogleAccount(){
+  // Opened before anything is awaited, so it is still part of the tap (see warmUpSignIn).
+  const ready=_firebaseMods;
+  const popup=ready?ready.authMod.signInWithPopup(ready.auth,new ready.authMod.GoogleAuthProvider()):null;
   const btns=[el('account-google-signin-btn'),el('sakura-landing-google-signin-btn')].filter(Boolean);
   btns.forEach(btn=>{btn.disabled=true; btn.style.opacity='.6'; btn.style.cursor='default';});
   try{
-    const {auth,authMod}=await loadFirebaseMods();
-    const provider=new authMod.GoogleAuthProvider();
-    const result=await authMod.signInWithPopup(auth,provider);
+    const result=popup?await popup:await (async()=>{ const {auth,authMod}=await loadFirebaseMods(); return authMod.signInWithPopup(auth,new authMod.GoogleAuthProvider()); })();
     try{localStorage.setItem('sakura_account_active','true')}catch(e){}
     updateAccountUI(result.user);
     el('account-menu')?.classList.remove('open');
@@ -16613,7 +16636,9 @@ async function signInWithGoogleAccount(){
     startRealtimeSync();
   }catch(e){
     // Popup dismissed by the person themselves isn't an error worth surfacing.
-    if(e && e.code!=='auth/popup-closed-by-user' && e.code!=='auth/cancelled-popup-request'){
+    if(e && e.code==='auth/popup-blocked'){
+      showToast('Your browser blocked the Google sign-in window. Tap \u201cSign in with Google\u201d again.');
+    }else if(e && e.code!=='auth/popup-closed-by-user' && e.code!=='auth/cancelled-popup-request'){
       console.warn('[sakura] Google sign-in failed:',e);
       showToast('Sign-in failed — please try again');
     }
@@ -24276,7 +24301,7 @@ function deleteSelected(){
   removeLinkedObjectsForNodeIds(deletedIds);
   removeIdsFromAutoRewriteQueue(deletedIds);
   cleanupRowLinksTo(deletedIds);
-  rebuildParentIds(); const fallbackIdx=Math.min(roots[0],Math.max(0,nodes.length-1)); selectedId=nodes[fallbackIdx]?.id??nodes[nodes.length-1]?.id??null; editingId=null; clearMultiSelection(); selectionAnchorId=selectedId; flashNodeId=null; render(); showToast(`Deleted ${count} row${count===1?'':'s'}`+(goneWith?` with ${goneWith}`:''));
+  rebuildParentIds(); const fallbackIdx=Math.min(roots[0],Math.max(0,nodes.length-1)); selectedId=nodes[fallbackIdx]?.id??nodes[nodes.length-1]?.id??null; editingId=null; clearMultiSelection(); selectionAnchorId=selectedId; flashNodeId=null; render(); showDeletedRowsToast(`Deleted ${count} row${count===1?'':'s'}`+(goneWith?` with ${goneWith}`:''));
 }
 function duplicateSelected(){const roots=getSelectionRootIndexes(); if(!roots.length)return; pushUndo(); markDirty(); let firstNewId=null; for(let r=roots.length-1;r>=0;r--){const idx=roots[r]; const end=getSubtreeEnd(nodes,idx); const originals=nodes.slice(idx,end); const clones=originals.map(n=>makeNode(n.text,n.depth,null,n.styles,n.note||'',false,n.tables,n.images,rowMarksOf(n))); nodes.splice(end,0,...clones); originals.forEach((n,k)=>{ const {qas,rms}=nodeDiscussionCopies(n.id); attachDiscussionCopies(clones[k].id,qas,rms); copyNodeDiagrams(n.id,clones[k].id); if(n.marker)Object.assign(clones[k],{marker:n.marker},normalizeRowStatusMeta(n)); }); firstNewId=clones[0]?.id??firstNewId} rebuildParentIds(); if(firstNewId!==null){setSingleSelection(firstNewId); flashNode(firstNewId)} render()}
 // A tree drawn with plain characters (|-- a, `-- b, +-- c, \-- d, as `tree` and older tools print it)
@@ -27232,7 +27257,7 @@ document.addEventListener('keydown',e=>{
 });
 // Settings fills the whole area, so it has its own close button (Esc and the rail button do the same).
 el('settings-close-btn')?.addEventListener('click',e=>{ e.stopPropagation(); el('settings-panel').classList.remove('open'); setSettingsSearchVisible(false); el('rail-settings-btn')?.focus(); });
-el('account-toggle')?.addEventListener('click',e=>{e.stopPropagation(); el('export-menu')?.classList.remove('open');  toggleNotifMenu(false); el('account-menu').classList.toggle('open')});
+el('account-toggle')?.addEventListener('click',e=>{e.stopPropagation(); el('export-menu')?.classList.remove('open');  toggleNotifMenu(false); if(el('account-menu').classList.toggle('open'))warmUpSignIn();});
 // Export ▾ / Import ▾: the shared menu, one item per format. Share shows the export formats under
 // "Export as"; Import (.md, .opml) is in the File Explorer's + menu.
 const SB_EXPORT_ICON='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>';
@@ -30814,6 +30839,7 @@ function swipeAxis(dx, dy, slop = 10) {
     menu.querySelector('.prm-title').textContent=nodes[i].text||'Untitled row';
     menu.querySelector('[data-act="checkbox"]').textContent=isCheckboxNode(nodes[i])?'Remove checkbox':'Checkbox';
     menu.querySelector('[data-act="note"]').textContent=nodes[i].note&&String(nodes[i].note).trim()?'Edit note':'Add a note';
+    menu.querySelector('[data-act="thread"]').textContent=nodeThread(id).length?'Add to thread':'Start a thread';
     menu.querySelectorAll('[data-act^="m-"]').forEach(b=>b.setAttribute('aria-pressed',String((nodes[i].marker||'')===b.dataset.act.slice(2))));
     pressedInMenu=false; menu.hidden=false;
   };
@@ -30921,6 +30947,32 @@ function idbOpen(){
 // Dexie do): on a failure, drop the cached connection, open a fresh one and try once more.
 // `onabort` is listened to as well as `onerror`, so a transaction the browser aborts (quota, a lost
 // connection) rejects instead of leaving its caller waiting for ever.
+// The browser's own words for the last storage failures (owner 2026-11-19: an iPhone kept failing
+// even after reconnecting, and the cause can only be read on that phone). Shown by the warning's
+// Details; kept in memory and the last one on the device, never sent anywhere.
+const STORAGE_ERROR_KEY='sakura_storage_last_error_v1';
+const _storageErrors=[];
+function noteStorageError(mode,attempt,e){
+  const entry={at:new Date().toISOString(),op:(mode==='readwrite'?'save':'read')+(attempt?' (after reconnecting)':''),name:String(e&&e.name||'Error'),message:String(e&&e.message||e||'').slice(0,300)};
+  _storageErrors.push(entry); if(_storageErrors.length>6)_storageErrors.shift();
+  try{ localStorage.setItem(STORAGE_ERROR_KEY,JSON.stringify(entry)); }catch(_e){}
+}
+async function storageDiagnosticsText(){
+  const lines=[];
+  const errs=_storageErrors.length?_storageErrors:(()=>{ try{ const e=JSON.parse(localStorage.getItem(STORAGE_ERROR_KEY)||'null'); return e?[e]:[]; }catch(_e){ return []; } })();
+  if(!errs.length)lines.push('No storage error recorded.');
+  errs.forEach(e=>lines.push(`${e.at} \u00b7 ${e.op}: ${e.name} \u2014 ${e.message}`));
+  try{ const est=await navigator.storage?.estimate?.(); if(est)lines.push(`Storage used: ${(est.usage/1048576).toFixed(1)} MB of ${(est.quota/1048576).toFixed(0)} MB allowed`); }catch(_e){}
+  try{ const p=await navigator.storage?.persisted?.(); if(p!==undefined)lines.push('Kept by the browser: '+(p?'yes':'no')); }catch(_e){}
+  lines.push('IndexedDB available: '+(('indexedDB' in window)?'yes':'no'));
+  lines.push('Browser: '+navigator.userAgent);
+  return lines.join('\n');
+}
+async function showStorageDiagnostics(){
+  const text=await storageDiagnosticsText();
+  const copy=await sakuraConfirm({title:'Storage details',body:text,confirmLabel:'Copy',cancelLabel:'Close'});
+  if(copy){ try{ await navigator.clipboard.writeText(text); showToast('Copied'); }catch(e){ showToast('Couldn\u2019t copy. Take a screenshot instead.'); } }
+}
 async function idbRequest(mode,run){
   for(let attempt=0;;attempt++){
     let conn=null;
@@ -30931,6 +30983,7 @@ async function idbRequest(mode,run){
         tx.oncomplete=()=>resolve(req.result); tx.onerror=()=>reject(tx.error||req.error); tx.onabort=()=>reject(tx.error||new Error('transaction aborted'));
       });
     }catch(e){
+      noteStorageError(mode,attempt,e);
       if(attempt>=1)throw e;
       // Only the connection this attempt used: another caller may already have opened a fresh one.
       if(conn&&_idbConnPromise===conn){ _idbConnPromise=null; conn.then(db=>{ try{ db.close(); }catch(_e){} },()=>{}); }
@@ -34118,11 +34171,20 @@ function renderThreadComposer(node,thread,place,commit){
   meta.appendChild(avatar); meta.appendChild(who);
   line.appendChild(meta); line.appendChild(input);
   // Leaving an empty reply line closes it again.
-  input.addEventListener('blur',()=>{ setTimeout(()=>{ if(_threadComposerNodeId!==node.id||_threadDrafts.has(node.id)||line.contains(document.activeElement)||!document.body.contains(line))return; if(document.activeElement&&document.activeElement.closest&&document.activeElement.closest('.sb-context-menu,.thread-author-edit'))return; _threadComposerNodeId=null; _threadAskNodeIds.delete(node.id);
-    // Typing somewhere else (another entry, a row): don't re-render under the caret; the reply line goes at the next render.
-    // An entry's author picker is focusable but not editable, so "inside a thread entry" counts too:
-    // re-rendering under it would blur it and drop an emptied entry the person is still working on.
-    const ae=document.activeElement; if(ae&&(ae.isContentEditable||/^(INPUT|TEXTAREA)$/.test(ae.tagName)||(ae.closest&&ae.closest('.thread-entry'))))return;
+  input.addEventListener('blur',()=>{ setTimeout(()=>{
+    if(_threadComposerNodeId!==node.id||_threadDrafts.has(node.id))return;
+    // A tap on another row redraws the document, replacing this box with a fresh copy: judge by
+    // that one (owner 2026-11-19: on a phone an empty reply box stayed open with no way to close it).
+    const cur=document.body.contains(line)?line:(document.querySelector('.thread-composer-input[data-node-id="'+node.id+'"]')?.closest('.thread-composer')||null);
+    if(cur&&cur.contains(document.activeElement))return;
+    if(input.querySelector('img')||cur?.querySelector('.thread-composer-input img'))return; // a pasted picture is content too
+    if(document.activeElement&&document.activeElement.closest&&document.activeElement.closest('.sb-context-menu,.thread-author-edit'))return;
+    _threadComposerNodeId=null; _threadAskNodeIds.delete(node.id);
+    // Typing somewhere else (another entry, a row): don't re-render under the caret; just the empty
+    // reply box goes. An entry's author picker is focusable but not editable, so "inside a thread
+    // entry" counts too: re-rendering under it would blur it and drop an emptied entry the person
+    // is still working on.
+    const ae=document.activeElement; if(ae&&(ae.isContentEditable||/^(INPUT|TEXTAREA)$/.test(ae.tagName)||(ae.closest&&ae.closest('.thread-entry')))){ cur?.remove(); return; }
     render(); },120); });
   place(line);
 }
