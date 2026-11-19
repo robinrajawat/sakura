@@ -26226,6 +26226,9 @@ function readClipboardStructure(root) {
         else
             rows.push({ text: '', marks: [], depth, heading: 0, isCheckbox: false, checked: false, tables: [html] });
     };
+    // Lists hold blocks and blocks hold lists, so these refer to each other; declared here, set below.
+    let block = () => { };
+    let flushInline = () => { };
     const list = (el, level) => {
         let lastItem = null;
         for (const c of Array.from(el.childNodes)) {
@@ -26267,7 +26270,7 @@ function readClipboardStructure(root) {
             }
         }
     };
-    const block = (el) => {
+    block = (el) => {
         if (el.nodeType === 3) {
             const t = (el.nodeValue ?? '').trim();
             if (t)
@@ -26336,7 +26339,7 @@ function readClipboardStructure(root) {
         flushInline(kids);
     };
     /** Inline content with <br> line breaks: each line its own row. */
-    const flushInline = (nodes) => {
+    flushInline = (nodes) => {
         let part = [];
         const out = () => { const inl = clipstInline(part, {}); if (inl.text)
             pushRow(inl, sectionDepth()); part = []; };

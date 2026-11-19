@@ -199,6 +199,10 @@ export function readClipboardStructure(root: ClipNode): ClipRow[] {
     else rows.push({ text: '', marks: [], depth, heading: 0, isCheckbox: false, checked: false, tables: [html] });
   };
 
+  // Lists hold blocks and blocks hold lists, so these refer to each other; declared here, set below.
+  let block: (el: ClipNode) => void = () => {};
+  let flushInline: (nodes: ClipNode[]) => void = () => {};
+
   const list = (el: ClipNode, level: number) => {
     let lastItem: ClipRow | null = null;
     for (const c of Array.from(el.childNodes)) {
@@ -228,7 +232,7 @@ export function readClipboardStructure(root: ClipNode): ClipRow[] {
     }
   };
 
-  const block = (el: ClipNode) => {
+  block = (el: ClipNode) => {
     if (el.nodeType === 3) {
       const t = (el.nodeValue ?? '').trim();
       if (t) pushRow(clipstInline([el], {}), sectionDepth());
@@ -280,7 +284,7 @@ export function readClipboardStructure(root: ClipNode): ClipRow[] {
   };
 
   /** Inline content with <br> line breaks: each line its own row. */
-  const flushInline = (nodes: ClipNode[]) => {
+  flushInline = (nodes: ClipNode[]) => {
     let part: ClipNode[] = [];
     const out = () => { const inl = clipstInline(part, {}); if (inl.text) pushRow(inl, sectionDepth()); part = []; };
     for (const n of nodes) {
