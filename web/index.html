@@ -13870,10 +13870,20 @@ let _diagramBlobSyncCache={};
 // it stays broken. Resets the moment a write succeeds again, so a genuinely transient failure
 // doesn't leave a stale "still broken" impression.
 let diagramBlobWriteFailed=false;
+// A diagram's write to IndexedDB failed even after a fresh connection. A diagram never written
+// there already rides along inline in localStorage (the `!d.blobSynced` branch in saveToStorage);
+// one written before was stripped from this save on the strength of that older copy, so the edit
+// just made would live only in memory. Marking it unsynced and saving once more puts its current
+// content inline too, which is what the warning promises. Only on the change from synced, so a
+// write that keeps failing doesn't set off a save on every attempt.
+function diagramBlobWriteMissed(d,docId){
+  if(d.blobSynced&&currentDocId===docId&&diagrams.includes(d)){ d.blobSynced=false; delete _diagramBlobSyncCache[d.id]; saveToStorage(); }
+  warnDiagramBlobWriteFailed();
+}
 function warnDiagramBlobWriteFailed(){
   if(diagramBlobWriteFailed)return;
   diagramBlobWriteFailed=true;
-  showToast('This browser\u2019s IndexedDB storage isn\u2019t syncing diagram content right now. Edits are still being kept in regular storage as a fallback. If a diagram won\u2019t load, use its Retry button rather than drawing over what looks like a blank canvas.');
+  showToast('Diagrams couldn\u2019t be saved to this browser\u2019s storage just now, so your changes are being kept another way. If a diagram looks blank, tap its Retry button instead of drawing over it.');
 }
 // A guest's gentle sign-in prompt (cloud-first plan, Phase 4), the way try-first apps ask:
 // never a wall, once real work exists. The first time a guest saves a document with words in it is
@@ -14039,13 +14049,14 @@ function saveToStorage(){
     // already treats a diagram loaded with inline xml as trustworthy (_hydrated=true)
     // immediately, same as a pre-migration legacy diagram, so no read-side changes are needed.
     // Once a sync is confirmed, later saves go back to stripping it, same as always.
+    const docIdAtSave=currentDocId;
     const diagramMeta=diagrams.map(d=>{
       const {xml,previewSvg,pageSvgs,_hydrated,...meta}=d;
       if(_hydrated&&_diagramBlobSyncCache[d.id]!==d.modifiedAt){
         const syncedAt=d.modifiedAt;
         idbSet('diagblob:'+currentDocId+':'+d.id,{xml:xml||'',previewSvg:previewSvg||'',pageSvgs:Array.isArray(pageSvgs)?pageSvgs:[]})
-          .then(ok=>{ if(ok){_diagramBlobSyncCache[d.id]=syncedAt; d.blobSynced=true; diagramBlobWriteFailed=false;} else warnDiagramBlobWriteFailed(); })
-          .catch(()=>warnDiagramBlobWriteFailed());
+          .then(ok=>{ if(ok){_diagramBlobSyncCache[d.id]=syncedAt; d.blobSynced=true; diagramBlobWriteFailed=false;} else diagramBlobWriteMissed(d,docIdAtSave); })
+          .catch(()=>diagramBlobWriteMissed(d,docIdAtSave));
       }
       if(_hydrated&&!d.blobSynced) return {...meta,xml:xml||'',previewSvg:previewSvg||'',pageSvgs:Array.isArray(pageSvgs)?pageSvgs:[]};
       return meta;
@@ -30803,14 +30814,40 @@ const SAKURA_BACKUP_DB='sakura_backup_db'; const SAKURA_BACKUP_STORE='kv';
 let _idbConnPromise=null;
 function idbOpen(){
   if(_idbConnPromise) return _idbConnPromise;
-  _idbConnPromise=new Promise((resolve,reject)=>{
-    if(!('indexedDB' in window)){ _idbConnPromise=null; reject(new Error('no indexeddb')); return }
+  if(!('indexedDB' in window)) return Promise.reject(new Error('no indexeddb'));
+  const conn=new Promise((resolve,reject)=>{
     const req=indexedDB.open(SAKURA_BACKUP_DB,1);
     req.onupgradeneeded=()=>{ const db=req.result; if(!db.objectStoreNames.contains(SAKURA_BACKUP_STORE)) db.createObjectStore(SAKURA_BACKUP_STORE) };
-    req.onsuccess=()=>{ const db=req.result; db.onclose=()=>{ _idbConnPromise=null }; db.onversionchange=()=>{ db.close(); _idbConnPromise=null }; resolve(db) };
-    req.onerror=()=>{ _idbConnPromise=null; reject(req.error) };
+    // A close or version change clears the cache only if it still holds this connection, so a late
+    // event from a replaced connection doesn't throw away the fresh one.
+    const forget=()=>{ if(_idbConnPromise===conn)_idbConnPromise=null };
+    req.onsuccess=()=>{ const db=req.result; db.onclose=forget; db.onversionchange=()=>{ db.close(); forget() }; resolve(db) };
+    req.onerror=()=>{ forget(); reject(req.error) };
   });
-  return _idbConnPromise;
+  _idbConnPromise=conn;
+  return conn;
+}
+// One request on the store, on the shared connection. Safari (iOS above all) can lose that
+// connection while the app is in the background without firing `close`, after which every
+// transaction on it throws or aborts until the page reloads. The usual remedy (as idb-keyval and
+// Dexie do): on a failure, drop the cached connection, open a fresh one and try once more.
+// `onabort` is listened to as well as `onerror`, so a transaction the browser aborts (quota, a lost
+// connection) rejects instead of leaving its caller waiting for ever.
+async function idbRequest(mode,run){
+  for(let attempt=0;;attempt++){
+    let conn=null;
+    try{
+      conn=idbOpen(); const db=await conn;
+      return await new Promise((resolve,reject)=>{
+        const tx=db.transaction(SAKURA_BACKUP_STORE,mode); const req=run(tx.objectStore(SAKURA_BACKUP_STORE));
+        tx.oncomplete=()=>resolve(req.result); tx.onerror=()=>reject(tx.error||req.error); tx.onabort=()=>reject(tx.error||new Error('transaction aborted'));
+      });
+    }catch(e){
+      if(attempt>=1)throw e;
+      // Only the connection this attempt used: another caller may already have opened a fresh one.
+      if(conn&&_idbConnPromise===conn){ _idbConnPromise=null; conn.then(db=>{ try{ db.close(); }catch(_e){} },()=>{}); }
+    }
+  }
 }
 // Deliberately does NOT swallow errors into a bare `undefined` return — callers that hydrate
 // state from here (e.g. hydrateDiagramBlobsForDoc) need to tell "key genuinely has no value"
@@ -30818,16 +30855,16 @@ function idbOpen(){
 // failed read as if it were confirmed-empty and then persisting that is how real data gets
 // silently wiped. Every call site below already wraps its own await in try/catch (or should),
 // so this is safe to let reject.
-async function idbGet(key){ const db=await idbOpen(); return await new Promise((resolve,reject)=>{ const tx=db.transaction(SAKURA_BACKUP_STORE,'readonly'); const req=tx.objectStore(SAKURA_BACKUP_STORE).get(key); req.onsuccess=()=>resolve(req.result); req.onerror=()=>reject(req.error) }) }
+async function idbGet(key){ return await idbRequest('readonly',store=>store.get(key)) }
 // Never log `value` here — it's the raw diagram XML/thumbnail or other blob content, exactly
 // the kind of thing that shouldn't end up sitting in a shareable debug log. The key alone is
 // enough to identify which write failed.
-async function idbSet(key,value){ try{ const db=await idbOpen(); return await new Promise((resolve,reject)=>{ const tx=db.transaction(SAKURA_BACKUP_STORE,'readwrite'); tx.objectStore(SAKURA_BACKUP_STORE).put(value,key); tx.oncomplete=()=>resolve(true); tx.onerror=()=>reject(tx.error) }) }catch(e){ return false } }
-async function idbDelete(key){ try{ const db=await idbOpen(); return await new Promise((resolve,reject)=>{ const tx=db.transaction(SAKURA_BACKUP_STORE,'readwrite'); tx.objectStore(SAKURA_BACKUP_STORE).delete(key); tx.oncomplete=()=>resolve(true); tx.onerror=()=>reject(tx.error) }) }catch(e){ return false } }
+async function idbSet(key,value){ try{ await idbRequest('readwrite',store=>store.put(value,key)); return true }catch(e){ return false } }
+async function idbDelete(key){ try{ await idbRequest('readwrite',store=>store.delete(key)); return true }catch(e){ return false } }
 // Used only by the full-backup builder, to enumerate what's in the overflow store (diagram
 // blobs, document revisions — see "Overflow storage" below) so backups/exports
 // stay complete without needing a separately-maintained index of what's in there.
-async function idbGetAllKeys(){ try{ const db=await idbOpen(); return await new Promise((resolve,reject)=>{ const tx=db.transaction(SAKURA_BACKUP_STORE,'readonly'); const req=tx.objectStore(SAKURA_BACKUP_STORE).getAllKeys(); req.onsuccess=()=>resolve(req.result||[]); req.onerror=()=>reject(req.error) }) }catch(e){ return [] } }
+async function idbGetAllKeys(){ try{ return (await idbRequest('readonly',store=>store.getAllKeys()))||[] }catch(e){ return [] } }
 
 // Prefix marking a backup key as belonging to the IndexedDB overflow store (diagram blobs,
 // document revisions — see "Overflow storage" section above) rather
