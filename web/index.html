@@ -30981,17 +30981,28 @@ function storageOpenTest(){
     req.onblocked=()=>reject(new Error('blocked by another open copy of Sakura'));
   });
 }
-async function storageDiagnosticsText(){
+// Each line is shown as soon as its answer arrives (onUpdate), and nothing the browser answers can
+// stop it: an unexpected answer is printed as such (owner 2026-11-19: on the iPhone Details stayed
+// on "Checking…", because one answer threw and the error was swallowed).
+async function storageDiagnosticsText(onUpdate){
   const lines=[];
-  const errs=_storageErrors.length?_storageErrors:(()=>{ try{ const e=JSON.parse(localStorage.getItem(STORAGE_ERROR_KEY)||'null'); return e?[e]:[]; }catch(_e){ return []; } })();
-  if(!errs.length)lines.push('No storage error recorded.');
-  errs.forEach(e=>lines.push(`${e.at} \u00b7 ${e.op}: ${e.name} \u2014 ${e.message}`));
-  const say=(label,r,fmt)=>lines.push(label+': '+(r.timeout?'no answer from the browser':r.ok?fmt(r.v):`${r.e&&r.e.name||'Error'} \u2014 ${r.e&&r.e.message||r.e}`));
-  const [open,est,kept]=await Promise.all([storageProbe(storageOpenTest),storageProbe(()=>navigator.storage.estimate()),storageProbe(()=>navigator.storage.persisted())]);
-  say('Storage test now',open,v=>v);
-  say('Storage used',est,v=>`${(v.usage/1048576).toFixed(1)} MB of ${(v.quota/1048576).toFixed(0)} MB allowed`);
-  say('Kept by the browser',kept,v=>v?'yes':'no');
-  lines.push('Browser: '+navigator.userAgent);
+  const push=l=>{ lines.push(l); try{ onUpdate&&onUpdate(lines.join('\n')); }catch(_e){} };
+  const describe=e=>`${(e&&e.name)||'Error'} \u2014 ${(e&&e.message)||String(e)}`;
+  try{
+    const errs=_storageErrors.length?_storageErrors:(()=>{ try{ const e=JSON.parse(localStorage.getItem(STORAGE_ERROR_KEY)||'null'); return e?[e]:[]; }catch(_e){ return []; } })();
+    if(!errs.length)push('No storage error recorded.');
+    errs.forEach(e=>push(`${e.at} \u00b7 ${e.op}: ${e.name} \u2014 ${e.message}`));
+  }catch(e){ push('Recorded errors: unreadable ('+describe(e)+')'); }
+  const say=async(label,fn,fmt)=>{
+    const r=await storageProbe(fn); let text;
+    try{ text=r.timeout?'no answer from the browser':r.ok?fmt(r.v):describe(r.e); }catch(e){ text='unexpected answer ('+describe(e)+')'; }
+    push(label+': '+text);
+  };
+  const mb=n=>Number.isFinite(n)?(n/1048576).toFixed(1)+' MB':'unknown';
+  await say('Storage test now',storageOpenTest,v=>String(v));
+  await say('Storage used',()=>navigator.storage.estimate(),v=>`${mb(v&&v.usage)} of ${mb(v&&v.quota)} allowed`);
+  await say('Kept by the browser',()=>navigator.storage.persisted(),v=>v?'yes':'no');
+  push('Browser: '+navigator.userAgent);
   return lines.join('\n');
 }
 // Opens at once with "Checking…" and fills in as the browser answers, so a tap never looks like it
@@ -30999,7 +31010,8 @@ async function storageDiagnosticsText(){
 async function showStorageDiagnostics(){
   let text='Checking this browser\u2019s storage\u2026';
   const answered=sakuraConfirm({title:'Storage details',body:text,confirmLabel:'Copy',cancelLabel:'Close'});
-  storageDiagnosticsText().then(t=>{ text=t; const b=el('sakura-modal-body'); if(b&&el('sakura-modal-title')?.textContent==='Storage details')b.textContent=t; }).catch(()=>{});
+  const show=t=>{ text=t; const b=el('sakura-modal-body'); if(b&&el('sakura-modal-title')?.textContent==='Storage details')b.textContent=t; };
+  storageDiagnosticsText(show).then(show,e=>show(text+'\nCould not finish: '+((e&&e.message)||e)));
   if(await answered){ try{ await navigator.clipboard.writeText(text); showToast('Copied'); }catch(e){ showToast('Couldn\u2019t copy. Take a screenshot instead.'); } }
 }
 el('about-storage-check-btn')?.addEventListener('click',()=>showStorageDiagnostics());
