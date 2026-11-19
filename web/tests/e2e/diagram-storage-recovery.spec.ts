@@ -76,3 +76,16 @@ test('the warning\'s Details shows what the browser said, so a failure on someon
   await expect(body).toContainText('save (after reconnecting): UnknownError — Connection to Indexed Database server lost');
   await expect(body).toContainText('Browser: ');
 });
+
+test('Details opens even when the browser never answers about its storage (as a broken store can)', async ({ page }) => {
+  await page.evaluate(async () => {
+    navigator.storage.estimate = () => new Promise(() => {});
+    navigator.storage.persisted = () => new Promise(() => {});
+    // @ts-expect-error -- bare globals from index.html
+    storageOpenTest = () => new Promise(() => {}); warnDiagramBlobWriteFailed();
+  });
+  await page.locator('#toast button').filter({ hasText: 'Details' }).click();
+  await expect(page.locator('#sakura-modal-title')).toHaveText('Storage details', { timeout: 4000 });
+  await expect(page.locator('#sakura-modal-body')).toContainText('Storage test now: no answer from the browser');
+  await expect(page.locator('#sakura-modal-body')).toContainText('Storage used: no answer from the browser');
+});
