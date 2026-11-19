@@ -13545,11 +13545,13 @@ function revisionKey(id){ return REVISION_KEY_PREFIX+id }
 // no "only the heavy part" split possible here, so the whole thing moves.
 // Each read opportunistically migrates any legacy copy still sitting in localStorage from
 // before this change (one-time, self-healing — no separate migration pass needed at startup).
-async function loadDocRevisions(id){
+// opts.strict: a failed read throws instead of reading as "no versions", for a caller that is about
+// to write the list back (recordDocRevisionNow) and must not replace real versions with one.
+async function loadDocRevisions(id,opts){
   try{
     const existing=await idbGet('docrev:'+id);
     if(Array.isArray(existing))return existing;
-  }catch(e){}
+  }catch(e){ if(opts&&opts.strict)throw e; }
   try{
     const raw=localStorage.getItem(revisionKey(id));
     if(raw){
@@ -13561,7 +13563,7 @@ async function loadDocRevisions(id){
   }catch(e){}
   return [];
 }
-async function saveDocRevisions(id,list){ try{ await idbSet('docrev:'+id,list) }catch(e){} }
+async function saveDocRevisions(id,list){ try{ return await idbSet('docrev:'+id,list) }catch(e){ return false } }
 async function deleteDocRevisions(id){ try{ await idbDelete('docrev:'+id); localStorage.removeItem(revisionKey(id)) }catch(e){} }
 // `reason` shows in the History panel — 'Auto', 'Manual checkpoint', 'Before restoring an older
 // version' (recorded automatically so restoring itself is never destructive), or one of the
@@ -13614,20 +13616,25 @@ function withDocRevisionLock(id,fn){
   _docRevisionLocks[id]=run.catch(()=>{});
   return run;
 }
+// Resolves true once the version is kept somewhere: on this device, or (when this device's store
+// can't be read or written) in the account. A caller about to replace the content it was made from
+// (resolveDocPushConflict) only does so then.
 async function recordDocRevisionNow(id,contentObj,reason,opts){
-  const list=await loadDocRevisions(id);
+  let list, readOk=true;
+  try{ list=await loadDocRevisions(id,{strict:true}); }catch(e){ list=[]; readOk=false; }
   const last=list[list.length-1];
-  if(opts&&opts.dedupe&&last&&docRevisionContentKey(last)===docRevisionContentKey(contentObj))return false;
+  if(opts&&opts.dedupe&&last&&docRevisionContentKey(last)===docRevisionContentKey(contentObj))return true; // already kept
   const now=Date.now();
   list.push({ts:last&&last.ts>=now?last.ts+1:now,reason:reason||'Auto',...(contentObj.rowFormat?{rowFormat:contentObj.rowFormat}:{}),nodes:contentObj.nodes,title:contentObj.title||'',author:contentObj.author||'',docStatus:typeof contentObj.docStatus==='string'?contentObj.docStatus:'',docLinkedUrl:typeof contentObj.docLinkedUrl==='string'?contentObj.docLinkedUrl:'',docLinkedUrlLabel:typeof contentObj.docLinkedUrlLabel==='string'?contentObj.docLinkedUrlLabel:'',diagrams:trimDiagramsForRevision(contentObj.diagrams),qa:Array.isArray(contentObj.qa)?contentObj.qa:[],remarks:Array.isArray(contentObj.remarks)?contentObj.remarks:[]});
   // Keeps REVISION_MAX_PER_DOC versions spread over time (src/utils/versionHistory.ts), not just
   // the newest ones.
   const kept=trimVersions(list,REVISION_MAX_PER_DOC,now);
-  await saveDocRevisions(id,kept);
+  // A list that couldn't be read isn't written back: that would replace this device's versions.
+  const savedHere=readOk&&await saveDocRevisions(id,kept);
   // Signed in: the new version goes to the cloud too, and versions trimmed away here leave it.
   const keptTs=new Set(kept.map(v=>v.ts)), added=kept[kept.length-1];
-  pushDocVersionsToCloud(id,added&&added.ts===list[list.length-1].ts?[added]:[],list.filter(v=>!keptTs.has(v.ts)).map(v=>v.ts));
-  return true;
+  const sent=pushDocVersionsToCloud(id,added&&added.ts===list[list.length-1].ts?[added]:[],readOk?list.filter(v=>!keptTs.has(v.ts)).map(v=>v.ts):[]);
+  return savedHere?true:await sent;
 }
 /* GENERATED:versionChunks:START — DO NOT EDIT BY HAND. Source of truth: src/utils/versionChunks.ts (tests: tests/unit/versionChunks.test.ts). Regenerate with `npm run generate` after changing the source; CI fails if this block drifts from what the generator produces (see .github/workflows/ci.yml and scripts/generate-index-blocks.mjs). */
 /**
@@ -13749,22 +13756,25 @@ function noteVersionPushPending(docId,ts,pending){
     localStorage.setItem(VERSION_PUSH_PENDING_KEY,JSON.stringify(m));
   }catch(e){}
 }
+// Resolves true when every added version reached the account.
 async function pushDocVersionsToCloud(docId,added,removedTs){
-  if(!currentUser||(!added.length&&!removedTs.length))return;
+  if(!currentUser)return false;
+  if(!added.length&&!removedTs.length)return true;
   let mod,db;
   try{ ({mod,db}=await loadFirestoreMods()); }
-  catch(e){ added.forEach(rev=>noteVersionPushPending(docId,rev.ts,true)); console.warn('[sakura] version sync: offline for',docId,e); return; }
+  catch(e){ added.forEach(rev=>noteVersionPushPending(docId,rev.ts,true)); console.warn('[sakura] version sync: offline for',docId,e); return false; }
+  let allSent=true;
   const path=['users',currentUser.uid,'docs',docId,'versions'];
   const col=mod.collection(db,...path), ref=id=>mod.doc(db,...path,id);
   for(const rev of added){
     const recs=versionCloudRecords(rev);
-    if(!recs){ noteVersionPushPending(docId,rev.ts,false); console.warn('[sakura] version sync: version too large for the account, kept on this device:',docId,rev.ts); continue; }
+    if(!recs){ allSent=false; noteVersionPushPending(docId,rev.ts,false); console.warn('[sakura] version sync: version too large for the account, kept on this device:',docId,rev.ts); continue; }
     try{
       // Parts first, the head last: a reader only takes a split version once all of it is there.
       for(const r of recs.slice(1))await mod.setDoc(ref(r.id),r.data);
       await mod.setDoc(ref(recs[0].id),recs[0].data);
       noteVersionPushPending(docId,rev.ts,false);
-    }catch(e){ noteVersionPushPending(docId,rev.ts,true); console.warn('[sakura] version sync: push failed for',docId,rev.ts,e); }
+    }catch(e){ allSent=false; noteVersionPushPending(docId,rev.ts,true); console.warn('[sakura] version sync: push failed for',docId,rev.ts,e); }
   }
   for(const ts of removedTs){
     try{
@@ -13773,6 +13783,7 @@ async function pushDocVersionsToCloud(docId,added,removedTs){
       const batch=mod.writeBatch(db); snap.docs.forEach(d=>batch.delete(d.ref)); await batch.commit();
     }catch(e){ console.warn('[sakura] version sync: remove failed for',docId,ts,e); }
   }
+  return allSent;
 }
 let _versionRetryRunning=false;
 async function retryPendingVersionPushes(){
@@ -13848,14 +13859,16 @@ let _foreignDocVersionPending=null;
 // Sync is about to replace a document's stored copy (one not open on screen) with a newer one
 // from another device. Keeps the local copy as a version first when it differs, so edits made
 // here offline, beaten by a newer edit elsewhere, can still be brought back.
+// Resolves false when the local copy differs and couldn't be kept: the caller then leaves it in
+// place and takes the incoming copy on a later sync.
 async function keepLocalDocBeforeIncoming(id,incoming){
   try{
-    const raw=localStorage.getItem(docKey(id)); if(!raw)return;
-    const prev=await storedDocForRevision(id,raw); if(!prev||!prev.nodes.length)return;
+    const raw=localStorage.getItem(docKey(id)); if(!raw)return true;
+    const prev=await storedDocForRevision(id,raw); if(!prev||!prev.nodes.length)return true;
     const sameRows=JSON.stringify({n:prev.nodes,r:prev.remarks||[],q:prev.qa||[],t:prev.title||''})===JSON.stringify({n:incoming.nodes||[],r:incoming.remarks||[],q:incoming.qa||[],t:incoming.title||''});
-    if(sameRows)return;
-    await recordDocRevision(id,prev,'Before changes from another device',{dedupe:true});
-  }catch(e){}
+    if(sameRows)return true;
+    return await recordDocRevision(id,prev,'Before changes from another device',{dedupe:true});
+  }catch(e){ return false; }
 }
 
 // Tracks the modifiedAt we last successfully wrote to the diagram-blob overflow store, per
@@ -14318,7 +14331,10 @@ function discardDocIfBlank(id){
   let d=null; try{ d=JSON.parse(localStorage.getItem(docKey(id))||'null'); }catch(e){ return false; }
   if(!docPayloadIsBlank(d))return false;
   const i=openTabs.findIndex(t=>t.docId===id); if(i>=0)openTabs.splice(i,1);
-  permanentlyDeleteDocCore(id);
+  // Blank here, but another device may have written in it since: the account's copy is removed
+  // only if it is still the one this device last had (deleteDocFromCloud checks).
+  const entry=loadDocsIndex().find(x=>x.id===id);
+  permanentlyDeleteDocCore(id,{cloudGuard:{baseRev:pushBaseRev(id),updatedAt:Number(entry&&entry.updatedAt)||0}});
   persistOpenTabs(); renderTabStrip(); renderSidebar();
   return true;
 }
@@ -14660,7 +14676,7 @@ function permanentlyDeleteDocCore(id,opts){
   // is synchronous and called from many places (Empty Trash, the automatic retention purge,
   // bulk trash actions); none of them need to block on the network round-trip, and a failure
   // here is logged rather than surfaced, matching every other best-effort sync call in the file.
-  if(!(opts&&opts.localOnly))deleteDocFromCloud(id);
+  if(!(opts&&opts.localOnly))deleteDocFromCloud(id,opts&&opts.cloudGuard);
 }
 // === Version History panel ===
 function openVersionHistory(docId){
@@ -16448,8 +16464,41 @@ function applyDataSettingsForAccount(){
   const u=el('sb-undo-restore-row'); if(u&&signedIn)u.style.display='none';
   else if(u&&typeof updatePreRestoreSnapshotStatus==='function')updatePreRestoreSnapshotStatus();
 }
+// Whose documents this device holds. Documents stay with the account they came from (as Google's
+// and Microsoft's apps do): signing in to a different account on a device still holding another
+// account's documents (kept by "Sign out, keep them here") never merges them into it; the person
+// chooses first. Documents made before any sign-in join the first account signed in to.
+const DATA_OWNER_KEY='sakura_data_owner_v1'; // {uid, email}
+function loadDataOwner(){ try{ const o=JSON.parse(localStorage.getItem(DATA_OWNER_KEY)||'null'); return o&&o.uid?o:null; }catch(e){ return null; } }
+function deviceHoldsDocuments(){ return loadDocsIndex().length>0||loadFolders().length>0; }
+function accountMayUseThisDevice(user){
+  const owner=loadDataOwner();
+  if(owner&&owner.uid!==user.uid&&deviceHoldsDocuments()){ askAboutOtherAccountsDocuments(user,owner); return false; }
+  try{ localStorage.setItem(DATA_OWNER_KEY,JSON.stringify({uid:user.uid,email:user.email||''})); }catch(e){}
+  return true;
+}
+let _otherAccountAskOpen=false;
+async function askAboutOtherAccountsDocuments(user,owner){
+  if(_otherAccountAskOpen)return;
+  _otherAccountAskOpen=true;
+  try{
+    const other=owner.email||'another account', mine=user.email||'this account';
+    const remove=await sakuraConfirm({
+      title:'This device has another account\u2019s documents',
+      body:`They belong to ${other} and are kept apart from ${mine}. To use ${mine} here, remove them from this device. Or sign out and sign in as ${other} to keep working with them.`,
+      warning:'Removing them also removes any changes that haven\u2019t reached that account yet.',
+      confirmLabel:'Remove them from this device', cancelLabel:'Sign out', confirmCls:'danger'
+    });
+    if(remove){ try{ sessionStorage.setItem('sakura_cleared_other_account','1'); }catch(e){} clearThisDeviceAndReload(); return; }
+    try{ const {auth,authMod}=await loadFirebaseMods(); await authMod.signOut(auth); }catch(e){ console.warn('[sakura] sign-out error:',e); }
+    try{ localStorage.removeItem('sakura_account_active'); }catch(e){}
+    updateAccountUI(null);
+  }finally{ _otherAccountAskOpen=false; }
+}
 function updateAccountUI(user){
   document.documentElement.classList.remove('account-restoring');
+  // Not this account's documents: nothing syncs (currentUser stays unset) until the person chooses.
+  if(user&&!accountMayUseThisDevice(user))user=null;
   currentUser=user; renderDocSaveState(); applyDataSettingsForAccount();
   refreshAdminStatus(user);
   // All three sign-in paths (Google popup, email/password, and restored-session
@@ -16761,6 +16810,8 @@ async function signOutOfAccountOnce(){
 // After the reload that cleared this device (the script at the top of the page).
 document.addEventListener('DOMContentLoaded',()=>{
   try{ if(sessionStorage.getItem('sakura_cleared_after_sign_out')!=='1')return; sessionStorage.removeItem('sakura_cleared_after_sign_out'); }catch(e){ return; }
+  let otherAccount=false; try{ otherAccount=sessionStorage.getItem('sakura_cleared_other_account')==='1'; sessionStorage.removeItem('sakura_cleared_other_account'); }catch(e){}
+  if(otherAccount){ setTimeout(()=>showToast('The other account\u2019s documents were removed from this device.','success',false,6000),300); return; }
   setTimeout(()=>showToast('Signed out. Your documents are in your account and were removed from this device.','success',false,6000),300);
 });
 // Deletes everything this account has in Firestore, then the Firebase Auth account itself (with a
@@ -18105,13 +18156,22 @@ function cloudDocStateOf(snap){ const d=snap.exists()?snap.data():null; return {
 // Another device saved this document since this device's copy was taken from the cloud: nothing
 // is written over it. This device's copy is kept as a version, the cloud's becomes the copy here
 // (and on screen, if open), and the person is told where their edits went.
+// This device's copy is replaced only once that version is confirmed kept (here or in the account);
+// otherwise nothing changes and the next sync tries again.
+const _conflictNotKeptToastShown=new Set();
 async function resolveDocPushConflict(mod,db,ownerUid,docId,cloud){
+  let kept=true;
   try{
     const open=docId===currentDocId&&activeTabDocId===docId;
     if(open)commitEdit();
     const mine=open?currentDocRevisionContent():await storedDocForRevision(docId,localStorage.getItem(docKey(docId)));
-    if(mine&&Array.isArray(mine.nodes)&&mine.nodes.length)await recordDocRevision(docId,mine,'Your changes on this device',{dedupe:true});
-  }catch(e){ console.warn('[sakura] could not keep this device\'s copy as a version:',e); }
+    if(mine&&Array.isArray(mine.nodes)&&mine.nodes.length)kept=await recordDocRevision(docId,mine,'Your changes on this device',{dedupe:true});
+  }catch(e){ kept=false; console.warn('[sakura] could not keep this device\'s copy as a version:',e); }
+  if(!kept){
+    if(!_conflictNotKeptToastShown.has(docId)){ _conflictNotKeptToastShown.add(docId); showToast('This document changed on another device. Your edits here are kept as they are until they can be saved as a version; then the other device\u2019s copy is shown.'); }
+    return;
+  }
+  _conflictNotKeptToastShown.delete(docId);
   if(!cloud)return;
   const {updatedAt,rev,...rawDocData}=cloud;
   const docData=await hydrateCloudDocBlobs(mod,db,ownerUid,docId,rawDocData);
@@ -18167,15 +18227,20 @@ async function pushDocToCloud(mod,db,docId){
       // Checked before the diagram writes too, so a refused copy writes nothing at all.
       const pre=await mod.getDoc(ref);
       if(!decideDocPush(cloudDocStateOf(pre),pushBaseRev(docId),localUpdatedAt).write){ await resolveDocPushConflict(mod,db,ownerUid,docId,pre.data()); return; }
+      // A diagram's content is sent only when this device actually has it: inline (saveToStorage's
+      // pre-first-sync safety-net copy) or read from IndexedDB. One it can't read (the store
+      // unavailable, or content that never arrived here) is left out, so the account's copy stays
+      // as it is; sending it as empty blanked the diagram in the account and on every device.
       const hydrated=await Promise.all(diagrams.map(async dg=>{
-        if(dg.xml!==undefined)return dg; // saveToStorage's own pre-first-sync safety-net copy — already has it
+        if(typeof dg.xml==='string')return {dg,known:true};
         try{
           const blob=await idbGet('diagblob:'+docId+':'+dg.id);
-          return blob&&blob.xml?{...dg,xml:blob.xml,previewSvg:blob.previewSvg||dg.previewSvg||''}:dg;
-        }catch(e){ return dg; } // best-effort — a diagram whose blob can't be read here pushes with whatever xml it already had (usually none), not a hard failure for the rest of the document
+          if(blob&&typeof blob.xml==='string')return {dg:{...dg,xml:blob.xml},known:true};
+        }catch(e){}
+        return {dg,known:false};
       }));
-      await pushDocBlobSubcollection(mod,db,ownerUid,docId,'diagrams',hydrated,['xml']);
-      diagrams=hydrated.map(({xml,previewSvg,pageSvgs,...meta})=>meta);
+      await pushDocBlobSubcollection(mod,db,ownerUid,docId,'diagrams',hydrated.filter(h=>h.known).map(h=>h.dg),['xml']);
+      diagrams=hydrated.map(({dg:{xml,previewSvg,pageSvgs,...meta}})=>meta);
     }
     // A pre-cutdown local copy may still carry a stale `attachments` array (with inline
     // dataUrls) from before the Files feature was removed — dropped here rather than pushed,
@@ -18246,10 +18311,21 @@ async function pushDocBlobSubcollection(mod,db,ownerUid,docId,subcolName,items,b
 // many places, including the automatic retention purge) — a failure
 // here just means this device's next sign-in will need to re-delete it, not silent data loss in
 // either direction.
-async function deleteDocFromCloud(docId){
+// cloudGuard {baseRev, updatedAt} (a blank document cleared away): the account's copy is removed
+// only if no other device has written it since this device's copy; otherwise it is left, and the
+// next sync brings it back here with its content.
+async function deleteDocFromCloud(docId,cloudGuard){
   if(!currentUser)return;
   try{
     const {mod,db}=await loadFirestoreMods();
+    if(cloudGuard){
+      const snap=await mod.getDoc(mod.doc(db,'users',currentUser.uid,'docs',docId));
+      if(snap.exists()&&!decideDocPush(cloudDocStateOf(snap),cloudGuard.baseRev,cloudGuard.updatedAt).write){
+        console.warn('[sakura] deleteDocFromCloud: left',docId,'in the account — another device wrote it since this blank copy');
+        _lastPullAt=0; pullAndMergeFromCloud();
+        return;
+      }
+    }
     // A marker that this document was deleted forever, so the account's other devices remove
     // their copy instead of sending it back up as "missing from the account" (cloud-first: a
     // delete reaches every device, as in Drive or Dropbox). Written first, so a failure part way
@@ -18304,7 +18380,11 @@ async function pushMetaToCloud(mod,db,metaKey){
   }else{
     const localKeyName=getSyncMetaKeys()[metaKey]; if(!localKeyName)return;
     const raw=localStorage.getItem(localKeyName);
-    if(raw!==null){ try{value=JSON.parse(raw)}catch(e){value=null} }
+    // Missing or unreadable here is never "empty it in the account": every save writes a real value
+    // (an empty list is [] or {}), so this is a cleared or broken store, and sending null would
+    // remove the account's copy on every device. Same rule as the IndexedDB branch above.
+    if(raw===null){ console.warn('[sakura] pushMetaToCloud: refused to push',metaKey,'— not on this device'); return; }
+    try{ value=JSON.parse(raw); }catch(e){ console.warn('[sakura] pushMetaToCloud: refused to push',metaKey,'— unreadable here'); return; }
   }
   const ts=Date.now(); _lastPushedTs['meta:'+metaKey]=ts; noteOwnPush('meta:'+metaKey,ts);
   const ref=mod.doc(db,'users',currentUser.uid,'meta',metaKey);
@@ -18452,7 +18532,7 @@ async function applyIncomingDocData(mod,db,ownerUid,id,cloud,viaRealtime){
     return true;
   }
   const {updatedAt,rev:_rev,...rawDocData}=cloud;
-  await keepLocalDocBeforeIncoming(id,rawDocData); // before hydrateCloudDocBlobs replaces the local diagram blobs
+  if(!await keepLocalDocBeforeIncoming(id,rawDocData))return false; // before hydrateCloudDocBlobs replaces the local diagram blobs
   const docData=await hydrateCloudDocBlobs(mod,db,ownerUid,id,rawDocData);
   localStorage.setItem(docKey(id),JSON.stringify(docData));
   // The copy taken from the cloud is stamped with the cloud's time, not now: stamped now, the next

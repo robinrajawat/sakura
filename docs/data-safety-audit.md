@@ -15,6 +15,21 @@ What Sakura promises instead, and what every change must keep true:
    away, and moving to another device (signed in).
 3. **When two copies disagree, both are kept.** Nothing is overwritten without a copy to go back to.
 
+**Sync rules** (owner 2026-11-19, after a cleared iPhone unfiled every document): every sync path
+keeps these, each pinned by a test in `sync-data-safety.spec.ts` or `first-sync-keeps-account-lists.spec.ts`.
+When in doubt, nothing is sent and nothing is deleted: the worst case is a change syncing late.
+
+- A device's **first sync merges** with the account (union, the account winning conflicts); it
+  never decides by timestamp, and never writes over the account's copy.
+- **Only what this device actually has is sent.** Content it can't read (a diagram in a failing
+  store, a list missing here) is left out, never sent as empty.
+- **A delete never removes newer content.** A blank document cleared away leaves the account's
+  copy if another device wrote it since.
+- **A copy is replaced only once it is kept.** Before another device's copy replaces this one, this
+  one is confirmed saved as a version (here or in the account); otherwise nothing changes yet.
+- **Documents stay with their account.** A device holding another account's documents asks before
+  anything syncs; they are never merged into a different account.
+
 How (the pattern Google Docs, Notion and Linear use): **saved on the device first, then synced to
 the account**, which is the copy everyone agrees on. A purely cloud copy would lose more: anything
 typed offline or on a bad connection would have nowhere to go. Direction for the cloud side:
@@ -61,6 +76,11 @@ over once. Tests: `thread-drafts.spec.ts`, `threadDrafts.test.ts`, `table-api.sp
 | A version over one cloud record (usually large diagrams); a version whose upload failed | Kept only on the device that made it (lost with it); a failed upload was retried only when Version history was next opened there | Stored in the account as a head and parts, sized in bytes; a failed upload is retried after the next successful sync. Only a version past about 17 MB stays on the device | `version-cloud-sync.spec.ts`, `versionChunks.test.ts` |
 | Folding a row or a table (on a phone, or anywhere) | Sent the whole document to the account ("Saving…") and moved its version on, so a real edit on another device could be refused as a conflict and kept aside as a version. Every save also re-sent the documents list and the settings | Folds are how the document is looked at (`DOC_VIEW_ONLY_FIELDS`): kept with it here, sent with the next real edit. The list and the settings go only when they changed | `sync-own-echo.spec.ts` |
 | A drawing in the diagram editor, not yet Saved inside draw.io | Lost when closing (it asked first) or when the app was closed | draw.io sends the drawing as it changes (`autosave=1`); kept like a Save, only once the real diagram was loaded; closing makes the picture and closes | `diagram-autosave.spec.ts` (draw.io's messages played by the test; check once by hand) |
+| Clearing website data on an iPhone, then signing in | Every document showed as Unfiled for every device: the first sync took "newer timestamp wins", and clearing away a blank document had re-saved the empty folder links. | A first sync merges, on pull and push. | `first-sync-keeps-account-lists.spec.ts` |
+| A diagram the device can't read (IndexedDB failing, as Safari does after the app sits in the background) | The next edit to its document sent the diagram up empty, blanking it in the account. | Only content the device has is sent; IndexedDB reconnects and retries (#906). | `sync-data-safety.spec.ts`, `diagram-storage-recovery.spec.ts` |
+| A blank document cleared away after another device wrote in it | Deleted from the account with the other device's words. | Deleted there only if unchanged since this device's copy. | `sync-data-safety.spec.ts` |
+| Two devices edited a document while this device's store was failing | "Your edits are kept in Version history", but the version could fail to save and the edits were replaced. | Replaced only once the version is confirmed kept. | `sync-data-safety.spec.ts` |
+| Signing out ("keep them here"), then in to another account | The first account's documents merged into the second. | Kept apart; the person chooses. | `sync-data-safety.spec.ts` |
 | Version history on a phone | Unreachable, because it opens by right-clicking. | A ⋯ document menu on the phone's top line. | `phone-shell.phone.spec.ts` |
 
 ## Checked and safe
