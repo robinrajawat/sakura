@@ -179,11 +179,11 @@ contradicts README.md or docs/feature-reference.md, trust them.)*
 
 ### Latest changes
 
+- **Role email addresses (2026-11-19, owner).** Public pages no longer show the owner's Gmail: privacy policy → `privacy@sakura-notes.com`, terms → `hello@` (general) and `security@` (security reports), `security.txt` → `security@`. All three forward to the owner's Gmail via Cloudflare Email Routing (domain DNS is on Cloudflare; the one SPF record combines `_spf.firebasemail.com` and `_spf.mx.cloudflare.net`, so never split or delete it). `FEEDBACK_ADMIN_EMAIL` (`web/src/state/admin.ts`) stays the Gmail: it's the owner's sign-in identity, not a contact. legalPages test fails if a page shows an `@gmail.com` address.
+
 - **Site basics made standard (2026-11-19, owner audit).** Privacy policy gained "Cookies and storage on your device" (no cookies; documents/settings in local storage, backup and sign-in session in IndexedDB, offline cache, session flags; strictly necessary so no consent asked), Effective 19 November 2026. New `web/public/404.html` (GitHub Pages serves it), `.well-known/security.txt` (Expires 2027-11-19; unit test fails once it passes, renew then), `robots.txt`; PNG icon fallback on every page; canonical + link-preview tags on the policy pages. Test: legalPages.
 
 - **Licensing follows standard practice (2026-11-18, owner: "adopt the standard practice. Period.").** Open-source notices are a page on the site, `web/public/third-party-notices.html` (full Apache 2.0 and OFL 1.1 texts), linked from Settings → About and the policy pages' footers, instead of a GitHub link. Settings' "License" row (the repo's all-rights-reserved LICENSE) is gone; users are governed by the Terms, which gained a "Sakura itself" section (who owns Sakura, personal and professional use allowed, no copying/reselling, open-source parts under their own licenses), Effective date now 18 November 2026. `THIRD-PARTY-NOTICES.md` stays as the repo copy; legalPages test checks every entry and copyright line is on the page.
-
-- **Policy pages follow the standard pattern (2026-11-18, owner).** #893 made "← Back to Sakura Notes" close the tab when the app opened it; Safari (and so every iPhone browser) refuses `window.close()` for a tab opened by a link, so it still opened a second app there. Owner chose the standard behaviour instead: `legal.js` and `?from=app` are gone, the top link is the plain name "Sakura Notes" (`.site`), and people close the tab themselves. Don't reintroduce tab-closing tricks. Test: legalPages (no script again).
 
 ### In progress / not built
 
@@ -209,12 +209,6 @@ contradicts README.md or docs/feature-reference.md, trust them.)*
   with 3–5 target users. The name is decided: **Sakura Notes** (owner, 2026-11-18, after weighing
   ~20 alternatives: Ramus, Viveka, Sutra, Krama (an existing "Krama" ideas app), Bridge (Adobe Bridge),
   generic words like Notes/Outliner (unownable)). Don't reopen it unless the owner asks.
-- **Role email address on the domain (owner, 2026-11-19: to set up).** Public pages (privacy, terms,
-  notices, security.txt) show the owner's personal Gmail. Standard is a role address such as
-  `hello@sakura-notes.com` forwarding to it. Once the owner has set up forwarding, swap the address in
-  `privacy.html`, `terms.html` and `.well-known/security.txt` (and the legalPages test's mailto check).
-  Do NOT change `FEEDBACK_ADMIN_EMAIL` (`web/src/state/admin.ts`, generated into index.html): that is
-  the owner's sign-in identity for the feedback inbox, not a contact address.
 - **Firestore backups, before public launch (owner, 2026-11-17: later, no computer at hand).** Upgrade
   the Firebase project `sakura-4cdae` to Blaze (needed for any managed backup), set a $5/month budget
   alert the same day (Blaze has no hard cap; anonymous feedback writes are the abuse path, App Check
