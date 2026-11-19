@@ -21,9 +21,13 @@ describe('privacy policy and terms', () => {
   it('name the operator, a contact and an effective date', () => {
     for (const p of [PRIVACY, TERMS]) {
       expect(p).toContain('Robin Singh Rajawat');
-      expect(p).toContain('mailto:robinsinghrajawat@gmail.com');
+      // Role addresses on the domain (Cloudflare Email Routing forwards them), never a personal inbox.
+      expect(p).not.toContain('@gmail.com');
       expect(p).toMatch(/Effective \d{1,2} \w+ 20\d\d/);
     }
+    expect(PRIVACY).toContain('mailto:privacy@sakura-notes.com');
+    expect(TERMS).toContain('mailto:hello@sakura-notes.com');
+    expect(TERMS).toContain('mailto:security@sakura-notes.com');
     expect(PRIVACY).toContain('Datatilsynet');
     expect(TERMS).toContain('Danish law');
   });
@@ -82,7 +86,7 @@ describe('privacy policy and terms', () => {
     expect(NOT_FOUND).toContain('<a href="/">Open Sakura Notes</a>');
     // security.txt (RFC 9116): a contact and an expiry no more than a year ahead. When this fails
     // because Expires has passed, renew the date — an expired file tells researchers to ignore it.
-    expect(SECURITY).toMatch(/^Contact: mailto:\S+@\S+$/m);
+    expect(SECURITY).toContain('Contact: mailto:security@sakura-notes.com');
     const expires = Date.parse(SECURITY.match(/^Expires: (\S+)$/m)?.[1] ?? '');
     expect(expires).toBeGreaterThan(Date.now());
     expect(expires - Date.now()).toBeLessThan(366 * 24 * 3600 * 1000);
