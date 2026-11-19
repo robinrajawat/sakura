@@ -3545,6 +3545,16 @@ html.calm-layout #sb-auto-rewrite-chip.is-quiet:hover,html.calm-layout #sb-auto-
     left: 8px; right: 8px; top: calc(60px + env(safe-area-inset-top)); transform: none; width: auto; max-height: 60dvh;
   }
 
+  /* ---- Send a copy: full width under the top line, like search (a box pinned to the bottom would
+     sit under the keyboard on an iPhone). Without this it hangs off the Share button's right edge
+     at its desktop width and runs off the left of the screen. ---- */
+  html.phone .todo-dd-menu.share-dd-menu {
+    position: fixed !important; left: 8px !important; right: 8px !important; top: calc(60px + env(safe-area-inset-top)) !important;
+    bottom: auto !important; width: auto !important; min-width: 0 !important; max-width: none !important; max-height: 60dvh;
+  }
+  html.phone .share-send-btn { min-height: 44px; padding: 0 18px; }
+  html.phone .share-search-wrap .meta-input { min-height: 44px; }
+
   /* ---- Account and notification menus: sheets along the bottom, over the open drawer. ---- */
   html.phone #account-menu, html.phone #notif-menu {
     position: fixed !important; left: 8px !important; right: 8px !important; bottom: calc(8px + env(safe-area-inset-bottom)) !important;
