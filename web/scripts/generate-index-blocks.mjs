@@ -397,7 +397,7 @@ initAiProvidersState({
   },
   {
     // Markdown export (same spec): exportMarkdown in index.html gathers rows, notes (via
-    // DOMParser), tables and mentions, then calls serializeMarkdown.
+    // DOMParser), tables and mentions, then calls mdSerializeDocument.
     name: 'markdownExport',
     sourceFile: 'src/utils/markdownExport.ts',
     testFile: 'tests/unit/markdownExport.test.ts',

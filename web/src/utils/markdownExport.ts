@@ -2,7 +2,7 @@
  * Markdown export (owner 2026-11-19, spec: docs/markdown-plan.md). Turns the open document into one
  * `.md` file that other notes apps open, and that markdownImport.ts reads back to the same rows.
  *
- * `serializeMarkdown` is pure. `mdFromNoteHtml` and `mdTableToGrid` read already-sanitized HTML
+ * `mdSerializeDocument` is pure. `mdFromNoteHtml` and `mdTableToGrid` read already-sanitized HTML
  * through the DOM element the caller passes in (index.html parses with DOMParser; tests use
  * happy-dom), and never write HTML anywhere. Wired via scripts/generate-index-blocks.mjs's
  * `markdownExport` block; `exportMarkdown` in index.html gathers the rows and downloads the file.
@@ -266,7 +266,7 @@ export function mdGridToTable(grid: string[][]): string[] {
  * heading. Notes, tables and mentions follow their row: indented under a list item, plain under a
  * heading.
  */
-export function serializeMarkdown(title: string, rows: MdExportRow[]): string {
+export function mdSerializeDocument(title: string, rows: MdExportRow[]): string {
   const out: string[] = ['# ' + mdInline((title || 'Untitled').trim() || 'Untitled', [], true), ''];
   const headingAt: boolean[] = []; // per depth: is the open row at this depth a heading block?
   const headingDepth: number[] = []; // per depth: depth of the nearest heading block at or above

@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { describe, it, expect } from 'vitest';
-import { serializeMarkdown, mdInline, mdEscape, mdFromNoteHtml, mdTableToGrid, mdGridToTable, type MdExportRow } from '../../src/utils/markdownExport';
+import { mdSerializeDocument, mdInline, mdEscape, mdFromNoteHtml, mdTableToGrid, mdGridToTable, type MdExportRow } from '../../src/utils/markdownExport';
 import { parseMarkdown, mdParseInline } from '../../src/utils/markdownImport';
 
 // Markdown export (docs/markdown-plan.md): readable in other apps, and read back by the importer to
@@ -83,7 +83,7 @@ describe('document', () => {
     { text: 'heading inside a list', depth: 2, heading: 1 }
   ];
   it('writes headings, lists, To-Dos, notes, tables and mentions', () => {
-    expect(serializeMarkdown('Plan', doc)).toBe(
+    expect(mdSerializeDocument('Plan', doc)).toBe(
       [
         '# Plan', '',
         '## Goals', '', 'Why we do this.', '',
@@ -99,7 +99,7 @@ describe('document', () => {
     );
   });
   it('round trip: export then import gives back the same rows', () => {
-    const back = parseMarkdown(serializeMarkdown('Plan', doc));
+    const back = parseMarkdown(mdSerializeDocument('Plan', doc));
     expect(back.title).toBe('Plan');
     expect(back.rows.map((r) => [r.depth, r.text, r.heading > 0, r.isCheckbox && r.checked, r.isCheckbox])).toEqual(
       doc.map((r) => [r.depth, r.text, !!r.heading && r.text !== 'heading inside a list', !!r.checked, !!r.isCheckbox])
@@ -112,11 +112,11 @@ describe('document', () => {
   it('round trip keeps tricky words exactly', () => {
     const tricky = ['# hash', '1. one', '- dash', '[ ] not a box', '[x] nor this', 'a*b*c', 'snake_case', '<tag>', 'pipe | here', '`tick`', '> quote', '~~not struck~~', 'trailing \\'];
     const rows: MdExportRow[] = tricky.map((t) => ({ text: t, depth: 0 }));
-    const back = parseMarkdown(serializeMarkdown('T', rows)).rows;
+    const back = parseMarkdown(mdSerializeDocument('T', rows)).rows;
     expect(back.map((r) => r.text)).toEqual(tricky);
     expect(back.every((r) => !r.isCheckbox && !r.heading && r.marks.length === 0)).toBe(true);
   });
   it('an empty document is just its title', () => {
-    expect(serializeMarkdown('', [])).toBe('# Untitled\n');
+    expect(mdSerializeDocument('', [])).toBe('# Untitled\n');
   });
 });

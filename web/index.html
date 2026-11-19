@@ -25649,7 +25649,7 @@ function parseMarkdown(input) {
  * Markdown export (owner 2026-11-19, spec: docs/markdown-plan.md). Turns the open document into one
  * `.md` file that other notes apps open, and that markdownImport.ts reads back to the same rows.
  *
- * `serializeMarkdown` is pure. `mdFromNoteHtml` and `mdTableToGrid` read already-sanitized HTML
+ * `mdSerializeDocument` is pure. `mdFromNoteHtml` and `mdTableToGrid` read already-sanitized HTML
  * through the DOM element the caller passes in (index.html parses with DOMParser; tests use
  * happy-dom), and never write HTML anywhere. Wired via scripts/generate-index-blocks.mjs's
  * `markdownExport` block; `exportMarkdown` in index.html gathers the rows and downloads the file.
@@ -25922,7 +25922,7 @@ function mdGridToTable(grid) {
  * heading. Notes, tables and mentions follow their row: indented under a list item, plain under a
  * heading.
  */
-function serializeMarkdown(title, rows) {
+function mdSerializeDocument(title, rows) {
     const out = ['# ' + mdInline((title || 'Untitled').trim() || 'Untitled', [], true), ''];
     const headingAt = []; // per depth: is the open row at this depth a heading block?
     const headingDepth = []; // per depth: depth of the nearest heading block at or above
@@ -26089,29 +26089,28 @@ async function importDocumentFile(file){
   else importOpmlText(text);
 }
 function triggerDocumentImport(){ el('sakura-opml-file-input')?.click(); }
-// Rows, notes (read through DOMParser), tables and what Markdown can't hold, for serializeMarkdown.
+// Rows, notes (read through DOMParser), tables and what Markdown can't hold, for mdSerializeDocument.
 function exportMarkdown(){
   const list=withoutNoExportNodes(getScopedNodes(true));
   const parser=new DOMParser();
   const htmlRoot=html=>parser.parseFromString('<!doctype html><body>'+(html||'')+'</body>','text/html').body;
-  let pictures=0, objects=0;
+  const counts={picture:0,diagram:0,thread:0,remark:0};
   const rows=list.map(n=>{
     const mentions=[];
-    for(const im of (Array.isArray(n.images)?n.images:[])){ pictures++; mentions.push('Picture'+(im.caption?': '+im.caption:'')); }
-    for(const d of diagrams.filter(d=>d.anchorNodeId===n.id)){ objects++; mentions.push('Diagram'+(d.title?': '+d.title:'')); }
-    for(const q of qaItems.filter(q=>q.sourceNodeId===n.id)){ objects++; const t=stripHtmlToText(q.question||q.text||'').trim(); mentions.push('Thread'+(t?': '+t:'')); }
-    for(const r of remarks.filter(r=>r.anchorNodeId===n.id)){ objects++; const t=stripHtmlToText(r.title||r.text||'').trim(); mentions.push('Remark'+(t?': '+t:'')); }
+    for(const im of (Array.isArray(n.images)?n.images:[])){ counts.picture++; mentions.push('Picture'+(im.caption?': '+im.caption:'')); }
+    for(const d of diagrams.filter(d=>d.anchorNodeId===n.id)){ counts.diagram++; mentions.push('Diagram'+(d.title?': '+d.title:'')); }
+    for(const q of qaItems.filter(q=>q.sourceNodeId===n.id)){ counts.thread++; const t=stripHtmlToText(q.question||q.text||'').trim(); mentions.push('Thread'+(t?': '+t:'')); }
+    for(const r of remarks.filter(r=>r.anchorNodeId===n.id)){ counts.remark++; const t=stripHtmlToText(r.title||r.text||'').trim(); mentions.push('Remark'+(t?': '+t:'')); }
     const tables=(Array.isArray(n.tables)?n.tables:[]).map(t=>{ const tb=htmlRoot(t).querySelector('table'); return tb?mdTableToGrid(tb):[]; }).filter(g=>g.length);
     return {text:n.text||'',marks:rowMarksOf(n),depth:n.depth||0,heading:n.styles?.heading||0,isCheckbox:!!n.isCheckbox,checked:!!n.checked,noteMd:n.note?mdFromNoteHtml(htmlRoot(n.note)):'',tables,mentions};
   });
   const title=(getMeta().title||'').trim();
   const fileTitle=(title||'Untitled').replace(/[\\/:*?"<>|]+/g,'_');
-  downloadBlob(fileTitle+'.md','text/markdown;charset=utf-8',serializeMarkdown(title||'Untitled',rows));
+  downloadBlob(fileTitle+'.md','text/markdown;charset=utf-8',mdSerializeDocument(title||'Untitled',rows));
   noExportToast(getScopedNodes(true));
-  const parts=[];
-  if(pictures)parts.push(pictures+' picture'+(pictures===1?'':'s'));
-  if(objects)parts.push(objects+' diagram'+(objects===1?'':'s')+', thread'+(objects===1?'':'s')+' or remark'+(objects===1?'':'s'));
-  if(parts.length)showToast('Exported. '+parts.join(' and ')+' listed by name only; export as PDF to keep them.');
+  // Say what's only named in the file, e.g. "2 diagrams and 1 picture listed by name only".
+  const parts=Object.entries(counts).filter(([,c])=>c).map(([k,c])=>c+' '+k+(c===1?'':'s'));
+  if(parts.length)showToast('Exported. '+(parts.length>1?parts.slice(0,-1).join(', ')+' and '+parts[parts.length-1]:parts[0])+' listed by name only; export as PDF to keep them.');
 }
 // API request tables built from Field | Value rows (the API form's Save and a pasted cURL). Postman
 // collection import was removed (owner 2026-10-30): requests come in one at a time, by pasting.
