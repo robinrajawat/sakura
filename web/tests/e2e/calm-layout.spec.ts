@@ -98,7 +98,7 @@ test('the File Explorer header has one + button; its right-click has Import', as
   expect(ids).toEqual(['sb-new-btn']);
   await page.locator('#sidebar').click({ button: 'right', position: { x: 60, y: 400 } });
   const labels = await page.locator('.sb-context-menu .sb-context-item').allTextContents();
-  expect(labels.slice(0, 3)).toEqual(['New document', 'New folder', 'Import (.opml)…']);
+  expect(labels.slice(0, 3)).toEqual(['New document', 'New folder', 'Import (.md, .opml)…']);
   await page.keyboard.press('Escape');
 });
 

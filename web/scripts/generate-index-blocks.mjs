@@ -388,6 +388,22 @@ initAiProvidersState({
     footer: ''
   },
   {
+    // Markdown import (owner 2026-11-19, docs/markdown-plan.md): pure parser. importMarkdownText in
+    // index.html turns its rows into nodes and sanitizes every note and table, like OPML.
+    name: 'markdownImport',
+    sourceFile: 'src/utils/markdownImport.ts',
+    testFile: 'tests/unit/markdownImport.test.ts',
+    footer: ''
+  },
+  {
+    // Markdown export (same spec): exportMarkdown in index.html gathers rows, notes (via
+    // DOMParser), tables and mentions, then calls mdSerializeDocument.
+    name: 'markdownExport',
+    sourceFile: 'src/utils/markdownExport.ts',
+    testFile: 'tests/unit/markdownExport.test.ts',
+    footer: ''
+  },
+  {
     // Export domain — third slice. serializeClipboardHtml and its color/parsing helpers
     // (getClipboardExportColors, depthTextColor, soften, parseStyledTextForClipboard) turned
     // out to have zero DOM dependency once traced — an earlier status note wrongly lumped this

@@ -54,29 +54,33 @@ async function seedNodes(page: import('@playwright/test').Page) {
 }
 
 async function openExportMenu(page: import('@playwright/test').Page) {
-  // Share holds Download PDF and Export (.opml); Import (.opml) is in the File Explorer header.
+  // Share holds one "Export as" group (PDF, Markdown, OPML); Import (.md, .opml) is in the File Explorer header.
   await page.locator('#doc-share-chip').click();
   await expect(page.locator('#share-menu')).toBeVisible();
 }
 
-test.describe('Export/Import trim (PDF under Share; OPML export and import)', () => {
-  test('Share holds Download PDF and Export (.opml); Import is on the File Explorer right-click', async ({ page }) => {
+test.describe('Export/Import (Share → Export as: PDF, Markdown, OPML; Import .md or .opml)', () => {
+  test('Share holds Export as: PDF, Markdown, OPML; Import is on the File Explorer right-click', async ({ page }) => {
     const errors = trackErrors(page);
     await page.goto('file://' + indexPath);
     await dismissOverlays(page);
 
-    // Share is always there; signed out it offers Download PDF and Export (inviting needs an account).
+    // Share is always there; signed out it offers the export formats (Send a copy needs an account).
+    // Markdown export came back 2026-11-19 (owner: switching cost; it was cut with other formats on
+    // 2026-10-11 to drop their libraries — this one needs none).
     await expect(page.locator('#doc-share-chip')).toBeVisible();
     await openExportMenu(page);
     const items = page.locator('#share-menu .sb-context-item');
-    await expect(items.locator('.sb-context-label')).toHaveText(['Download PDF', 'Export']);
-    expect(await items.evaluateAll((els) => els.map((e) => (e as HTMLElement).dataset.save))).toEqual(['pdf', 'opml']);
-    await expect(page.locator('#share-menu .sb-context-submenu, #share-menu .sb-context-heading')).toHaveCount(0);
+    await expect(items.locator('.sb-context-label')).toHaveText(['PDF', 'Markdown', 'OPML']);
+    expect(await items.evaluateAll((els) => els.map((e) => (e as HTMLElement).dataset.save))).toEqual(['pdf', 'md', 'opml']);
+    // A labelled group, not a submenu, so each format is one tap on a phone.
+    await expect(page.locator('#share-menu .sb-context-submenu')).toHaveCount(0);
+    await expect(page.locator('#share-menu .sb-context-heading')).toHaveText(['Export as']);
     await page.keyboard.press('Escape');
     await expect(page.locator('#appbar-more-toggle')).toHaveCount(0);
     // The Import ▾ button opens the same items.
     await page.evaluate(() => document.getElementById('import-toggle')?.click());
-    await expect(page.locator('#import-menu .sb-context-item')).toHaveText([/OPML/]);
+    await expect(page.locator('#import-menu .sb-context-item')).toHaveText([/Markdown or OPML/]);
     await page.keyboard.press('Escape');
 
     // Removed surfaces are really gone, not just hidden.
@@ -85,7 +89,7 @@ test.describe('Export/Import trim (PDF under Share; OPML export and import)', ()
       '#todos-export-sakura-item', '#todos-import-btn', '#todos-share-file-input']) {
       await expect(page.locator(sel), sel).toHaveCount(0);
     }
-    const gone = await page.evaluate(() => ['exportDocx', 'exportPptx', 'exportMarkdown', 'exportTreeFormat', 'exportTreeAsImage',
+    const gone = await page.evaluate(() => ['exportDocx', 'exportPptx', 'exportTreeFormat', 'exportTreeAsImage',
       'exportToClipboard', 'exportSakuraDocumentFile', 'importSakuraDocumentFile', 'importDocxFile', 'handlePrint']
       .filter((n) => typeof (window as unknown as Record<string, unknown>)[n] !== 'undefined'));
     expect(gone).toEqual([]);
@@ -99,7 +103,7 @@ test.describe('Export/Import trim (PDF under Share; OPML export and import)', ()
     expect(errors).toEqual([]);
   });
 
-  test('Share → Download PDF still renders the document headlessly and calls print()', async ({ page }) => {
+  test('Share → Export as → PDF still renders the document headlessly and calls print()', async ({ page }) => {
     const errors = trackErrors(page);
     await page.goto('file://' + indexPath);
     await dismissOverlays(page);

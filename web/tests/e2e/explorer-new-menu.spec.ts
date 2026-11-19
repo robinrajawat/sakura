@@ -29,7 +29,7 @@ test('+ opens New document / New folder / Import; New document is highlighted, s
   await page.locator('#sb-new-btn').click();
   const menu = page.locator('#sb-new-menu');
   await expect(menu).toBeVisible();
-  await expect(menu.locator('.sb-context-item')).toHaveText(['New document', 'New folder', 'Import (.opml)…']);
+  await expect(menu.locator('.sb-context-item')).toHaveText(['New document', 'New folder', 'Import (.md, .opml)…']);
   await page.keyboard.press('Enter');
   await expect(menu).toHaveCount(0);
   await expect.poll(() => openDoc(page)).not.toBe(before);

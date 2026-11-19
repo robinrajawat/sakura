@@ -120,9 +120,13 @@ One task list for everything, separate from any document, on the rail on the lef
 - Titles are written for real work items: long text, formatting and links all work.
 - On a phone, Sakura opens a dedicated page that you can add to your home screen: your To-Dos, and a **Documents** tab to read your synced documents (fold and unfold, notes, threads, pictures, tables). Documents are read only on the phone, so it can never overwrite your work. On Android, you can share a link or text from another app straight into a new task.
 
+## Markdown
+
+**Share → Export as → Markdown** saves the document as a `.md` file that Obsidian, Logseq, Notion and other notes apps open, and **+ → Import (.md, .opml)…** in the File Explorer brings one in as a new document. Headings, nested rows, To-Dos, notes, tables and bold/italic/strikethrough/links go both ways. Pictures and diagrams stay in Sakura (export as PDF to keep them in a file).
+
 ## PDF
 
-**Share → Download PDF** turns the document into something you can send:
+**Share → Export as → PDF** turns the document into something you can send:
 
 - A **cover page** with the title, author, status stamp (Draft, Review, Approved, Rejected) and your own mark, such as a team name.
 - A **contents** page with page numbers that you can click in the saved PDF.

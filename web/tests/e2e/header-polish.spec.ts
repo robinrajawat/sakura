@@ -115,7 +115,7 @@ test('signed in, Share also offers Send a copy…', async ({ page }) => {
     // @ts-expect-error -- bare globals from index.html
     currentUser = { uid: 'u1' }; currentDocId = currentDocId || 'd1';
     // @ts-expect-error
-    return shareMenuItems().map((i: { label: string }) => i.label);
+    return shareMenuItems().map((i: { label?: string; heading?: string; divider?: boolean }) => i.heading ? '# ' + i.heading : i.divider ? '---' : i.label);
   });
-  expect(labels).toEqual(['Download PDF', 'Export', 'Send a copy…']);
+  expect(labels).toEqual(['# Export as', 'PDF', 'Markdown', 'OPML', '---', 'Send a copy…']);
 });
