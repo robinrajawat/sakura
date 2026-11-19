@@ -404,6 +404,14 @@ initAiProvidersState({
     footer: ''
   },
   {
+    // Pasted formatted text keeps its structure (owner 2026-11-19): structuredPasteRows in
+    // index.html parses the clipboard HTML inertly, calls readClipboardStructure, and sanitizes tables.
+    name: 'clipboardStructure',
+    sourceFile: 'src/utils/clipboardStructure.ts',
+    testFile: 'tests/unit/clipboardStructure.test.ts',
+    footer: ''
+  },
+  {
     // Export domain — third slice. serializeClipboardHtml and its color/parsing helpers
     // (getClipboardExportColors, depthTextColor, soften, parseStyledTextForClipboard) turned
     // out to have zero DOM dependency once traced — an earlier status note wrongly lumped this
