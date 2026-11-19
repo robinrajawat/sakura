@@ -209,14 +209,9 @@ contradicts README.md or docs/feature-reference.md, trust them.)*
   with 3–5 target users. The name is decided: **Sakura Notes** (owner, 2026-11-18, after weighing
   ~20 alternatives: Ramus, Viveka, Sutra, Krama (an existing "Krama" ideas app), Bridge (Adobe Bridge),
   generic words like Notes/Outliner (unownable)). Don't reopen it unless the owner asks.
-- **Send a copy by email: owner steps (2026-11-19).** (1) Right after the PR deploys, publish
-  `firebase/firestore.rules` in the Firebase Console (rules are published by hand); until then the live
-  rules still allow listing Public profiles and don't know `emailIndex`, so Send a copy can't find anyone.
-  (2) By **19 December 2026** (the privacy policy promises it): Firestore → Data, delete the `profiles`
-  collection (leftovers of accounts that never signed in again). (3) Optional: delete the composite
-  index `profiles (visibility, displayNameLower)` under Firestore → Indexes. (4) Optional: Authentication →
+- **Send a copy by email: owner steps (2026-11-19).** Done the same day: rules published in the Firebase
+  Console, `profiles` collection and its composite index deleted. Optional, still open: Authentication →
   Templates → Email address verification, set the sender name/reply-to (e.g. hello@sakura-notes.com).
-  Remind the owner at session start until (1) and (2) are done.
 - **Firestore backups, before public launch (owner, 2026-11-17: later, no computer at hand).** Upgrade
   the Firebase project `sakura-4cdae` to Blaze (needed for any managed backup), set a $5/month budget
   alert the same day (Blaze has no hard cap; anonymous feedback writes are the abuse path, App Check
