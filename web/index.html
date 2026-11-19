@@ -712,7 +712,10 @@ mark.row-hl{color:inherit;padding:0 2px;margin:0 -1px}
   #appbar{overflow:hidden}
 }
 @media (max-width:720px){
-  #header-actions .btn:not(.primary){display:none}
+  /* The top bar's own buttons only: the Settings sheet sits inside #header-actions, and this
+     hid its buttons (Download all data, Import, Empty trash, Delete account…) on every phone.
+     :where keeps the exception weightless, so the phone top bar's own rules still win. */
+  #header-actions .btn:not(.primary):not(:where(#settings-panel .btn)){display:none}
 }
 @media (max-width:560px){
   .toolbar{display:none}
@@ -3668,6 +3671,10 @@ html.calm-layout #sb-auto-rewrite-chip.is-quiet:hover,html.calm-layout #sb-auto-
   /* Toasts (Undo, Saved…) sit above the full-screen panels and sheets, so an Undo after a swipe in
      To-Dos can be tapped. */
   html.phone #toast { z-index: 1500; }
+  /* Sakura's own question dialogs (sakuraConfirm, sakuraPrompt) come in front of the full-screen
+     Settings, Help and To-Dos sheets (1300). Below them, a dialog opened from one of those screens
+     was hidden behind it and took every tap, so the app seemed frozen (owner 2026-11-19). */
+  html.phone #sakura-modal-overlay { z-index: 1350; }
   /* Right-click-style menus (a task's ⋯, a table's menu) open over the full-screen panels. */
   html.phone .sb-context-menu { z-index: 1450; }
 
@@ -3941,6 +3948,7 @@ html.calm-layout #sb-auto-rewrite-chip.is-quiet:hover,html.calm-layout #sb-auto-
               <div class="settings-row-text"><span class="settings-about-name">Sakura Notes</span><span class="settings-row-desc" id="about-version" data-version="__SAKURA_VERSION__" hidden></span><span class="settings-row-desc">An outliner for structured thinking: documents with tables, charts and diagrams, discussion threads, To-Dos and AI.</span><span class="settings-row-desc settings-about-copy">© 2026 Robin Singh Rajawat. All rights reserved.</span></div>
             </div>
             <div class="settings-list">
+              <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Storage on this device</span><span class="settings-row-desc">Checks that this browser can save Sakura’s data, and shows what it says if not.</span></div><button type="button" class="btn data-io-btn" id="about-storage-check-btn">Check</button></div>
               <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Open-source notices</span><span class="settings-row-desc">The draw.io diagram editor, DOMPurify, and the Inter and Fira Code typefaces.</span></div><a class="btn settings-link-btn" href="third-party-notices.html" target="_blank" rel="noopener">View</a></div>
             </div>
           </div>
@@ -30986,11 +30994,15 @@ async function storageDiagnosticsText(){
   lines.push('Browser: '+navigator.userAgent);
   return lines.join('\n');
 }
+// Opens at once with "Checking…" and fills in as the browser answers, so a tap never looks like it
+// did nothing (owner 2026-11-19). Also reachable any time: Settings → About → Storage on this device.
 async function showStorageDiagnostics(){
-  const text=await storageDiagnosticsText();
-  const copy=await sakuraConfirm({title:'Storage details',body:text,confirmLabel:'Copy',cancelLabel:'Close'});
-  if(copy){ try{ await navigator.clipboard.writeText(text); showToast('Copied'); }catch(e){ showToast('Couldn\u2019t copy. Take a screenshot instead.'); } }
+  let text='Checking this browser\u2019s storage\u2026';
+  const answered=sakuraConfirm({title:'Storage details',body:text,confirmLabel:'Copy',cancelLabel:'Close'});
+  storageDiagnosticsText().then(t=>{ text=t; const b=el('sakura-modal-body'); if(b&&el('sakura-modal-title')?.textContent==='Storage details')b.textContent=t; }).catch(()=>{});
+  if(await answered){ try{ await navigator.clipboard.writeText(text); showToast('Copied'); }catch(e){ showToast('Couldn\u2019t copy. Take a screenshot instead.'); } }
 }
+el('about-storage-check-btn')?.addEventListener('click',()=>showStorageDiagnostics());
 async function idbRequest(mode,run){
   for(let attempt=0;;attempt++){
     let conn=null;

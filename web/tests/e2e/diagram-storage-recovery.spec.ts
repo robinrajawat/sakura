@@ -89,3 +89,15 @@ test('Details opens even when the browser never answers about its storage (as a 
   await expect(page.locator('#sakura-modal-body')).toContainText('Storage test now: no answer from the browser');
   await expect(page.locator('#sakura-modal-body')).toContainText('Storage used: no answer from the browser');
 });
+
+test('Settings \u2192 About \u2192 Storage on this device opens the same check at once, without waiting for the warning', async ({ page }) => {
+  await page.evaluate(() => {
+    // @ts-expect-error -- bare globals from index.html
+    storageOpenTest = () => new Promise(() => {});
+    document.getElementById('about-storage-check-btn')!.click();
+  });
+  // Open straight away, then the answers come in.
+  await expect(page.locator('#sakura-modal-title')).toHaveText('Storage details', { timeout: 500 });
+  await expect(page.locator('#sakura-modal-body')).toContainText('Storage test now: no answer from the browser');
+  await expect(page.locator('#sakura-modal-body')).toContainText('Browser: ');
+});

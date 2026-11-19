@@ -124,7 +124,10 @@
   #appbar{overflow:hidden}
 }
 @media (max-width:720px){
-  #header-actions .btn:not(.primary){display:none}
+  /* The top bar's own buttons only: the Settings sheet sits inside #header-actions, and this
+     hid its buttons (Download all data, Import, Empty trash, Delete account…) on every phone.
+     :where keeps the exception weightless, so the phone top bar's own rules still win. */
+  #header-actions .btn:not(.primary):not(:where(#settings-panel .btn)){display:none}
 }
 @media (max-width:560px){
   .toolbar{display:none}
