@@ -265,6 +265,23 @@ used for every test, doesn't do them):
   when that style attribute changes. `updateAccountUI` now sets `has-avatar` on the button, and
   the CSS keys off that class (`account-toggle-avatar.spec.ts`).
 
+### Row menu: Status and threads; objects edited on a computer (owner, 2026-11-19)
+
+- The editing toolbar gains **⋯**, which opens the long-press sheet (long-press alone is hard to
+  discover). The sheet gains **Add to thread** and **Status** (Agreed, Follow-up, Out of scope),
+  reusing the desktop's `setNodeMarker` and the `remark` quick action. The toolbar's icon buttons
+  may narrow to 36px so seven controls fit a 320px phone.
+- **No swipes on document rows** (owner agreed): not a standard outliner gesture, and they clash
+  with sideways table scrolling, the ☰ drawer / iOS back gesture and text selection. To-Dos keep
+  their swipes (phase 4), which are the standard pattern.
+- **Owner rule: build only what is fully robust on a phone; otherwise say "edit this on a
+  computer".** A review found plain tables were editable on a phone (a tap made cells editable and
+  typing saved), and a double-tap opened chart/board data. Now `phoneEditsOnComputer` guards the
+  table editor, note-table editor, API request form and picture mark-up at their entry points.
+  Diagrams were already guarded. Notes hold only words when opened (tables move onto the row on
+  load and render); `noteHasObjects` keeps one read only if it ever didn't.
+- Tests: `phone-row-actions.phone.spec.ts`.
+
 ### Diagram pictures followed the device's dark mode (owner, 2026-11-16)
 
 "Diagram previews in mobile are not respecting light or dark theme, they always come in dark mode."
