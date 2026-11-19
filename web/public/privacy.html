@@ -40,12 +40,13 @@
 <tr><th>What</th><th>Why</th><th>How long</th></tr>
 <tr><td>Name, email address, profile picture and an account ID, from Google sign-in or email sign-in (Firebase Authentication)</td><td>To sign you in</td><td>Until you delete your account</td></tr>
 <tr><td>Your documents with their version history, folders, To-Dos, templates, settings and unsent drafts (Cloud Firestore)</td><td>To keep your work and show it on every device you sign in on</td><td>Until you delete them or your account. Deleted documents stay in Trash for the period you choose (7 days by default).</td></tr>
-<tr><td>Your profile: name, email and whether it is Private (the default) or Public</td><td>So people can find you to send you a copy, only if you make it Public</td><td>Until you delete your account</td></tr>
+<tr><td>An email lookup entry: a one-way code (SHA-256 hash) made from your verified email address, and your account ID</td><td>So someone who already knows your exact email can send you a copy. It can't be listed or searched, and holds nothing else</td><td>Until you delete your account</td></tr>
 </table>
 <p>Legal basis: providing the service you signed up for (GDPR Art. 6(1)(b)). A copy is also kept in your browser so Sakura works offline. Signing out removes it from that device unless you choose to keep it there.</p>
 
 <h2>Sending someone a copy</h2>
-<p>With <strong>Send a copy</strong>, the recipient gets their own copy of that document, together with your name and email so they know who sent it, and a notification. It's then theirs: deleting your account doesn't remove copies you've already sent. Copies sent to you are deleted with your account.</p>
+<p>With <strong>Send a copy</strong>, you type the exact email address of another Sakura user. If an account with that verified email exists, they get their own copy of the document, together with your name and email so they know who sent it, and a notification; nothing is added to their documents until they choose to add it. If no account uses that email, you're told so. This means anyone who knows your exact email can find out that it has a Sakura account; nobody can browse or search for other users. Once added, a copy is theirs: deleting your account doesn't remove copies you've already sent. Copies sent to you are deleted with your account.</p>
+<p>Until 19 November 2026 Sakura also had public profiles (name, email and profile picture that others could search for). They were removed; your old profile is deleted the next time you sign in, and any left from accounts that don't sign in again are deleted by 19 December 2026.</p>
 
 <h2>AI features</h2>
 <p><strong>Sakura Hosted AI:</strong> the text you ask AI to work on goes through Sakura's server (a Cloudflare Worker) to an AI provider Sakura chooses, currently Groq or Google (Gemini). Sakura doesn't store that text. It keeps only a count of your requests for the day, which expires within 48 hours. The provider processes the text under its own terms.</p>

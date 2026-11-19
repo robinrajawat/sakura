@@ -12,6 +12,11 @@ const me = env.authenticatedContext('u1').firestore();
 const other = env.authenticatedContext('u2').firestore();
 const anon = env.unauthenticatedContext().firestore();
 const admin = env.authenticatedContext('adm', { email: 'someone@x.test' }).firestore(); // an admin through /admins, not the built-in email
+const verified = env.authenticatedContext('u1', { email: 'A@x.test', email_verified: true }).firestore();
+const unverified = env.authenticatedContext('u4', { email: 'd@x.test', email_verified: false }).firestore();
+const thief = env.authenticatedContext('u5', { email: 'e@x.test', email_verified: true }).firestore();
+import crypto from 'crypto';
+const hash = e => crypto.createHash('sha256').update(e.trim().toLowerCase()).digest('hex');
 const d = (db, p) => doc(db, p);
 let ok = 0; const t = async (name, p) => { await p; ok++; console.log('ok', name); };
 // Seed data, written with the rules off (the test library allows this once per run): a legacy doc
@@ -45,13 +50,26 @@ await t('anon cannot read', assertFails(getDoc(d(anon, 'users/u1/meta/prefs'))))
 await t('other user cannot create a doc under u1', assertFails(setDoc(d(other, 'users/u1/docs/z'), { rev: 1 })));
 
 // Profiles: own always; others only when public, also through the share dialog's email query.
-await t('owner reads own private profile', assertSucceeds(getDoc(d(me, 'profiles/u1'))));
-await t('other cannot read a private profile', assertFails(getDoc(d(other, 'profiles/u1'))));
-await t('other reads a public profile', assertSucceeds(getDoc(d(other, 'profiles/u3'))));
-await t('email query cannot find a private profile', assertFails(getDocs(query(collection(other, 'profiles'), where('email', '==', 'a@x.test')))));
-await t('email query limited to public finds a public one', assertSucceeds(getDocs(query(collection(other, 'profiles'), where('email', '==', 'c@x.test'), where('visibility', '==', 'public')))));
-await t('other cannot write my profile', assertFails(setDoc(d(other, 'profiles/u1'), { visibility: 'public' })));
-await t('anon cannot read a public profile', assertFails(getDoc(d(anon, 'profiles/u3'))));
+// Retired public profiles (2026-11-19): leftovers only, owner read and delete.
+await t('owner reads own leftover profile', assertSucceeds(getDoc(d(me, 'profiles/u1'))));
+await t('other cannot read a profile, even a once-public one', assertFails(getDoc(d(other, 'profiles/u3'))));
+await t('listing public profiles refused', assertFails(getDocs(query(collection(other, 'profiles'), where('visibility', '==', 'public')))));
+await t('email query on profiles refused', assertFails(getDocs(query(collection(other, 'profiles'), where('email', '==', 'c@x.test'), where('visibility', '==', 'public')))));
+await t('owner cannot write a profile any more', assertFails(setDoc(d(me, 'profiles/u1'), { visibility: 'public' }, { merge: true })));
+await t('anon cannot read a profile', assertFails(getDoc(d(anon, 'profiles/u3'))));
+await t('owner deletes their leftover profile', assertSucceeds(deleteDoc(d(me, 'profiles/u1'))));
+
+// emailIndex: exact-email lookup for Send a copy.
+await t('verified account writes its own entry (address lowercased)', assertSucceeds(setDoc(d(verified, 'emailIndex/' + hash('a@x.test')), { uid: 'u1' })));
+await t('signed-in user gets an entry by exact id', assertSucceeds(getDoc(d(other, 'emailIndex/' + hash('a@x.test')))));
+await t('nobody can list the index', assertFails(getDocs(collection(other, 'emailIndex'))));
+await t('anon cannot get an entry', assertFails(getDoc(d(anon, 'emailIndex/' + hash('a@x.test')))));
+await t('unverified email cannot claim an entry', assertFails(setDoc(d(unverified, 'emailIndex/' + hash('d@x.test')), { uid: 'u4' })));
+await t('cannot claim someone else\'s email', assertFails(setDoc(d(thief, 'emailIndex/' + hash('a@x.test')), { uid: 'u5' })));
+await t('cannot point own entry at another account', assertFails(setDoc(d(thief, 'emailIndex/' + hash('e@x.test')), { uid: 'u1' })));
+await t('entry holds only the uid', assertFails(setDoc(d(thief, 'emailIndex/' + hash('e@x.test')), { uid: 'u5', name: 'E' })));
+await t('other cannot delete my entry', assertFails(deleteDoc(d(thief, 'emailIndex/' + hash('a@x.test')))));
+await t('owner deletes own entry', assertSucceeds(deleteDoc(d(verified, 'emailIndex/' + hash('a@x.test')))));
 
 // Notifications: a sender may create one known shape in someone's inbox; only the owner reads it.
 const note = { type: 'copy', fromUid: 'u2', fromEmail: 'b@x.test', docTitle: 'A', createdAt: 1, read: false };

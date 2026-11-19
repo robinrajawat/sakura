@@ -179,11 +179,11 @@ contradicts README.md or docs/feature-reference.md, trust them.)*
 
 ### Latest changes
 
+- **Send a copy finds people by exact, verified email; public profiles removed (2026-11-19, owner).** Risk audit found the share dialog ran a name-prefix search over every Public profile (a harvestable list of names, emails, photos). Owner kept Send a copy (the only way to give another user a whole document) with exact-email lookup and clear "no account uses that email" feedback, and dropped the Private/Public tag (standard, as in Google Docs/Notion). New `emailIndex/{sha256(email)} = {uid}`: get-only, written only for the account's own verified email (rules use `hashing.sha256`); email sign-ups now get a verification email, Settings → Account has Verify your email. Add/Decline flow unchanged. Delete account removes the entry. Privacy policy updated (lookup entry row, Send a copy explains existence can be checked by exact email, removed profiles deleted by 19 December 2026). Rules test ALL 69; send-copy e2e covers found / not found / self / partial / lookup failure / hash. A full-removal alternative is on the local-only branch `backup/remove-send-a-copy` (not pushed; discard).
+
 - **Role email addresses (2026-11-19, owner).** Public pages no longer show the owner's Gmail: privacy policy → `privacy@sakura-notes.com`, terms → `hello@` (general) and `security@` (security reports), `security.txt` → `security@`. All three forward to the owner's Gmail via Cloudflare Email Routing (domain DNS is on Cloudflare; the one SPF record combines `_spf.firebasemail.com` and `_spf.mx.cloudflare.net`, so never split or delete it). `FEEDBACK_ADMIN_EMAIL` (`web/src/state/admin.ts`) stays the Gmail: it's the owner's sign-in identity, not a contact. legalPages test fails if a page shows an `@gmail.com` address.
 
 - **Site basics made standard (2026-11-19, owner audit).** Privacy policy gained "Cookies and storage on your device" (no cookies; documents/settings in local storage, backup and sign-in session in IndexedDB, offline cache, session flags; strictly necessary so no consent asked), Effective 19 November 2026. New `web/public/404.html` (GitHub Pages serves it), `.well-known/security.txt` (Expires 2027-11-19; unit test fails once it passes, renew then), `robots.txt`; PNG icon fallback on every page; canonical + link-preview tags on the policy pages. Test: legalPages.
-
-- **Licensing follows standard practice (2026-11-18, owner: "adopt the standard practice. Period.").** Open-source notices are a page on the site, `web/public/third-party-notices.html` (full Apache 2.0 and OFL 1.1 texts), linked from Settings → About and the policy pages' footers, instead of a GitHub link. Settings' "License" row (the repo's all-rights-reserved LICENSE) is gone; users are governed by the Terms, which gained a "Sakura itself" section (who owns Sakura, personal and professional use allowed, no copying/reselling, open-source parts under their own licenses), Effective date now 18 November 2026. `THIRD-PARTY-NOTICES.md` stays as the repo copy; legalPages test checks every entry and copyright line is on the page.
 
 ### In progress / not built
 
@@ -209,6 +209,14 @@ contradicts README.md or docs/feature-reference.md, trust them.)*
   with 3–5 target users. The name is decided: **Sakura Notes** (owner, 2026-11-18, after weighing
   ~20 alternatives: Ramus, Viveka, Sutra, Krama (an existing "Krama" ideas app), Bridge (Adobe Bridge),
   generic words like Notes/Outliner (unownable)). Don't reopen it unless the owner asks.
+- **Send a copy by email: owner steps (2026-11-19).** (1) Right after the PR deploys, publish
+  `firebase/firestore.rules` in the Firebase Console (rules are published by hand); until then the live
+  rules still allow listing Public profiles and don't know `emailIndex`, so Send a copy can't find anyone.
+  (2) By **19 December 2026** (the privacy policy promises it): Firestore → Data, delete the `profiles`
+  collection (leftovers of accounts that never signed in again). (3) Optional: delete the composite
+  index `profiles (visibility, displayNameLower)` under Firestore → Indexes. (4) Optional: Authentication →
+  Templates → Email address verification, set the sender name/reply-to (e.g. hello@sakura-notes.com).
+  Remind the owner at session start until (1) and (2) are done.
 - **Firestore backups, before public launch (owner, 2026-11-17: later, no computer at hand).** Upgrade
   the Firebase project `sakura-4cdae` to Blaze (needed for any managed backup), set a $5/month budget
   alert the same day (Blaze has no hard cap; anonymous feedback writes are the abuse path, App Check
