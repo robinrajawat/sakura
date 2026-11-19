@@ -30957,14 +30957,32 @@ function noteStorageError(mode,attempt,e){
   _storageErrors.push(entry); if(_storageErrors.length>6)_storageErrors.shift();
   try{ localStorage.setItem(STORAGE_ERROR_KEY,JSON.stringify(entry)); }catch(_e){}
 }
+// Each question to the browser gets 1.5 s: a broken store can leave them unanswered for ever, and
+// Details must open regardless (owner 2026-11-19: on the iPhone, Details did nothing).
+function storageProbe(promiseFn){
+  return Promise.race([Promise.resolve().then(promiseFn).then(v=>({ok:true,v}),e=>({ok:false,e})),new Promise(r=>setTimeout(()=>r({ok:false,timeout:true}),1500))]);
+}
+// Opens the store on its own (not the app's shared connection) to see what the browser does now.
+function storageOpenTest(){
+  return new Promise((resolve,reject)=>{
+    if(!('indexedDB' in window)){ reject(new Error('IndexedDB is not available')); return; }
+    const req=indexedDB.open(SAKURA_BACKUP_DB,1);
+    req.onupgradeneeded=()=>{ const db=req.result; if(!db.objectStoreNames.contains(SAKURA_BACKUP_STORE))db.createObjectStore(SAKURA_BACKUP_STORE); };
+    req.onsuccess=()=>{ const db=req.result; try{ const tx=db.transaction(SAKURA_BACKUP_STORE,'readwrite'); tx.objectStore(SAKURA_BACKUP_STORE).put(Date.now(),'storageTest'); tx.oncomplete=()=>{ db.close(); resolve('opened and saved'); }; tx.onerror=tx.onabort=()=>{ db.close(); reject(tx.error||new Error('save aborted')); }; }catch(e){ db.close(); reject(e); } };
+    req.onerror=()=>reject(req.error);
+    req.onblocked=()=>reject(new Error('blocked by another open copy of Sakura'));
+  });
+}
 async function storageDiagnosticsText(){
   const lines=[];
   const errs=_storageErrors.length?_storageErrors:(()=>{ try{ const e=JSON.parse(localStorage.getItem(STORAGE_ERROR_KEY)||'null'); return e?[e]:[]; }catch(_e){ return []; } })();
   if(!errs.length)lines.push('No storage error recorded.');
   errs.forEach(e=>lines.push(`${e.at} \u00b7 ${e.op}: ${e.name} \u2014 ${e.message}`));
-  try{ const est=await navigator.storage?.estimate?.(); if(est)lines.push(`Storage used: ${(est.usage/1048576).toFixed(1)} MB of ${(est.quota/1048576).toFixed(0)} MB allowed`); }catch(_e){}
-  try{ const p=await navigator.storage?.persisted?.(); if(p!==undefined)lines.push('Kept by the browser: '+(p?'yes':'no')); }catch(_e){}
-  lines.push('IndexedDB available: '+(('indexedDB' in window)?'yes':'no'));
+  const say=(label,r,fmt)=>lines.push(label+': '+(r.timeout?'no answer from the browser':r.ok?fmt(r.v):`${r.e&&r.e.name||'Error'} \u2014 ${r.e&&r.e.message||r.e}`));
+  const [open,est,kept]=await Promise.all([storageProbe(storageOpenTest),storageProbe(()=>navigator.storage.estimate()),storageProbe(()=>navigator.storage.persisted())]);
+  say('Storage test now',open,v=>v);
+  say('Storage used',est,v=>`${(v.usage/1048576).toFixed(1)} MB of ${(v.quota/1048576).toFixed(0)} MB allowed`);
+  say('Kept by the browser',kept,v=>v?'yes':'no');
   lines.push('Browser: '+navigator.userAgent);
   return lines.join('\n');
 }
@@ -31016,7 +31034,7 @@ async function idbGetAllKeys(){ try{ return (await idbRequest('readonly',store=>
 // deleted), and they describe *this browser's* old backup machinery, not app data, so they stay
 // out of backup files.
 const IDB_BACKUP_KEY_PREFIX='idb::';
-const IDB_BACKUP_EXCLUDED_KEYS=new Set(['fsHandle','preRestoreSnapshot','localStorageMirror','fsBackupHistory']);
+const IDB_BACKUP_EXCLUDED_KEYS=new Set(['fsHandle','preRestoreSnapshot','localStorageMirror','fsBackupHistory','storageTest']); // storageTest: Details' own write check (storageOpenTest)
 async function buildFullBackupPayload(){
   const data={};
   for(let i=0;i<localStorage.length;i++){ const key=localStorage.key(i); data[key]=localStorage.getItem(key) }
