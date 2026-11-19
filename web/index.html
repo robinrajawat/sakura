@@ -154,6 +154,11 @@ try{ if(navigator.storage&&navigator.storage.persist)navigator.storage.persisted
 @font-face{font-family:'Fira Code';font-style:normal;font-display:swap;font-weight:700;src:url(fonts/fira-code-latin-ext-700-normal.woff2) format('woff2');unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
 </style>
 <script>
+// Startup errors, in the browser's own words (owner 2026-11-19: on an iPhone the app's startup
+// stopped part way, leaving its storage settings unset; Details shows these). Kept on this page
+// only, never sent anywhere.
+window.__sakuraBootErrors=[];
+window.addEventListener('error',function(e){ try{ if(window.__sakuraBootErrors.length<5)window.__sakuraBootErrors.push({message:String(e.message||e.error||'').slice(0,300),where:(e.lineno?'line '+e.lineno+':'+e.colno:'')}); }catch(_e){} });
 // ---------- Phone layout ----------
 // One page for every screen (docs/mobile-plan.md, owner 2026-11-13): below 768px this page shows its
 // phone layout instead of sending phones to a separate page. hub.html, the old phone page, now only
@@ -4975,6 +4980,13 @@ html.calm-layout #sb-auto-rewrite-chip.is-quiet:hover,html.calm-layout #sb-auto-
   <div id="tag-popover-empty">No tags yet</div>
 </div>
 <script>
+// Storage settings first: everything that reads or writes IndexedDB depends on them, and a failure
+// anywhere later in startup must not leave them unset (owner 2026-11-19: on an iPhone it did, and
+// every diagram save failed with "Cannot access 'SAKURA_BACKUP_DB' before initialization").
+const SAKURA_BACKUP_DB='sakura_backup_db'; const SAKURA_BACKUP_STORE='kv';
+let _idbConnPromise=null; // the one shared connection (see idbOpen)
+const STORAGE_ERROR_KEY='sakura_storage_last_error_v1'; // the last storage failure, for Details
+const _storageErrors=[];
 const STORAGE_KEY='sakura_v001'; const META_KEY='sakura_v001_meta';
 const PREFS_KEY='sakura_v001_prefs';
 const DOCS_INDEX_KEY='sakura_docs_index_v1'; const DOC_KEY_PREFIX='sakura_doc_v1_'; const CURRENT_DOC_KEY='sakura_current_doc_v1';
@@ -30925,7 +30937,6 @@ el('editor-zen-toggle')?.addEventListener('click',()=>{setZenMode(!zenMode); foc
 // in, Firestore sync (see queueSync) is the live off-device copy. The IndexedDB store below is
 // still the app's overflow storage (diagram blobs, document revisions) and holds the
 // pre-restore snapshot "Undo last restore" uses.
-const SAKURA_BACKUP_DB='sakura_backup_db'; const SAKURA_BACKUP_STORE='kv';
 
 // Previously each of idbGet/idbSet/idbDelete called indexedDB.open() independently, meaning
 // several unawaited startup readers/writers each opened their own separate connection to the
@@ -30933,7 +30944,6 @@ const SAKURA_BACKUP_DB='sakura_backup_db'; const SAKURA_BACKUP_STORE='kv';
 // hard-to-reproduce timing issues across browsers. Memoizing the open() call means every
 // caller shares one connection and one in-flight open promise, removing that whole class
 // of race regardless of whether it was the actual cause of any specific symptom.
-let _idbConnPromise=null;
 function idbOpen(){
   if(_idbConnPromise) return _idbConnPromise;
   if(!('indexedDB' in window)) return Promise.reject(new Error('no indexeddb'));
@@ -30958,8 +30968,6 @@ function idbOpen(){
 // The browser's own words for the last storage failures (owner 2026-11-19: an iPhone kept failing
 // even after reconnecting, and the cause can only be read on that phone). Shown by the warning's
 // Details; kept in memory and the last one on the device, never sent anywhere.
-const STORAGE_ERROR_KEY='sakura_storage_last_error_v1';
-const _storageErrors=[];
 function noteStorageError(mode,attempt,e){
   const entry={at:new Date().toISOString(),op:(mode==='readwrite'?'save':'read')+(attempt?' (after reconnecting)':''),name:String(e&&e.name||'Error'),message:String(e&&e.message||e||'').slice(0,300)};
   _storageErrors.push(entry); if(_storageErrors.length>6)_storageErrors.shift();
@@ -30988,6 +30996,7 @@ async function storageDiagnosticsText(onUpdate){
   const lines=[];
   const push=l=>{ lines.push(l); try{ onUpdate&&onUpdate(lines.join('\n')); }catch(_e){} };
   const describe=e=>`${(e&&e.name)||'Error'} \u2014 ${(e&&e.message)||String(e)}`;
+  try{ const boot=window.__sakuraBootErrors||[]; push(boot.length?boot.map(b=>'Startup error: '+b.message+(b.where?' ('+b.where+')':'')).join('\n'):'Startup: no errors'); }catch(_e){}
   try{
     const errs=_storageErrors.length?_storageErrors:(()=>{ try{ const e=JSON.parse(localStorage.getItem(STORAGE_ERROR_KEY)||'null'); return e?[e]:[]; }catch(_e){ return []; } })();
     if(!errs.length)push('No storage error recorded.');

@@ -112,3 +112,14 @@ test('Details always finishes: an answer the browser gives in an unexpected shap
   await expect(body).toContainText('Browser: ');
   await expect(body).not.toContainText('Checking');
 });
+
+test('Details shows any error that stopped startup, in the browser’s own words', async ({ page }) => {
+  await page.evaluate(() => {
+    window.dispatchEvent(new ErrorEvent('error', { message: "TypeError: null is not an object (evaluating 'x.y')", lineno: 12, colno: 34 }));
+    document.getElementById('about-storage-check-btn')!.click();
+  });
+  await expect(page.locator('#sakura-modal-body')).toContainText("Startup error: TypeError: null is not an object (evaluating 'x.y') (line 12:34)");
+  // The storage settings exist from the very start of the app's code.
+  // @ts-expect-error -- bare globals from index.html
+  expect(await page.evaluate(() => [SAKURA_BACKUP_DB, Array.isArray(_storageErrors)])).toEqual(['sakura_backup_db', true]);
+});
