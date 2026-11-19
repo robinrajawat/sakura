@@ -1,6 +1,6 @@
 # Markdown import and export — spec
 
-Status: **draft for owner review (2026-11-19). Nothing is built yet.**
+Status: **built (2026-11-19)**. Owner decisions on review: build what's standard; one file at a time; Share shows one **Export as** group (PDF, Markdown, OPML), as Google Docs/Notion/Bear do, as a labelled group rather than a submenu so each format is one tap on a phone.
 
 ## Why
 
@@ -17,7 +17,7 @@ In:
 - **Import a `.md` file** as a new document: File Explorer **+ → Import (.md, .opml)…**, or drop a
   `.md` file on the File Explorer or the page (same places OPML works today). One file = one new
   document; it never merges into the open one.
-- **Export the open document as `.md`**: **Share → Export Markdown (.md)**, next to Export (.opml).
+- **Export the open document as `.md`**: **Share → Export as → Markdown**, with PDF and OPML in the same group.
 
 Out (on purpose):
 - Importing a folder or zip (an Obsidian vault, a Notion export with sub-pages and assets). People
@@ -40,7 +40,8 @@ CommonMark plus the two GitHub extensions everyone produces: **tables** and **ta
 | `## Heading` … `######` | a row with a heading style; each heading level nests under the one above it (H2 at the top, H3 inside it, …) |
 | `- item`, `* item`, `+ item`, `1. item` | a row, nested by indentation, under the heading it follows |
 | `- [ ] item` / `- [x] item` | a To-Do (checkbox) row, unchecked / checked |
-| a paragraph that isn't a list item | a row under the current heading |
+| prose right under a heading (before any list) | that heading's note |
+| any other paragraph that isn't a list item | a row under the current heading |
 | text indented under a list item (more lines of the same item) | that row's note |
 | a fenced code block (` ``` `) | a note on the row above, kept as monospaced text |
 | a GitHub table | a table on the row above (or on a new row if there is none) |
@@ -51,8 +52,8 @@ CommonMark plus the two GitHub extensions everyone produces: **tables** and **ta
 | `---`, front matter (`---` block at the top), HTML comments | skipped |
 | raw HTML | its text only; nothing is rendered |
 
-Heading styles: Sakura rows have three heading sizes, so H2→Heading 1, H3→Heading 2, H4 and
-deeper→Heading 3 (the nesting still follows the real level).
+Heading styles size by nesting: a top-level heading is Heading 1, the next level Heading 2, deeper
+ones Heading 3 (the nesting still follows the real level).
 
 Robustness rules:
 - Tabs or 2/4-space indentation, CRLF line endings and a byte-order mark all work.
@@ -71,13 +72,14 @@ Robustness rules:
 | a top-level row with a heading style, and heading rows directly inside it | `##`, `###`, … by depth (up to `######`) |
 | every other row | a `- ` list item, indented two spaces per level under its nearest heading |
 | To-Do row | `- [ ]` or `- [x]` |
-| note | indented lines under the row's list item (the standard "more lines of the same item") |
+| note | paragraphs indented under the row's list item (under a heading: right after it); note lists as `• ` lines so they don't read back as rows; code as a fenced block |
 | table | a GitHub table under the row; merged or multi-line cells are flattened to one line |
 | bold, italic, strikethrough, web link | `**…**`, `*…*`, `~~…~~`, `[…](…)` |
 | underline, highlight, text colour | dropped (the words stay) |
 | link to another row | its text |
 | picture | `*[Picture: caption]*` |
-| diagram, chart, KPI card, status board, thread, API request | `*[Diagram: title]*` etc. — one line naming what's there |
+| chart, KPI card, status board, API request | their table, as a GitHub table (they are displays of a row's table) |
+| diagram, thread, remark | `*[Diagram: title]*` etc. — one line naming what's there |
 | rows marked "not exported" | left out, as in OPML and PDF |
 
 Characters that Markdown would read as formatting (`*`, `_`, `` ` ``, `[`, `#` at line start, …)
@@ -105,8 +107,3 @@ pictures or objects. This is checked by tests.
   the downloaded file.
 - Docs: feature reference, help panel, README.
 
-## Open questions for the owner
-
-1. Menu wording: **Share → Export Markdown (.md)** and **Export OPML (.opml)** (renaming today's
-   "Export"), or keep "Export" for OPML and add "Export Markdown"?
-2. Is "one file at a time, no folders or zips" right for now?

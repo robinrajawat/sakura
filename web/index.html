@@ -3939,7 +3939,7 @@ html.calm-layout #sb-auto-rewrite-chip.is-quiet:hover,html.calm-layout #sb-auto-
               <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">AI with your own key</span><span class="settings-row-desc">Only the text you ask AI to work on goes straight from your browser to the provider you chose, with your key. Sakura's server is never involved.</span></div></div>
               <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Sakura Hosted AI</span><span class="settings-row-desc">That text goes to Sakura's server, which passes it to a provider Sakura picks (currently Groq or Gemini). The text is not stored; only a daily request count.</span></div></div>
               <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Sign-in</span><span class="settings-row-desc">Google shares only your name, email and picture. Email sign-in is handled by Firebase Authentication.</span></div></div>
-              <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">PDF files</span><span class="settings-row-desc">Signed in, Download PDF sends a print copy of the document to Sakura's server, which makes the file and sends it back. Nothing is stored.</span></div></div>
+              <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">PDF files</span><span class="settings-row-desc">Signed in, Share → Export as → PDF sends a print copy of the document to Sakura's server, which makes the file and sends it back. Nothing is stored.</span></div></div>
               <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Tracking</span><span class="settings-row-desc">None. No analytics anywhere in Sakura, and every font is served by Sakura itself.</span></div></div>
               <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Privacy policy</span><span class="settings-row-desc">Who processes what, how long it's kept, and your rights.</span></div><a class="btn settings-link-btn" href="privacy.html" target="_blank" rel="noopener">View</a></div>
               <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Terms of use</span><span class="settings-row-desc">The rules for using Sakura.</span></div><a class="btn settings-link-btn" href="terms.html" target="_blank" rel="noopener">View</a></div>
@@ -3996,7 +3996,7 @@ html.calm-layout #sb-auto-rewrite-chip.is-quiet:hover,html.calm-layout #sb-auto-
             </div>
           </div>
           <input id="sakura-import-file-input" type="file" accept=".json,application/json" style="position:absolute;width:1px;height:1px;opacity:0;pointer-events:none" aria-hidden="true" tabindex="-1" />
-          <input id="sakura-opml-file-input" type="file" accept=".opml,.xml,text/x-opml,text/xml,application/xml" style="position:absolute;width:1px;height:1px;opacity:0;pointer-events:none" aria-hidden="true" tabindex="-1" />
+          <input id="sakura-opml-file-input" type="file" accept=".md,.markdown,.mdown,.mkd,text/markdown,.opml,.xml,text/x-opml,text/xml,application/xml" style="position:absolute;width:1px;height:1px;opacity:0;pointer-events:none" aria-hidden="true" tabindex="-1" />
           <input id="doc-author" type="text" style="position:absolute;width:1px;height:1px;opacity:0;pointer-events:none" aria-hidden="true" tabindex="-1" />
           <div class="settings-section" data-cat="ai" id="settings-section-ai-rewrite">
             <div class="settings-section-title">Provider</div>
@@ -4243,7 +4243,7 @@ html.calm-layout #sb-auto-rewrite-chip.is-quiet:hover,html.calm-layout #sb-auto-
           <div class="help-section" data-cat="documents">
 <h4>Documents and folders</h4>
 <ul>
-<li>New document, New folder or Import (.opml): the File Explorer's + button (+ then Enter makes a document), or for a document <span class="help-kbd">Ctrl/Cmd</span> + <span class="help-kbd">Alt</span> + <span class="help-kbd">N</span></li>
+<li>New document, New folder or Import (.md, .opml): the File Explorer's + button (+ then Enter makes a document), or for a document <span class="help-kbd">Ctrl/Cmd</span> + <span class="help-kbd">Alt</span> + <span class="help-kbd">N</span></li>
 <li>Right-click a document or folder to rename, duplicate, move, share or delete it. Drag documents and folders to file and order them</li>
 <li>Deleted documents go to Trash at the bottom of the File Explorer, kept for 7 days by default (Settings → Documents)</li>
 </ul>
@@ -4265,9 +4265,10 @@ html.calm-layout #sb-auto-rewrite-chip.is-quiet:hover,html.calm-layout #sb-auto-
           <div class="help-section" data-cat="documents">
 <h4>Share and PDF</h4>
 <ul>
-<li>Share → Download PDF saves the whole document as a PDF file, with notes, threads, tables and images (signed out or offline, or once the day's PDF files are used up, the print dialog opens: choose Save as PDF). Cover page and PDF mark are in Settings → Documents</li>
+<li>Share → Export as → PDF saves the whole document as a PDF file, with notes, threads, tables and images (signed out or offline, or once the day's PDF files are used up, the print dialog opens: choose Save as PDF). Cover page and PDF mark are in Settings → Documents</li>
 <li>Share → Send a copy (signed in) gives another Sakura user their own copy to edit and keep: type the exact email their account uses (it must be verified). It arrives in their notifications with Add to my documents and Decline; nothing is added until they choose</li>
-<li>Share → Export saves the outline as an OPML file; the File Explorer's + → Import (.opml)… opens one, or drop a .opml file on the File Explorer or the page</li>
+<li>Share → Export as → Markdown saves the document as a .md file other notes apps open: headings, nested rows, To-Dos, notes, tables, bold, italic, strikethrough and links. Pictures, diagrams, threads and remarks are listed by name only (PDF keeps them). OPML saves the outline for other outliners</li>
+<li>The File Explorer's + → Import (.md, .opml)… opens a Markdown or OPML file as a new document, or drop one on the File Explorer or the page. Headings nest, lists become rows, prose right under a heading becomes its note, and anything Markdown-only (math, HTML) comes in as plain text</li>
 </ul>
 </div>
           <div class="help-section" data-cat="documents">
@@ -17031,10 +17032,12 @@ el('doc-share-chip')?.addEventListener('click',e=>{
   document.querySelectorAll('.todo-dd-menu.open').forEach(m=>m.classList.remove('open'));
   openSbMenuUnder(e.currentTarget,shareMenuItems(),{id:'share-menu',label:'Share',alignRight:true,keyboard:e.detail===0});
 });
-// Share ▾: PDF first (works signed out, on any document), Export (.opml), then a copy to a Sakura user.
+// Share ▾ (owner 2026-11-19, standard practice): one "Export as" group with every format, PDF first
+// (works signed out, on any document), then a copy to a Sakura user. A labelled group, not a
+// submenu, so each format stays one tap on a phone.
 function shareMenuItems(){
-  const items=[{label:'Download PDF', meta:'.pdf', icon:SB_PDF_ICON, data:{save:'pdf'}, onClick:()=>exportPdfDirect()},{label:'Export', meta:'.opml', icon:SB_EXPORT_ICON, data:{save:'opml'}, onClick:()=>exportOpml()}];
-  if(currentUser&&currentDocId)items.push({label:'Send a copy…', icon:SB_PEOPLE_ICON, onClick:()=>openShareDropdown(currentDocId, el('header-title')?.value||'Untitled')});
+  const items=[{heading:'Export as'}, ...exportMenuItems()];
+  if(currentUser&&currentDocId)items.push({divider:true},{label:'Send a copy…', icon:SB_PEOPLE_ICON, onClick:()=>openShareDropdown(currentDocId, el('header-title')?.value||'Untitled')});
   return items;
 }
 
@@ -21862,7 +21865,7 @@ function explorerContextItems(){
   const folders=loadFolders(), items=[
     {label:'New document', onClick: async()=>{ createDoc(); renderSidebar(); }},
     {label:'New folder', onClick: async()=>{ createFolder(); }},
-    {label:'Import (.opml)…', onClick: async()=>{ triggerOpmlImport(); }}
+    {label:'Import (.md, .opml)…', onClick: async()=>{ triggerDocumentImport(); }}
   ];
   if(folders.length){ const anyOpen=folders.some(f=>f.open!==false); items.push({label:anyOpen?'Collapse all folders':'Expand all folders', onClick: async()=>{ toggleAllFolders(); }}); }
   return items.concat({divider:true}, chromeContextItems().filter(it=>it.label!=='New document'&&!/^(Expand|Collapse) all$/.test(it.label||'')));
@@ -25071,6 +25074,918 @@ function serializeOpmlCore(scopeNodes, title, includeNotes, stripHtmlToText, dat
 }
 
 /* GENERATED:serializeOpml:END */
+/* GENERATED:markdownImport:START — DO NOT EDIT BY HAND. Source of truth: src/utils/markdownImport.ts (tests: tests/unit/markdownImport.test.ts). Regenerate with `npm run generate` after changing the source; CI fails if this block drifts from what the generator produces (see .github/workflows/ci.yml and scripts/generate-index-blocks.mjs). */
+/**
+ * Markdown import (owner 2026-11-19, spec: docs/markdown-plan.md). Turns one `.md` file into the
+ * rows of a new document. Pure: no DOM, no network, no third-party code. Wired into index.html via
+ * scripts/generate-index-blocks.mjs's `markdownImport` block; `importMarkdownText` in index.html
+ * builds the rows and sends every note and table through `sakuraSanitizeRichHtml`, like OPML.
+ *
+ * The bar is "robust": a CommonMark subset (headings, lists, task lists, paragraphs, quotes, fenced
+ * code, GitHub tables, inline emphasis/links), and anything outside it comes through as its plain
+ * text. Words are never dropped; unmatched emphasis markers stay as typed. Nothing from the file is
+ * ever rendered as HTML: tags are reduced to their text, and notes/tables are built here from
+ * escaped text only.
+ */
+const MARKDOWN_IMPORT_MAX_BYTES = 5 * 1024 * 1024;
+// ---------------------------------------------------------------------------------------------
+// Small helpers
+function mdEscHtml(s) {
+    return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+const MD_NAMED_ENTITIES = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", nbsp: ' ', '#39': "'" };
+function mdDecodeEntities(s) {
+    return s.replace(/&(#x[0-9a-fA-F]{1,6}|#[0-9]{1,7}|[a-zA-Z]{2,8}|#39);/g, (m, body) => {
+        if (body[0] === '#') {
+            const code = body[1] === 'x' || body[1] === 'X' ? parseInt(body.slice(2), 16) : parseInt(body.slice(1), 10);
+            return Number.isFinite(code) && code > 0 && code <= 0x10ffff ? String.fromCodePoint(code) : m;
+        }
+        return MD_NAMED_ENTITIES[body] ?? m;
+    });
+}
+/** Only web and mail links survive as links; anything else keeps its words. */
+function mdSafeHref(url) {
+    const u = url.trim().replace(/^<|>$/g, '');
+    return /^(https?:\/\/|mailto:)[^\s]+$/i.test(u) ? u : null;
+}
+/** Leading whitespace width, tabs counted as 4. */
+function mdIndentOf(line) {
+    let n = 0;
+    for (const ch of line) {
+        if (ch === ' ')
+            n++;
+        else if (ch === '\t')
+            n += 4 - (n % 4);
+        else
+            break;
+    }
+    return n;
+}
+function mdStripIndent(line, cols) {
+    let n = 0, i = 0;
+    while (i < line.length && n < cols && (line[i] === ' ' || line[i] === '\t')) {
+        n += line[i] === '\t' ? 4 - (n % 4) : 1;
+        i++;
+    }
+    return line.slice(i);
+}
+/**
+ * Parses one line (or a joined paragraph) of inline Markdown into plain words plus mark ranges.
+ * Emphasis needs a matching closer on the same run of text; otherwise the markers stay as typed.
+ */
+function mdParseInline(src) {
+    let simplified = false;
+    // HTML: comments vanish, <br> becomes a space, other tags are dropped keeping their text.
+    let s = src.replace(/(?<!\\)<!--[\s\S]*?-->/g, '');
+    if (/(?<!\\)<\/?[A-Za-z][^>]*>/.test(s)) {
+        s = s.replace(/(?<!\\)<br\s*\/?>/gi, ' ').replace(/(?<!\\)<(?!https?:|mailto:)\/?[A-Za-z][^>]*>/g, '');
+        simplified = true;
+    }
+    if (/\$\$|\\\(|\\\[|\[\^[^\]]+\]/.test(s))
+        simplified = true;
+    // Wiki links [[Page]] / [[Page|Alias]] → their words.
+    s = s.replace(/\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/g, (_m, page, alias) => alias || page);
+    let text = '';
+    const marks = [];
+    const insertLiteral = (pos, lit) => {
+        text = text.slice(0, pos) + lit + text.slice(pos);
+        for (const m of marks) {
+            if (m.s >= pos)
+                m.s += lit.length;
+            if (m.e > pos)
+                m.e += lit.length;
+        }
+    };
+    const open = [];
+    const isWordChar = (c) => !!c && /[\p{L}\p{N}]/u.test(c);
+    let i = 0;
+    while (i < s.length) {
+        const c = s[i];
+        // Backslash escape of punctuation.
+        if (c === '\\' && i + 1 < s.length && /[!-/:-@[-`{-~]/.test(s[i + 1])) {
+            text += s[i + 1];
+            i += 2;
+            continue;
+        }
+        // Code span: literal, backticks dropped (rows have no code formatting).
+        if (c === '`') {
+            let run = 1;
+            while (s[i + run] === '`')
+                run++;
+            const fence = '`'.repeat(run);
+            const end = s.indexOf(fence, i + run);
+            if (end > -1) {
+                let code = s.slice(i + run, end);
+                if (code.length > 2 && code[0] === ' ' && code[code.length - 1] === ' ')
+                    code = code.slice(1, -1);
+                text += code;
+                i = end + run;
+                continue;
+            }
+            text += fence;
+            i += run;
+            continue;
+        }
+        // Autolink <https://…>.
+        if (c === '<') {
+            const m = /^<((?:https?:\/\/|mailto:)[^\s<>]+)>/i.exec(s.slice(i));
+            if (m) {
+                const start = text.length;
+                text += m[1];
+                marks.push({ s: start, e: text.length, k: 'a', v: m[1] });
+                i += m[0].length;
+                continue;
+            }
+        }
+        // Image ![alt](url) and link [text](url).
+        if (c === '[' || (c === '!' && s[i + 1] === '[')) {
+            const isImg = c === '!';
+            const startBr = isImg ? i + 1 : i;
+            const close = mdFindClosingBracket(s, startBr);
+            if (close > -1 && s[close + 1] === '(') {
+                const parenEnd = mdFindClosingParen(s, close + 1);
+                if (parenEnd > -1) {
+                    const inner = s.slice(startBr + 1, close);
+                    const target = s.slice(close + 2, parenEnd).trim().replace(/\s+["'(].*$/, '');
+                    const sub = mdParseInline(inner);
+                    if (sub.simplified)
+                        simplified = true;
+                    const start = text.length;
+                    for (const m of sub.marks)
+                        marks.push({ ...m, s: m.s + start, e: m.e + start });
+                    text += sub.text;
+                    const href = mdSafeHref(target);
+                    if (href && text.length > start)
+                        marks.push({ s: start, e: text.length, k: 'a', v: href });
+                    i = parenEnd + 1;
+                    continue;
+                }
+            }
+        }
+        // Emphasis / strong / strikethrough.
+        if (c === '*' || c === '_' || c === '~') {
+            let run = 1;
+            while (s[i + run] === c)
+                run++;
+            if (c === '~' && run !== 2) {
+                text += s.slice(i, i + run);
+                i += run;
+                continue;
+            }
+            const before = s[i - 1], after = s[i + run];
+            const leftFlanking = after !== undefined && !/\s/.test(after);
+            const rightFlanking = before !== undefined && !/\s/.test(before);
+            // Intraword underscores (snake_case) are literal.
+            const intraword = c === '_' && isWordChar(before) && isWordChar(after);
+            let remaining = run;
+            // Close: always the innermost open marker of this character, if this run is long enough.
+            while (!intraword && remaining > 0 && rightFlanking) {
+                let idx = -1;
+                for (let j = open.length - 1; j >= 0; j--)
+                    if (open[j].delim[0] === c) {
+                        idx = j;
+                        break;
+                    }
+                if (idx === -1 || open[idx].delim.length > remaining)
+                    break;
+                const closed = open.splice(idx);
+                const o = closed.shift();
+                // Markers opened inside it and never closed are literal text: put them back first.
+                for (const d of closed.reverse())
+                    insertLiteral(d.textAt, d.delim);
+                if (text.length > o.textAt)
+                    marks.push({ s: o.textAt, e: text.length, k: o.k });
+                remaining -= o.delim.length;
+            }
+            // Open with whatever is left: ** strong, * emphasis, *** both, ~~ strikethrough.
+            if (!intraword && remaining > 0 && leftFlanking) {
+                if (c === '~')
+                    open.push({ k: 's', delim: '~~', textAt: text.length });
+                else {
+                    if (remaining >= 2) {
+                        open.push({ k: 'b', delim: c + c, textAt: text.length });
+                        remaining -= 2;
+                    }
+                    if (remaining >= 2) {
+                        open.push({ k: 'b', delim: c + c, textAt: text.length });
+                        remaining -= 2;
+                    }
+                    if (remaining === 1) {
+                        open.push({ k: 'i', delim: c, textAt: text.length });
+                        remaining = 0;
+                    }
+                }
+                remaining = 0;
+            }
+            if (remaining > 0)
+                text += c.repeat(remaining);
+            i += run;
+            continue;
+        }
+        text += c;
+        i++;
+    }
+    // Unclosed openers are literal text, in place.
+    for (const o of open.reverse())
+        insertLiteral(o.textAt, o.delim);
+    const decoded = mdDecodeWithMarks(text, marks);
+    // Leading/trailing spaces (often left by removed tags) go; marks shift with the words.
+    const lead = decoded.text.length - decoded.text.replace(/^\s+/, '').length;
+    const trimmed = decoded.text.trim();
+    const shifted = decoded.marks.map((mk) => ({ ...mk, s: mk.s - lead, e: mk.e - lead }));
+    return { text: trimmed, marks: mdNormalizeMarks(shifted, trimmed.length), simplified };
+}
+function mdFindClosingBracket(s, openAt) {
+    let depth = 0;
+    for (let j = openAt; j < s.length; j++) {
+        if (s[j] === '\\') {
+            j++;
+            continue;
+        }
+        if (s[j] === '[')
+            depth++;
+        else if (s[j] === ']') {
+            depth--;
+            if (depth === 0)
+                return j;
+        }
+    }
+    return -1;
+}
+function mdFindClosingParen(s, openAt) {
+    let depth = 0;
+    for (let j = openAt; j < s.length; j++) {
+        if (s[j] === '\\') {
+            j++;
+            continue;
+        }
+        if (s[j] === '(')
+            depth++;
+        else if (s[j] === ')') {
+            depth--;
+            if (depth === 0)
+                return j;
+        }
+    }
+    return -1;
+}
+/** Decodes entities while keeping mark offsets on the decoded text. */
+function mdDecodeWithMarks(text, marks) {
+    if (!text.includes('&'))
+        return { text, marks };
+    const map = [];
+    let out = '';
+    const re = /&(#x[0-9a-fA-F]{1,6}|#[0-9]{1,7}|[a-zA-Z]{2,8}|#39);/g;
+    let last = 0;
+    let m;
+    while ((m = re.exec(text))) {
+        for (let j = last; j < m.index; j++) {
+            map[j] = out.length;
+            out += text[j];
+        }
+        const dec = mdDecodeEntities(m[0]);
+        for (let j = m.index; j < m.index + m[0].length; j++)
+            map[j] = out.length;
+        out += dec;
+        last = m.index + m[0].length;
+    }
+    for (let j = last; j < text.length; j++) {
+        map[j] = out.length;
+        out += text[j];
+    }
+    map[text.length] = out.length;
+    return { text: out, marks: marks.map((mk) => ({ ...mk, s: map[mk.s], e: map[mk.e] })) };
+}
+function mdNormalizeMarks(marks, len) {
+    return marks
+        .map((m) => ({ ...m, s: Math.max(0, Math.min(m.s, len)), e: Math.max(0, Math.min(m.e, len)) }))
+        .filter((m) => m.e > m.s)
+        .sort((a, b) => a.s - b.s || a.e - b.e);
+}
+// ---------------------------------------------------------------------------------------------
+// Blocks
+const MD_ATX_RE = /^ {0,3}(#{1,6})(?:[ \t]+(.*?))?(?:[ \t]+#+)?[ \t]*$/;
+const MD_HR_RE = /^ {0,3}([-*_])(?:[ \t]*\1){2,}[ \t]*$/;
+const MD_LIST_RE = /^([ \t]*)([-*+]|\d{1,9}[.)])([ \t]+|$)(.*)$/;
+const MD_FENCE_RE = /^([ \t]*)(`{3,}|~{3,})(.*)$/;
+const MD_TABLE_DELIM_RE = /^[ \t]*\|?[ \t]*:?-{1,}:?[ \t]*(\|[ \t]*:?-{1,}:?[ \t]*)*\|?[ \t]*$/;
+const MD_LOGSEQ_PROP_RE = /^[A-Za-z][\w-]*::( |$)/;
+function mdSplitTableRow(line) {
+    let t = line.trim();
+    if (t.startsWith('|'))
+        t = t.slice(1);
+    if (t.endsWith('|') && !t.endsWith('\\|'))
+        t = t.slice(0, -1);
+    const cells = [];
+    let cur = '';
+    for (let j = 0; j < t.length; j++) {
+        if (t[j] === '\\' && t[j + 1] === '|') {
+            cur += '|';
+            j++;
+            continue;
+        }
+        if (t[j] === '|') {
+            cells.push(cur.trim());
+            cur = '';
+            continue;
+        }
+        cur += t[j];
+    }
+    cells.push(cur.trim());
+    return cells;
+}
+function mdCellHtml(md) {
+    return mdEscHtml(mdParseInline(md).text);
+}
+function mdTableToHtml(header, body) {
+    const cols = Math.max(1, header.length);
+    const fit = (r) => Array.from({ length: cols }, (_, j) => r[j] ?? '');
+    return ('<table><thead><tr>' + fit(header).map((c) => '<th>' + mdCellHtml(c) + '</th>').join('') + '</tr></thead><tbody>' +
+        body.map((r) => '<tr>' + fit(r).map((c) => '<td>' + mdCellHtml(c) + '</td>').join('') + '</tr>').join('') +
+        '</tbody></table>');
+}
+/**
+ * Turns Markdown text into a title and rows. Never throws on odd input; an empty result means the
+ * file had no content.
+ */
+function parseMarkdown(input) {
+    let src = String(input ?? '');
+    if (src.charCodeAt(0) === 0xfeff)
+        src = src.slice(1);
+    const lines = src.replace(/\r\n?/g, '\n').split('\n');
+    const rows = [];
+    let simplified = false;
+    let title = '';
+    // Headings nest by level; rows outside lists sit one level under the current heading.
+    const headingStack = [];
+    const sectionDepth = () => (headingStack.length ? headingStack[headingStack.length - 1].depth + 1 : 0);
+    // Open list items: where their marker sits and where their content starts.
+    let listStack = [];
+    let lastRow = null;
+    // The heading just written, while only its own prose has followed: that prose is its note.
+    let headingForNote = null;
+    let para = [];
+    let paraTarget = 'row';
+    let blankSeen = false;
+    const newRow = (text, depth, extra = {}) => {
+        const inl = mdParseInline(text);
+        if (inl.simplified)
+            simplified = true;
+        const row = { text: inl.text, marks: inl.marks, depth, heading: 0, isCheckbox: false, checked: false, note: '', tables: [], ...extra };
+        rows.push(row);
+        lastRow = row;
+        return row;
+    };
+    const currentItem = () => (listStack.length ? listStack[listStack.length - 1].row : null);
+    const attachTarget = () => currentItem() ?? lastRow ?? newRow('', sectionDepth());
+    const addNote = (row, html) => { row.note += html; };
+    const flushPara = () => {
+        if (!para.length)
+            return;
+        const joined = para.map((l) => l.trim()).join(' ');
+        para = [];
+        if (paraTarget === 'note') {
+            const target = attachTarget();
+            const inl = mdParseInline(joined);
+            if (inl.simplified)
+                simplified = true;
+            addNote(target, '<p>' + mdEscHtml(inl.text) + '</p>');
+        }
+        else if (headingForNote) {
+            const inl = mdParseInline(joined);
+            if (inl.simplified)
+                simplified = true;
+            if (inl.text)
+                addNote(headingForNote, '<p>' + mdEscHtml(inl.text) + '</p>');
+        }
+        else {
+            const inl = mdParseInline(joined);
+            if (inl.simplified)
+                simplified = true;
+            if (inl.text)
+                newRow(joined, sectionDepth());
+        }
+        paraTarget = 'row';
+    };
+    const closeLists = () => { listStack = []; };
+    let i = 0;
+    // Front matter: a --- block at the very top.
+    if (/^---[ \t]*$/.test(lines[0] ?? '')) {
+        const end = lines.findIndex((l, j) => j > 0 && /^(---|\.\.\.)[ \t]*$/.test(l));
+        if (end > 0)
+            i = end + 1;
+    }
+    for (; i < lines.length; i++) {
+        const raw = lines[i];
+        const line = raw.replace(/\s+$/, '');
+        const ind = mdIndentOf(line);
+        const inItem = listStack.length > 0 && ind >= listStack[listStack.length - 1].contentIndent;
+        if (!line.trim()) {
+            flushPara();
+            blankSeen = true;
+            continue;
+        }
+        // Logseq block properties (id:: …, collapsed:: true) are not content.
+        if (MD_LOGSEQ_PROP_RE.test(line.trim()) && (inItem || lastRow)) {
+            continue;
+        }
+        // Fenced code → a monospaced note.
+        const fence = MD_FENCE_RE.exec(line);
+        if (fence) {
+            flushPara();
+            const fenceIndent = mdIndentOf(fence[1]);
+            const marker = fence[2];
+            const code = [];
+            let j = i + 1;
+            for (; j < lines.length; j++) {
+                const l = lines[j];
+                const t = l.trim();
+                if (t.startsWith(marker[0].repeat(marker.length)) && /^[`~]+$/.test(t))
+                    break;
+                code.push(mdStripIndent(l, fenceIndent));
+            }
+            i = j; // the closing fence (or the end of the file when unclosed)
+            const target = inItem || (listStack.length && fenceIndent > 0) ? currentItem() ?? attachTarget() : attachTarget();
+            addNote(target, '<pre><code>' + mdEscHtml(code.join('\n')) + '</code></pre>');
+            blankSeen = false;
+            continue;
+        }
+        // GitHub table: a row of cells followed by a delimiter row.
+        if (line.includes('|') && i + 1 < lines.length && MD_TABLE_DELIM_RE.test(lines[i + 1]) && lines[i + 1].includes('-') && mdSplitTableRow(lines[i + 1]).length === mdSplitTableRow(line).length) {
+            flushPara();
+            const header = mdSplitTableRow(line);
+            const body = [];
+            let j = i + 2;
+            for (; j < lines.length; j++) {
+                const l = lines[j];
+                if (!l.trim() || !l.includes('|'))
+                    break;
+                body.push(mdSplitTableRow(l));
+            }
+            i = j - 1;
+            const target = inItem ? currentItem() : attachTarget();
+            target.tables.push(mdTableToHtml(header, body));
+            blankSeen = false;
+            continue;
+        }
+        // Setext heading: a paragraph line underlined with === or ---.
+        if (para.length && paraTarget === 'row' && !listStack.length && /^ {0,3}(=+|-+)[ \t]*$/.test(line)) {
+            const level = line.trim()[0] === '=' ? 1 : 2;
+            const text = para.map((l) => l.trim()).join(' ');
+            para = [];
+            handleHeading(level, text);
+            continue;
+        }
+        if (MD_HR_RE.test(line) && !inItem) {
+            flushPara();
+            closeLists();
+            blankSeen = false;
+            continue;
+        }
+        const atx = MD_ATX_RE.exec(line);
+        if (atx && !inItem) {
+            flushPara();
+            handleHeading(atx[1].length, atx[2] ?? '');
+            continue;
+        }
+        const li = MD_LIST_RE.exec(line);
+        if (li && !(para.length && paraTarget === 'row' && !listStack.length && !blankSeen && /^\d/.test(li[2]) && li[2] !== '1.' && li[2] !== '1)')) {
+            flushPara();
+            const markerIndent = mdIndentOf(li[1]);
+            const contentIndent = markerIndent + li[2].length + Math.max(1, Math.min(li[3].length, 4));
+            while (listStack.length && markerIndent < listStack[listStack.length - 1].contentIndent)
+                listStack.pop();
+            let content = li[4];
+            let isCheckbox = false, checked = false;
+            const task = /^\[([ xX])\](?:[ \t]+|$)(.*)$/.exec(content);
+            if (task) {
+                isCheckbox = true;
+                checked = task[1] !== ' ';
+                content = task[2];
+            }
+            // A quote marker inside a list item is just text.
+            const depth = sectionDepth() + listStack.length;
+            headingForNote = null;
+            const row = newRow(content, depth, { isCheckbox, checked });
+            listStack.push({ markerIndent, contentIndent, row });
+            blankSeen = false;
+            continue;
+        }
+        // Quote: the quoted words, Obsidian callout markers dropped.
+        if (/^ {0,3}>/.test(line) && !inItem) {
+            flushPara();
+            closeLists();
+            const text = line.replace(/^ {0,3}(>[ \t]?)+/, '').replace(/^\[![A-Za-z]+\][+-]?\s*/, '');
+            headingForNote = null;
+            if (text.trim())
+                newRow(text, sectionDepth());
+            blankSeen = false;
+            continue;
+        }
+        // Plain text.
+        if (listStack.length) {
+            const item = currentItem();
+            if (inItem && blankSeen) {
+                // A later paragraph of the same item: its note.
+                if (!para.length)
+                    paraTarget = 'note';
+                para.push(mdStripIndent(line, listStack[listStack.length - 1].contentIndent));
+                blankSeen = false;
+                continue;
+            }
+            if (!blankSeen) {
+                // Lazy continuation: more words of the item's first paragraph, or of the note being written.
+                if (para.length) {
+                    para.push(line);
+                    continue;
+                }
+                const extra = mdParseInline(line.trim());
+                if (extra.simplified)
+                    simplified = true;
+                const start = item.text.length + (item.text ? 1 : 0);
+                item.text = item.text ? item.text + ' ' + extra.text : extra.text;
+                for (const m of extra.marks)
+                    item.marks.push({ ...m, s: m.s + start, e: m.e + start });
+                continue;
+            }
+            // Unindented text after a blank line ends the list.
+            closeLists();
+        }
+        if (!para.length)
+            paraTarget = 'row';
+        para.push(line);
+        blankSeen = false;
+    }
+    flushPara();
+    function handleHeading(level, rawText) {
+        closeLists();
+        const text = rawText.trim();
+        // A leading H1 before any content is the document's title.
+        if (level === 1 && !title && !rows.length && !headingStack.length) {
+            const inl = mdParseInline(text);
+            if (inl.simplified)
+                simplified = true;
+            title = inl.text.trim();
+            if (title) {
+                headingForNote = null;
+                return;
+            }
+        }
+        while (headingStack.length && headingStack[headingStack.length - 1].level >= level)
+            headingStack.pop();
+        const depth = headingStack.length ? headingStack[headingStack.length - 1].depth + 1 : 0;
+        // Size by nesting: a top-level heading is Heading 1 whatever its #-level.
+        const size = Math.min(3, headingStack.length + 1);
+        headingForNote = newRow(text, depth, { heading: size });
+        headingStack.push({ level, depth });
+        blankSeen = false;
+    }
+    return { title, rows, simplified };
+}
+
+/* GENERATED:markdownImport:END */
+/* GENERATED:markdownExport:START — DO NOT EDIT BY HAND. Source of truth: src/utils/markdownExport.ts (tests: tests/unit/markdownExport.test.ts). Regenerate with `npm run generate` after changing the source; CI fails if this block drifts from what the generator produces (see .github/workflows/ci.yml and scripts/generate-index-blocks.mjs). */
+/**
+ * Markdown export (owner 2026-11-19, spec: docs/markdown-plan.md). Turns the open document into one
+ * `.md` file that other notes apps open, and that markdownImport.ts reads back to the same rows.
+ *
+ * `serializeMarkdown` is pure. `mdFromNoteHtml` and `mdTableToGrid` read already-sanitized HTML
+ * through the DOM element the caller passes in (index.html parses with DOMParser; tests use
+ * happy-dom), and never write HTML anywhere. Wired via scripts/generate-index-blocks.mjs's
+ * `markdownExport` block; `exportMarkdown` in index.html gathers the rows and downloads the file.
+ */
+// ---------------------------------------------------------------------------------------------
+// Escaping
+/** Escapes characters Markdown would read as formatting, so the words come out as typed. */
+function mdEscape(text, opts = {}) {
+    let out = text.replace(/[\\`*_[\]<>~]/g, (c) => '\\' + c);
+    if (opts.inTable)
+        out = out.replace(/\|/g, '\\|');
+    if (opts.lineStart) {
+        out = out.replace(/^(\s*)([#>+=-])/, '$1\\$2').replace(/^(\s*\d+)([.)])/, '$1\\$2');
+    }
+    return out;
+}
+function mdSafeUrl(url) {
+    const u = String(url || '').trim();
+    if (!/^(https?:\/\/|mailto:)/i.test(u))
+        return null;
+    return u.replace(/ /g, '%20').replace(/\(/g, '%28').replace(/\)/g, '%29');
+}
+// ---------------------------------------------------------------------------------------------
+// Inline: words + marks → Markdown
+const MD_EMPH_ORDER = ['b', 's', 'i'];
+const MD_EMPH_DELIM = { b: '**', s: '~~', i: '*' };
+/** Renders text with bold, italic, strikethrough and web links; other marks keep only their words. */
+function mdInline(text, marks = [], lineStart = false) {
+    const n = text.length;
+    if (!n)
+        return '';
+    const fmt = Array.from({ length: n }, () => ({}));
+    for (const m of marks) {
+        const s = Math.max(0, Math.min(n, m.s)), e = Math.max(0, Math.min(n, m.e));
+        for (let j = s; j < e; j++) {
+            if (m.k === 'b' || m.k === 'i' || m.k === 's')
+                fmt[j][m.k] = true;
+            else if (m.k === 'a') {
+                const u = mdSafeUrl(m.v || '');
+                if (u)
+                    fmt[j].a = u;
+            }
+        }
+    }
+    // Spaces never carry emphasis (`** x**` isn't bold in Markdown); the words around them do.
+    for (let j = 0; j < n; j++)
+        if (/\s/.test(text[j])) {
+            fmt[j].b = false;
+            fmt[j].i = false;
+            fmt[j].s = false;
+        }
+    // Split into link groups, then render emphasis inside each with proper nesting.
+    let out = '';
+    let j = 0;
+    while (j < n) {
+        const link = fmt[j].a;
+        let k = j;
+        while (k < n && fmt[k].a === link)
+            k++;
+        const inner = mdRenderEmphasis(text, fmt, j, k, lineStart && j === 0 && !link);
+        out += link ? '[' + inner + '](' + link + ')' : inner;
+        j = k;
+    }
+    return out;
+}
+function mdRenderEmphasis(text, fmt, from, to, lineStart) {
+    let out = '';
+    const stack = [];
+    for (let j = from; j <= to; j++) {
+        const want = new Set(j < to ? MD_EMPH_ORDER.filter((k) => fmt[j][k]) : []);
+        // Close from the top until everything still open is wanted, then open what's missing.
+        let keep = 0;
+        while (keep < stack.length && want.has(stack[keep]))
+            keep++;
+        for (let c = stack.length - 1; c >= keep; c--)
+            out += MD_EMPH_DELIM[stack[c]];
+        stack.length = keep;
+        for (const k of MD_EMPH_ORDER)
+            if (want.has(k) && !stack.includes(k)) {
+                stack.push(k);
+                out += MD_EMPH_DELIM[k];
+            }
+        if (j < to)
+            out += mdEscape(text[j], { lineStart: lineStart && j === from && !stack.length });
+    }
+    return out;
+}
+const MD_BLOCK_TAGS = new Set(['P', 'DIV', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'UL', 'OL', 'LI', 'PRE', 'BLOCKQUOTE', 'TABLE', 'SECTION', 'ARTICLE', 'FIGURE']);
+function mdInlineFromDom(node, inherit = {}) {
+    let text = '';
+    const marks = [];
+    const walk = (n, f) => {
+        if (n.nodeType === 3) {
+            const t = (n.textContent || '').replace(/\s+/g, ' ');
+            const s = text.length;
+            text += t;
+            if (f.b)
+                marks.push({ s, e: text.length, k: 'b' });
+            if (f.i)
+                marks.push({ s, e: text.length, k: 'i' });
+            if (f.s)
+                marks.push({ s, e: text.length, k: 's' });
+            if (f.a)
+                marks.push({ s, e: text.length, k: 'a', v: f.a });
+            return;
+        }
+        if (n.nodeType !== 1)
+            return;
+        const tag = n.nodeName.toUpperCase();
+        if (tag === 'BR') {
+            text += ' ';
+            return;
+        }
+        if (tag === 'IMG')
+            return;
+        const g = { ...f };
+        if (tag === 'B' || tag === 'STRONG')
+            g.b = true;
+        if (tag === 'I' || tag === 'EM')
+            g.i = true;
+        if (tag === 'S' || tag === 'STRIKE' || tag === 'DEL')
+            g.s = true;
+        if (tag === 'A' && n.getAttribute) {
+            const h = n.getAttribute('href');
+            if (h && mdSafeUrl(h))
+                g.a = h;
+        }
+        for (const c of Array.from(n.childNodes))
+            walk(c, g);
+    };
+    for (const c of Array.from(node.childNodes))
+        walk(c, inherit);
+    return { text, marks };
+}
+function mdTrimInline(r) {
+    const lead = r.text.length - r.text.replace(/^\s+/, '').length;
+    const text = r.text.trim();
+    return { text, marks: r.marks.map((m) => ({ ...m, s: m.s - lead, e: m.e - lead })) };
+}
+/**
+ * A note's HTML as Markdown paragraphs. Each line of the note becomes its own paragraph; list items
+ * become "• " / "1. " paragraphs (not Markdown lists, which under a list item would read back as
+ * child rows); preformatted text becomes a fenced code block.
+ */
+function mdFromNoteHtml(root) {
+    const paras = [];
+    let inlineBuf = [];
+    const pushInline = (nodes) => {
+        const fake = { nodeType: 1, nodeName: 'SPAN', textContent: '', childNodes: nodes };
+        // Split on <br> so each visible line stays its own paragraph.
+        let part = [];
+        const flush = () => {
+            const r = mdTrimInline(mdInlineFromDom({ ...fake, childNodes: part }));
+            if (r.text)
+                paras.push(mdInline(r.text, r.marks, true));
+            part = [];
+        };
+        for (const n of Array.from(fake.childNodes)) {
+            if (n.nodeType === 1 && n.nodeName.toUpperCase() === 'BR')
+                flush();
+            else
+                part.push(n);
+        }
+        flush();
+    };
+    const flushInline = () => { if (inlineBuf.length)
+        pushInline(inlineBuf); inlineBuf = []; };
+    const block = (n, listPrefix) => {
+        const tag = n.nodeName.toUpperCase();
+        if (tag === 'PRE') {
+            const code = (n.textContent || '').replace(/\n$/, '');
+            let fence = '```';
+            while (code.includes(fence))
+                fence += '`';
+            paras.push(fence + '\n' + code + '\n' + fence);
+            return;
+        }
+        if (tag === 'UL' || tag === 'OL') {
+            let idx = 1;
+            for (const li of Array.from(n.childNodes)) {
+                if (li.nodeType === 1 && li.nodeName.toUpperCase() === 'LI')
+                    block(li, tag === 'OL' ? idx++ + '. ' : '• ');
+            }
+            return;
+        }
+        if (tag === 'TABLE') {
+            for (const row of mdTableToGrid(n))
+                if (row.some((c) => c))
+                    paras.push(mdEscape(row.join(' | '), { lineStart: true }));
+            return;
+        }
+        // Paragraph-like: its inline content, with nested blocks handled in order.
+        const kids = Array.from(n.childNodes);
+        const hasBlocks = kids.some((c) => c.nodeType === 1 && MD_BLOCK_TAGS.has(c.nodeName.toUpperCase()));
+        const isHeading = /^H[1-6]$/.test(tag);
+        if (!hasBlocks && !listPrefix && !isHeading) {
+            pushInline(kids);
+            return;
+        }
+        if (!hasBlocks) {
+            const r = mdTrimInline(mdInlineFromDom(n, isHeading ? { b: true } : {}));
+            if (r.text) {
+                const body = mdInline(r.text, r.marks, !listPrefix);
+                paras.push(listPrefix ? (/^\d/.test(listPrefix) ? listPrefix.replace('.', '\\.') : listPrefix) + body : body);
+            }
+            return;
+        }
+        let buf = [];
+        for (const c of kids) {
+            if (c.nodeType === 1 && MD_BLOCK_TAGS.has(c.nodeName.toUpperCase())) {
+                if (buf.length) {
+                    pushInline(buf);
+                    buf = [];
+                }
+                block(c);
+            }
+            else
+                buf.push(c);
+        }
+        if (buf.length)
+            pushInline(buf);
+    };
+    for (const c of Array.from(root.childNodes)) {
+        if (c.nodeType === 1 && MD_BLOCK_TAGS.has(c.nodeName.toUpperCase())) {
+            flushInline();
+            block(c);
+        }
+        else
+            inlineBuf.push(c);
+    }
+    flushInline();
+    return paras.join('\n\n');
+}
+/** A table element's cells as text, row by row; merged and multi-line cells flatten to one line. */
+function mdTableToGrid(table) {
+    const rows = [];
+    const visit = (n) => {
+        const tag = n.nodeName.toUpperCase();
+        if (tag === 'TR') {
+            const cells = [];
+            for (const c of Array.from(n.childNodes)) {
+                const t = c.nodeName.toUpperCase();
+                if (c.nodeType === 1 && (t === 'TD' || t === 'TH'))
+                    cells.push((c.textContent || '').replace(/\s+/g, ' ').trim());
+            }
+            rows.push(cells);
+            return;
+        }
+        for (const c of Array.from(n.childNodes))
+            if (c.nodeType === 1)
+                visit(c);
+    };
+    visit(table);
+    return rows;
+}
+function mdGridToTable(grid) {
+    const rows = grid.filter((r) => r.length);
+    if (!rows.length)
+        return [];
+    const cols = Math.max(...rows.map((r) => r.length));
+    const cell = (c) => mdEscape(c ?? '', { inTable: true }) || ' ';
+    const line = (r) => '| ' + Array.from({ length: cols }, (_, j) => cell(r[j])).join(' | ') + ' |';
+    return [line(rows[0]), '| ' + Array.from({ length: cols }, () => '---').join(' | ') + ' |', ...rows.slice(1).map(line)];
+}
+// ---------------------------------------------------------------------------------------------
+// The document
+/**
+ * The whole document as Markdown. Rows with a heading style whose ancestors are all headings
+ * become `##`… headings (the title is `#`); every other row is a `- ` list item under its nearest
+ * heading. Notes, tables and mentions follow their row: indented under a list item, plain under a
+ * heading.
+ */
+function serializeMarkdown(title, rows) {
+    const out = ['# ' + mdInline((title || 'Untitled').trim() || 'Untitled', [], true), ''];
+    const headingAt = []; // per depth: is the open row at this depth a heading block?
+    const headingDepth = []; // per depth: depth of the nearest heading block at or above
+    let prevWasList = false;
+    const blank = () => { if (out[out.length - 1] !== '')
+        out.push(''); };
+    const blocksFor = (r) => {
+        const b = [];
+        if (r.noteMd && r.noteMd.trim())
+            b.push(...r.noteMd.split('\n'), '');
+        for (const t of r.tables || []) {
+            const md = mdGridToTable(t);
+            if (md.length)
+                b.push(...md, '');
+        }
+        for (const m of r.mentions || [])
+            b.push('*\\[' + mdEscape(m) + '\\]*', '');
+        while (b.length && b[b.length - 1] === '')
+            b.pop();
+        return b;
+    };
+    for (const r of rows) {
+        const depth = Math.max(0, Math.floor(r.depth || 0));
+        headingAt.length = depth;
+        headingDepth.length = depth;
+        const parentIsHeading = depth === 0 || headingAt[depth - 1] === true;
+        const isHeading = !!r.heading && r.heading > 0 && parentIsHeading;
+        headingAt[depth] = isHeading;
+        headingDepth[depth] = isHeading ? depth : depth > 0 ? headingDepth[depth - 1] : -1;
+        const blocks = blocksFor(r);
+        if (isHeading) {
+            blank();
+            out.push('#'.repeat(Math.min(6, depth + 2)) + ' ' + mdInline(r.text, r.marks));
+            if (blocks.length) {
+                out.push('');
+                out.push(...blocks);
+            }
+            out.push('');
+            prevWasList = false;
+            continue;
+        }
+        const base = depth > 0 ? headingDepth[depth - 1] + 1 : 0;
+        const indent = '  '.repeat(Math.max(0, depth - base));
+        if (!prevWasList)
+            blank();
+        const box = r.isCheckbox ? (r.checked ? '[x] ' : '[ ] ') : '';
+        // A row whose words would read as a task box or a list marker gets its first character escaped.
+        const body = mdInline(r.text, r.marks, true);
+        out.push(indent + '- ' + box + (box ? body : body.replace(/^\[([ xX])\]/, '\\[$1\\]')));
+        if (blocks.length) {
+            out.push('');
+            for (const l of blocks)
+                out.push(l ? indent + '  ' + l : '');
+            out.push('');
+        }
+        prevWasList = true;
+    }
+    while (out.length && out[out.length - 1] === '')
+        out.pop();
+    return out.join('\n') + '\n';
+}
+
+/* GENERATED:markdownExport:END */
 function nodesToOutlineXml(list,startIdx,parentDepth){return nodesToOutlineXmlCore(list,startIdx,parentDepth,true,stripHtmlToText)}
 function serializeOpml(scopeNodes=nodes){return serializeOpmlCore(scopeNodes,getMeta().title,true,stripHtmlToText)}
 function exportOpml(){const title=(getMeta().title||'tree').replace(/[\\/:*?"<>|]+/g,'_'); downloadBlob(`${title}.opml`,'text/x-opml;charset=utf-8',serializeOpml(withoutNoExportNodes(getScopedNodes(true)))); noExportToast(getScopedNodes(true))}
@@ -25136,6 +26051,68 @@ function importOpmlText(xmlText){
   return true;
 }
 function triggerOpmlImport(){ el('sakura-opml-file-input')?.click(); }
+// ---------- Markdown import and export (owner 2026-11-19, docs/markdown-plan.md) ----------
+// One file at a time, always into a new document, like OPML. The parsing and writing live in the
+// generated markdownImport/markdownExport blocks; here they meet the document model.
+const MD_FILE_RE=/\.(md|markdown|mdown|mkd)$/i;
+function isMarkdownFile(f){ return !!f&&(MD_FILE_RE.test(f.name||'')||f.type==='text/markdown'||f.type==='text/x-markdown'); }
+function isOpmlFile(f){ return !!f&&(/\.(opml|xml)$/i.test(f.name||'')||f.type==='text/x-opml'); }
+function importMarkdownText(text,fileName){
+  const parsed=parseMarkdown(text);
+  if(!parsed.rows.length){ showToast('Nothing to import in that Markdown file'); return false; }
+  createDoc();
+  pushUndo(); markDirty();
+  // Notes and tables are built from escaped text by the parser; they still go through the same
+  // cleaning as everything else that's loaded.
+  const mapped=parsed.rows.map(r=>{
+    const n=makeNode(r.text,r.depth,null,{...emptyStyles(),heading:r.heading},sakuraSanitizeRichHtml(r.note||''),r.isCheckbox,r.tables.map(t=>tidyTableHtml(sakuraSanitizeRichHtml(t))),undefined,r.marks);
+    if(r.isCheckbox&&r.checked){ n.checked=true; n.completedAt=Date.now(); }
+    return n;
+  });
+  nodes=mapped;
+  rebuildParentIds();
+  selectedId=mapped[0]?.id??null; selectAllMode=false; clearMultiSelection(); selectionAnchorId=selectedId; editingId=null; flashNodeId=null;
+  const title=(parsed.title||String(fileName||'').replace(MD_FILE_RE,'')).trim();
+  if(title){ setDocTitleField(title); touchDocIndex(currentDocId,title); }
+  render();
+  scheduleAutoSave(); renderSidebar();
+  showToast(`Imported ${mapped.length} row${mapped.length===1?'':'s'}`+(parsed.simplified?' (some formatting came in as plain text)':''));
+  return true;
+}
+// Picks the reader from the file: Markdown or OPML. Files over 5 MB are refused before reading.
+async function importDocumentFile(file){
+  if(!file)return;
+  if(file.size>MARKDOWN_IMPORT_MAX_BYTES){ showToast('That file is too large to import (over 5 MB)'); return; }
+  let text;
+  try{ text=await file.text(); }catch(e){ showToast('Could not read that file'); return; }
+  if(isMarkdownFile(file))importMarkdownText(text,file.name);
+  else importOpmlText(text);
+}
+function triggerDocumentImport(){ el('sakura-opml-file-input')?.click(); }
+// Rows, notes (read through DOMParser), tables and what Markdown can't hold, for serializeMarkdown.
+function exportMarkdown(){
+  const list=withoutNoExportNodes(getScopedNodes(true));
+  const parser=new DOMParser();
+  const htmlRoot=html=>parser.parseFromString('<!doctype html><body>'+(html||'')+'</body>','text/html').body;
+  let pictures=0, objects=0;
+  const rows=list.map(n=>{
+    const mentions=[];
+    for(const im of (Array.isArray(n.images)?n.images:[])){ pictures++; mentions.push('Picture'+(im.caption?': '+im.caption:'')); }
+    for(const d of diagrams.filter(d=>d.anchorNodeId===n.id)){ objects++; mentions.push('Diagram'+(d.title?': '+d.title:'')); }
+    for(const q of qaItems.filter(q=>q.sourceNodeId===n.id)){ objects++; const t=stripHtmlToText(q.question||q.text||'').trim(); mentions.push('Thread'+(t?': '+t:'')); }
+    for(const r of remarks.filter(r=>r.anchorNodeId===n.id)){ objects++; const t=stripHtmlToText(r.title||r.text||'').trim(); mentions.push('Remark'+(t?': '+t:'')); }
+    const tables=(Array.isArray(n.tables)?n.tables:[]).map(t=>{ const tb=htmlRoot(t).querySelector('table'); return tb?mdTableToGrid(tb):[]; }).filter(g=>g.length);
+    return {text:n.text||'',marks:rowMarksOf(n),depth:n.depth||0,heading:n.styles?.heading||0,isCheckbox:!!n.isCheckbox,checked:!!n.checked,noteMd:n.note?mdFromNoteHtml(htmlRoot(n.note)):'',tables,mentions};
+  });
+  const title=(getMeta().title||'').trim();
+  const fileTitle=(title||'Untitled').replace(/[\\/:*?"<>|]+/g,'_');
+  downloadBlob(fileTitle+'.md','text/markdown;charset=utf-8',serializeMarkdown(title||'Untitled',rows));
+  noExportToast(getScopedNodes(true));
+  const parts=[];
+  if(pictures)parts.push(pictures+' picture'+(pictures===1?'':'s'));
+  if(objects)parts.push(objects+' diagram'+(objects===1?'':'s')+', thread'+(objects===1?'':'s')+' or remark'+(objects===1?'':'s'));
+  if(parts.length)showToast('Exported. '+parts.join(' and ')+' listed by name only; export as PDF to keep them.');
+}
 // API request tables built from Field | Value rows (the API form's Save and a pasted cURL). Postman
 // collection import was removed (owner 2026-10-30): requests come in one at a time, by pasting.
 function apiGridToTableHtml(grid){
@@ -25752,19 +26729,22 @@ document.addEventListener('keydown',e=>{
 // Settings fills the whole area, so it has its own close button (Esc and the rail button do the same).
 el('settings-close-btn')?.addEventListener('click',e=>{ e.stopPropagation(); el('settings-panel').classList.remove('open'); setSettingsSearchVisible(false); el('rail-settings-btn')?.focus(); });
 el('account-toggle')?.addEventListener('click',e=>{e.stopPropagation(); el('export-menu')?.classList.remove('open');  toggleNotifMenu(false); el('account-menu').classList.toggle('open')});
-// Export ▾ / Import ▾: the shared menu, one item per format. Download PDF and Export (.opml) live
-// under Share; Import (.opml) is in the File Explorer's + menu.
+// Export ▾ / Import ▾: the shared menu, one item per format. Share shows the export formats under
+// "Export as"; Import (.md, .opml) is in the File Explorer's + menu.
 const SB_EXPORT_ICON='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>';
 const SB_IMPORT_ICON='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>';
 const SB_PDF_ICON='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="13" y2="17"/></svg>';
 const SB_PEOPLE_ICON='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>';
+// The Markdown mark (an M and a down arrow in a rounded box), as other apps show it.
+const SB_MD_ICON='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2.5"/><path d="M6 15V9l2.5 3L11 9v6"/><path d="M17 9v6"/><path d="M14.5 12.5L17 15l2.5-2.5"/></svg>';
 const SB_OPML_ICON='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="2.4"/><circle cx="6" cy="18" r="2.4"/><circle cx="17" cy="12" r="2.4"/><path d="M8 6h4a4 4 0 0 1 4 4"/><path d="M8 18h4a4 4 0 0 0 4-4"/></svg>';
 function exportMenuItems(){ return [
   {label:'PDF', meta:'.pdf', icon:SB_PDF_ICON, data:{save:'pdf'}, onClick:()=>exportPdfDirect()},
+  {label:'Markdown', meta:'.md', icon:SB_MD_ICON, data:{save:'md'}, onClick:()=>exportMarkdown()},
   {label:'OPML', meta:'.opml', icon:SB_OPML_ICON, data:{save:'opml'}, onClick:()=>exportOpml()}
 ]; }
 function importMenuItems(){ return [
-  {label:'OPML', meta:'.opml', icon:SB_OPML_ICON, data:{import:'opml'}, onClick:()=>triggerOpmlImport()}
+  {label:'Markdown or OPML', meta:'.md, .opml', icon:SB_IMPORT_ICON, data:{import:'file'}, onClick:()=>triggerDocumentImport()}
 ]; }
 // Makes a real panel/menu open anchored to the button that was actually clicked (the '...'
 // or Account toggle), instead of its own default position — which is relative to its original,
@@ -29144,24 +30124,24 @@ el('sidebar-search-clear').addEventListener('click',()=>{
 });
 
 // One + for everything that adds to the File Explorer (owner, 2026-11-03): New document (highlighted,
-// so + then Enter makes one), New folder, Import (.opml). Right-click on empty space has the same three.
+// so + then Enter makes one), New folder, Import (.md, .opml). Right-click on empty space has the same three.
 el('sb-new-btn').addEventListener('click',e=>{ e.stopPropagation(); openSbMenuUnder(e.currentTarget,sbNewMenuItems(),{id:'sb-new-menu',label:'New',keyboard:true}); });
 function sbNewMenuItems(){ return [
   {label:'New document', icon:SB_NEW_DOC_ICON, onClick:()=>{ createDoc(); renderSidebar(); }},
   {label:'New folder', icon:SB_NEW_FOLDER_ICON, onClick:()=>createFolder()},
-  {label:'Import (.opml)…', icon:SB_IMPORT_ICON, onClick:()=>triggerOpmlImport()}
+  {label:'Import (.md, .opml)…', icon:SB_IMPORT_ICON, onClick:()=>triggerDocumentImport()}
 ]; }
 const SB_NEW_DOC_ICON='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>'; // the document rows' own page icon
 const SB_NEW_FOLDER_ICON='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>'; // a plain folder: the menu already says New
-// A .opml file dropped on the File Explorer or the editor becomes a new document, like Import.
-function _opmlFilesFrom(files){ return [...(files||[])].filter(f=>/\.(opml)$/i.test(f.name||'')||f.type==='text/x-opml'); }
+// A .md or .opml file dropped on the File Explorer or the editor becomes a new document, like Import.
+function _opmlFilesFrom(files){ return [...(files||[])].filter(f=>/\.(opml)$/i.test(f.name||'')||f.type==='text/x-opml'||isMarkdownFile(f)); }
 function _dropInImportArea(t){ return !!(t&&t.closest&&t.closest('#sidebar, #editor-pane')); }
 document.addEventListener('dragover',e=>{ if(_dragHasFiles(e)&&_dropInImportArea(e.target)&&!el('editor-pane')?.contains(e.target)){ e.preventDefault(); e.dataTransfer.dropEffect='copy'; } });
 document.addEventListener('drop',async e=>{
   if(!_dragHasFiles(e)||!_dropInImportArea(e.target))return;
   const opml=_opmlFilesFrom(e.dataTransfer.files); if(!opml.length)return;
   e.preventDefault(); e.stopPropagation();
-  for(const f of opml){ try{ importOpmlText(await f.text()); }catch(err){ showToast('Could not read that OPML file'); } }
+  for(const f of opml)await importDocumentFile(f);
 },true);
 el('sb-bulk-clear-btn')?.addEventListener('click',()=>{ sbSelectedDocIds.clear(); renderSidebar(); });
 el('sb-bulk-delete-btn')?.addEventListener('click',async()=>{ await bulkDeleteDocs(Array.from(sbSelectedDocIds)); });
@@ -29755,8 +30735,7 @@ el('sakura-import-file-input')?.addEventListener('change',async e=>{
 el('sakura-opml-file-input')?.addEventListener('change',async e=>{
   const file=e.target.files&&e.target.files[0];
   e.target.value='';
-  if(!file)return;
-  try{ const text=await file.text(); importOpmlText(text); }catch(err){ showToast('Could not read that OPML file') }
+  if(file)await importDocumentFile(file);
 });
 
 // --- Settings: new-folders-start-collapsed toggle ---
