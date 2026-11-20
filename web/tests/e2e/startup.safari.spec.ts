@@ -62,3 +62,18 @@ test('starts for a signed-in account (the session is restored from Firebase)', a
   expect(r.errors, r.errors.join('\n\n')).toEqual([]);
   expect(r.done).toBe(true);
 });
+
+test('starts with a thread on screen from the first draw (the owner\u2019s iPhone froze here)', async ({ page }) => {
+  const r = await startWith(page, () => {
+    const n = (id: number, text: string) => ({ id, depth: 0, text, parentId: null, isCheckbox: false, checked: false, note: '', tables: [], images: [], tags: [], styles: {} });
+    localStorage.setItem('sakura_doc_v1_d1', JSON.stringify({ title: 'Kumla', nextId: 3, nodes: [n(1, 'Business Requirement'), n(2, 'Validation')],
+      remarks: [{ id: 'r1', anchorNodeId: 2, text: 'What should we do about clean core?', author: 'Robin', createdAt: 1, kind: 'question' }] }));
+    localStorage.setItem('sakura_docs_index_v1', JSON.stringify([{ id: 'd1', title: 'Kumla', updatedAt: 2 }]));
+    localStorage.setItem('sakura_current_doc_v1', 'd1');
+    localStorage.setItem('sakura_thread_drafts_v1', JSON.stringify({ 'd1|2': { html: 'half a reply', kind: 'comment', at: Date.now() } }));
+  });
+  expect(r.errors, r.errors.join('\n\n')).toEqual([]);
+  expect(r.boot).toEqual([]);
+  expect(r.done).toBe(true);
+  await expect(page.locator('#editor-pane')).toContainText('What should we do about clean core?');
+});
