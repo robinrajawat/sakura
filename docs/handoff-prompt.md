@@ -206,7 +206,7 @@ The flaky To-Dos draft test reports its storage state on failure: read that befo
 ### Parked / open questions for the owner
 
 
-- **Launch checklist (owner, 2026-11-17), besides the backups below:** (1) a lawyer's read of
+- **Launch checklist (owner, 2026-11-17), besides the backups below:** (0) switch on the release process (`docs/standard-practice-plan.md` step 6: deploy on a published release, not every merge) before the first outside users; (1) a lawyer's read of
   `privacy.html` / `terms.html` if possible (drafted, not reviewed; include the new "Sakura itself" ownership section); (2) test the positioning pitch
   with 3–5 target users. The name is decided: **Sakura Notes** (owner, 2026-11-18, after weighing
   ~20 alternatives: Ramus, Viveka, Sutra, Krama (an existing "Krama" ideas app), Bridge (Adobe Bridge),
