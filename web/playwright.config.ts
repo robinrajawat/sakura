@@ -16,10 +16,12 @@ export default defineConfig({
     // build-output verification specifically).
   },
   // docs/mobile-plan.md: the existing suite runs at desktop size, as before. `*.phone.spec.ts`
-  // runs on two phone profiles instead. Both use Chromium, the one browser CI installs; real iOS
-  // Safari is checked on a device (plan, phase 3).
+  // runs on two phone profiles instead, in Chromium at phone sizes. `*.safari.spec.ts` runs in
+  // WebKit, Safari's own engine (owner 2026-11-19: a startup failure on iPhone Safari passed every
+  // Chromium test). CI installs both browsers.
   projects: [
-    { name: 'desktop', testIgnore: /\.phone\.spec\.ts$/ },
+    { name: 'desktop', testIgnore: /\.(phone|safari)\.spec\.ts$/ },
+    { name: 'safari-iphone', testMatch: /\.safari\.spec\.ts$/, use: { ...devices['iPhone 13'] } },
     { name: 'phone-ios', testMatch: /\.phone\.spec\.ts$/, use: { ...devices['iPhone 13'], browserName: 'chromium' } },
     { name: 'phone-android', testMatch: /\.phone\.spec\.ts$/, use: { ...devices['Pixel 7'] } }
   ]
