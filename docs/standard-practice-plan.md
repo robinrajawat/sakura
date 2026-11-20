@@ -43,7 +43,7 @@ Original plan:
   `/opt/pw-browsers/chromium_headless_shell`.
 - Done when the full phone suite passes in WebKit in CI.
 
-## 2. Error reports from devices (built 2026-11-20; live once the DSN is set)
+## 2. Error reports from devices (built 2026-11-20)
 
 Built: **Sentry** (owner 2026-11-20: "do what's standard for the applications in this category"), on
 by default with Settings → About → Error reports to turn it off (option A; opt-in, B, would miss a
@@ -53,10 +53,11 @@ query values, breadcrumbs or local variables (`src/telemetry/`). The old opt-in 
 reports are gone. Existing users get a one-time notice before any report (privacy.html promises
 that for significant changes). privacy.html and the open-source notices are updated.
 
-Owner, to switch it on: create the Sentry organisation `robinrajawat` (EU data region) and project
-`sakura-web` (Browser JavaScript); turn on Settings → Security & Privacy → "Prevent Storing of IP
-Addresses"; give Claude the DSN for `SENTRY_DSN` in `web/src/telemetry/sentryConfig.ts`. Alerts:
-email on every new issue.
+Sentry: organisation `robinrajawat`, project `sakura-web` (Browser JavaScript, EU region), error
+monitoring only (no replay, tracing or logs); not connected to the GitHub repo. The DSN is in
+`web/src/telemetry/sentryConfig.ts`; index.html's CSP allows only its host. Owner: turn on
+"Prevent Storing of IP Addresses" (project Settings → Security & Privacy) and email alerts on new
+issues.
 
 Original plan:
 

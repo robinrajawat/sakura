@@ -6,6 +6,8 @@ import { existsSync, readFileSync } from 'fs';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const dist = path.resolve(__dirname, '../../dist');
 const SITE = 'https://www.sakura-notes.com';
+// The real project's host (the page's CSP allows only that one), with a stand-in key and project.
+const TEST_DSN = 'https://publickey@o4512462918320128.ingest.de.sentry.io/1';
 
 // Error reports (docs/standard-practice-plan.md step 2, src/telemetry/sentry.ts). The built page is
 // served as if from the live site, with a stand-in Sentry that records what would be sent.
@@ -35,7 +37,7 @@ test.describe('error reports', () => {
   }
 
   test('an error on the live site is reported, without the person\'s details', async ({ page }) => {
-    const sent = await openLiveSite(page, 'https://publickey@o1.ingest.de.sentry.io/1');
+    const sent = await openLiveSite(page, TEST_DSN);
     await page.waitForFunction(() => !!document.querySelector('script[src*="/vendor/sentry-"]'));
     await page.waitForTimeout(500); // the module runs init
     await page.evaluate(() => setTimeout(() => { throw new Error('test failure from a phone'); }, 0));
@@ -50,15 +52,8 @@ test.describe('error reports', () => {
     expect(body).not.toContain('private-id');
   });
 
-  test('with no DSN set, nothing is sent', async ({ page }) => {
-    const sent = await openLiveSite(page, null);
-    await page.evaluate(() => setTimeout(() => { throw new Error('not reported'); }, 0));
-    await page.waitForTimeout(1000);
-    expect(sent).toEqual([]);
-  });
-
   test('turned off in Settings, Sentry isn\'t loaded and nothing is sent', async ({ page }) => {
-    const sent = await openLiveSite(page, 'https://publickey@o1.ingest.de.sentry.io/1', { errorReportsOff: true });
+    const sent = await openLiveSite(page, TEST_DSN, { errorReportsOff: true });
     await expect(page.locator('#auto-error-report-toggle')).toHaveAttribute('aria-checked', 'false');
     expect(await page.locator('script[src*="/vendor/sentry-"]').count()).toBe(0);
     await page.evaluate(() => setTimeout(() => { throw new Error('not reported'); }, 0));
@@ -67,7 +62,7 @@ test.describe('error reports', () => {
   });
 
   test('turning it off while the page is open stops reports at once', async ({ page }) => {
-    const sent = await openLiveSite(page, 'https://publickey@o1.ingest.de.sentry.io/1');
+    const sent = await openLiveSite(page, TEST_DSN);
     await page.waitForFunction(() => !!document.querySelector('script[src*="/vendor/sentry-"]'));
     await page.waitForTimeout(500);
     await expect(page.locator('#auto-error-report-toggle')).toHaveAttribute('aria-checked', 'true');
@@ -79,7 +74,7 @@ test.describe('error reports', () => {
   });
 
   test('someone who used Sakura before is told first; reports start from the next load', async ({ page }) => {
-    const sent = await openLiveSite(page, 'https://publickey@o1.ingest.de.sentry.io/1', { theme: 'light' });
+    const sent = await openLiveSite(page, TEST_DSN, { theme: 'light' });
     expect(await page.locator('script[src*="/vendor/sentry-"]').count()).toBe(0);
     await expect(page.locator('#toast')).toContainText('Sakura now sends error reports', { timeout: 6000 });
     await page.reload();

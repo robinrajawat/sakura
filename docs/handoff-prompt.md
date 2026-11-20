@@ -171,7 +171,7 @@ keep only the last 3 entries, and delete older ones (git history and the PRs kee
 anything still unbuilt or undecided into "In progress / not built" or "Parked". If this section
 contradicts README.md or docs/feature-reference.md, trust them.)*
 
-**Open work (2026-11-20):** `docs/standard-practice-plan.md` steps 1 (phone suite in WebKit) and 2 (Sentry error reports) are built. Step 2 sends nothing until the owner gives the Sentry DSN (steps in the plan); then set `SENTRY_DSN` in `web/src/telemetry/sentryConfig.ts` and narrow index.html's CSP from `https://*.ingest.de.sentry.io` to the DSN's exact host. Step 3 (preview per PR) waits on the owner's 15 minutes. The flaky To-Dos draft test now reports its storage state on failure: read that message before changing code. Owner to confirm on the iPhone that Sakura starts normally after #915. Not built: the AI code still loads at startup inside index.html.
+**Open work (2026-11-20):** `docs/standard-practice-plan.md` steps 1 (phone suite in WebKit) and 2 (Sentry error reports) are built. Sentry project: organisation `robinrajawat`, project `sakura-web`, EU region; the DSN is in `web/src/telemetry/sentryConfig.ts` and index.html's CSP allows only its host. Step 3 (preview per PR) waits on the owner's 15 minutes. The flaky To-Dos draft test now reports its storage state on failure: read that message before changing code. Owner to confirm on the iPhone that Sakura starts normally after #915. Not built: the AI code still loads at startup inside index.html.
 
 **Direction (owner, 2026-11-12):** Sakura is going cloud-first, with try-without-an-account kept. Plan: `docs/cloud-first-plan.md` (built; PDF stays on Cloudflare's free plan, owner 2026-11-17). Read it and `docs/data-safety-audit.md` before touching sync.
 
@@ -179,7 +179,7 @@ contradicts README.md or docs/feature-reference.md, trust them.)*
 
 ### Latest changes
 
-- **Error reports through Sentry (2026-11-20, plan step 2, owner: "do what's standard").** On by default (owner chose this over opt-in), Settings → About → Error reports turns them off (`errorReportsOff` in prefs; the old `autoErrorReportEnabled` is ignored). `web/src/telemetry/sentry.ts` is built by Vite into a hashed file (`sentrySrc` plugin in vite.config.js) and added by index.html's first script on www.sakura-notes.com only; errors before it loads (`__sakuraBootErrors`, `__sakuraEarlyRejections`) are sent once it does. No user, IP, query, breadcrumbs or local variables (`sentryConfig.ts`). Existing users see a one-time notice and reports start on their next load. The old opt-in Firestore crash reports are removed (Send feedback unchanged). privacy.html, open-source notices, README and feature reference updated. Tests: `error-reports.spec.ts` (built page served as the live site, stand-in Sentry), `sentryConfig.test.ts`. Inactive until the DSN is set.
+- **Error reports through Sentry (2026-11-20, plan step 2, owner: "do what's standard").** On by default (owner chose this over opt-in), Settings → About → Error reports turns them off (`errorReportsOff` in prefs; the old `autoErrorReportEnabled` is ignored). `web/src/telemetry/sentry.ts` is built by Vite into a hashed file (`sentrySrc` plugin in vite.config.js) and added by index.html's first script on www.sakura-notes.com only; errors before it loads (`__sakuraBootErrors`, `__sakuraEarlyRejections`) are sent once it does. No user, IP, query, breadcrumbs or local variables (`sentryConfig.ts`). Existing users see a one-time notice and reports start on their next load. The old opt-in Firestore crash reports are removed (Send feedback unchanged). privacy.html, open-source notices, README and feature reference updated. Tests: `error-reports.spec.ts` (built page served as the live site, stand-in Sentry), `sentryConfig.test.ts`.
 
 - **Phone suite runs in Safari's engine (2026-11-20, plan step 1).** `phone-ios` is WebKit now (`phone-android` stays Chromium). Gestures (long-press, swipe, pinch) go through `web/tests/e2e/fixtures/touch.ts`: Chrome's touch input in Chromium, and pointer events dispatched in the page in WebKit (pointer capture honoured). `SAKURA_SYNTH_TOUCH=1` checks the WebKit path locally in Chromium. Locally without WebKit, `playwright.config.ts` leaves the WebKit projects out with a warning; CI always runs them. The To-Dos draft flake didn't reproduce in 400+ runs; it now prints storage state when it fails.
 
@@ -204,7 +204,7 @@ contradicts README.md or docs/feature-reference.md, trust them.)*
 
 ### Parked / open questions for the owner
 
-- Sentry DSN for error reports (owner creates the account; steps in `docs/standard-practice-plan.md` step 2).
+- Sentry: owner to turn on "Prevent Storing of IP Addresses" (Settings → Projects → sakura-web → Security & Privacy) and email alerts on new issues, if not done.
 - Cloudflare Pages preview per PR: owner connects the repo (about 15 minutes; steps in the plan, step 3).
 
 - **Launch checklist (owner, 2026-11-17), besides the backups below:** (1) a lawyer's read of

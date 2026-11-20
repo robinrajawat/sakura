@@ -9,8 +9,8 @@
  */
 
 /** The project's DSN (Sentry → Settings → Projects → sakura-web → Client Keys). Public by design: it
- * only lets a page send reports in. Empty means reporting is off. */
-export const SENTRY_DSN = '';
+ * only lets a page send reports in. Empty would turn reporting off. */
+export const SENTRY_DSN = 'https://8acab3ed6dc39dd4dd27861089f8cbb2@o4512462918320128.ingest.de.sentry.io/4512462933327952';
 
 /** Reports are sent only from the live site, never from tests, local copies or previews. */
 export const PRODUCTION_ORIGIN = 'https://www.sakura-notes.com';
