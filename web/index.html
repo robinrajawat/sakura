@@ -5105,6 +5105,78 @@ function mergeDrafts(base, local, cloud) {
 }
 
 /* GENERATED:threadDrafts:END */
+/* GENERATED:threadMerge:START — DO NOT EDIT BY HAND. Source of truth: src/state/threadMerge.ts (tests: tests/unit/threadMerge.test.ts). Regenerate with `npm run generate` after changing the source; CI fails if this block drifts from what the generator produces (see .github/workflows/ci.yml and scripts/generate-index-blocks.mjs). */
+/**
+ * Thread entries when two devices' copies of a document collide (owner 2026-11-20: a thread added
+ * on the phone vanished on the Mac and the other way round; each time, that device's whole copy went
+ * to Version history as "Your changes on this device"). The account's copy is still the one kept,
+ * as the sync rules say, but thread entries are merged into it by id, as offline-first apps do,
+ * instead of being lost with the rest of this device's copy.
+ *
+ * - Every entry in the kept copy stays (an entry both copies have keeps the kept copy's version).
+ * - An entry only this device has is added, unless the kept copy records it as deleted
+ *   (`remarkTombstones`: entry id → time deleted) or its row isn't in the kept copy.
+ * - Deletion records from both copies are kept, and dropped after TOMBSTONE_MAX_AGE_MS.
+ *
+ * A deletion made only on this device doesn't win over the kept copy: when in doubt nothing is
+ * deleted (docs/data-safety-audit.md, Sync rules). Pure; called from resolveDocPushConflict and
+ * applyIncomingDocData in index.html.
+ */
+const TOMBSTONE_MAX_AGE_MS = 90 * 24 * 60 * 60 * 1000;
+/** Records an entry as deleted, at `now`. Returns a new map. */
+function addTombstone(t, id, now) {
+    return { ...(t || {}), [String(id)]: now };
+}
+/** Deletion records younger than TOMBSTONE_MAX_AGE_MS, from both maps (the later time when both have one). */
+function mergeTombstones(a, b, now) {
+    const out = {};
+    for (const m of [a, b]) {
+        if (!m || typeof m !== 'object')
+            continue;
+        for (const [id, at] of Object.entries(m)) {
+            const t = Number(at);
+            if (!Number.isFinite(t) || now - t > TOMBSTONE_MAX_AGE_MS)
+                continue;
+            if (!(id in out) || out[id] < t)
+                out[id] = t;
+        }
+    }
+    return out;
+}
+/**
+ * Merges this device's thread entries into the kept copy's.
+ * @param keptRemarks the kept (account's) copy's entries
+ * @param keptTombstones the kept copy's deletion records
+ * @param mineRemarks this device's entries
+ * @param mineTombstones this device's deletion records
+ * @param keptRowIds ids of the rows in the kept copy
+ */
+function mergeThreadEntries(keptRemarks, keptTombstones, mineRemarks, mineTombstones, keptRowIds, now) {
+    const kept = Array.isArray(keptRemarks) ? keptRemarks.filter((r) => r && r.id != null) : [];
+    const mine = Array.isArray(mineRemarks) ? mineRemarks.filter((r) => r && r.id != null) : [];
+    const rows = new Set([...keptRowIds].map((x) => String(x)));
+    const deletedInKept = keptTombstones && typeof keptTombstones === 'object' ? keptTombstones : {};
+    const have = new Set(kept.map((r) => String(r.id)));
+    const extra = mine.filter((r) => !have.has(String(r.id)) && !(String(r.id) in deletedInKept) && rows.has(String(r.anchorNodeId)));
+    const all = [...kept, ...extra.map((r) => ({ ...r }))];
+    // A reply whose entry isn't there any more stops pointing at it (as deleting an entry does).
+    const ids = new Set(all.map((r) => String(r.id)));
+    for (const r of all)
+        if (r.answerTo != null && !ids.has(String(r.answerTo)))
+            delete r.answerTo;
+    if (extra.length)
+        all.sort((a, b) => (Number(a.createdAt) || 0) - (Number(b.createdAt) || 0));
+    return { remarks: all, remarkTombstones: mergeTombstones(keptTombstones, mineTombstones, now), added: extra.length };
+}
+
+/* GENERATED:threadMerge:END */
+// Thread entries deleted in each document (entry id → time), saved and synced with the document
+// (remarkTombstones), so a collision with another device's copy doesn't bring them back
+// (mergeThreadEntries). Kept per document id, not per open tab, so switching tabs needs nothing.
+var _remarkTombstonesByDoc=new Map();
+function docRemarkTombstones(id){ return _remarkTombstonesByDoc.get(id)||{}; }
+function setDocRemarkTombstones(id,t){ if(id!=null)_remarkTombstonesByDoc.set(id,mergeTombstones(docRemarkTombstones(id),t,Date.now())); }
+function noteRemarksDeleted(list){ if(currentDocId==null)return; let t=docRemarkTombstones(currentDocId); const now=Date.now(); (list||[]).forEach(r=>{ if(r&&r.id!=null)t=addTombstone(t,r.id,now); }); _remarkTombstonesByDoc.set(currentDocId,t); }
 // A node's thread: reply box state and chip icons (see renderNodeThread).
 var _threadComposerNodeId=null;   // the node whose reply box is open even with no entries yet
 var _threadAskNodeIds=new Set();  // reply boxes whose next entry is a question
@@ -13911,6 +13983,20 @@ async function keepLocalDocBeforeIncoming(id,incoming){
   }catch(e){ return false; }
 }
 
+// Two devices' copies collided and the account's (`incoming`) is kept: this device's thread entries
+// (`mine`, a document object) are merged into it by id (mergeThreadEntries), instead of going only
+// to Version history with the rest of this copy (owner 2026-11-20: threads lost between phone and
+// Mac). Changes `incoming` in place; returns how many entries were added from this device.
+function mergeMyThreadEntriesInto(id,incoming,mine){
+  try{
+    if(!incoming||!mine)return 0;
+    const rowIds=(Array.isArray(incoming.nodes)?incoming.nodes:[]).map(n=>n&&n.id);
+    const r=mergeThreadEntries(incoming.remarks,incoming.remarkTombstones,mine.remarks,{...(mine.remarkTombstones||{}),...docRemarkTombstones(id)},rowIds,Date.now());
+    incoming.remarks=r.remarks; incoming.remarkTombstones=r.remarkTombstones;
+    _remarkTombstonesByDoc.set(id,r.remarkTombstones);
+    return r.added;
+  }catch(e){ console.warn('[sakura] could not merge thread entries:',e); return 0; }
+}
 // Tracks the modifiedAt we last successfully wrote to the diagram-blob overflow store, per
 // diagram id, so saveToStorage (which runs on every debounced edit, not just diagram edits)
 // doesn't re-write every diagram's XML/SVG to IndexedDB on every keystroke — only on saves
@@ -14114,7 +14200,7 @@ function saveToStorage(){
       if(_hydrated&&!d.blobSynced) return {...meta,xml:xml||'',previewSvg:previewSvg||'',pageSvgs:Array.isArray(pageSvgs)?pageSvgs:[]};
       return meta;
     });
-    const payload={rowFormat:ROW_FORMAT,nodes,nextId,selectedId,multiSelectedIds,selectionAnchorId,collapsed:[...collapsedIds],collapsedTables:[...collapsedTableNodeIds],collapsedImages:[...collapsedImageNodeIds],focusedId,title:el('header-title')?.value||'',author:el('doc-author')?.value||'',docStatus,docLinkedUrl,docLinkedUrlLabel,qa:qaItems,diagrams:diagramMeta,remarks};
+    const payload={rowFormat:ROW_FORMAT,nodes,nextId,selectedId,multiSelectedIds,selectionAnchorId,collapsed:[...collapsedIds],collapsedTables:[...collapsedTableNodeIds],collapsedImages:[...collapsedImageNodeIds],focusedId,title:el('header-title')?.value||'',author:el('doc-author')?.value||'',docStatus,docLinkedUrl,docLinkedUrlLabel,qa:qaItems,diagrams:diagramMeta,remarks,remarkTombstones:docRemarkTombstones(currentDocId)};
     // This is the write that actually persists the in-memory document. If it throws (most
     // commonly QuotaExceededError once localStorage is full), everything downstream of it —
     // including the IndexedDB mirror and File System Access backup, which both re-read from
@@ -14194,6 +14280,7 @@ function loadDocFromStorage(id){
     diagrams=Array.isArray(d.diagrams)?d.diagrams:[];
     diagrams.forEach(dg=>{ if(dg&&dg.xml)dg._hydrated=true; });
     remarks=Array.isArray(d.remarks)?d.remarks:[];
+    setDocRemarkTombstones(id,d.remarkTombstones);
     // Q&A, remarks and diagrams attached to no row of this document (left behind by deleted rows
     // before deleting took them along, or by the removed Pad panel's lists) can't be seen or
     // reached anywhere: remove them once, through the normal save (owner-approved cleanup).
@@ -14345,6 +14432,7 @@ function loadTabFromStorageObj(id){
     const raw=localStorage.getItem(docKey(id)); if(!raw)return null;
     const d=JSON.parse(raw); if(!Array.isArray(d.nodes))return null;
     const nds=d.nodes.map(normalizeNode); if(convertLegacyRows(nds,d.rowFormat))keepLegacyRowsVersion(id,d,nds);
+    setDocRemarkTombstones(id,d.remarkTombstones);
     return {docId:id, title:d.title||'', author:d.author||'', docStatus:typeof d.docStatus==='string'?d.docStatus:'', docLinkedUrl:typeof d.docLinkedUrl==='string'?d.docLinkedUrl:'', docLinkedUrlLabel:typeof d.docLinkedUrlLabel==='string'?d.docLinkedUrlLabel:'', qa:Array.isArray(d.qa)?d.qa:[], diagrams:Array.isArray(d.diagrams)?d.diagrams:[], remarks:Array.isArray(d.remarks)?d.remarks:[], nodes:nds, nextId:d.nextId||1, selectedId:d.selectedId??(nds[0]?.id??null), multiSelectedIds:Array.isArray(d.multiSelectedIds)?d.multiSelectedIds.filter(idv=>nds.some(n=>n.id===idv)):[], selectionAnchorId:d.selectionAnchorId??null, collapsedIds:new Set(Array.isArray(d.collapsed)?d.collapsed:[]),collapsedTableNodeIds:new Set(Array.isArray(d.collapsedTables)?d.collapsedTables:[]),collapsedImageNodeIds:new Set(Array.isArray(d.collapsedImages)?d.collapsedImages:[]), focusedId:(Number.isFinite(d.focusedId)&&nds.some(n=>n.id===d.focusedId))?d.focusedId:null, undoStack:[], redoStack:[], dirty:false, scrollTop:0, searchQuery:'', searchMatches:[], searchIndex:-1};
   }catch(e){ console.warn('[sakura] loadTabFromStorageObj(',id,') failed — falling back to null:',e); return null }
 }
@@ -18188,11 +18276,12 @@ function cloudDocStateOf(snap){ const d=snap.exists()?snap.data():null; return {
 // otherwise nothing changes and the next sync tries again.
 const _conflictNotKeptToastShown=new Set();
 async function resolveDocPushConflict(mod,db,ownerUid,docId,cloud){
-  let kept=true;
+  let kept=true, _mineForThreadMerge=null;
   try{
     const open=docId===currentDocId&&activeTabDocId===docId;
     if(open)commitEdit();
     const mine=open?currentDocRevisionContent():await storedDocForRevision(docId,localStorage.getItem(docKey(docId)));
+    _mineForThreadMerge=mine?{remarks:mine.remarks,remarkTombstones:docRemarkTombstones(docId)}:null;
     if(mine&&Array.isArray(mine.nodes)&&mine.nodes.length)kept=await recordDocRevision(docId,mine,'Your changes on this device',{dedupe:true});
   }catch(e){ kept=false; console.warn('[sakura] could not keep this device\'s copy as a version:',e); }
   if(!kept){
@@ -18203,10 +18292,12 @@ async function resolveDocPushConflict(mod,db,ownerUid,docId,cloud){
   if(!cloud)return;
   const {updatedAt,rev,...rawDocData}=cloud;
   const docData=await hydrateCloudDocBlobs(mod,db,ownerUid,docId,rawDocData);
+  const addedEntries=mergeMyThreadEntriesInto(docId,docData,_mineForThreadMerge);
   localStorage.setItem(docKey(docId),JSON.stringify(docData));
   touchDocIndex(docId,docData.title||'Untitled',updatedAt); // the cloud copy's time, not now: see applyIncomingDocData
   setDocBaseRev(docId,readDocRev(rev));
   delete _incomingDocRev[docId];
+  if(addedEntries)queueSync('doc',docId); // the merged copy goes back up, so the other device gets these entries
   const tab=findOpenTab(docId);
   if(tab){
     const fresh=loadTabFromStorageObj(docId);
@@ -18216,7 +18307,7 @@ async function resolveDocPushConflict(mod,db,ownerUid,docId,cloud){
     }
   }
   renderSidebar();
-  showActionToast('Changed on another device. Your edits here are kept in Version history.','Version history',()=>openVersionHistory(docId),8000);
+  showActionToast(addedEntries?'Changed on another device. Your thread entries are kept; your other edits here are in Version history.':'Changed on another device. Your edits here are kept in Version history.','Version history',()=>openVersionHistory(docId),8000);
   _actionToastUndo=null; // Ctrl/Cmd+Z stays undo
 }
 // Documents this device couldn't store (storage full) but that still go to the account: the newest
@@ -18561,13 +18652,16 @@ async function applyIncomingDocData(mod,db,ownerUid,id,cloud,viaRealtime){
   }
   const {updatedAt,rev:_rev,...rawDocData}=cloud;
   if(!await keepLocalDocBeforeIncoming(id,rawDocData))return false; // before hydrateCloudDocBlobs replaces the local diagram blobs
+  let mineForMerge=null; try{ const lr=localStorage.getItem(docKey(id)); if(lr)mineForMerge=JSON.parse(lr); }catch(e){}
   const docData=await hydrateCloudDocBlobs(mod,db,ownerUid,id,rawDocData);
+  const addedEntries=mergeMyThreadEntriesInto(id,docData,mineForMerge);
   localStorage.setItem(docKey(id),JSON.stringify(docData));
   // The copy taken from the cloud is stamped with the cloud's time, not now: stamped now, the next
   // catch-up saw it as newer here than in the account (localCopyIsNewer) and sent it back up, and
   // the other device did the same, so documents bounced between devices on every focus.
   touchDocIndex(id,docData.title||'Untitled',cloud.updatedAt);
   setDocBaseRev(id,readDocRev(cloud.rev));
+  if(addedEntries)queueSync('doc',id); // the merged copy goes back up, so the other device gets these entries
   return true;
 }
 // Another device deleted this document forever (its marker in users/{uid}/deletedDocs). The copy
@@ -33801,6 +33895,7 @@ function formatThreadTimeTip(r){ return r.createdAt?new Date(r.createdAt).toLoca
 function deleteThread(nodeId){
   const n=nodeThread(nodeId).length; if(!n)return;
   pushUndo();
+  noteRemarksDeleted(remarks.filter(r=>r.anchorNodeId===nodeId));
   remarks=remarks.filter(r=>r.anchorNodeId!==nodeId);
   _threadDrafts.delete(nodeId); _threadAnswerTo.delete(nodeId); if(_threadComposerNodeId===nodeId)_threadComposerNodeId=null;
   inlineExpandRemarksNodeIds.delete(nodeId);
@@ -33893,7 +33988,7 @@ function renderThreadEntry(node,r,thread,place,commit,prev,nested){
   // or print. Moving between its own fields keeps it.
   const dropIfBlank=e=>{
     if(htmlHasVisibleText(r.text)||(e.relatedTarget&&line.contains(e.relatedTarget))||!remarks.includes(r))return false;
-    remarks.splice(remarks.indexOf(r),1); remarks.forEach(x=>{ if(x.answerTo===r.id)delete x.answerTo; });
+    noteRemarksDeleted([r]); remarks.splice(remarks.indexOf(r),1); remarks.forEach(x=>{ if(x.answerTo===r.id)delete x.answerTo; });
     setTimeout(commit,0); return true;
   };
   // The author is picked like on the reply line (owner request): click → the names in this document,
@@ -33961,7 +34056,7 @@ function renderThreadEntry(node,r,thread,place,commit,prev,nested){
     if(e.key!=='Backspace'||e.shiftKey||e.altKey||e.ctrlKey||e.metaKey)return;
     if((textEl.textContent||'').trim())return;
     e.preventDefault();
-    const i=remarks.indexOf(r); if(i>=0)remarks.splice(i,1);
+    const i=remarks.indexOf(r); if(i>=0){ noteRemarksDeleted([r]); remarks.splice(i,1); }
     // The caret goes back to the end of the row's text (owner: like deleting back into the row).
     if(_threadComposerNodeId===node.id&&!_threadDrafts.has(node.id))_threadComposerNodeId=null;
     commit(); beginEdit(node.id,true);
@@ -34119,7 +34214,7 @@ function threadEntryMenuItems(node,r,thread,textEl,commit){
   items.push({label:'Reply', icon:THREAD_REPLY_ICON, onClick:()=>openThreadComposer(node.id,false,(parent||r).id)});
   items.push({divider:true});
   if(featureAiEnabled&&!isPhoneLayout())items.push({label:'Rewrite', icon:'<svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z" fill="currentColor"/></svg>', onClick: async()=>{ const current=textEl.textContent||''; if(!current.trim())return; try{ const result=await callAiApi(current); if(!result)return; pushUndo(); r.text=sakuraSanitizeRichHtml(result); markDirty(); scheduleAutoSave(); render(); }catch(err){ showAiErrorModal(aiProvider,err); } }});
-  items.push({label:'Delete', danger:true, icon:ico('<polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>'), onClick:change(()=>{ const i=remarks.indexOf(r); if(i>=0)remarks.splice(i,1); remarks.forEach(x=>{ if(x.answerTo===r.id)delete x.answerTo; }); })});
+  items.push({label:'Delete', danger:true, icon:ico('<polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>'), onClick:change(()=>{ const i=remarks.indexOf(r); if(i>=0){ noteRemarksDeleted([r]); remarks.splice(i,1); } remarks.forEach(x=>{ if(x.answerTo===r.id)delete x.answerTo; }); })});
   return items;
 }
 function renderThreadComposer(node,thread,place,commit){

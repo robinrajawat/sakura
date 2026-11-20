@@ -179,6 +179,15 @@ initVaultState({
     footer: ''
   },
   {
+    name: 'threadMerge',
+    sourceFile: 'src/state/threadMerge.ts',
+    testFile: 'tests/unit/threadMerge.test.ts',
+    // Two devices' copies collided: thread entries are merged by id into the kept copy, with
+    // deletion records. Spliced after threadDrafts; called from resolveDocPushConflict and
+    // applyIncomingDocData.
+    footer: ''
+  },
+  {
     name: 'versionChunks',
     sourceFile: 'src/utils/versionChunks.ts',
     testFile: 'tests/unit/versionChunks.test.ts',
