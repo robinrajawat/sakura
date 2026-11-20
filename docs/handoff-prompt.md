@@ -172,7 +172,6 @@ anything still unbuilt or undecided into "In progress / not built" or "Parked". 
 contradicts README.md or docs/feature-reference.md, trust them.)*
 
 **Open work (2026-11-20):** `docs/standard-practice-plan.md` steps 1–3 are done: phone suite in WebKit, Sentry error reports (organisation `robinrajawat`, project `sakura-web`, EU; IP storage off at organisation level), and previews (Cloudflare Pages `sakura-preview`, whose production branch is the working branch: `https://preview.sakura-notes.com` shows its latest push, other branches get `https://<branch>.sakura-preview-6so.pages.dev`, and Cloudflare comments the addresses on each PR; previews are signed out). A session on a differently named branch asks the owner to set it as that project's production branch. Before asking the owner to merge, point them at the preview. Next, in this order:
-1. **Thread reply box (owner 2026-11-20, iPhone).** Replying to a question reused the row's reply box with someone else's unsent text in it (`openThreadComposer` keeps the draft and points it at the question), and a draft doesn't keep its author, so an unsent entry "by Raja" became an unsent reply by the owner. Standard: one draft per reply target; drafts keep their author; an unsent reply is marked as not sent. Not fixed yet.
 The flaky To-Dos draft test reports its storage state on failure: read that before changing code. Not built: the AI code still loads at startup inside index.html (startup on the Mac's Safari confirmed clean after #915); Sentry source maps.
 
 **Direction (owner, 2026-11-12):** Sakura is going cloud-first, with try-without-an-account kept. Plan: `docs/cloud-first-plan.md` (built; PDF stays on Cloudflare's free plan, owner 2026-11-17). Read it and `docs/data-safety-audit.md` before touching sync.
@@ -181,11 +180,11 @@ The flaky To-Dos draft test reports its storage state on failure: read that befo
 
 ### Latest changes
 
+- **Thread reply box keeps unsent text as written (2026-11-20, owner, iPhone).** An unsent entry typed as Raja became the owner's reply to a question: Reply reused the row's reply box with its unsent text (`openThreadComposer`), and a draft didn't keep its author. Now a thread draft keeps `person` and its target; opening the box for something else leaves unsent text alone and says "You have an unsent entry here"; unsent text is marked "Not sent". Test: `thread-reply-box.spec.ts` (fails without the fix).
+
 - **Threads no longer lost when two devices collide (2026-11-20).** Confirmed from the owner's Version history (two "Your changes on this device" versions in one day): when both devices changed a document, the copy reaching the account second went to Version history with its thread entries. Now this device's thread entries are merged into the kept copy by id (`src/state/threadMerge.ts`, `mergeMyThreadEntriesInto` in `resolveDocPushConflict` and `applyIncomingDocData`) and the merged copy goes back up. Deleting an entry records it (`remarkTombstones`, per document, synced, 90 days) so it isn't brought back. Row edits still go to Version history (a three-way row merge would need a stored common copy). The "missing dot" on the iPhone was this same bug. Tests: `threadMerge.test.ts`, `thread-merge-sync.spec.ts`.
 
 - **Privacy wording matches error reports (2026-11-20).** Settings → About → Privacy & data said nothing leaves the browser without an account except AI and feedback; it now names error reports and has an Error reports row. The sign-in screen's "What gets stored?" and privacy.html's no-account section say so too. The Your account row still described public profiles (removed 2026-11-19); fixed, with the feature reference. Terms and open-source notices needed nothing. Test: `signin-privacy.spec.ts`.
-
-- **Polish after the plan (2026-11-20).** Sentry no longer sends a session record on every page load (`EXCLUDED_INTEGRATIONS`: Breadcrumbs, BrowserSession), so it hears from a device only on an error, as privacy.html says. A failed service-worker install (private browsing, blocked storage) is caught and logged instead of reported. Settings → Documents → PDF mark showed "SAKURA" instead of the saved mark: a top-level call filled the box before `loadPrefs`, which runs last since #915; startup now sets it again (`settings-after-start.spec.ts`). Sentry verified on the live site (report arrives, email alert, no user or IP).
 
 ### In progress / not built
 
@@ -207,7 +206,7 @@ The flaky To-Dos draft test reports its storage state on failure: read that befo
 ### Parked / open questions for the owner
 
 
-- **Launch checklist (owner, 2026-11-17), besides the backups below:** (1) a lawyer's read of
+- **Launch checklist (owner, 2026-11-17), besides the backups below:** (0) switch on the release process (`docs/standard-practice-plan.md` step 6: deploy on a published release, not every merge) before the first outside users; (1) a lawyer's read of
   `privacy.html` / `terms.html` if possible (drafted, not reviewed; include the new "Sakura itself" ownership section); (2) test the positioning pitch
   with 3–5 target users. The name is decided: **Sakura Notes** (owner, 2026-11-18, after weighing
   ~20 alternatives: Ramus, Viveka, Sutra, Krama (an existing "Krama" ideas app), Bridge (Adobe Bridge),

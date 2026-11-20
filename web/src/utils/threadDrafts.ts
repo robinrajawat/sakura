@@ -19,6 +19,9 @@ export type ThreadDraft = {
   at: number;
   kind?: 'question' | 'decision';
   answerTo?: string;
+  /** Who it's written as (the reply box's author), kept with the text (owner 2026-11-20: an unsent
+   * entry by Raja showed as the owner's after a reload). */
+  person?: string;
 };
 export type ThreadDraftMap = Record<string, ThreadDraft>;
 

@@ -130,9 +130,28 @@ Original plan:
   locally on 2026-11-19, and passed when re-run alone. A data-safety test that fails now and then
   may be hiding a real bug.
 
+## 6. Release process (switch on before the first outside users)
+
+Owner 2026-11-20: small PRs are fine while the owner is the only user; before a broader audience the
+release must be controlled and standard. Today every merge to `main` goes live (`deploy.yml`, and
+`deploy-worker.yml` for `worker/`). When switched on, in one PR:
+
+- Small PRs keep merging to `main` (trunk-based). Merging no longer publishes: `deploy.yml` (and
+  `deploy-worker.yml`) run when a **GitHub release is published**, not on every push.
+- `main` is staging: `https://main.sakura-preview-6so.pages.dev` (Cloudflare builds it), checked on
+  the iPhone before a release.
+- A release: Releases → new tag (`v2026.12.1`), notes drafted from the merged PRs (also shown as
+  "What's new" in the app), checklist: preview checked, CI green, Sentry quiet. The tag is the
+  version in Settings → About and in Sentry, so errors group by release.
+- Roll back by publishing (or re-running the deploy for) the previous release; an urgent fix is a
+  merge plus an immediate release.
+- Not needed at first: feature flags, gradual rollouts.
+
+**When:** before the first outside users, i.e. the 3–5 user tests in the positioning plan. Until then
+the preview check before each merge (step 3) is the safety net.
+
 ## Order
 
-1. Step 1 (Safari engine for the phone suite) and the flaky To-Dos test.
-2. Step 2, once the owner picks own Worker or Sentry.
-3. Step 3, when the owner has 15 minutes.
-4. Step 4 starts now. Step 5 is ongoing.
+1. Steps 1–3: done (2026-11-20).
+2. Step 4 starts now. Step 5 is ongoing.
+3. Step 6 before the first outside users.
