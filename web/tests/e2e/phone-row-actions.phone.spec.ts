@@ -1,7 +1,6 @@
 import { test, expect, type Page } from '@playwright/test';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { longPressAt } from './fixtures/touch';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const indexPath = path.resolve(__dirname, '../../index.html');
@@ -51,10 +50,6 @@ const label = (page: Page, text: string) => page.locator('.node-row', { hasText:
 const toasts = (page: Page) => page.evaluate(() => (window as unknown as { __toasts: string[] }).__toasts);
 // @ts-expect-error -- bare global from index.html
 const node = (page: Page, id: number) => page.evaluate((i) => nodes.find((n: { id: number }) => n.id === i), id);
-async function longPress(page: Page, text: string) {
-  const box = (await label(page, text).boundingBox())!;
-  await longPressAt(page, { x: box.x + 10, y: box.y + box.height / 2 });
-}
 const editableCells = (page: Page) => page.locator('.node-table-line td[contenteditable="true"], .node-table-line th[contenteditable="true"]');
 
 test('the toolbar\'s ⋯ opens the row menu, which sets and clears a Status', async ({ page }) => {

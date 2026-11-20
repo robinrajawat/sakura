@@ -55,9 +55,14 @@ that for significant changes). privacy.html and the open-source notices are upda
 
 Sentry: organisation `robinrajawat`, project `sakura-web` (Browser JavaScript, EU region), error
 monitoring only (no replay, tracing or logs); not connected to the GitHub repo. The DSN is in
-`web/src/telemetry/sentryConfig.ts`; index.html's CSP allows only its host. Owner: turn on
-"Prevent Storing of IP Addresses" (project Settings → Security & Privacy) and email alerts on new
-issues.
+`web/src/telemetry/sentryConfig.ts`; index.html's CSP allows only its host. "Prevent Storing of IP
+Addresses" is on at organisation level; the alert "Send a notification for high priority issues"
+emails the owner. No session records either: Sentry hears from a device only when something goes
+wrong.
+
+Verified 2026-11-20 on the live site (Mac): a test error reached Sentry and the alert email arrived;
+the report had no user or IP and its address ended at `sakura-notes.com/`. Not yet done: source
+maps, so a report points at readable code instead of the minified page.
 
 Original plan:
 

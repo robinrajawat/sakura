@@ -4,7 +4,7 @@
  * site only, so tests, local copies and previews never load it.
  */
 import { init, captureException } from '@sentry/browser';
-import { SENTRY_DSN, MAX_VALUE_LENGTH, reportingEnabled, scrubEvent, bootErrorToException, type BootError } from './sentryConfig';
+import { SENTRY_DSN, MAX_VALUE_LENGTH, EXCLUDED_INTEGRATIONS, reportingEnabled, scrubEvent, bootErrorToException, type BootError } from './sentryConfig';
 
 const w = window as unknown as { __sakuraBootErrors?: BootError[]; __sakuraEarlyRejections?: BootError[]; __sakuraSentryTestDsn?: string; __sakuraErrorReportsOn?: () => boolean };
 // tests/e2e/error-reports.spec.ts sends to a stand-in Sentry it intercepts. Only a script already
@@ -21,7 +21,9 @@ if (reportingEnabled(location.origin, dsn)) {
     dataCollection: { userInfo: false, cookies: false, httpHeaders: false, httpBodies: [], urlQueryParams: false, stackFrameVariables: false },
     maxValueLength: MAX_VALUE_LENGTH,
     // No breadcrumbs of clicks, console output or network requests: they can carry a person's words.
-    integrations: (defaults) => defaults.filter((i) => i.name !== 'Breadcrumbs'),
+    // No session records either: they'd go out on every page load, and privacy.html promises a report
+    // only when something goes wrong.
+    integrations: (defaults) => defaults.filter((i) => !EXCLUDED_INTEGRATIONS.includes(i.name)),
     beforeBreadcrumb: () => null,
     // Settings → About → Error reports can turn them off while the page is open.
     beforeSend: (event) => (w.__sakuraErrorReportsOn?.() === false ? null : scrubEvent(event))
