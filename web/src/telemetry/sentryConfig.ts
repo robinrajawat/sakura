@@ -17,6 +17,10 @@ export const PRODUCTION_ORIGIN = 'https://www.sakura-notes.com';
 
 export const MAX_VALUE_LENGTH = 300;
 
+/** Default SDK integrations left out: Breadcrumbs (clicks, console, requests can carry a person's
+ * words) and BrowserSession (a record on every page load, not only when something goes wrong). */
+export const EXCLUDED_INTEGRATIONS: readonly string[] = ['Breadcrumbs', 'BrowserSession'];
+
 export function reportingEnabled(origin: string, dsn: string = SENTRY_DSN): boolean {
   return !!dsn && origin === PRODUCTION_ORIGIN;
 }

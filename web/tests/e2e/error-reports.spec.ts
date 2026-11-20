@@ -95,4 +95,13 @@ test.describe('error reports', () => {
     await page.waitForTimeout(2500);
     await expect(page.locator('#toast')).not.toContainText('Sakura now sends error reports');
   });
+
+  test('a visit with no error sends nothing (no session records)', async ({ page }) => {
+    await page.addInitScript(() => localStorage.setItem('sakura_error_reports_notice_v1', '1'));
+    const sent = await openLiveSite(page, TEST_DSN);
+    await page.waitForFunction(() => !!document.querySelector('script[src*="/vendor/sentry-"]'));
+    await page.waitForTimeout(2500);
+    // The stand-in host can't install the offline copy; that failure is caught, so it isn't sent either.
+    expect(sent).toEqual([]);
+  });
 });
