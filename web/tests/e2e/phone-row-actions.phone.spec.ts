@@ -1,6 +1,7 @@
 import { test, expect, type Page } from '@playwright/test';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { longPressAt } from './fixtures/touch';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const indexPath = path.resolve(__dirname, '../../index.html');
@@ -52,12 +53,7 @@ const toasts = (page: Page) => page.evaluate(() => (window as unknown as { __toa
 const node = (page: Page, id: number) => page.evaluate((i) => nodes.find((n: { id: number }) => n.id === i), id);
 async function longPress(page: Page, text: string) {
   const box = (await label(page, text).boundingBox())!;
-  const cdp = await page.context().newCDPSession(page);
-  const pt = [{ x: box.x + 10, y: box.y + box.height / 2, id: 1 }];
-  await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: pt });
-  await page.waitForTimeout(650);
-  await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
-  await cdp.detach();
+  await longPressAt(page, { x: box.x + 10, y: box.y + box.height / 2 });
 }
 const editableCells = (page: Page) => page.locator('.node-table-line td[contenteditable="true"], .node-table-line th[contenteditable="true"]');
 

@@ -1,6 +1,7 @@
 import { test, expect, type Page } from '@playwright/test';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { touchGesture } from './fixtures/touch';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const indexPath = path.resolve(__dirname, '../../index.html');
@@ -37,14 +38,10 @@ test.beforeEach(async ({ page }) => {
   await page.evaluate(() => document.fonts.ready);
 });
 
-// Two fingers, through Chrome's own touch input, so the page sees real pointer events.
+// Two fingers, moving apart (or together) from `from` to `to` pixels.
 async function pinch(page: Page, cx: number, cy: number, from: number, to: number) {
-  const cdp = await page.context().newCDPSession(page);
-  const pts = (d: number) => [{ x: cx - d / 2, y: cy, id: 1 }, { x: cx + d / 2, y: cy, id: 2 }];
-  await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: pts(from) });
-  for (let i = 1; i <= 8; i++) await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: pts(from + ((to - from) * i) / 8) });
-  await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
-  await cdp.detach();
+  const pts = (d: number) => [{ x: cx - d / 2, y: cy }, { x: cx + d / 2, y: cy }];
+  await touchGesture(page, Array.from({ length: 9 }, (_, i) => pts(from + ((to - from) * i) / 8)));
 }
 
 test('a fold dot is a 40px target that folds and unfolds its row', async ({ page }) => {

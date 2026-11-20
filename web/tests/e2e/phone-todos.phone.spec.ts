@@ -1,6 +1,7 @@
 import { test, expect, type Page } from '@playwright/test';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { dragBy } from './fixtures/touch';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const indexPath = path.resolve(__dirname, '../../index.html');
@@ -33,11 +34,7 @@ const stored = (page: Page) => page.evaluate(() => JSON.parse(localStorage.getIt
 async function drag(page: Page, text: string, dx: number, dy: number) {
   const box = (await row(page, text).locator('.todo-text').boundingBox())!;
   const x = box.x + box.width / 2, y = box.y + box.height / 2;
-  const cdp = await page.context().newCDPSession(page);
-  await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x, y, id: 1 }] });
-  for (let i = 1; i <= 10; i++) await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x: x + (dx * i) / 10, y: y + (dy * i) / 10, id: 1 }] });
-  await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
-  await cdp.detach();
+  await dragBy(page, { x, y }, dx, dy);
 }
 
 test('a swipe right completes a task', async ({ page }) => {

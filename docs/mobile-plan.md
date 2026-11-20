@@ -84,8 +84,9 @@ Guests: the phone works without an account like the desktop does (try first, sig
   phone still goes to `hub.html`.
 - **Phone test project**: `playwright.config.ts` now has `desktop` (everything as before),
   `phone-ios` (iPhone 13) and `phone-android` (Pixel 7). The phone projects run only
-  `*.phone.spec.ts`. Both phone projects use Chromium, the one browser CI installs, so real iOS
-  Safari still needs a device (phase 3).
+  `*.phone.spec.ts`. Since 2026-11-20 `phone-ios` runs in WebKit (Safari's engine, CI only) and
+  `phone-android` in Chromium; gestures go through `tests/e2e/fixtures/touch.ts`. A real iPhone is
+  still the final check (phase 3).
 - **Measured** (production build, Pixel 7 profile, CPU slowed 4×, our own code only, three runs):
 
   | | Size (gzip) | Page ready (load event) | First paint |
