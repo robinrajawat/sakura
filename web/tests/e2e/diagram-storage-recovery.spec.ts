@@ -123,3 +123,20 @@ test('Details shows any error that stopped startup, in the browser’s own words
   // @ts-expect-error -- bare globals from index.html
   expect(await page.evaluate(() => [SAKURA_BACKUP_DB, Array.isArray(_storageErrors)])).toEqual(['sakura_backup_db', true]);
 });
+
+test('a normal start shows no failure screen; a failed start shows the browser’s error with Reload', async ({ page }) => {
+  await page.waitForTimeout(3000);
+  await expect(page.locator('#sakura-startup-failed')).toHaveCount(0);
+  // As if the main script had stopped part way with an error.
+  const shown = await page.evaluate(() => {
+    const w = window as unknown as { __sakuraMainDone: boolean; __sakuraBootErrors: unknown[]; __sakuraCheckStartup: () => boolean };
+    w.__sakuraMainDone = false;
+    w.__sakuraBootErrors.push({ message: "TypeError: null is not an object (evaluating 'a.b')", where: 'line 9:9', beforeStart: true });
+    return w.__sakuraCheckStartup();
+  });
+  expect(shown).toBe(true);
+  const box = page.locator('#sakura-startup-failed');
+  await expect(box).toContainText('Something went wrong starting Sakura');
+  await expect(box).toContainText("TypeError: null is not an object (evaluating 'a.b') (line 9:9)");
+  await expect(box.getByRole('button', { name: 'Reload' })).toBeVisible();
+});

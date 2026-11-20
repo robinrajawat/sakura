@@ -158,7 +158,30 @@ try{ if(navigator.storage&&navigator.storage.persist)navigator.storage.persisted
 // stopped part way, leaving its storage settings unset; Details shows these). Kept on this page
 // only, never sent anywhere.
 window.__sakuraBootErrors=[];
-window.addEventListener('error',function(e){ try{ if(window.__sakuraBootErrors.length<5)window.__sakuraBootErrors.push({message:String(e.message||e.error||'').slice(0,300),where:(e.lineno?'line '+e.lineno+':'+e.colno:'')}); }catch(_e){} });
+window.addEventListener('error',function(e){ try{ if(window.__sakuraBootErrors.length<5)window.__sakuraBootErrors.push({message:String(e.message||e.error||'').slice(0,300),where:(e.lineno?'line '+e.lineno+':'+e.colno:''),beforeStart:!window.__sakuraMainDone}); }catch(_e){} });
+// If the app's main script doesn't finish starting, say so on screen with the browser's error and a
+// Reload, as apps do on a failed start, instead of a page that looks loaded but takes no taps.
+// Plain DOM, nothing from the app itself, so it works however far startup got.
+window.__sakuraCheckStartup=function(){
+  try{
+    var errs=window.__sakuraBootErrors||[], early=errs.filter(function(e){ return e.beforeStart; });
+    if(window.__sakuraMainDone&&!early.length)return false;
+    if(document.getElementById('sakura-startup-failed'))return true;
+    var text='Sakura couldn\u2019t finish starting on this device.\n\n'+(early.length?early.map(function(e){ return e.message+(e.where?' ('+e.where+')':''); }).join('\n'):'No error was reported.')+'\n\nBrowser: '+navigator.userAgent;
+    var box=document.createElement('div'); box.id='sakura-startup-failed'; box.setAttribute('role','alertdialog');
+    box.style.cssText='position:fixed;inset:0;z-index:2147483647;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;padding:16px;font:14px/1.5 -apple-system,system-ui,sans-serif';
+    var card=document.createElement('div'); card.style.cssText='max-width:520px;width:100%;max-height:90vh;overflow:auto;background:#fff;color:#222;border-radius:14px;padding:20px;box-shadow:0 10px 40px rgba(0,0,0,.3)';
+    var h=document.createElement('div'); h.textContent='Something went wrong starting Sakura'; h.style.cssText='font-weight:600;font-size:16px;margin-bottom:8px';
+    var pre=document.createElement('div'); pre.textContent=text; pre.style.cssText='white-space:pre-wrap;word-break:break-word;color:#555;margin-bottom:16px';
+    var row=document.createElement('div'); row.style.cssText='display:flex;gap:8px;justify-content:flex-end';
+    var mk=function(label,primary,fn){ var b=document.createElement('button'); b.type='button'; b.textContent=label; b.style.cssText='min-height:44px;padding:0 18px;border-radius:10px;font:inherit;border:1px solid #ccc;'+(primary?'background:#222;color:#fff;border-color:#222':'background:#fff;color:#222'); b.addEventListener('click',fn); return b; };
+    row.appendChild(mk('Copy',false,function(){ try{ navigator.clipboard.writeText(text); }catch(_e){} }));
+    row.appendChild(mk('Reload',true,function(){ location.reload(); }));
+    card.appendChild(h); card.appendChild(pre); card.appendChild(row); box.appendChild(card); document.body.appendChild(box);
+    return true;
+  }catch(_e){ return false; }
+};
+window.addEventListener('load',function(){ setTimeout(window.__sakuraCheckStartup,2500); });
 // ---------- Phone layout ----------
 // One page for every screen (docs/mobile-plan.md, owner 2026-11-13): below 768px this page shows its
 // phone layout instead of sending phones to a separate page. hub.html, the old phone page, now only
@@ -37800,6 +37823,8 @@ function todosHistorySummary(list) {
   window.todosTextUndo=todosTextUndo;
   window.todosTextRedo=todosTextRedo;
 })();
+// The last line of the main script: startup got all the way through (see __sakuraCheckStartup).
+window.__sakuraMainDone=true;
 </script>
 
 
