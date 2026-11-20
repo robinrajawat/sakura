@@ -243,7 +243,7 @@ test.describe('Settings', () => {
     await page.locator('#settings-rail .settings-rail-btn[data-cat="documents"]').click();
     expect(await titles()).toEqual(['New documents', 'PDF', 'Trash']);
     await page.locator('#settings-rail .settings-rail-btn[data-cat="about"]').click();
-    expect(await titles()).toEqual(expect.arrayContaining(['About', 'Privacy & data', 'Support', 'Feedback & crash reports']));
+    expect(await titles()).toEqual(expect.arrayContaining(['About', 'Privacy & data', 'Support', 'Feedback & error reports']));
     // AI Capabilities now lives in the AI category, in its own always-visible section.
     await expect(page.locator('#settings-section-ai-capabilities[data-cat="ai"] #feat-ai-toggle')).toHaveCount(1);
   });

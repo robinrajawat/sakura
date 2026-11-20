@@ -52,7 +52,7 @@ Sakura v1.0.0 — see LICENSE for terms.
   only ever fed Meeting Notes.)
 
 -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://accounts.google.com https://www.gstatic.com https://apis.google.com https://ssl.gstatic.com; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob: https:; connect-src 'self' https://api.anthropic.com https://api.openai.com https://api.groq.com https://api.cerebras.ai https://generativelanguage.googleapis.com https://openrouter.ai https://models.github.ai https://accounts.google.com https://oauth2.googleapis.com https://www.gstatic.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://sakura-4cdae.firebaseapp.com https://auth.sakura-notes.com https://apis.google.com https://firestore.googleapis.com https://ai.sakura-notes.com; frame-src https://embed.diagrams.net https://accounts.google.com https://sakura-4cdae.firebaseapp.com https://auth.sakura-notes.com https://apis.google.com; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self';" />
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://accounts.google.com https://www.gstatic.com https://apis.google.com https://ssl.gstatic.com; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob: https:; connect-src 'self' https://api.anthropic.com https://api.openai.com https://api.groq.com https://api.cerebras.ai https://generativelanguage.googleapis.com https://openrouter.ai https://models.github.ai https://accounts.google.com https://oauth2.googleapis.com https://www.gstatic.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://sakura-4cdae.firebaseapp.com https://auth.sakura-notes.com https://apis.google.com https://firestore.googleapis.com https://ai.sakura-notes.com https://o4512462918320128.ingest.de.sentry.io; frame-src https://embed.diagrams.net https://accounts.google.com https://sakura-4cdae.firebaseapp.com https://auth.sakura-notes.com https://apis.google.com; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self';" />
 <!--
   Referrer-Policy: the app links out to several external sites (SAP Notes via me.sap.com,
   GitHub token pages, Azure/Google Cloud consoles, provider key pages, draw.io/diagrams.net).
@@ -155,10 +155,18 @@ try{ if(navigator.storage&&navigator.storage.persist)navigator.storage.persisted
 </style>
 <script>
 // Startup errors, in the browser's own words (owner 2026-11-19: on an iPhone the app's startup
-// stopped part way, leaving its storage settings unset; Details shows these). Kept on this page
-// only, never sent anywhere.
+// stopped part way, leaving its storage settings unset; Details shows these). On the live site they
+// also go to Sentry once it loads (src/telemetry/sentry.ts, which reports everything after that).
 window.__sakuraBootErrors=[];
-window.addEventListener('error',function(e){ try{ if(window.__sakuraBootErrors.length<5)window.__sakuraBootErrors.push({message:String(e.message||e.error||'').slice(0,300),where:(e.lineno?'line '+e.lineno+':'+e.colno:''),beforeStart:!window.__sakuraMainDone}); }catch(_e){} });
+window.addEventListener('error',function(e){ try{ if(window.__sakuraBootErrors.length<5)window.__sakuraBootErrors.push({message:String(e.message||e.error||'').slice(0,300),where:(e.lineno?'line '+e.lineno+':'+e.colno:''),beforeStart:!window.__sakuraMainDone,error:e.error}); }catch(_e){} });
+// Rejected promises are kept apart: they don't stop startup, so they never show the failed-start screen.
+window.__sakuraEarlyRejections=[];
+window.addEventListener('unhandledrejection',function(e){ try{ if(window.__sakuraEarlyRejections.length<5)window.__sakuraEarlyRejections.push({message:String((e.reason&&e.reason.message)||e.reason||'Unhandled promise rejection').slice(0,300),beforeStart:!window.__sakuraMainDone,error:e.reason}); }catch(_e){} });
+// Error reports (docs/standard-practice-plan.md step 2): the live site only. Someone who used Sakura
+// before they existed is told first (announceErrorReportsOnce), as privacy.html promises for
+// significant changes; reports start from the next load after that. The build puts the
+// Sentry file's hashed name in place of the placeholder (vite.config.js); anywhere else it stays.
+(function(){ var src='__SAKURA_SENTRY_SRC__'; if(location.origin!=='https://www.sakura-notes.com'||src.indexOf('__')===0)return; try{ var p=localStorage.getItem('sakura_v001_prefs'); if(p&&JSON.parse(p).errorReportsOff===true)return; if(p&&!localStorage.getItem('sakura_error_reports_notice_v1'))return; }catch(_e){} var s=document.createElement('script'); s.type='module'; s.src=src; document.head.appendChild(s); })();
 // If the app's main script doesn't finish starting, say so on screen with the browser's error and a
 // Reload, as apps do on a failed start, instead of a page that looks loaded but takes no taps.
 // Plain DOM, nothing from the app itself, so it works however far startup got.
@@ -221,38 +229,7 @@ syncPhoneLayoutClass();
 try { window.matchMedia(PHONE_LAYOUT_QUERY).addEventListener('change', () => syncPhoneLayoutClass()); } catch (e) {}
 
 /* GENERATED:phoneLayout:END */
-// ---------- Error capture: rolling console buffer (local only) ----------
-// Installed as the very first statement in the app so nothing that runs afterward can throw
-// before this is in place. Purely in-memory and local — nothing here is ever sent anywhere on
-// its own. It only becomes part of a report if/when reportErrorAuto or the manual Send Feedback
-// flow (further down, near the Account & Sync code) actually submits one, and reportErrorAuto
-// itself stays off by default (Settings → Data → Automatic crash reports) — see the comment
-// there for why an always-on network call would break this app's opt-in-to-any-network-call
-// promise. Wrapped in try/catch throughout: this must never itself be a source of crashes.
-const RECENT_CONSOLE_ERRORS=[];
-(function installConsoleErrorBuffer(){
-  const original=console.error.bind(console);
-  console.error=(...args)=>{
-    try{
-      const msg=args.map(a=>{
-        if(a instanceof Error)return a.stack||a.message;
-        if(typeof a==='string')return a;
-        try{return JSON.stringify(a)}catch(e){return String(a)}
-      }).join(' ');
-      RECENT_CONSOLE_ERRORS.push({t:Date.now(),msg:msg.slice(0,500)});
-      if(RECENT_CONSOLE_ERRORS.length>20)RECENT_CONSOLE_ERRORS.shift();
-    }catch(e){}
-    original(...args);
-  };
-})();
-window.addEventListener('error',e=>{
-  if(typeof reportErrorAuto==='function')reportErrorAuto(e.message,{source:'window.onerror',filename:e.filename,lineno:e.lineno,stack:e.error&&e.error.stack});
-});
-window.addEventListener('unhandledrejection',e=>{
-  if(typeof reportErrorAuto!=='function')return;
-  const reason=e.reason;
-  reportErrorAuto(reason instanceof Error?reason.message:String(reason),{source:'unhandledrejection',stack:reason instanceof Error?reason.stack:undefined});
-});
+// Error reports go to Sentry, on the live site only (index.html's first script, src/telemetry/sentry.ts).
 
 /* Pre-paint chrome visibility: reads saved File Explorer / app bar / Quick Assist / dock-rail
    state synchronously, before body markup is parsed, so the very first frame already
@@ -4001,9 +3978,9 @@ html.calm-layout #sb-auto-rewrite-chip.is-quiet:hover,html.calm-layout #sb-auto-
             </div>
           </div>
           <div class="settings-section" data-cat="about">
-            <div class="settings-section-title">Feedback &amp; crash reports</div>
+            <div class="settings-section-title">Feedback &amp; error reports</div>
             <div class="settings-list">
-              <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Automatic crash reports</span><span class="settings-row-desc">Sends a short error report if something crashes. Never includes your content.</span></div><button id="auto-error-report-toggle" class="toggle-switch" type="button" role="switch" aria-checked="false" aria-label="Automatic crash reports"></button></div>
+              <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Error reports</span><span class="settings-row-desc">If something goes wrong, sends the error and your browser type to Sentry so it can be fixed. Never your documents or account.</span></div><button id="auto-error-report-toggle" class="toggle-switch on" type="button" role="switch" aria-checked="true" aria-label="Error reports"></button></div>
               <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Send feedback</span><span class="settings-row-desc">Report a bug or suggest something.</span></div><button type="button" class="btn" id="open-feedback-modal-btn">Send feedback…</button></div>
             </div>
           </div>
@@ -5247,16 +5224,14 @@ let suppressPrefsSaveOnUnload=false;
 let suppressSaveToStorageOnUnload=false;
 const AI_PREFS_KEY='sakura_ai_prefs_v1';
 
-// Off by default — see the Settings row this backs (Settings → Data → Automatic crash reports)
-// and reportErrorAuto below for why this is opt-in rather than matching the always-on pattern
-// some other single-file apps use: Sakura's account/sync code documents an explicit
-// no-network-call-to-Firebase-until-you-opt-in promise, and silently phoning home on every
-// crash — even to a write-only mailbox nobody else can read — would quietly break that
-// promise for people who never asked for it. Turning this on doesn't touch documents/notes;
-// see submitFeedback below for exactly what a report contains.
-let autoErrorReportEnabled=false;
-// Uncaught errors are always written to the console, where the rolling console-error buffer at
-// the top of this file (RECENT_CONSOLE_ERRORS) picks them up for crash reports / Send Feedback.
+// Error reports (Settings → About → Error reports). Owner 2026-11-20: on by default, as is standard
+// for apps like this, with this switch to turn them off. Sentry sends them, from the live site only
+// (src/telemetry/sentry.ts asks __sakuraErrorReportsOn before each one; index.html's first script
+// doesn't load it at all once they're off). Saved as errorReportsOff only when someone turns them
+// off: the old opt-in setting (autoErrorReportEnabled) was saved as false for everyone, so it isn't read.
+let errorReportsEnabled=true;
+window.__sakuraErrorReportsOn=()=>errorReportsEnabled;
+// Uncaught errors are always written to the console as well.
 function sakuraLogError(source,msg,data){
   console.error(`[Sakura:error:${source}]`,msg,data||'');
 }
@@ -5267,14 +5242,24 @@ window.addEventListener('unhandledrejection',e=>{
   const reason=e.reason;
   sakuraLogError('promise',reason?.message||String(reason),{stack:reason?.stack});
 });
-function setAutoErrorReportEnabled(on,persist=true){
-  autoErrorReportEnabled=!!on;
+function setErrorReportsEnabled(on,persist=true){
+  errorReportsEnabled=!!on;
   const toggle=el('auto-error-report-toggle');
-  if(toggle){ toggle.classList.toggle('on',autoErrorReportEnabled); toggle.setAttribute('aria-checked',String(autoErrorReportEnabled)); }
+  if(toggle){ toggle.classList.toggle('on',errorReportsEnabled); toggle.setAttribute('aria-checked',String(errorReportsEnabled)); }
   if(persist)savePrefs();
 }
-el('auto-error-report-toggle')?.addEventListener('click',()=>setAutoErrorReportEnabled(!autoErrorReportEnabled));
-el('auto-error-report-toggle')?.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault(); setAutoErrorReportEnabled(!autoErrorReportEnabled);}});
+// Says once, on the live site, that error reports are on and how to turn them off (privacy.html:
+// significant changes are announced in the app before they take effect).
+const ERROR_REPORTS_NOTICE_KEY='sakura_error_reports_notice_v1';
+function announceErrorReportsOnce(){
+  try{
+    if(location.origin!=='https://www.sakura-notes.com'||!errorReportsEnabled||localStorage.getItem(ERROR_REPORTS_NOTICE_KEY))return;
+    localStorage.setItem(ERROR_REPORTS_NOTICE_KEY,String(Date.now()));
+    showActionToast('Sakura now sends error reports when something goes wrong: the error and your browser type, never your documents or account. Settings \u2192 About.','Turn off',()=>{ setErrorReportsEnabled(false); showToast('Error reports are off'); },15000);
+  }catch(e){}
+}
+el('auto-error-report-toggle')?.addEventListener('click',()=>setErrorReportsEnabled(!errorReportsEnabled));
+el('auto-error-report-toggle')?.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault(); setErrorReportsEnabled(!errorReportsEnabled);}});
 // === Feedback modal ===
 function openFeedbackModal(){
   const ov=el('feedback-modal-overlay'); if(!ov)return;
@@ -16071,7 +16056,7 @@ function renderDocsList(){
 }
 function savePrefs(){
   try{
-    const payload={ctxQuickRow:ctxQuickRowCustom,theme:currentTheme,themeMode,editorScale,outlineNumbering,treeIndentWidth,spellcheckEnabled,noteMatchEditorBg,codeMatchEditorBg,pdfMark:previewBrandingText,defaultAuthorName,trashRetentionDays,searchIncludesTrash,featureNoteEnabled,featureCodeEnabled,featureAiEnabled,qaSearchResultsEnabled,qaSearchHiddenCategories,sectionMarkingsEnabled,svgSectionIconsEnabled,rowHighlightStyle,coverPageEnabled,contentsPageEnabled,openItemsPageEnabled,searchMatchCase,searchWholeWord,autoRewriteEnabled,qaLocation,autoErrorReportEnabled};
+    const payload={ctxQuickRow:ctxQuickRowCustom,theme:currentTheme,themeMode,editorScale,outlineNumbering,treeIndentWidth,spellcheckEnabled,noteMatchEditorBg,codeMatchEditorBg,pdfMark:previewBrandingText,defaultAuthorName,trashRetentionDays,searchIncludesTrash,featureNoteEnabled,featureCodeEnabled,featureAiEnabled,qaSearchResultsEnabled,qaSearchHiddenCategories,sectionMarkingsEnabled,svgSectionIconsEnabled,rowHighlightStyle,coverPageEnabled,contentsPageEnabled,openItemsPageEnabled,searchMatchCase,searchWholeWord,autoRewriteEnabled,qaLocation,errorReportsOff:!errorReportsEnabled};
     const json=JSON.stringify(payload);
     // Unchanged (every save of a document also saves the settings): nothing to send to the account.
     if(localStorage.getItem(PREFS_KEY)===json)return;
@@ -16096,7 +16081,7 @@ function savePrefs(){
     console.warn('[sakura] savePrefs failed:',e && e.message);
   }
 }
-function loadPrefs(){try{const raw=localStorage.getItem(PREFS_KEY); if(!raw)return; const d=JSON.parse(raw); ctxQuickRowCustom=Array.isArray(d.ctxQuickRow)?d.ctxQuickRow.filter(a=>typeof a==='string').slice(0,12):null; if(d.theme)currentTheme=({default:'light',vscode:'dark','clever-dark':'dark',clever:'light',sakura:'light'}[d.theme]||d.theme); if(!['light','dark'].includes(currentTheme))currentTheme='light'; themeMode=['manual','system'].includes(d.themeMode)?d.themeMode:'manual'; if(Number.isFinite(Number(d.editorScale)))editorScale=Math.min(1.4,Math.max(0.85,Number(d.editorScale))); outlineNumbering=!!d.outlineNumbering; if(Number.isFinite(Number(d.treeIndentWidth)))treeIndentWidth=Math.min(6,Math.max(2,Math.round(Number(d.treeIndentWidth)))); spellcheckEnabled=d.spellcheckEnabled===undefined?true:!!d.spellcheckEnabled;     noteMatchEditorBg=d.noteMatchEditorBg===undefined?false:!!d.noteMatchEditorBg; codeMatchEditorBg=d.codeMatchEditorBg===undefined?false:!!d.codeMatchEditorBg;   previewBrandingText=typeof d.pdfMark==='string'?d.pdfMark:(d.previewBrandingEnabled===false?'':((typeof d.previewBrandingText==='string'&&d.previewBrandingText.trim())||'SAKURA')); defaultAuthorName=typeof d.defaultAuthorName==='string'&&d.defaultAuthorName.trim()?d.defaultAuthorName:(typeof d.greetingDisplayName==='string'?d.greetingDisplayName:''); trashRetentionDays=Number.isFinite(Number(d.trashRetentionDays))?Math.min(30,Math.max(0,Math.round(Number(d.trashRetentionDays)))):7; searchIncludesTrash=!!d.searchIncludesTrash; featureNoteEnabled=d.featureNoteEnabled===undefined?true:!!d.featureNoteEnabled; featureCodeEnabled=d.featureCodeEnabled===undefined?true:!!d.featureCodeEnabled; featureAiEnabled=d.featureAiEnabled===undefined?true:!!d.featureAiEnabled; qaSearchResultsEnabled=d.qaSearchResultsEnabled===undefined?true:!!d.qaSearchResultsEnabled; qaSearchHiddenCategories=Array.isArray(d.qaSearchHiddenCategories)?d.qaSearchHiddenCategories.filter(k=>QA_SEARCH_CATEGORIES.some(c=>c.key===k)):[];  sectionMarkingsEnabled=d.sectionMarkingsEnabled===undefined?false:!!d.sectionMarkingsEnabled; svgSectionIconsEnabled=d.svgSectionIconsEnabled===undefined?true:!!d.svgSectionIconsEnabled; rowHighlightStyle=['original','dot','bar','outline'].includes(d.rowHighlightStyle)?d.rowHighlightStyle:'original'; coverPageEnabled=d.coverPageEnabled===undefined?true:!!d.coverPageEnabled; contentsPageEnabled=d.contentsPageEnabled===undefined?true:!!d.contentsPageEnabled; openItemsPageEnabled=!!d.openItemsPageEnabled;  searchMatchCase=!!d.searchMatchCase; searchWholeWord=!!d.searchWholeWord; autoRewriteEnabled=!!d.autoRewriteEnabled; qaLocation=d.qaLocation==='statusbar'?'statusbar':'appbar'; autoErrorReportEnabled=!!d.autoErrorReportEnabled;}catch(e){console.warn('[sakura] loadPrefs threw — prefs were NOT restored this load:',e); try{ if(typeof showToast==='function') showToast('Your settings could not be loaded this session — they were reset to defaults for now, but are still saved.'); }catch(e2){} }}
+function loadPrefs(){try{const raw=localStorage.getItem(PREFS_KEY); if(!raw)return; const d=JSON.parse(raw); ctxQuickRowCustom=Array.isArray(d.ctxQuickRow)?d.ctxQuickRow.filter(a=>typeof a==='string').slice(0,12):null; if(d.theme)currentTheme=({default:'light',vscode:'dark','clever-dark':'dark',clever:'light',sakura:'light'}[d.theme]||d.theme); if(!['light','dark'].includes(currentTheme))currentTheme='light'; themeMode=['manual','system'].includes(d.themeMode)?d.themeMode:'manual'; if(Number.isFinite(Number(d.editorScale)))editorScale=Math.min(1.4,Math.max(0.85,Number(d.editorScale))); outlineNumbering=!!d.outlineNumbering; if(Number.isFinite(Number(d.treeIndentWidth)))treeIndentWidth=Math.min(6,Math.max(2,Math.round(Number(d.treeIndentWidth)))); spellcheckEnabled=d.spellcheckEnabled===undefined?true:!!d.spellcheckEnabled;     noteMatchEditorBg=d.noteMatchEditorBg===undefined?false:!!d.noteMatchEditorBg; codeMatchEditorBg=d.codeMatchEditorBg===undefined?false:!!d.codeMatchEditorBg;   previewBrandingText=typeof d.pdfMark==='string'?d.pdfMark:(d.previewBrandingEnabled===false?'':((typeof d.previewBrandingText==='string'&&d.previewBrandingText.trim())||'SAKURA')); defaultAuthorName=typeof d.defaultAuthorName==='string'&&d.defaultAuthorName.trim()?d.defaultAuthorName:(typeof d.greetingDisplayName==='string'?d.greetingDisplayName:''); trashRetentionDays=Number.isFinite(Number(d.trashRetentionDays))?Math.min(30,Math.max(0,Math.round(Number(d.trashRetentionDays)))):7; searchIncludesTrash=!!d.searchIncludesTrash; featureNoteEnabled=d.featureNoteEnabled===undefined?true:!!d.featureNoteEnabled; featureCodeEnabled=d.featureCodeEnabled===undefined?true:!!d.featureCodeEnabled; featureAiEnabled=d.featureAiEnabled===undefined?true:!!d.featureAiEnabled; qaSearchResultsEnabled=d.qaSearchResultsEnabled===undefined?true:!!d.qaSearchResultsEnabled; qaSearchHiddenCategories=Array.isArray(d.qaSearchHiddenCategories)?d.qaSearchHiddenCategories.filter(k=>QA_SEARCH_CATEGORIES.some(c=>c.key===k)):[];  sectionMarkingsEnabled=d.sectionMarkingsEnabled===undefined?false:!!d.sectionMarkingsEnabled; svgSectionIconsEnabled=d.svgSectionIconsEnabled===undefined?true:!!d.svgSectionIconsEnabled; rowHighlightStyle=['original','dot','bar','outline'].includes(d.rowHighlightStyle)?d.rowHighlightStyle:'original'; coverPageEnabled=d.coverPageEnabled===undefined?true:!!d.coverPageEnabled; contentsPageEnabled=d.contentsPageEnabled===undefined?true:!!d.contentsPageEnabled; openItemsPageEnabled=!!d.openItemsPageEnabled;  searchMatchCase=!!d.searchMatchCase; searchWholeWord=!!d.searchWholeWord; autoRewriteEnabled=!!d.autoRewriteEnabled; qaLocation=d.qaLocation==='statusbar'?'statusbar':'appbar'; errorReportsEnabled=d.errorReportsOff!==true;}catch(e){console.warn('[sakura] loadPrefs threw — prefs were NOT restored this load:',e); try{ if(typeof showToast==='function') showToast('Your settings could not be loaded this session — they were reset to defaults for now, but are still saved.'); }catch(e2){} }}
 function setBacklinksEnabled(on,persist=true){backlinksEnabled=!!on; if(!backlinksEnabled)closeAtSuggest(); if(persist){savePrefs(); scheduleAutoSave()} syncFeatureToggleUi('backlinks',backlinksEnabled); applyFeatureVisibility();}
 
 // === Feature Activation ===========================================
@@ -17586,17 +17571,16 @@ function renderNotifList(){
 
 
 
-// ---------- Feedback & error reporting ----------
-// One write-only Firestore collection ('feedback', see firestore.rules) for both a person's own
-// message ("feedback") and an automatically-captured crash ("error"). Write-only by design —
+// ---------- Feedback ----------
+// One write-only Firestore collection ('feedback', see firestore.rules) for a person's own message
+// ("feedback"; older entries also hold opt-in crash reports, "error", which Sentry replaced on
+// 2026-11-20). Write-only by design —
 // create is open, read/update/delete are all denied to every client — so this can never become a
 // way to read anyone else's report; only reviewed directly in the Firebase Console. No account
 // needed either way: an error can happen before anyone's signed in, and feedback shouldn't
 // require one. This is the one deliberate exception to the "no network call to Firebase unless
-// you sign in" promise documented above FIREBASE_CONFIG — clicking Send Feedback, or opting into
-// Settings → Data → Automatic crash reports, is its own explicit consent, same as clicking
-// Sign in with Google is. Never includes document/note/task content — only the error text, a
-// short recent-console-errors tail, and basic environment info (URL, user agent).
+// you sign in" promise documented above FIREBASE_CONFIG — clicking Send Feedback is its own explicit
+// consent, same as clicking Sign in with Google is. Never includes document/note/task content.
 async function submitFeedback({kind,message,email,extra}){
   const trimmed=(message||'').trim();
   if(!trimmed)return{ok:false,error:'Enter a message first.'};
@@ -17616,32 +17600,6 @@ async function submitFeedback({kind,message,email,extra}){
   }catch(e){
     console.error('feedback submit failed',e);
     return{ok:false,error:"Couldn't send that — check your connection and try again."};
-  }
-}
-// Best-effort automatic crash report — called from the window.onerror/unhandledrejection
-// handlers installed at the very top of the file. Gated behind autoErrorReportEnabled (off by
-// default, Settings → Data → Automatic crash reports) — see the comment on that variable's
-// declaration for why this can't just be always-on the way it is in some of Robin's other
-// single-file apps. Session-scoped dedupe + a hard cap guard against a crash loop hammering
-// Firestore with duplicate writes; both reset on reload, which is fine since a fresh session
-// reporting the same recurring bug once more is exactly what's useful to see.
-const _reportedErrorSignatures=new Set();
-let _autoReportCount=0;
-async function reportErrorAuto(message,extra){
-  if(!autoErrorReportEnabled)return{ok:false,skipped:true};
-  try{
-    const signature=(message||'').slice(0,200);
-    if(_reportedErrorSignatures.has(signature))return{ok:false,skipped:true};
-    if(_autoReportCount>=10)return{ok:false,skipped:true};
-    _reportedErrorSignatures.add(signature);
-    _autoReportCount++;
-    return await submitFeedback({
-      kind:'error',
-      message:message||'Unknown error',
-      extra:{auto:true,consoleLog:RECENT_CONSOLE_ERRORS.slice(-10),...(extra||{})}
-    });
-  }catch(e){
-    return{ok:false,error:e.message};
   }
 }
 
@@ -34451,7 +34409,6 @@ function subtreeHasRemark(idx){if(!Array.isArray(remarks)||!remarks.length)retur
 
 setNoteBgMatch(noteMatchEditorBg, false);
 setCodeBgMatch(codeMatchEditorBg, false);
-setAutoErrorReportEnabled(autoErrorReportEnabled, false);
 setPreviewBrandingText(previewBrandingText, false);
 setQaSearchResultsEnabled(qaSearchResultsEnabled, false);
 applyQaSearchCategorySettings();
@@ -37828,7 +37785,7 @@ function todosHistorySummary(list) {
 // run two thirds of the way down, so whatever it drew could reach code further down that wasn't set
 // up yet. On the owner's iPhone an open thread did ("Cannot access '_threadKeptQuestions' before
 // initialization"), which stopped startup and left the app frozen (2026-11-20).
-loadPrefs(); migrateStaleModelIds(); loadAiFallbackPrefs(); loadAiPrefs(); applyFallbackToggle(); ensureDocSystem(); purgeExpiredTrash(); restoreOpenTabsOnStartup(null); setTheme(currentTheme||'light',true,false); setThemeMode(themeMode,false); setEditorScale(editorScale,false); setTreeIndentWidth(treeIndentWidth,false); setOutlineNumbering(outlineNumbering,false); setBacklinksEnabled(backlinksEnabled,false); setSpellcheckEnabled(spellcheckEnabled,false); setSectionMarkingsEnabled(sectionMarkingsEnabled,false); setSvgSectionIconsEnabled(svgSectionIconsEnabled,false); setRowHighlightStyle(rowHighlightStyle,false); setCoverPageEnabled(coverPageEnabled,false); setContentsPageEnabled(contentsPageEnabled,false); setOpenItemsPageEnabled(openItemsPageEnabled,false); applyAccentColor(); setSearchMatchCase(searchMatchCase,false); setSearchWholeWord(searchWholeWord,false); setAutoRewriteEnabled(autoRewriteEnabled,false); applyCalmLayout(); noteDocVisit(null,currentDocId); setQaLocation('appbar',false); setDefaultAuthorName(defaultAuthorName,false); setTrashRetentionDays(trashRetentionDays,false); setSearchIncludesTrash(searchIncludesTrash,false); initFeatureActivationPanel(); ensureSelection(); render(); document.documentElement.classList.remove('presetup-doc-pending'); resetDirty(); focusPane(); updateExportStatus(); updatePreRestoreSnapshotStatus(); updateAiUsageDisplay(); restoreAccountSessionIfNeeded(); renderNotifBell();
+loadPrefs(); migrateStaleModelIds(); loadAiFallbackPrefs(); loadAiPrefs(); applyFallbackToggle(); ensureDocSystem(); purgeExpiredTrash(); restoreOpenTabsOnStartup(null); setTheme(currentTheme||'light',true,false); setThemeMode(themeMode,false); setEditorScale(editorScale,false); setTreeIndentWidth(treeIndentWidth,false); setOutlineNumbering(outlineNumbering,false); setBacklinksEnabled(backlinksEnabled,false); setSpellcheckEnabled(spellcheckEnabled,false); setSectionMarkingsEnabled(sectionMarkingsEnabled,false); setSvgSectionIconsEnabled(svgSectionIconsEnabled,false); setRowHighlightStyle(rowHighlightStyle,false); setCoverPageEnabled(coverPageEnabled,false); setContentsPageEnabled(contentsPageEnabled,false); setOpenItemsPageEnabled(openItemsPageEnabled,false); applyAccentColor(); setSearchMatchCase(searchMatchCase,false); setSearchWholeWord(searchWholeWord,false); setAutoRewriteEnabled(autoRewriteEnabled,false); setErrorReportsEnabled(errorReportsEnabled,false); setTimeout(announceErrorReportsOnce,2500); applyCalmLayout(); noteDocVisit(null,currentDocId); setQaLocation('appbar',false); setDefaultAuthorName(defaultAuthorName,false); setTrashRetentionDays(trashRetentionDays,false); setSearchIncludesTrash(searchIncludesTrash,false); initFeatureActivationPanel(); ensureSelection(); render(); document.documentElement.classList.remove('presetup-doc-pending'); resetDirty(); focusPane(); updateExportStatus(); updatePreRestoreSnapshotStatus(); updateAiUsageDisplay(); restoreAccountSessionIfNeeded(); renderNotifBell();
 // The last line of the main script: startup got all the way through (see __sakuraCheckStartup).
 window.__sakuraMainDone=true;
 </script>

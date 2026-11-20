@@ -24,7 +24,8 @@ rules_version = '2';
 //   3b. /copies/{uid}/items/{id} — documents other accounts sent this one ("Send a copy"). The
 //      sender creates; only the recipient reads and deletes (after adding it to their documents).
 //   4. /feedback/{id}       — anyone can file one (create-only for non-admins); a small admin
-//      set can read/triage/delete (see submitFeedback/reportErrorAuto in index.html).
+//      set can read/triage/delete (see submitFeedback in index.html; older
+//      entries also hold opt-in crash reports, which Sentry replaced on 2026-11-20).
 //   5. /admins/{uid}        — existence-only admin registry backing isFeedbackAdminAuth() below.
 service cloud.firestore {
   match /databases/{database}/documents {
