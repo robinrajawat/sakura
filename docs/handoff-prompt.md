@@ -171,7 +171,10 @@ keep only the last 3 entries, and delete older ones (git history and the PRs kee
 anything still unbuilt or undecided into "In progress / not built" or "Parked". If this section
 contradicts README.md or docs/feature-reference.md, trust them.)*
 
-**Open work (2026-11-20):** `docs/standard-practice-plan.md` steps 1 (phone suite in WebKit) and 2 (Sentry error reports) are built. Sentry project: organisation `robinrajawat`, project `sakura-web`, EU region; the DSN is in `web/src/telemetry/sentryConfig.ts` and index.html's CSP allows only its host. Step 3 (preview per PR) waits on the owner's 15 minutes. The flaky To-Dos draft test now reports its storage state on failure: read that message before changing code. Owner to confirm on the iPhone that Sakura starts normally after #915. Not built: the AI code still loads at startup inside index.html.
+**Open work (2026-11-20):** `docs/standard-practice-plan.md` steps 1–3 are done: phone suite in WebKit, Sentry error reports (organisation `robinrajawat`, project `sakura-web`, EU; IP storage off at organisation level), and previews (`https://preview.sakura-notes.com` shows the latest push to the working branch; each PR gets its own Cloudflare address). Before asking the owner to merge, point them at the preview. Next, in this order:
+1. **Threads lost between phone and Mac (owner 2026-11-20, data loss).** Not diagnosed. Likely: both devices changed the document, and the copy that reached the account second went to Version history ("Your changes on this device", `resolveDocPushConflict`), thread included. Owner to check Version history for such a version. Proposed fix, needs the owner's OK: on a conflict, merge thread entries (`remarks`, each with its own id) from both copies instead of keeping one copy's.
+2. **iPhone: a thread reply doesn't post (owner 2026-11-20).** No dot, the thread keeps reopening. Likely: the reply box posts only on a keydown Enter, and the iPhone keyboard sends none (rows have `phoneKeyboardFallback` for this; the reply box doesn't), so the reply stays a draft. Owner to confirm whether Return adds a new line. Fix with a test that sends Return as an iPhone keyboard does (`phone-keyboard-safety.phone.spec.ts` does this for rows).
+The flaky To-Dos draft test reports its storage state on failure: read that before changing code. Not built: the AI code still loads at startup inside index.html (startup on the Mac's Safari confirmed clean after #915).
 
 **Direction (owner, 2026-11-12):** Sakura is going cloud-first, with try-without-an-account kept. Plan: `docs/cloud-first-plan.md` (built; PDF stays on Cloudflare's free plan, owner 2026-11-17). Read it and `docs/data-safety-audit.md` before touching sync.
 
@@ -204,8 +207,6 @@ contradicts README.md or docs/feature-reference.md, trust them.)*
 
 ### Parked / open questions for the owner
 
-- Sentry: owner to turn on "Prevent Storing of IP Addresses" (Settings → Projects → sakura-web → Security & Privacy) and email alerts on new issues, if not done.
-- Cloudflare Pages preview per PR: owner connects the repo (about 15 minutes; steps in the plan, step 3).
 
 - **Launch checklist (owner, 2026-11-17), besides the backups below:** (1) a lawyer's read of
   `privacy.html` / `terms.html` if possible (drafted, not reviewed; include the new "Sakura itself" ownership section); (2) test the positioning pitch

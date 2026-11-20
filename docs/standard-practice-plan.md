@@ -73,7 +73,24 @@ screenshot.
   anything under `worker/` redeploys the live Worker, so the owner merges it on purpose.
 - **Owner to decide:** own Worker or Sentry.
 
-## 3. A preview before going live (owner setup about 15 minutes, then Claude)
+## 3. A preview before going live (set up 2026-11-20)
+
+Set up: Cloudflare Pages project `sakura-preview` (owner's Cloudflare account, the Pages workflow;
+owner chose it over a Workers app, which Cloudflare now promotes, because it needs no change in the
+repo). It builds `npm run build -w sakura-web` into `web/dist` with `NODE_VERSION=22`, for every
+branch except production (automatic production deployments off). Addresses:
+
+- **`https://preview.sakura-notes.com`**: always the latest push to Claude's working branch
+  (`claude/clever-carson-durens`, via its branch address
+  `claude-clever-carson-durens.sakura-preview-6so.pages.dev`). The one bookmark to open on the iPhone.
+- Each PR's own address, which Cloudflare posts on the PR.
+
+What a preview can't do: Google sign-in (Firebase allows only listed domains; owner 2026-11-20:
+previews stay signed out, so a preview never syncs into the real account), Hosted AI and signed-in
+PDF (the Worker accepts only www.sakura-notes.com), and error reports (Sentry runs on the live site
+only). Testing sync on a phone needs a separate test account; not set up.
+
+Original plan:
 
 - Every PR gets its own preview address. Cloudflare Pages does this for free from the GitHub repo,
   on the Cloudflare account the domain already uses.
@@ -85,7 +102,7 @@ screenshot.
 ## 4. Release discipline (from now on)
 
 - Fewer, larger releases: batch related fixes into one PR rather than one PR per symptom.
-- Each release is checked on the preview (once step 3 exists) on a real iPhone before merging.
+- Each release is checked on the preview (`preview.sakura-notes.com`) on a real iPhone before merging.
 - If something breaks live: revert the PR first, then investigate.
 - Diagnose before fixing: get the real error (Details, the failed-start screen, error reports)
   before changing code.
