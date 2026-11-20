@@ -1968,6 +1968,9 @@ table tr.tbl-total>td,table tr.tbl-total>th{font-weight:700;border-top:1.5px sol
 .node-remark-line.thread-composer{display:block;padding-top:3px;padding-bottom:3px}
 .thread-author-btn{flex:0 0 auto;border:0;background:transparent;color:var(--fg);font:600 13px 'Inter',sans-serif;padding:0 3px;height:20px;border-radius:4px;cursor:pointer;white-space:nowrap}
 .thread-author-btn:hover{background:var(--hover)}
+/* Unsent text in a thread's reply box says so, so it isn't taken for a posted entry (owner 2026-11-20). */
+.thread-unsent{display:none;align-self:center;margin-left:6px;padding:0 6px;border-radius:4px;font:500 var(--fs-xs)/18px 'Inter',sans-serif;color:var(--muted);background:var(--hover)}
+.thread-composer.has-unsent .thread-unsent{display:inline-block}
 .thread-author-edit{flex:0 0 auto;min-width:60px;font:600 13px 'Inter',sans-serif;padding:0 4px;border-radius:4px;background:var(--hover);outline:none}
 .thread-author-edit:empty::before{content:attr(data-placeholder);color:var(--hint)}
 /* The reply line types like any entry: no box, just the text under the author. */
@@ -5202,7 +5205,8 @@ var typedDrafts=(function(){
   }
   return {
     get(k){ const d=load()[k]; return d?d.html:undefined; },
-    put(k,d){ const m=load(), prev=m[k]; if(prev&&prev.html===d.html&&prev.kind===d.kind&&prev.answerTo===d.answerTo)return; m[k]=d; persist(); },
+    put(k,d){ const m=load(), prev=m[k]; if(prev&&prev.html===d.html&&prev.kind===d.kind&&prev.answerTo===d.answerTo&&prev.person===d.person)return; m[k]=d; persist(); },
+    entry(k){ return load()[k]; },
     remove(k){ const m=load(); if(!(k in m))return; delete m[k]; persist(); },
     // Send a pending change to the account now (the app is being put away).
     flush(){ if(syncTimer){ clearTimeout(syncTimer); syncTimer=null; markMetaChanged('threadDrafts'); } },
@@ -5215,12 +5219,15 @@ var typedDrafts=(function(){
 var _threadDrafts={
   has(id){ return typedDrafts.get(threadDraftKey(currentDocId,id))!==undefined; },
   get(id){ return typedDrafts.get(threadDraftKey(currentDocId,id)); },
-  set(id,html){
+  set(id,html,person){
     const d={html:String(html),at:Date.now()};
     if(_threadDecisionNodeIds.has(id))d.kind='decision'; else if(_threadAskNodeIds.has(id))d.kind='question';
     if(_threadAnswerTo.has(id))d.answerTo=String(_threadAnswerTo.get(id));
+    const who=person||this.person(id)||threadDefaultAuthor(); if(who)d.person=who;
     typedDrafts.put(threadDraftKey(currentDocId,id),d);
   },
+  // Who the draft is written as, if it says.
+  person(id){ const d=typedDrafts.entry(threadDraftKey(currentDocId,id)); return d&&typeof d.person==='string'&&d.person.trim()?d.person:null; },
   delete(id){ typedDrafts.remove(threadDraftKey(currentDocId,id)); }
 };
 // A plain-text field's draft ("Add a task", the feedback message). Empty text removes it.
@@ -33908,9 +33915,18 @@ function openThreadComposer(nodeId,ask,answerTo){
   if(nodeId==null)return;
   forceInlineItemExpanded(inlineExpandRemarksNodeIds,nodeId);
   inlineExpandRemarksNodeIds.add(nodeId);
-  _threadComposerNodeId=nodeId; setThreadComposerKind(nodeId,ask?'question':'comment');
-  if(answerTo&&!ask)_threadAnswerTo.set(nodeId,answerTo); else _threadAnswerTo.delete(nodeId);
-  if(_threadDrafts.has(nodeId))_threadDrafts.set(nodeId,_threadDrafts.get(nodeId));
+  _threadComposerNodeId=nodeId;
+  // Unsent text keeps what it is and what it replies to (owner 2026-11-20: tapping Reply on a
+  // question turned someone's unsent entry into a reply to it): the box opens as it is, and says so.
+  if(_threadDrafts.has(nodeId)){
+    const d=typedDrafts.entry(threadDraftKey(currentDocId,nodeId))||{};
+    const wantKind=ask?'question':'comment', haveKind=d.kind||'comment';
+    const sameTarget=String(d.answerTo||'')===String((answerTo&&!ask)?answerTo:'')&&(haveKind==='decision'||haveKind===wantKind);
+    if(!sameTarget)showToast('You have an unsent entry here: send it or clear it first.');
+  } else {
+    setThreadComposerKind(nodeId,ask?'question':'comment');
+    if(answerTo&&!ask)_threadAnswerTo.set(nodeId,answerTo); else _threadAnswerTo.delete(nodeId);
+  }
   _pendingInlineFocus={kind:'threadComposer',nodeId};
   render();
 }
@@ -34232,9 +34248,12 @@ function renderThreadComposer(node,thread,place,commit){
   // The end-of-thread line adds a Comment, a Question or a Decision (owner, 2026-10-27): one choice.
   const kind=_threadDecisionNodeIds.has(node.id)?'decision':_threadAskNodeIds.has(node.id)?'question':'comment';
   const ask=kind==='question';
-  const author=threadDefaultAuthor();
+  const author=_threadDrafts.person(node.id)||threadDefaultAuthor();
   let avatar=threadKindEl(kind==='question'?{type:'question'}:kind==='decision'?{decision:true}:{},null,'thread-kind');
   const who=document.createElement('button'); who.type='button'; who.className='thread-author-btn'; who.textContent=(author||'Add name')+' ▾'; who.dataset.tip='Add as — pick who is speaking';
+  // Unsent text is marked so it isn't taken for a posted entry (owner 2026-11-20).
+  const unsent=document.createElement('span'); unsent.className='thread-unsent'; unsent.textContent='Not sent';
+  const markUnsent=()=>line.classList.toggle('has-unsent',htmlHasVisibleText(input.innerHTML)||!!input.querySelector('img'));
   who.addEventListener('mousedown',e=>{ e.stopPropagation(); e.preventDefault(); });
   who.addEventListener('click',e=>{ e.stopPropagation(); const r=who.getBoundingClientRect(); showSbContextMenu(r.left,r.bottom+4,threadAuthorMenuItems(node,who)); });
   const input=document.createElement('div'); input.className='thread-composer-input remark-text-input'; input.contentEditable='true'; input.spellcheck=spellcheckEnabled; input.dataset.nodeId=node.id;
@@ -34253,7 +34272,7 @@ function renderThreadComposer(node,thread,place,commit){
     if(!hasText)return;
     pushUndo();
     const last=thread[thread.length-1];
-    const e={id:newRemarkId(),anchorNodeId:node.id,person:threadDefaultAuthor(),text:html,context:'',createdAt:Math.max(Date.now(),(last&&last.createdAt||0)+1)};
+    const e={id:newRemarkId(),anchorNodeId:node.id,person:_threadDrafts.person(node.id)||threadDefaultAuthor(),text:html,context:'',createdAt:Math.max(Date.now(),(last&&last.createdAt||0)+1)};
     if(chosen)e.answerTo=chosen.id;
     if(asking)e.type='question';
     if(deciding)e.decision=true;
@@ -34268,7 +34287,7 @@ function renderThreadComposer(node,thread,place,commit){
   };
   // A draft survives re-renders and moving to another row; the box stays open while it has one.
   if(_threadDrafts.has(node.id))input.innerHTML=_threadDrafts.get(node.id);
-  input.addEventListener('input',()=>{ if(htmlHasVisibleText(input.innerHTML))_threadDrafts.set(node.id,sakuraSanitizeRichHtml(input.innerHTML)); else _threadDrafts.delete(node.id); });
+  input.addEventListener('input',()=>{ if(htmlHasVisibleText(input.innerHTML))_threadDrafts.set(node.id,sakuraSanitizeRichHtml(input.innerHTML)); else _threadDrafts.delete(node.id); markUnsent(); });
   input.addEventListener('mousedown',e=>e.stopPropagation());
   input.addEventListener('click',e=>e.stopPropagation());
   attachThreadPaste(input);
@@ -34297,7 +34316,7 @@ function renderThreadComposer(node,thread,place,commit){
     avatar.addEventListener('keydown',e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); open(); } });
   }
   const meta=document.createElement('div'); meta.className='thread-meta';
-  meta.appendChild(avatar); meta.appendChild(who);
+  meta.appendChild(avatar); meta.appendChild(who); meta.appendChild(unsent); markUnsent();
   line.appendChild(meta); line.appendChild(input);
   // Leaving an empty reply line closes it again.
   input.addEventListener('blur',()=>{ setTimeout(()=>{
@@ -34338,7 +34357,7 @@ function threadComposerMenuItems(node,input,ask,submit){
 function threadAuthorMenuItems(node,anchor){
   const CHECK='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
   const cur=threadDefaultAuthor();
-  const pick=name=>()=>{ setThreadAuthorHidden(name,false); _threadAuthor=name; _threadComposerNodeId=node.id; _pendingInlineFocus={kind:'threadComposer',nodeId:node.id}; render(); };
+  const pick=name=>()=>{ setThreadAuthorHidden(name,false); _threadAuthor=name; if(_threadDrafts.has(node.id))_threadDrafts.set(node.id,_threadDrafts.get(node.id),name); _threadComposerNodeId=node.id; _pendingInlineFocus={kind:'threadComposer',nodeId:node.id}; render(); };
   const items=[{heading:'Add as'}];
   threadRecentAuthors().slice(0,8).forEach(n=>items.push({label:n, icon:n===cur?CHECK:'', onClick:pick(n)}));
   if(items.length>1)items.push({divider:true});
@@ -34350,7 +34369,7 @@ function threadAuthorMenuItems(node,anchor){
     anchor.replaceWith(ed); ed.focus();
     ed.addEventListener('mousedown',e=>e.stopPropagation());
     ed.addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); ed.blur(); } else if(e.key==='Escape'){ e.preventDefault(); ed.textContent=''; ed.blur(); } });
-    ed.addEventListener('blur',()=>{ const v=(ed.textContent||'').trim(); if(v){ _threadAuthor=v; setThreadAuthorHidden(v,false); } _threadComposerNodeId=node.id; _pendingInlineFocus={kind:'threadComposer',nodeId:node.id}; render(); });
+    ed.addEventListener('blur',()=>{ const v=(ed.textContent||'').trim(); if(v){ _threadAuthor=v; setThreadAuthorHidden(v,false); if(_threadDrafts.has(node.id))_threadDrafts.set(node.id,_threadDrafts.get(node.id),v); } _threadComposerNodeId=node.id; _pendingInlineFocus={kind:'threadComposer',nodeId:node.id}; render(); });
   }});
   return items;
 }

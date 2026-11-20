@@ -65,7 +65,11 @@ untouched. When two devices changed the same draft, both texts are kept in it, t
 (one per line for a plain field) (`src/utils/threadDrafts.ts`, `mergeDrafts`; the generic merge
 would let one side win). A field on screen takes the merged text at once, so typing on doesn't save
 over the other device's words. "Add a task…" moved here from its device-only key, which is carried
-over once. Tests: `thread-drafts.spec.ts`, `threadDrafts.test.ts`, `table-api.spec.ts` (API editor).
+over once. A thread draft also keeps its author (`person`), and keeps what it replies to: opening
+the reply box for something else (Reply on a question, "+ Add to thread") never moves unsent text,
+it says "You have an unsent entry here", and the box marks unsent text "Not sent" (owner
+2026-11-20: an unsent entry by Raja became the owner's reply to a question). Tests:
+`thread-drafts.spec.ts`, `thread-reply-box.spec.ts`, `threadDrafts.test.ts`, `table-api.spec.ts` (API editor).
 
 ## Fixed
 
