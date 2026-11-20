@@ -84,10 +84,14 @@ previews too. A build of `main` only updates the project's own copy, never www. 
 connected to GitHub (Settings → Git repository; the Cloudflare Workers and Pages app needs access to
 `robinrajawat/sakura`), or nothing builds. Addresses:
 
-- **`https://preview.sakura-notes.com`**: always the latest push to Claude's working branch
-  (`claude/clever-carson-durens`, via its branch address
-  `claude-clever-carson-durens.sakura-preview-6so.pages.dev`). The one bookmark to open on the iPhone.
-- Each PR's own address, which Cloudflare posts on the PR.
+- **The branch address**, `https://<branch>.sakura-preview-6so.pages.dev` (the branch name with `/`
+  as `-`): always the latest push to that branch. For `claude/clever-carson-durens` it is
+  `https://claude-clever-carson-durens.sakura-preview-6so.pages.dev`, the owner's iPhone bookmark.
+- Each push's own address. Cloudflare posts both on the PR ("Preview URL", "Branch Preview URL").
+
+Not used: a custom domain. `preview.sakura-notes.com` was added to the project and its DNS pointed at
+the branch address (2026-11-20), but it kept showing the copy built from `main`: a domain added to a
+Pages project shows that project's production copy.
 
 What a preview can't do: Google sign-in (Firebase allows only listed domains; owner 2026-11-20:
 previews stay signed out, so a preview never syncs into the real account), Hosted AI and signed-in
@@ -106,7 +110,7 @@ Original plan:
 ## 4. Release discipline (from now on)
 
 - Fewer, larger releases: batch related fixes into one PR rather than one PR per symptom.
-- Each release is checked on the preview (`preview.sakura-notes.com`) on a real iPhone before merging.
+- Each release is checked on its preview (the branch address, or the link Cloudflare posts on the PR) on a real iPhone before merging.
 - If something breaks live: revert the PR first, then investigate.
 - Diagnose before fixing: get the real error (Details, the failed-start screen, error reports)
   before changing code.
