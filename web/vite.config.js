@@ -72,6 +72,9 @@ export default defineConfig({
   plugins: [stampVersion(), sentrySrc(), minifyInline()],
   build: {
     rollupOptions: {
+      // The error-report file goes in vendor/, not assets/ (tests/e2e/dist-static-assets.spec.ts keeps
+      // assets/ from coming back).
+      output: { entryFileNames: (chunk) => (chunk.name === 'sentry' ? 'vendor/[name]-[hash].js' : 'assets/[name]-[hash].js') },
       input: {
         main: resolve(__dirname, 'index.html'),
         hub: resolve(__dirname, 'hub.html'),

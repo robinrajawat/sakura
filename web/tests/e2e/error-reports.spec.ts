@@ -36,7 +36,7 @@ test.describe('error reports', () => {
 
   test('an error on the live site is reported, without the person\'s details', async ({ page }) => {
     const sent = await openLiveSite(page, 'https://publickey@o1.ingest.de.sentry.io/1');
-    await page.waitForFunction(() => !!document.querySelector('script[src*="/assets/sentry-"]'));
+    await page.waitForFunction(() => !!document.querySelector('script[src*="/vendor/sentry-"]'));
     await page.waitForTimeout(500); // the module runs init
     await page.evaluate(() => setTimeout(() => { throw new Error('test failure from a phone'); }, 0));
     await expect.poll(() => sent.find((b) => b.includes('test failure from a phone')), { timeout: 10000 }).toBeTruthy();
@@ -60,7 +60,7 @@ test.describe('error reports', () => {
   test('turned off in Settings, Sentry isn\'t loaded and nothing is sent', async ({ page }) => {
     const sent = await openLiveSite(page, 'https://publickey@o1.ingest.de.sentry.io/1', { errorReportsOff: true });
     await expect(page.locator('#auto-error-report-toggle')).toHaveAttribute('aria-checked', 'false');
-    expect(await page.locator('script[src*="/assets/sentry-"]').count()).toBe(0);
+    expect(await page.locator('script[src*="/vendor/sentry-"]').count()).toBe(0);
     await page.evaluate(() => setTimeout(() => { throw new Error('not reported'); }, 0));
     await page.waitForTimeout(1000);
     expect(sent).toEqual([]);
@@ -68,7 +68,7 @@ test.describe('error reports', () => {
 
   test('turning it off while the page is open stops reports at once', async ({ page }) => {
     const sent = await openLiveSite(page, 'https://publickey@o1.ingest.de.sentry.io/1');
-    await page.waitForFunction(() => !!document.querySelector('script[src*="/assets/sentry-"]'));
+    await page.waitForFunction(() => !!document.querySelector('script[src*="/vendor/sentry-"]'));
     await page.waitForTimeout(500);
     await expect(page.locator('#auto-error-report-toggle')).toHaveAttribute('aria-checked', 'true');
     await page.evaluate(() => (0, eval)('setErrorReportsEnabled(false)'));
@@ -80,10 +80,10 @@ test.describe('error reports', () => {
 
   test('someone who used Sakura before is told first; reports start from the next load', async ({ page }) => {
     const sent = await openLiveSite(page, 'https://publickey@o1.ingest.de.sentry.io/1', { theme: 'light' });
-    expect(await page.locator('script[src*="/assets/sentry-"]').count()).toBe(0);
+    expect(await page.locator('script[src*="/vendor/sentry-"]').count()).toBe(0);
     await expect(page.locator('#toast')).toContainText('Sakura now sends error reports', { timeout: 6000 });
     await page.reload();
-    await page.waitForFunction(() => !!document.querySelector('script[src*="/assets/sentry-"]'));
+    await page.waitForFunction(() => !!document.querySelector('script[src*="/vendor/sentry-"]'));
     await expect(page.locator('#toast')).not.toContainText('Sakura now sends error reports');
     await page.waitForTimeout(500);
     await page.evaluate(() => setTimeout(() => { throw new Error('after the notice'); }, 0));
