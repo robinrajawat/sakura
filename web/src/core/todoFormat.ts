@@ -67,7 +67,7 @@ export function fmtLink(url: any){
   try{
     const u=new URL(url);
     return u.hostname.replace(/^www\./,'') || url;
-  }catch(e){
+  }catch{
     return String(url).replace(/^https?:\/\//,'').slice(0,30);
   }
 }

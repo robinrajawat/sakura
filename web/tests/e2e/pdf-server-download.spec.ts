@@ -25,7 +25,6 @@ test.beforeEach(async ({ page }) => {
   await page.waitForFunction(() => typeof (window as any).exportPdfDirect === 'function');
   // A stand-in signed-in user: only getIdToken is used on this path.
   await page.evaluate(() => {
-    // eslint-disable-next-line no-eval
     (0, eval)("currentUser = { uid: 'u1', getIdToken: async () => 'token-1' }");
   });
 });
