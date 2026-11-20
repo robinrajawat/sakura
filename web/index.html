@@ -29274,7 +29274,7 @@ let zenMode=false;
 // again by hand while in zen mode (see setZenMode). The toolbar and tab bar are hidden by CSS.
 let _zenAutoHidSidebar=false;
 
-loadPrefs(); migrateStaleModelIds(); loadAiFallbackPrefs(); loadAiPrefs(); applyFallbackToggle(); ensureDocSystem(); purgeExpiredTrash(); restoreOpenTabsOnStartup(null); setTheme(currentTheme||'light',true,false); setThemeMode(themeMode,false); setEditorScale(editorScale,false); setTreeIndentWidth(treeIndentWidth,false); setOutlineNumbering(outlineNumbering,false); setBacklinksEnabled(backlinksEnabled,false); setSpellcheckEnabled(spellcheckEnabled,false); setSectionMarkingsEnabled(sectionMarkingsEnabled,false); setSvgSectionIconsEnabled(svgSectionIconsEnabled,false); setRowHighlightStyle(rowHighlightStyle,false); setCoverPageEnabled(coverPageEnabled,false); setContentsPageEnabled(contentsPageEnabled,false); setOpenItemsPageEnabled(openItemsPageEnabled,false); applyAccentColor(); setSearchMatchCase(searchMatchCase,false); setSearchWholeWord(searchWholeWord,false); setAutoRewriteEnabled(autoRewriteEnabled,false); applyCalmLayout(); noteDocVisit(null,currentDocId); setQaLocation('appbar',false); setDefaultAuthorName(defaultAuthorName,false); setTrashRetentionDays(trashRetentionDays,false); setSearchIncludesTrash(searchIncludesTrash,false); initFeatureActivationPanel(); ensureSelection(); render(); document.documentElement.classList.remove('presetup-doc-pending'); resetDirty(); focusPane(); updateExportStatus(); updatePreRestoreSnapshotStatus(); updateAiUsageDisplay(); restoreAccountSessionIfNeeded(); renderNotifBell();
+// Startup runs at the end of this script (see "Start the app" there), once everything it uses is set up.
 
 /* === Sidebar === */
 /* === Sidebar: folders, search === */
@@ -37823,6 +37823,12 @@ function todosHistorySummary(list) {
   window.todosTextUndo=todosTextUndo;
   window.todosTextRedo=todosTextRedo;
 })();
+// ===== Start the app =====
+// Last, after every declaration above (standard: declare everything, then start). Startup used to
+// run two thirds of the way down, so whatever it drew could reach code further down that wasn't set
+// up yet. On the owner's iPhone an open thread did ("Cannot access '_threadKeptQuestions' before
+// initialization"), which stopped startup and left the app frozen (2026-11-20).
+loadPrefs(); migrateStaleModelIds(); loadAiFallbackPrefs(); loadAiPrefs(); applyFallbackToggle(); ensureDocSystem(); purgeExpiredTrash(); restoreOpenTabsOnStartup(null); setTheme(currentTheme||'light',true,false); setThemeMode(themeMode,false); setEditorScale(editorScale,false); setTreeIndentWidth(treeIndentWidth,false); setOutlineNumbering(outlineNumbering,false); setBacklinksEnabled(backlinksEnabled,false); setSpellcheckEnabled(spellcheckEnabled,false); setSectionMarkingsEnabled(sectionMarkingsEnabled,false); setSvgSectionIconsEnabled(svgSectionIconsEnabled,false); setRowHighlightStyle(rowHighlightStyle,false); setCoverPageEnabled(coverPageEnabled,false); setContentsPageEnabled(contentsPageEnabled,false); setOpenItemsPageEnabled(openItemsPageEnabled,false); applyAccentColor(); setSearchMatchCase(searchMatchCase,false); setSearchWholeWord(searchWholeWord,false); setAutoRewriteEnabled(autoRewriteEnabled,false); applyCalmLayout(); noteDocVisit(null,currentDocId); setQaLocation('appbar',false); setDefaultAuthorName(defaultAuthorName,false); setTrashRetentionDays(trashRetentionDays,false); setSearchIncludesTrash(searchIncludesTrash,false); initFeatureActivationPanel(); ensureSelection(); render(); document.documentElement.classList.remove('presetup-doc-pending'); resetDirty(); focusPane(); updateExportStatus(); updatePreRestoreSnapshotStatus(); updateAiUsageDisplay(); restoreAccountSessionIfNeeded(); renderNotifBell();
 // The last line of the main script: startup got all the way through (see __sakuraCheckStartup).
 window.__sakuraMainDone=true;
 </script>
