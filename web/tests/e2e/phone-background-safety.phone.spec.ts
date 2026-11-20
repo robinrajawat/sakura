@@ -66,13 +66,17 @@ test('a task typed in "Add a task…" but not added comes back after the app is 
   expect(await todosDraft(page)).toBe('Call the bank');
   await page.reload();
   await page.waitForFunction(() => typeof (window as unknown as { createDoc?: unknown }).createDoc === 'function');
-  await expect(page.locator('#todos-input')).toHaveValue('Call the bank');
+  // Flaky in the full suite on 2026-11-19 (passed alone; 0 failures in 400+ runs on 2026-11-20, under
+  // load too). If it fails again, the message says which half broke: the draft lost from storage
+  // across the reload (seeded = null means session storage went too), or kept but not put back.
+  const state = () => page.evaluate(() => JSON.stringify({ seeded: sessionStorage.getItem('seeded'), drafts: localStorage.getItem('sakura_thread_drafts_v1'), box: (document.getElementById('todos-input') as HTMLTextAreaElement | null)?.value }));
+  await expect(page.locator('#todos-input'), 'after reload: ' + (await state())).toHaveValue('Call the bank');
   // Adding it clears the draft.
   await openTodos(page).catch(() => undefined);
   await page.locator('#todos-input').focus();
   await page.keyboard.press('Enter');
   await expect.poll(() => todoTexts(page)).toEqual(['Buy milk', 'Call the bank']);
-  expect(await todosDraft(page)).toBeUndefined();
+  expect(await todosDraft(page), 'draft after adding: ' + (await state())).toBeUndefined();
 });
 
 test('a document rename in progress is saved when the app is put away', async ({ page }) => {

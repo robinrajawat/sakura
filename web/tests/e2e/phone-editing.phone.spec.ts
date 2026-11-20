@@ -1,6 +1,7 @@
 import { test, expect, type Page } from '@playwright/test';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { longPressAt } from './fixtures/touch';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const indexPath = path.resolve(__dirname, '../../index.html');
@@ -31,12 +32,7 @@ const label = (page: Page, text: string) => page.locator('.node-row', { hasText:
 
 async function longPress(page: Page, text: string) {
   const box = (await label(page, text).boundingBox())!;
-  const cdp = await page.context().newCDPSession(page);
-  const pt = [{ x: box.x + 10, y: box.y + box.height / 2, id: 1 }];
-  await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: pt });
-  await page.waitForTimeout(650);
-  await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
-  await cdp.detach();
+  await longPressAt(page, { x: box.x + 10, y: box.y + box.height / 2 });
 }
 
 test('tapping a row edits it, and the toolbar shows only while typing', async ({ page }) => {

@@ -17,7 +17,18 @@ Done already:
 - #914: CI runs `*.safari.spec.ts` in WebKit (startup checks).
 - #915: startup runs last, and `tests/unit/startupOrder.test.ts` keeps it there.
 
-## 1. Test in Safari's engine (next session; Claude)
+## 1. Test in Safari's engine (built 2026-11-20; done once CI is green)
+
+Built: `phone-ios` runs in WebKit. Long-press, swipe and pinch go through
+`tests/e2e/fixtures/touch.ts`: Chrome's own touch input in Chromium, and in WebKit the pointer
+events Sakura listens for, dispatched in the page (with pointer capture honoured, which the diagram
+viewer needs). `SAKURA_SYNTH_TOUCH=1` forces the WebKit path in Chromium to check it locally; all 48
+gesture tests pass both ways. A local run without WebKit leaves the two WebKit projects out with a
+warning; CI always runs them. The flaky To-Dos draft test did not fail once in 400+ local runs
+(alone, under CPU load, and in the full phone suite four times), and CI's history no longer has its
+error, so it now prints what storage held when it fails instead of getting a guessed fix.
+
+Original plan:
 
 - Make `phone-ios` a WebKit project (`devices['iPhone 13']`, no `browserName: 'chromium'`), keeping
   `phone-android` on Chromium. CI already installs WebKit.
@@ -68,7 +79,7 @@ screenshot.
 - Keep moving code into `web/src/` modules when an area is changed anyway (the standing rule).
   Modules can't use a variable before it is declared, and lint (`no-use-before-define`) checks them.
 - Startup stays last in the main script (unit test).
-- Known flaky test to root-cause, not re-run: `phone-background-safety.phone.spec.ts`, "a task
+- Known flaky test to root-cause, not re-run (now prints its storage state on failure; see step 1): `phone-background-safety.phone.spec.ts`, "a task
   typed in Add a task… but not added comes back after the app is closed". It failed in CI and
   locally on 2026-11-19, and passed when re-run alone. A data-safety test that fails now and then
   may be hiding a real bug.
