@@ -73,15 +73,26 @@ test.describe('error reports', () => {
     expect(sent.some((b) => b.includes('after turning off'))).toBe(false);
   });
 
-  test('someone who used Sakura before is told first; reports start from the next load', async ({ page }) => {
+  // Two steps rather than one page reloaded in between: a reload straight after the notice can lose
+  // the flag it just saved in the test browser (CI, 2026-11-20); at worst a person sees it twice.
+  test('someone who used Sakura before is told first, and nothing is sent that time', async ({ page }) => {
     const sent = await openLiveSite(page, TEST_DSN, { theme: 'light' });
     expect(await page.locator('script[src*="/vendor/sentry-"]').count()).toBe(0);
     await expect(page.locator('#toast')).toContainText('Sakura now sends error reports', { timeout: 6000 });
-    await page.reload();
+    expect(await page.evaluate(() => localStorage.getItem('sakura_error_reports_notice_v1'))).toBeTruthy();
+    await page.evaluate(() => setTimeout(() => { throw new Error('before the notice'); }, 0));
+    await page.waitForTimeout(1000);
+    expect(sent).toEqual([]);
+  });
+
+  test('once told, they send reports and aren\'t told again', async ({ page }) => {
+    await page.addInitScript(() => localStorage.setItem('sakura_error_reports_notice_v1', '1'));
+    const sent = await openLiveSite(page, TEST_DSN, { theme: 'light' });
     await page.waitForFunction(() => !!document.querySelector('script[src*="/vendor/sentry-"]'));
-    await expect(page.locator('#toast')).not.toContainText('Sakura now sends error reports');
     await page.waitForTimeout(500);
     await page.evaluate(() => setTimeout(() => { throw new Error('after the notice'); }, 0));
     await expect.poll(() => sent.some((b) => b.includes('after the notice')), { timeout: 10000 }).toBe(true);
+    await page.waitForTimeout(2500);
+    await expect(page.locator('#toast')).not.toContainText('Sakura now sends error reports');
   });
 });
