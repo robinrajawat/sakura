@@ -50,14 +50,32 @@ const minifyInline = () => ({
   transformIndexHtml: { order: 'post', handler: (html) => minifyInlineHtml(html) }
 });
 
+// Error reports (src/telemetry/sentry.ts): built as its own file, named by its content's hash so the
+// service worker's cache-first script rule never serves an old copy, and that name put in place of
+// index.html's __SAKURA_SENTRY_SRC__. The page adds the file on the live site only.
+const sentrySrc = () => ({
+  name: 'sakura-sentry-src',
+  apply: 'build',
+  transformIndexHtml: {
+    order: 'post',
+    handler: (html, ctx) => {
+      if (!html.includes('__SAKURA_SENTRY_SRC__')) return html;
+      const chunk = Object.values(ctx.bundle || {}).find((c) => c.type === 'chunk' && c.isEntry && c.name === 'sentry');
+      if (!chunk) throw new Error('sakura-sentry-src: the sentry entry was not built');
+      return html.replace(/__SAKURA_SENTRY_SRC__/g, '/' + chunk.fileName);
+    }
+  }
+});
+
 export default defineConfig({
   base: '/',
-  plugins: [stampVersion(), minifyInline()],
+  plugins: [stampVersion(), sentrySrc(), minifyInline()],
   build: {
     rollupOptions: {
       input: {
         main: resolve(__dirname, 'index.html'),
-        hub: resolve(__dirname, 'hub.html')
+        hub: resolve(__dirname, 'hub.html'),
+        sentry: resolve(__dirname, 'src/telemetry/sentry.ts')
       }
     },
     // Both entry files are already large, hand-optimized single files (see the repo's own

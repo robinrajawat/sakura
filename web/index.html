@@ -52,7 +52,7 @@ Sakura v1.0.0 — see LICENSE for terms.
   only ever fed Meeting Notes.)
 
 -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://accounts.google.com https://www.gstatic.com https://apis.google.com https://ssl.gstatic.com; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob: https:; connect-src 'self' https://api.anthropic.com https://api.openai.com https://api.groq.com https://api.cerebras.ai https://generativelanguage.googleapis.com https://openrouter.ai https://models.github.ai https://accounts.google.com https://oauth2.googleapis.com https://www.gstatic.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://sakura-4cdae.firebaseapp.com https://auth.sakura-notes.com https://apis.google.com https://firestore.googleapis.com https://ai.sakura-notes.com; frame-src https://embed.diagrams.net https://accounts.google.com https://sakura-4cdae.firebaseapp.com https://auth.sakura-notes.com https://apis.google.com; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self';" />
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://accounts.google.com https://www.gstatic.com https://apis.google.com https://ssl.gstatic.com; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob: https:; connect-src 'self' https://api.anthropic.com https://api.openai.com https://api.groq.com https://api.cerebras.ai https://generativelanguage.googleapis.com https://openrouter.ai https://models.github.ai https://accounts.google.com https://oauth2.googleapis.com https://www.gstatic.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://sakura-4cdae.firebaseapp.com https://auth.sakura-notes.com https://apis.google.com https://firestore.googleapis.com https://ai.sakura-notes.com https://*.ingest.de.sentry.io; frame-src https://embed.diagrams.net https://accounts.google.com https://sakura-4cdae.firebaseapp.com https://auth.sakura-notes.com https://apis.google.com; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self';" />
 <!--
   Referrer-Policy: the app links out to several external sites (SAP Notes via me.sap.com,
   GitHub token pages, Azure/Google Cloud consoles, provider key pages, draw.io/diagrams.net).
@@ -155,10 +155,16 @@ try{ if(navigator.storage&&navigator.storage.persist)navigator.storage.persisted
 </style>
 <script>
 // Startup errors, in the browser's own words (owner 2026-11-19: on an iPhone the app's startup
-// stopped part way, leaving its storage settings unset; Details shows these). Kept on this page
-// only, never sent anywhere.
+// stopped part way, leaving its storage settings unset; Details shows these). On the live site they
+// also go to Sentry once it loads (src/telemetry/sentry.ts, which reports everything after that).
 window.__sakuraBootErrors=[];
-window.addEventListener('error',function(e){ try{ if(window.__sakuraBootErrors.length<5)window.__sakuraBootErrors.push({message:String(e.message||e.error||'').slice(0,300),where:(e.lineno?'line '+e.lineno+':'+e.colno:''),beforeStart:!window.__sakuraMainDone}); }catch(_e){} });
+window.addEventListener('error',function(e){ try{ if(window.__sakuraBootErrors.length<5)window.__sakuraBootErrors.push({message:String(e.message||e.error||'').slice(0,300),where:(e.lineno?'line '+e.lineno+':'+e.colno:''),beforeStart:!window.__sakuraMainDone,error:e.error}); }catch(_e){} });
+// Rejected promises are kept apart: they don't stop startup, so they never show the failed-start screen.
+window.__sakuraEarlyRejections=[];
+window.addEventListener('unhandledrejection',function(e){ try{ if(window.__sakuraEarlyRejections.length<5)window.__sakuraEarlyRejections.push({message:String((e.reason&&e.reason.message)||e.reason||'Unhandled promise rejection').slice(0,300),beforeStart:!window.__sakuraMainDone,error:e.reason}); }catch(_e){} });
+// Error reports (docs/standard-practice-plan.md step 2): the live site only. The build puts the
+// Sentry file's hashed name in place of the placeholder (vite.config.js); anywhere else it stays.
+(function(){ var src='__SAKURA_SENTRY_SRC__'; if(location.origin!=='https://www.sakura-notes.com'||src.indexOf('__')===0)return; var s=document.createElement('script'); s.type='module'; s.src=src; document.head.appendChild(s); })();
 // If the app's main script doesn't finish starting, say so on screen with the browser's error and a
 // Reload, as apps do on a failed start, instead of a page that looks loaded but takes no taps.
 // Plain DOM, nothing from the app itself, so it works however far startup got.
