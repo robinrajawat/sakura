@@ -26,6 +26,10 @@ exists so that distinction is visible without opening every file.
   phone layout that leaves the desktop untouched; hub.html, the old phone page, now only forwards to it.
   Phases 0–5 done; a real-phone typing check and the faster first load remain.
 
+- **`standard-practice-plan.md`**: adopted 2026-11-20, after an iPhone-only startup failure. The
+  steps are: test in Safari's engine, error reports from devices, a preview before going live,
+  release discipline, and code structure. Step 1 comes next.
+
 - **`data-safety-audit.md`**: what was checked for data loss on 2026-11-16 (after a title went
   missing on an iPhone), what was fixed, and what is still open.
 

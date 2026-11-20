@@ -171,7 +171,7 @@ keep only the last 3 entries, and delete older ones (git history and the PRs kee
 anything still unbuilt or undecided into "In progress / not built" or "Parked". If this section
 contradicts README.md or docs/feature-reference.md, trust them.)*
 
-**Open work:** none open; everything from 2026-11-17/18 is merged and deployed (#882–#895). Owner to check on an iPhone that Settings → About link arrows are no longer emoji (#887), and to read the live `privacy.html` / `terms.html`. Not built: the AI code still loads at startup inside index.html; split it out only if first load is measured as slow. Check `mcp__github__list_pull_requests` at session start, and remind the owner of the launch checklist below.
+**Open work (2026-11-20):** follow `docs/standard-practice-plan.md`, starting with step 1: run the phone test suite in WebKit (Safari’s engine) in CI, and root-cause the flaky To-Dos draft test. Owner decisions waiting: error reports through Sakura’s own Worker or Sentry (step 2), and about 15 minutes to connect Cloudflare Pages previews (step 3). Owner to confirm on the iPhone that Sakura starts normally after #915. Not built: the AI code still loads at startup inside index.html.
 
 **Direction (owner, 2026-11-12):** Sakura is going cloud-first, with try-without-an-account kept. Plan: `docs/cloud-first-plan.md` (built; PDF stays on Cloudflare's free plan, owner 2026-11-17). Read it and `docs/data-safety-audit.md` before touching sync.
 
@@ -204,6 +204,9 @@ contradicts README.md or docs/feature-reference.md, trust them.)*
 
 ### Parked / open questions for the owner
 
+- Error reports from devices: Sakura’s own Cloudflare Worker (recommended, no third party) or Sentry? (`docs/standard-practice-plan.md` step 2)
+- Cloudflare Pages preview per PR: owner connects the repo (about 15 minutes; steps in the plan, step 3).
+
 - **Launch checklist (owner, 2026-11-17), besides the backups below:** (1) a lawyer's read of
   `privacy.html` / `terms.html` if possible (drafted, not reviewed; include the new "Sakura itself" ownership section); (2) test the positioning pitch
   with 3–5 target users. The name is decided: **Sakura Notes** (owner, 2026-11-18, after weighing
@@ -225,6 +228,10 @@ contradicts README.md or docs/feature-reference.md, trust them.)*
   CSP until someone verifies live sign-in works without them; then remove them.
 
 ### Standing lessons
+
+- Startup runs last in index.html’s main script (“Start the app”, kept there by `tests/unit/startupOrder.test.ts`). Never call startup code (`render()`, loading documents) from the middle of the script: the first draw can reach declarations further down that aren’t set up yet, which froze the app on iPhone Safari (2026-11-20).
+- Chromium at an iPhone’s size is not Safari. Anything for phones gets a `*.safari.spec.ts` (WebKit, CI only), and the plan moves the phone suite there. Don’t run `npx playwright install` in the cloud container: a failed WebKit download deletes the Chromium build the tests use (fix: `docs/standard-practice-plan.md`, step 1).
+- Diagnose before fixing: get the real error first (Details in Settings → About, the failed-start screen), then change code. On 2026-11-19 four PRs fixed guessed causes before the real one was seen.
 
 - `web/public/privacy.html` is a promise to users: any change to what Sakura stores, sends where (AI
   providers, Cloudflare, Google, GitHub, diagrams.net), keeps how long, or deletes, updates it and its
