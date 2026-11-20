@@ -17,10 +17,14 @@ test('sign-in screen says what gets stored, and links to the full privacy sectio
   await expect(details.locator('ul')).toBeHidden();
   await details.locator('summary').click();
   await expect(details.locator('ul')).toContainText('No ads, no analytics, no tracking.');
+  // privacy.html: error reports are on by default, so the summary says so (2026-11-20).
+  await expect(details.locator('ul')).toContainText('a short error report (never your content)');
 
   await page.locator('#sakura-landing-privacy-link').click();
   await expect(page.locator('#sakura-landing-overlay')).toBeHidden();
   await expect(page.locator('#settings-section-about-privacy')).toBeVisible();
+  await expect(page.locator('#settings-section-about-privacy')).toContainText('Error reports');
+  await expect(page.locator('#settings-section-about-privacy')).not.toContainText('make it Public');
   // Hiding to read the details is not "continue without signing in".
   expect(await page.evaluate(() => sessionStorage.getItem('sakura_landing_dismissed'))).toBeNull();
 });
