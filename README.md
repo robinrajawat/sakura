@@ -104,6 +104,7 @@ Every row can carry a **thread**: the conversation about that point, kept where 
 
 - An entry is a **comment**, a **question** or a **decision**. Replies sit indented under the entry they answer, and a reply to a question answers it.
 - Entries carry an author and a date. Taking notes in a meeting, you can write an entry in someone else's name.
+- Text you haven't sent yet is marked **Not sent** and keeps its author. It stays a draft, back after a reload and on your other devices, until you send or clear it.
 - An **open question** is the only coloured thing in a thread. The row's thread icon shows how many are still open.
 - A row's **status** sits on the row itself: **Follow-up**, **Agreed** or **Out of scope**, with the date it was set, so you can see how old a follow-up is. **Add to To-Dos** turns a follow-up into a task linked back to the row.
 - The **open items** button under the title lists every follow-up and open question in the document, each with its age. Click an item to jump to it, or **filter** the outline to only those rows. **Copy** turns the list into a dated agenda for an email. **F8** steps through the open items one by one.
@@ -118,7 +119,7 @@ One task list for everything, separate from any document, on the rail on the lef
 - Each task has a due date, a repeat (daily, weekdays or weekly) or subtasks, a pin, and **waiting for**: who or what you're waiting on, and since when.
 - A task can **link** to a document, a row or a web address. Tasks made from a follow-up say where they came from.
 - Titles are written for real work items: long text, formatting and links all work.
-- On a phone, Sakura opens a dedicated page that you can add to your home screen: your To-Dos, and a **Documents** tab to read your synced documents (fold and unfold, notes, threads, pictures, tables). Documents are read only on the phone, so it can never overwrite your work. On Android, you can share a link or text from another app straight into a new task.
+- On a phone, Sakura is the same app in a phone layout, and you can add it to your home screen. Read and lightly edit documents (type in rows, indent, notes, threads, statuses), and your To-Dos open full screen, with a swipe to complete or delete a task. Tables, charts and diagrams are edited on a computer. On Android, you can share a link or text from another app straight into a new task.
 
 ## Markdown
 
@@ -202,7 +203,7 @@ Settings → Shortcuts lists every shortcut; click one to change it.
 
 - The app is one static page, `index.html`, with a phone layout below 768px (`docs/mobile-plan.md`); `hub.html`, the old phone page, only forwards to it. It is built with Vite (which also minifies the page's inline code and styles, `web/scripts/minify-inline.mjs`) and served by GitHub Pages at `www.sakura-notes.com`. There is no application server: the editor, the PDF renderer, diagram editing and storage all run in the browser.
 - **Storage:** browser `localStorage`, with a service worker for offline use and installing as an app (PWA).
-- **Accounts and sync:** Firebase Authentication (Google, email) and Cloud Firestore, one document per item under `users/{uid}`. Each document carries a version number (`rev`), and a device only saves over the account's copy when nobody else saved since it last loaded it; otherwise its edits are kept in Version history and the newer copy wins. Access rules are in `firebase/firestore.rules` (published by hand in the Firebase Console), tested in the Firestore emulator by `firebase/rules.test.mjs` on every PR (`cd firebase && npm ci && npm test` locally; needs Java 11+).
+- **Accounts and sync:** Firebase Authentication (Google, email) and Cloud Firestore, one document per item under `users/{uid}`. Each document carries a version number (`rev`), and a device only saves over the account's copy when nobody else saved since it last loaded it; otherwise the newer copy wins, its thread entries are merged into it (`src/state/threadMerge.ts`), and the rest of its edits are kept in Version history. Access rules are in `firebase/firestore.rules` (published by hand in the Firebase Console), tested in the Firestore emulator by `firebase/rules.test.mjs` on every PR (`cd firebase && npm ci && npm test` locally; needs Java 11+).
 - **Hosted AI:** a Cloudflare Worker (`worker/`) holds the provider keys, enforces the daily quota per account and tries the providers in order. Bring-your-own-key requests go straight from the browser to the provider. A Content-Security-Policy allowlist limits which hosts the page can talk to.
 - **Diagrams:** the draw.io editor (diagrams.net, Apache 2.0) runs embedded in a frame.
 - **PDF:** the document is laid out as print HTML and printed through the browser's own print dialog.

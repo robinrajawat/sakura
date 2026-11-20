@@ -38,7 +38,6 @@ async function printCopy(page: Page, fullCss: boolean): Promise<string> {
   }, fullCss);
   await expect.poll(() => html.length, { timeout: 20000 }).toBeGreaterThan(0);
   // Finished (a second export is ignored while one is busy).
-  // eslint-disable-next-line no-eval
   await expect.poll(() => page.evaluate(() => (0, eval)('_serverPdfBusy'))).toBe(false);
   return html;
 }
@@ -94,7 +93,6 @@ test('the trimmed print copy is a fraction of the size and renders identically',
   await page.goto('file://' + indexPath);
   await page.waitForFunction(() => typeof (window as unknown as { exportPdfDirect?: unknown }).exportPdfDirect === 'function');
   await page.evaluate(() => {
-    // eslint-disable-next-line no-eval
     (0, eval)("currentUser = { uid: 'u1', getIdToken: async () => 'token-1' }");
   });
 

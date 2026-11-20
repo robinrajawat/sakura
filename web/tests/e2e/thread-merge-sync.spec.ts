@@ -40,7 +40,6 @@ test.beforeEach(async ({ page }) => {
   });
 });
 
-const cloud = (page: Page, p: string) => page.evaluate((p) => (window as unknown as { __cloud: Record<string, Record<string, unknown>> }).__cloud[p], p);
 const row = (id: number, text: string) => ({ id, depth: 0, text, parentId: null, isCheckbox: false, checked: false, note: '', tables: [], images: [], tags: [], styles: {} });
 const entry = (id: string, row: number, createdAt: number, text: string) => ({ id, anchorNodeId: row, person: 'Me', text, context: '', createdAt });
 const stored = (page: Page, id: string) => page.evaluate((id) => JSON.parse(localStorage.getItem('sakura_doc_v1_' + id) || 'null'), id);

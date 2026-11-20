@@ -4243,6 +4243,7 @@ html.calm-layout #sb-auto-rewrite-chip.is-quiet:hover,html.calm-layout #sb-auto-
 <li>Each entry is a Comment, Question or Decision: click its icon to change it</li>
 <li>Reply to any entry (hover → Reply, or right-click → Reply). A question stays open until it has a reply</li>
 <li>Entries are written as the last name used; click the name to write for a colleague</li>
+<li>Text you haven't sent stays in the box, marked Not sent, with its name; it's back after a reload and on your other devices. Reply on another entry doesn't move it: send or clear it first</li>
 <li>Right-click an entry for Reply, Rewrite or Delete; right-click the thread header to copy or delete the thread</li>
 <li>The bubble on a row shows or hides its thread and counts open questions. The PDF prints every thread</li>
 </ul>
@@ -4306,6 +4307,7 @@ html.calm-layout #sb-auto-rewrite-chip.is-quiet:hover,html.calm-layout #sb-auto-
 <h4>Your account and backup</h4>
 <ul>
 <li>Signed in, your documents, folders, To-Dos and settings are kept in your account and on every device you sign in on, with version history. The top line says when something is still saving, offline or not synced</li>
+<li>If two devices change a document at the same time, the copy saved first is kept, thread entries from both are kept, and your other edits are in Version history (a message says so)</li>
 <li>Without an account everything stays in this browser, and the top line says "Only on this device"</li>
 <li>Settings → Data &amp; backup → Download all data saves everything to one file. Without an account it's Backup all data, and Restore reads a backup back</li>
 </ul>
@@ -35364,7 +35366,7 @@ function fmtLink(url) {
         const u = new URL(url);
         return u.hostname.replace(/^www\./, '') || url;
     }
-    catch (e) {
+    catch {
         return String(url).replace(/^https?:\/\//, '').slice(0, 30);
     }
 }
