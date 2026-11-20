@@ -12,7 +12,7 @@ const SITE = 'https://www.sakura-notes.com';
 test.describe('error reports', () => {
   test.skip(!existsSync(path.join(dist, 'index.html')), 'dist/ not built yet: run `npm run build` first');
 
-  async function openLiveSite(page: Page, dsn: string | null) {
+  async function openLiveSite(page: Page, dsn: string | null, prefs?: object) {
     const sent: string[] = [];
     await page.route('**/*', async (route) => {
       const url = new URL(route.request().url());
@@ -23,11 +23,12 @@ test.describe('error reports', () => {
       const type = file.endsWith('.html') ? 'text/html' : file.endsWith('.js') ? 'text/javascript' : file.endsWith('.json') ? 'application/json' : undefined;
       return route.fulfill({ status: 200, body: readFileSync(file), contentType: type });
     });
-    await page.addInitScript((d) => {
+    await page.addInitScript(({ d, p }) => {
+      if (p && !sessionStorage.getItem('prefsSeeded')) { sessionStorage.setItem('prefsSeeded', '1'); localStorage.setItem('sakura_v001_prefs', JSON.stringify(p)); }
       localStorage.setItem('sakura_welcome_seen', '1');
       sessionStorage.setItem('sakura_landing_dismissed', 'true');
       if (d) (window as unknown as { __sakuraSentryTestDsn?: string }).__sakuraSentryTestDsn = d;
-    }, dsn);
+    }, { d: dsn, p: prefs || null });
     await page.goto(SITE + '/?doc=private-id#row');
     await page.waitForFunction(() => typeof (window as unknown as { createDoc?: unknown }).createDoc === 'function');
     return sent;
@@ -54,5 +55,38 @@ test.describe('error reports', () => {
     await page.evaluate(() => setTimeout(() => { throw new Error('not reported'); }, 0));
     await page.waitForTimeout(1000);
     expect(sent).toEqual([]);
+  });
+
+  test('turned off in Settings, Sentry isn\'t loaded and nothing is sent', async ({ page }) => {
+    const sent = await openLiveSite(page, 'https://publickey@o1.ingest.de.sentry.io/1', { errorReportsOff: true });
+    await expect(page.locator('#auto-error-report-toggle')).toHaveAttribute('aria-checked', 'false');
+    expect(await page.locator('script[src*="/assets/sentry-"]').count()).toBe(0);
+    await page.evaluate(() => setTimeout(() => { throw new Error('not reported'); }, 0));
+    await page.waitForTimeout(1000);
+    expect(sent).toEqual([]);
+  });
+
+  test('turning it off while the page is open stops reports at once', async ({ page }) => {
+    const sent = await openLiveSite(page, 'https://publickey@o1.ingest.de.sentry.io/1');
+    await page.waitForFunction(() => !!document.querySelector('script[src*="/assets/sentry-"]'));
+    await page.waitForTimeout(500);
+    await expect(page.locator('#auto-error-report-toggle')).toHaveAttribute('aria-checked', 'true');
+    await page.evaluate(() => (0, eval)('setErrorReportsEnabled(false)'));
+    expect(await page.evaluate(() => JSON.parse(localStorage.getItem('sakura_v001_prefs') || '{}').errorReportsOff)).toBe(true);
+    await page.evaluate(() => setTimeout(() => { throw new Error('after turning off'); }, 0));
+    await page.waitForTimeout(1000);
+    expect(sent.some((b) => b.includes('after turning off'))).toBe(false);
+  });
+
+  test('someone who used Sakura before is told first; reports start from the next load', async ({ page }) => {
+    const sent = await openLiveSite(page, 'https://publickey@o1.ingest.de.sentry.io/1', { theme: 'light' });
+    expect(await page.locator('script[src*="/assets/sentry-"]').count()).toBe(0);
+    await expect(page.locator('#toast')).toContainText('Sakura now sends error reports', { timeout: 6000 });
+    await page.reload();
+    await page.waitForFunction(() => !!document.querySelector('script[src*="/assets/sentry-"]'));
+    await expect(page.locator('#toast')).not.toContainText('Sakura now sends error reports');
+    await page.waitForTimeout(500);
+    await page.evaluate(() => setTimeout(() => { throw new Error('after the notice'); }, 0));
+    await expect.poll(() => sent.some((b) => b.includes('after the notice')), { timeout: 10000 }).toBe(true);
   });
 });

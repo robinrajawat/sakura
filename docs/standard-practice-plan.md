@@ -43,7 +43,22 @@ Original plan:
   `/opt/pw-browsers/chromium_headless_shell`.
 - Done when the full phone suite passes in WebKit in CI.
 
-## 2. Error reports from devices (owner decision, then Claude)
+## 2. Error reports from devices (built 2026-11-20; live once the DSN is set)
+
+Built: **Sentry** (owner 2026-11-20: "do what's standard for the applications in this category"), on
+by default with Settings → About → Error reports to turn it off (option A; opt-in, B, would miss a
+fresh device failing at startup). The SDK (@sentry/browser, pinned) is built into its own hashed file
+and loaded by index.html's first script on the live site only. Reports carry no user, IP, cookies,
+query values, breadcrumbs or local variables (`src/telemetry/`). The old opt-in Firestore crash
+reports are gone. Existing users get a one-time notice before any report (privacy.html promises
+that for significant changes). privacy.html and the open-source notices are updated.
+
+Owner, to switch it on: create the Sentry organisation `robinrajawat` (EU data region) and project
+`sakura-web` (Browser JavaScript); turn on Settings → Security & Privacy → "Prevent Storing of IP
+Addresses"; give Claude the DSN for `SENTRY_DSN` in `web/src/telemetry/sentryConfig.ts`. Alerts:
+email on every new issue.
+
+Original plan:
 
 When Sakura fails on any device, it reports what failed so we can read it, instead of waiting for a
 screenshot.

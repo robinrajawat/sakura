@@ -6,7 +6,7 @@
 import { init, captureException } from '@sentry/browser';
 import { SENTRY_DSN, MAX_VALUE_LENGTH, reportingEnabled, scrubEvent, bootErrorToException, type BootError } from './sentryConfig';
 
-const w = window as unknown as { __sakuraBootErrors?: BootError[]; __sakuraEarlyRejections?: BootError[]; __sakuraSentryTestDsn?: string };
+const w = window as unknown as { __sakuraBootErrors?: BootError[]; __sakuraEarlyRejections?: BootError[]; __sakuraSentryTestDsn?: string; __sakuraErrorReportsOn?: () => boolean };
 // tests/e2e/error-reports.spec.ts sends to a stand-in Sentry it intercepts. Only a script already
 // running on the page could set this, and such a script controls the page anyway.
 const dsn = w.__sakuraSentryTestDsn || SENTRY_DSN;
@@ -23,7 +23,8 @@ if (reportingEnabled(location.origin, dsn)) {
     // No breadcrumbs of clicks, console output or network requests: they can carry a person's words.
     integrations: (defaults) => defaults.filter((i) => i.name !== 'Breadcrumbs'),
     beforeBreadcrumb: () => null,
-    beforeSend: (event) => scrubEvent(event)
+    // Settings → About → Error reports can turn them off while the page is open.
+    beforeSend: (event) => (w.__sakuraErrorReportsOn?.() === false ? null : scrubEvent(event))
   });
   // Errors from before the SDK arrived (the first script keeps them), startup failures above all.
   for (const b of [...(w.__sakuraBootErrors || []), ...(w.__sakuraEarlyRejections || [])]) {

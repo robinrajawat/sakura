@@ -157,7 +157,7 @@ Two ways to run it:
 - **Send a copy** of a document to another Sakura user. It becomes their own document; nothing stays linked.
 - **Download all data** saves everything to one file at any time. Without an account it's **Backup**, and **Restore** brings it back (with one-step undo).
 - **Secure storage** locks your AI keys with a passphrase.
-- **No analytics or tracking.** Crash reports are off unless you turn them on, and never include your content. Every font is served by Sakura itself.
+- **No analytics or tracking.** Error reports (on by default, switch off in Settings → About) never include your content, account or IP address. Every font is served by Sakura itself.
 - **Delete your account** and everything it has in the cloud goes with it: documents, version history, settings and profile.
 
 Settings → About → Privacy & data in the app explains exactly what goes where. The full [privacy policy](https://www.sakura-notes.com/privacy.html) and [terms of use](https://www.sakura-notes.com/terms.html) are on the site (source: `web/public/privacy.html`, `web/public/terms.html`).
