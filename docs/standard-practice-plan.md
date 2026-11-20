@@ -78,7 +78,9 @@ screenshot.
 Set up: Cloudflare Pages project `sakura-preview` (owner's Cloudflare account, the Pages workflow;
 owner chose it over a Workers app, which Cloudflare now promotes, because it needs no change in the
 repo). It builds `npm run build -w sakura-web` into `web/dist` with `NODE_VERSION=22`, for every
-branch except production (automatic production deployments off). Addresses:
+branch except production. Branch control (Settings → Builds): production branch `main` with
+automatic production deployments off, preview branch "All non-production branches"; a push to any
+other branch builds a preview (the Pages comment on the PR gives its address). Addresses:
 
 - **`https://preview.sakura-notes.com`**: always the latest push to Claude's working branch
   (`claude/clever-carson-durens`, via its branch address
