@@ -180,11 +180,11 @@ The flaky To-Dos draft test reports its storage state on failure: read that befo
 
 ### Latest changes
 
+- **A closed thread stays closed after a reload (2026-11-21, owner, iPhone).** A thread with unsent text reopened on every load (`revealThreadDrafts`), even after it was closed. The draft now keeps a `hidden` flag, set when the thread is closed (header, row dot, Collapse all) and cleared when it's opened; the text itself is kept either way. Test: `thread-drafts.spec.ts` "stays closed" (fails without the fix).
+
 - **Thread reply box keeps unsent text as written (2026-11-20, owner, iPhone).** An unsent entry typed as Raja became the owner's reply to a question: Reply reused the row's reply box with its unsent text (`openThreadComposer`), and a draft didn't keep its author. Now a thread draft keeps `person` and its target; opening the box for something else leaves unsent text alone and says "You have an unsent entry here"; unsent text is marked "Not sent". Test: `thread-reply-box.spec.ts` (fails without the fix).
 
 - **Threads no longer lost when two devices collide (2026-11-20).** Confirmed from the owner's Version history (two "Your changes on this device" versions in one day): when both devices changed a document, the copy reaching the account second went to Version history with its thread entries. Now this device's thread entries are merged into the kept copy by id (`src/state/threadMerge.ts`, `mergeMyThreadEntriesInto` in `resolveDocPushConflict` and `applyIncomingDocData`) and the merged copy goes back up. Deleting an entry records it (`remarkTombstones`, per document, synced, 90 days) so it isn't brought back. Row edits still go to Version history (a three-way row merge would need a stored common copy). The "missing dot" on the iPhone was this same bug. Tests: `threadMerge.test.ts`, `thread-merge-sync.spec.ts`.
-
-- **Privacy wording matches error reports (2026-11-20).** Settings → About → Privacy & data said nothing leaves the browser without an account except AI and feedback; it now names error reports and has an Error reports row. The sign-in screen's "What gets stored?" and privacy.html's no-account section say so too. The Your account row still described public profiles (removed 2026-11-19); fixed, with the feature reference. Terms and open-source notices needed nothing. Test: `signin-privacy.spec.ts`.
 
 ### In progress / not built
 

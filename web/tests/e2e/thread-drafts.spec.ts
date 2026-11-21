@@ -84,6 +84,27 @@ test('A reply typed but not sent is back after a reload, as a question, in its o
   expect(errors).toEqual([]);
 });
 
+test('A thread closed with unsent text in it stays closed after a reload; opening it shows the text', async ({ page }) => {
+  // Owner 2026-11-21, iPhone: a closed thread opened again on every load.
+  const errors = await open(page, true);
+  await page.evaluate('openThreadComposer(1, false)');
+  await expect(page.locator('.thread-composer-input')).toBeFocused();
+  await page.keyboard.type('Ask the DBA first.');
+  await page.locator('.thread-head').click();
+  await expect(page.locator('.thread-head')).toHaveCount(0);
+  await page.reload();
+  await expect.poll(() => page.evaluate('typeof render === "function" && !!currentDocId && nodes.length > 1'), { timeout: 15000 }).toBe(true);
+  await expect(page.locator('.thread-head')).toHaveCount(0);
+  expect(Object.values(await drafts(page)).map((d) => d.html)).toEqual(['Ask the DBA first.']);
+  // The row's thread dot opens it with the text, and the next reload keeps it open.
+  await page.locator('.node-remark-dot').first().click();
+  await expect(page.locator('.thread-composer .thread-composer-input')).toHaveText('Ask the DBA first.');
+  await page.reload();
+  await expect.poll(() => page.evaluate('typeof render === "function" && !!currentDocId && nodes.length > 1'), { timeout: 15000 }).toBe(true);
+  await expect(page.locator('.thread-composer .thread-composer-input')).toHaveText('Ask the DBA first.');
+  expect(errors).toEqual([]);
+});
+
 test('A draft stays with its own document', async ({ page }) => {
   const errors = await open(page, true);
   await page.evaluate('openThreadComposer(2, false)');
