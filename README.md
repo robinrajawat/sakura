@@ -66,7 +66,7 @@ It works well for:
 - **#tags** on rows. Click one to filter the document to it.
 - **Zoom** into one branch to work on it alone, and use **Zen mode** (the corner button) for a full-screen page.
 - **Search** (`Ctrl/Cmd+/`) finds documents, rows, notes, threads, table cells, image captions, To-Dos and settings, and runs commands like "dark mode" or "new document".
-- **Version history** keeps up to 10 versions of each document, spread over time. Extra safety versions are saved before big deletions and before another device's copy replaces this one. Right-click the title to open it.
+- **Version history** keeps 30 days of each document's versions: everything from the last day, then one a day. Extra safety versions are saved before big deletions and before another device's copy replaces this one. Right-click the title to open it.
 - Documents live in **folders** in the File Explorer on the left. The line at the top shows where the open document is filed.
 
 ## Diagrams, tables and pictures

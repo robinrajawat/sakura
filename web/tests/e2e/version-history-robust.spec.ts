@@ -100,13 +100,16 @@ test('To-Dos: another device’s list is kept as a version, and version lists fr
   await open(page);
   await page.evaluate(`(() => {
     localStorage.setItem('sakura_todos_v1', JSON.stringify([{ id: 't1', text: 'Local task', done: false }]));
-    localStorage.setItem('sakura_todos_revisions_v1', JSON.stringify([{ ts: 1000, reason: 'Auto', todos: [] }]));
+    // Recent times: versions older than 30 days are dropped (owner 2026-11-21).
+    window.__t0 = Date.now() - 2 * 3600000;
+    localStorage.setItem('sakura_todos_revisions_v1', JSON.stringify([{ ts: window.__t0, reason: 'Auto', todos: [] }]));
   })()`);
   expect(await page.evaluate(`applyIncomingMetaData('todos', { updatedAt: Date.now() + 60000, value: [{ id: 't2', text: 'Phone task', done: false }] })`)).toBe(true);
   let revs = await page.evaluate(`JSON.parse(localStorage.getItem('sakura_todos_revisions_v1'))`) as { ts: number; reason: string; todos: { text: string }[] }[];
   expect(revs.map((r) => r.reason)).toEqual(['Auto', 'Before changes from another device']);
   expect(revs[1].todos[0].text).toBe('Local task');
-  expect(await page.evaluate(`applyIncomingMetaData('todosRevisions', { updatedAt: Date.now() + 120000, value: [{ ts: 500, reason: 'Auto', todos: [] }] })`)).toBe(true);
+  expect(await page.evaluate(`applyIncomingMetaData('todosRevisions', { updatedAt: Date.now() + 120000, value: [{ ts: window.__t0 - 3600000, reason: 'Auto', todos: [] }] })`)).toBe(true);
   revs = await page.evaluate(`JSON.parse(localStorage.getItem('sakura_todos_revisions_v1'))`);
-  expect(revs.map((r) => r.ts)).toEqual([500, 1000, revs[2].ts]);
+  const t0 = await page.evaluate('window.__t0') as number;
+  expect(revs.map((r) => r.ts)).toEqual([t0 - 3600000, t0, revs[2].ts]);
 });
