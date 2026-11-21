@@ -15739,13 +15739,33 @@ function regenerateDiagramThumbnail(id,{silent=false}={}){
 // time (each in its own hidden draw.io frame), at most once per diagram per session. State lives on
 // the function, not in top-level consts: document loading can call this during boot, before a
 // declaration this far down the script would be initialised.
+// The picture another device drew and sent with the drawing, if it was made from this exact drawing.
+async function fetchDiagramPreviewFromAccount(d){
+  if(!currentUser||!d||!d.xml||typeof loadFirestoreMods!=='function')return false;
+  const docId=currentDocId;
+  try{
+    const {mod,db}=await loadFirestoreMods();
+    const snap=await mod.getDoc(mod.doc(db,'users',currentUser.uid,'docs',docId,'diagrams',d.id));
+    const b=snap&&snap.exists()?snap.data():null;
+    if(!b||!b.previewSvg||b.previewOf!==diagramXmlSig(d.xml))return false;
+    const live=findDiagram(d.id); if(currentDocId!==docId||!live||live.xml!==d.xml||live.previewSvg)return !!(live&&live.previewSvg);
+    live.previewSvg=b.previewSvg; live.pageSvgs=[{name:'',svg:b.previewSvg}];
+    try{ await idbSet('diagblob:'+docId+':'+d.id,{xml:live.xml,previewSvg:live.previewSvg,pageSvgs:live.pageSvgs}); }catch(e){}
+    render();
+    return true;
+  }catch(e){ console.warn('[sakura] fetchDiagramPreviewFromAccount: could not read the picture:',e); return false; }
+}
 function regenerateMissingDiagramPreviews(){
   const self=regenerateMissingDiagramPreviews;
   if(!self.tried){ self.tried=new Set(); self.queue=Promise.resolve(); }
   (diagrams||[]).forEach(d=>{
     if(!d||!d.xml||d.previewSvg||self.tried.has(d.id))return;
     self.tried.add(d.id);
-    self.queue=self.queue.then(()=>{ const live=findDiagram(d.id); if(live&&live.xml&&!live.previewSvg)return regenerateDiagramThumbnail(d.id,{silent:true}); });
+    self.queue=self.queue.then(async()=>{
+      const live=findDiagram(d.id); if(!live||!live.xml||live.previewSvg)return;
+      if(await fetchDiagramPreviewFromAccount(live))return; // another device drew it: no redraw needed
+      const again=findDiagram(d.id); if(again&&again.xml&&!again.previewSvg)return regenerateDiagramThumbnail(d.id,{silent:true});
+    });
   });
 }
 
@@ -19235,13 +19255,11 @@ async function pushDocToCloud(mod,db,docId){
   // can add up past Firestore's 1MB-per-document cap (see the "too large" catch below, which
   // used to be the only defense). Each diagram's XML now pushes to its own subcollection doc
   // instead — pushDocBlobSubcollection — so no single one of them is bounded by how many
-  // others, or how much other document content, happens to exist alongside it. previewSvg/
-  // pageSvgs are still deliberately NOT pushed at all: they're pure rendered-from-xml cache (often
-  // the actual expensive part, size-wise) and the app already has a clean, calm fallback for "xml
-  // present, no cached thumbnail yet" (the inline diagram preview's placeholder icon) rather than needing pre-rendered
-  // images to cross the wire, now doubly so since a diagram's own subcollection doc still has its
-  // own 1MB ceiling. (2026-11-03 to 2026-11-13 the rendered picture also went up for the old phone
-  // page's read-only view; phones now use this page and draw diagrams themselves.)
+  // others, or how much other document content, happens to exist alongside it. The picture
+  // (previewSvg, with previewOf naming the drawing it was made from) rides along when it fits
+  // (diagramPreviewForSync): devices were left to redraw it themselves from 2026-11-13, and an
+  // iPhone that signed out and in showed "no picture yet" for every diagram (owner 2026-11-21).
+  // pageSvgs (per-page pictures) still stay on the device.
   try{
     let diagrams=Array.isArray(data.diagrams)?data.diagrams:[];
     if(diagrams.length){
@@ -19256,11 +19274,13 @@ async function pushDocToCloud(mod,db,docId){
         if(typeof dg.xml==='string')return {dg,known:true};
         try{
           const blob=await idbGet('diagblob:'+docId+':'+dg.id);
-          if(blob&&typeof blob.xml==='string')return {dg:{...dg,xml:blob.xml},known:true};
+          if(blob&&typeof blob.xml==='string')return {dg:{...dg,xml:blob.xml,previewSvg:blob.previewSvg},known:true};
         }catch(e){}
         return {dg,known:false};
       }));
-      await pushDocBlobSubcollection(mod,db,ownerUid,docId,'diagrams',hydrated.filter(h=>h.known).map(h=>h.dg),['xml']);
+      // The picture rides along when this device has one. Without one, the fields are left out, so
+      // the account keeps what it has (a stale one is ignored by previewOf).
+      await pushDocBlobSubcollection(mod,db,ownerUid,docId,'diagrams',hydrated.filter(h=>h.known).map(h=>({id:h.dg.id,xml:h.dg.xml,...(diagramPreviewForSync(h.dg.xml,h.dg.previewSvg)||{})})),['xml','previewSvg','previewOf']);
       diagrams=hydrated.map(({dg:{xml,previewSvg,pageSvgs,...meta}})=>meta);
     }
     // A pre-cutdown local copy may still carry a stale `attachments` array (with inline
@@ -19313,7 +19333,7 @@ async function pushDocBlobSubcollection(mod,db,ownerUid,docId,subcolName,items,b
   const batch=mod.writeBatch(db);
   let hasWrites=false;
   for(const item of items){
-    const blob={}; for(const f of blobFields)blob[f]=item[f]||'';
+    const blob={}; for(const f of blobFields){ if(f!=='xml'&&item[f]===undefined)continue; blob[f]=item[f]||''; } // an optional field the item lacks is left as the account has it
     const sig=JSON.stringify(blob);
     const cacheKey=docId+':'+subcolName+':'+item.id;
     if(_lastPushedBlobSig[cacheKey]===sig)continue;
@@ -19494,6 +19514,46 @@ function shouldApplyIncomingSyncCore(cloudUpdatedAt, localUpdatedAt, lastPushedT
 // pushed before this split existed already has xml inline on the metadata itself (no
 // subcollection docs to find for it); that inline copy is used as-is either way, so old cloud
 // data keeps working with no migration step.
+// A diagram's picture goes to the account with its drawing, so every device shows it without
+// redrawing it (a phone often can't: draw.io is a large download, and iPhone Safari won't run it in
+// a hidden frame reliably). previewOf names the drawing it was made from; a picture that doesn't
+// match the current drawing is ignored. Pictures past the size below are left out (the diagram's
+// account record holds at most 1 MiB, drawing included); those devices redraw as before.
+const DIAGRAM_PREVIEW_SYNC_MAX_CHARS=700000;
+function diagramXmlSig(xml){ const t=String(xml||''); let h=5381; for(let i=0;i<t.length;i++)h=(Math.imul(h,33)^t.charCodeAt(i))>>>0; return t.length+':'+h.toString(36); }
+function diagramPreviewForSync(xml,previewSvg){
+  if(!previewSvg||typeof previewSvg!=='string'||String(xml||'').length+previewSvg.length>DIAGRAM_PREVIEW_SYNC_MAX_CHARS)return null;
+  return {previewSvg,previewOf:diagramXmlSig(xml)};
+}
+// Diagrams already in the account before pictures were sent have none there. Once per device and
+// account, after a sync, this device sends the pictures it has, each only where the account's drawing
+// is the same one it was drawn from. Only the picture fields are written, never the drawing.
+const DIAGRAM_PREVIEW_BACKFILL_KEY='sakura_diagram_previews_sent_v1';
+async function backfillDiagramPreviewsToAccount(mod,db){
+  if(!currentUser)return;
+  const uid=currentUser.uid;
+  try{ if(localStorage.getItem(DIAGRAM_PREVIEW_BACKFILL_KEY)===uid)return; }catch(e){ return; }
+  let sent=0;
+  try{
+    for(const entry of loadActiveDocsIndex()){
+      let d; try{ d=JSON.parse(localStorage.getItem(docKey(entry.id))||'null'); }catch(e){ d=null; }
+      const list=d&&Array.isArray(d.diagrams)?d.diagrams:[]; if(!list.length)continue;
+      const snap=await mod.getDocs(mod.collection(db,'users',uid,'docs',entry.id,'diagrams'));
+      const cloud={}; snap.docs.forEach(x=>{ cloud[x.id]=x.data(); });
+      const batch=mod.writeBatch(db); let writes=0;
+      for(const dg of list){
+        const c=cloud[dg.id]; if(!c||typeof c.xml!=='string')continue;
+        let here=null; try{ here=await idbGet('diagblob:'+entry.id+':'+dg.id); }catch(e){}
+        if(!here||here.xml!==c.xml)continue; // not the same drawing: leave it
+        const p=diagramPreviewForSync(here.xml,here.previewSvg); if(!p||c.previewOf===p.previewOf)continue;
+        batch.set(mod.doc(db,'users',uid,'docs',entry.id,'diagrams',dg.id),p,{merge:true}); writes++;
+      }
+      if(writes){ await batch.commit(); sent+=writes; }
+    }
+    try{ localStorage.setItem(DIAGRAM_PREVIEW_BACKFILL_KEY,uid); }catch(e){}
+    if(sent)console.info('[sakura] sent',sent,'diagram picture(s) to the account');
+  }catch(e){ console.warn('[sakura] backfillDiagramPreviewsToAccount: will try again next sync:',e); }
+}
 async function hydrateCloudDocBlobs(mod,db,ownerUid,docId,docData){
   const diagrams=Array.isArray(docData.diagrams)?docData.diagrams:[];
   if(diagrams.length){
@@ -19507,7 +19567,13 @@ async function hydrateCloudDocBlobs(mod,db,ownerUid,docId,docData){
       const blob=blobs[dg.id];
       const xml=blob?blob.xml:dg.xml;
       if(xml!==undefined){
-        try{ await idbSet('diagblob:'+docId+':'+dg.id,{xml:xml||'',previewSvg:'',pageSvgs:[]}); }catch(e){}
+        // The picture: the account's when it was drawn from this exact drawing (previewOf), else
+        // this device's own when the drawing hasn't changed. It used to be wiped on every incoming
+        // copy, and a phone that can't redraw it showed "no picture yet" (owner 2026-11-21, iPhone).
+        let previewSvg='', pageSvgs=[];
+        if(blob&&blob.previewSvg&&blob.previewOf===diagramXmlSig(xml||'')){ previewSvg=blob.previewSvg; pageSvgs=[{name:'',svg:blob.previewSvg}]; }
+        else{ try{ const here=await idbGet('diagblob:'+docId+':'+dg.id); if(here&&here.xml===(xml||'')&&here.previewSvg){ previewSvg=here.previewSvg; pageSvgs=Array.isArray(here.pageSvgs)?here.pageSvgs:[]; } }catch(e){} }
+        try{ await idbSet('diagblob:'+docId+':'+dg.id,{xml:xml||'',previewSvg,pageSvgs}); }catch(e){}
       }
       const {xml:_x,previewSvg:_p,pageSvgs:_pg,...meta}=dg;
       metaDiagrams.push(meta);
@@ -20088,6 +20154,7 @@ async function pullAndMergeFromCloud(isInitial=false){
     if(typeof renderDocsList==='function')renderDocsList();
     updateSyncStatusUI('synced');
     finishFirstSync(docsFetchOk);
+    if(docsFetchOk)backfillDiagramPreviewsToAccount(mod,db); // not awaited: pictures go up behind everything else
     _syncErrorToastShown=false;
     retryPendingVersionPushes();
     if(removedOpenDoc){
