@@ -295,3 +295,19 @@ body:has(#diagram-viewer.open) .sb-context-menu,body:has(#node-image-viewer.open
 .hv-word-add{background:color-mix(in srgb,var(--accent) 22%,transparent);border-radius:3px}
 .hv-word-del{color:var(--muted);text-decoration:line-through;text-decoration-color:var(--fc-red)}
 .history-preview-key .k-removed::before{background:color-mix(in srgb,var(--fc-red) 25%,transparent);border-left:3px solid var(--fc-red)}
+/* First sync after signing in on this device (startFirstSync): covers the app until the account's
+   documents are in, with a count and the same stages as other waits (loadingStage). */
+#first-sync{position:fixed;inset:0;z-index:1110;display:flex;align-items:center;justify-content:center;padding:24px;background:var(--bg)}
+#first-sync[hidden]{display:none}
+#first-sync[data-stage="quiet"] .first-sync-card{visibility:hidden}
+.first-sync-card{width:min(400px,100%);text-align:center}
+#first-sync-msg{color:var(--fg);font:600 var(--fs-xl) 'Inter',sans-serif}
+#first-sync-detail{color:var(--muted);font:400 var(--fs-md) 'Inter',sans-serif;margin-top:8px;min-height:1.4em}
+.first-sync-bar{height:4px;border-radius:2px;margin:20px auto 0;width:min(280px,100%);background:color-mix(in srgb,var(--fg) 9%,transparent);overflow:hidden}
+.first-sync-bar span{display:block;height:100%;width:0;background:var(--accent);border-radius:2px;transition:width .3s ease}
+.first-sync-bar.indeterminate span{width:35%;animation:first-sync-slide 1.3s ease-in-out infinite}
+@keyframes first-sync-slide{from{transform:translateX(-100%)}to{transform:translateX(290%)}}
+@media (prefers-reduced-motion:reduce){.first-sync-bar.indeterminate span{animation:none;width:100%;opacity:.4}}
+#first-sync:is([data-stage="failed"],[data-stage="offline"]) .first-sync-bar{display:none}
+.first-sync-actions{display:flex;gap:8px;justify-content:center;margin-top:20px}
+.first-sync-actions:not(:has(button:not([hidden]))){display:none}
