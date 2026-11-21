@@ -357,5 +357,10 @@ extremely careful about these data loss issues."
 
 - Breakpoint: 768px, the same as today's redirect. Tablets in portrait (768–1024px) keep the
   desktop layout.
+  Open (owner asked 2026-11-21): touch on that desktop layout. It assumes a mouse (hover-only
+  actions, right-click menus, small targets) and no tablet is tested. Standard practice keeps the
+  desktop layout and adapts it for touch (`@media (hover:none) and (pointer:coarse)`: larger
+  targets, no hover-only actions, long-press for the context menu). Next: the owner tries it on an
+  iPad, then decides on an iPad test project and the touch fixes. See the handoff's Parked list.
 - Guests on the phone: allowed, as on desktop (try first, sign in to sync).
 - Thread replies on the phone: allowed (a short text box).
