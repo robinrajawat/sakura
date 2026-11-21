@@ -46,10 +46,46 @@ export function pickVersionToDrop(list: VersionEntry[], now: number): number {
   return best;
 }
 
-/** Sorts oldest first and drops versions (see `pickVersionToDrop`) until at most `max` remain. */
+/**
+ * How long versions are kept, as similar apps do (owner 2026-11-21: "30 days is fine"; Notion keeps
+ * 30 days on its paid plans, Obsidian Sync a month): nothing older than 30 days; everything from the
+ * last day; before that, one automatic version per day (the day's last). Named versions (a manual
+ * save, a safety copy) are kept for the whole 30 days. The newest is always kept.
+ */
+export function thinVersionsByAge<T extends VersionEntry>(sorted: T[], now: number): T[] {
+  // Plain numbers, not module constants: index.html can call this before the block's own
+  // top-level `const`s have run.
+  const day = 24 * 60 * 60 * 1000;
+  const newest = sorted.length - 1;
+  const lastAutoOfDay = new Map<string, number>();
+  sorted.forEach((v, i) => {
+    if ((v.reason || 'Auto') !== 'Auto') return;
+    const d = new Date(Number(v.ts) || 0);
+    lastAutoOfDay.set(d.getFullYear() + '-' + d.getMonth() + '-' + d.getDate(), i);
+  });
+  return sorted.filter((v, i) => {
+    if (i === newest) return true;
+    const age = now - (Number(v.ts) || 0);
+    if (age > 30 * day) return false;
+    if (age <= day || (v.reason || 'Auto') !== 'Auto') return true;
+    const d = new Date(Number(v.ts) || 0);
+    return lastAutoOfDay.get(d.getFullYear() + '-' + d.getMonth() + '-' + d.getDate()) === i;
+  });
+}
+
+/**
+ * Sorts oldest first, applies the age rules (`thinVersionsByAge`), then drops versions (see
+ * `pickVersionToDrop`) until at most `max` remain: the cap keeps storage bounded on a document
+ * edited all day, every day.
+ */
 export function trimVersions<T extends VersionEntry>(list: T[], max: number, now: number): T[] {
-  const out = list.slice().sort((a, b) => (Number(a.ts) || 0) - (Number(b.ts) || 0));
-  while (out.length > Math.max(1, max)) out.splice(pickVersionToDrop(out, now), 1);
+  const out = thinVersionsByAge(list.slice().sort((a, b) => (Number(a.ts) || 0) - (Number(b.ts) || 0)), now);
+  while (out.length > Math.max(1, max)) {
+    // Over the cap: thin the last day first, so the one-a-day versions keep reaching back 30 days.
+    const recentStart = out.findIndex((v) => now - (Number(v.ts) || 0) <= 24 * 60 * 60 * 1000);
+    const i = recentStart >= 0 && out.length - recentStart >= 3 ? recentStart + pickVersionToDrop(out.slice(recentStart), now) : pickVersionToDrop(out, now);
+    out.splice(i, 1);
+  }
   return out;
 }
 

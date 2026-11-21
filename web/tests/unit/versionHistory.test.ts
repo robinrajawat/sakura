@@ -23,19 +23,29 @@ describe('trimVersions', () => {
     expect(trimVersions(list, 10, 10).map((v) => v.ts)).toEqual([1, 2, 3]);
   });
 
-  it('spreads 10 versions back over days instead of the last 100 minutes', () => {
-    const { list, now } = simulate(5, 10);
-    expect(list).toHaveLength(10);
+  // Owner 2026-11-21: kept for 30 days, as similar apps do; everything from the last day, then one a day.
+  it('keeps 30 days: all of the last day, then one version a day', () => {
+    const { list, now } = simulate(10, 60);
     const ages = list.map((v) => now - v.ts);
-    expect(ages[0]).toBeGreaterThan(3 * D); // still reaches back to the first days
     expect(ages[ages.length - 1]).toBe(0); // the newest always stays
-    expect(ages.filter((a) => a <= H).length).toBeGreaterThanOrEqual(4); // and the last hour stays dense
+    const olderDays = new Set(list.filter((v) => now - v.ts > D).map((v) => Math.floor(v.ts / D)));
+    expect(list.filter((v) => now - v.ts > D)).toHaveLength(olderDays.size); // one per day
+    expect(olderDays.size).toBeGreaterThanOrEqual(8);
   });
 
-  it('reaches back further the longer you work', () => {
-    const { list, now } = simulate(20, 10);
-    expect(now - list[0].ts).toBeGreaterThan(14 * D);
-    expect(list.some((v) => now - v.ts > 6 * D && now - v.ts < 8 * D)).toBe(true);
+  it('nothing older than 30 days; the cap thins the last day, not the daily history', () => {
+    const { list, now } = simulate(40, 60);
+    expect(list.length).toBeLessThanOrEqual(60);
+    expect(now - list[0].ts).toBeLessThanOrEqual(30 * D);
+    expect(now - list[0].ts).toBeGreaterThan(28 * D); // still reaches back about a month
+    expect(list.filter((v) => now - v.ts <= H).length).toBeGreaterThanOrEqual(4); // and the last hour stays dense
+  });
+
+  it('a named version older than a day is kept for 30 days, then goes', () => {
+    const named = { ts: 0, reason: 'Manual checkpoint' };
+    const autos: { ts: number; reason?: string }[] = [{ ts: 10 * M }, { ts: 20 * M }];
+    expect(trimVersions([named, ...autos, { ts: 5 * D }], 60, 5 * D).map((v) => v.reason || 'Auto')).toEqual(['Manual checkpoint', 'Auto', 'Auto']);
+    expect(trimVersions([named, ...autos, { ts: 31 * D }], 60, 31 * D).map((v) => v.ts)).toEqual([31 * D]);
   });
 
   it('drops an automatic version before a named one in the same spot', () => {
