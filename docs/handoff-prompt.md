@@ -180,11 +180,11 @@ The flaky To-Dos draft test reports its storage state on failure: read that befo
 
 ### Latest changes
 
+- **A document still loading from the account says how it's going (2026-11-21, owner: "do what's standard").** `setDocContentPendingLock` now shows stages from `src/utils/loadingStage.ts` (nothing under 300 ms, skeleton, "taking longer" at 4 s, Retry at 12 s, offline at once; per document via `tab._pendingSince`). Retry (`retryPendingDocLoad`) fetches just that document and goes through `applyIncomingDocData`, so the placeholder is still never saved. Only the editor's children are `inert` now (the overlay's Retry must stay clickable). Tests: `loadingStage.test.ts`, `doc-content-pending.spec.ts`. Next, agreed in chat: a first-sync screen after sign-in on a new device ("Bringing in your documents…", then open the latest document) instead of a blank Untitled; then the same staged loading for the other bare "Loading…" texts (AI providers, feedback inbox, draw.io). Owner asked about Google-only sign-in: advised keeping email (Microsoft 365 users), maybe email links instead of passwords later; nothing decided.
+
 - **Another device's changes appear live in the open document (2026-11-21, owner: standard, "absolutely sure no bugs").** `applyIncomingToOpenDoc` (serialized per document, `_docBaseCache` so a second copy merges on the first's base); changed rows glow (`.row-updated`), "Updated from <device>" (`lastDevice` on the account copy only, never stored). Fixed on the way: merge renumbering could reuse an id with a stale nextId (a row was overwritten); rows from an older app looked edited (defaults now ignored); a stale copy arriving late could replace a newer one. Randomised tests: `docMergeProperties.test.ts`.
 
 - **Named versions; the view shows removed rows and changed words (2026-11-21, owner: "do what's standard").** `name`/`nameAt` on a version (`saveManualDocVersion` asks, `nameDocVersion` renames; the latest `nameAt` wins between devices in `mergeVersionLists`); named versions are never thinned and the cap skips them. `diffWords` in `src/utils/versionSummary.ts`. Tests: `versionHistory.test.ts`, `versionSummary.test.ts`, `version-history-preview.spec.ts`.
-
-- **Version history polish (2026-11-21).** A row's own history shows times and devices like the document's; entries show a › (they open a view, on touch too); "Restore this version" is the primary button and "Save a version now" is hidden while viewing one. Test: `version-history-preview.spec.ts`. Suggested, not built: apply another device's copy to an open document automatically when nothing here is unsent (the "updated on another device" banner), now that copies merge.
 
 ### In progress / not built
 

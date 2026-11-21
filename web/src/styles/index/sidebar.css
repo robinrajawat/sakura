@@ -248,9 +248,25 @@ body:has(#diagram-viewer.open) .sb-context-menu,body:has(#node-image-viewer.open
 .sfmt-url{width:min(260px,62vw);border:1px solid var(--border);border-radius:6px;background:var(--edit-bg);color:var(--fg);font:13px 'Inter',sans-serif;padding:5px 8px;outline:none}
 .sfmt-url:focus{border-color:var(--accent)}
 .sfmt-menu-item.sfmt-url-ok{color:var(--accent);font-weight:600}
-/* A document whose content hasn't arrived yet: locked (inert) with a short note in place of the rows. */
+/* A document whose content hasn't arrived yet: locked (inert) and shown in stages (setDocContentPendingLock):
+   nothing for a moment, then the shape of a document, then "taking longer", then Retry; offline says so at once. */
 #editor-wrap.doc-content-pending #editor-pane-inner,#editor-wrap.doc-content-pending #editor-title-inner{visibility:hidden}
-#doc-content-pending-msg{position:absolute;left:0;right:0;top:35%;text-align:center;color:var(--muted);font:400 var(--fs-md) 'Inter',sans-serif;padding:0 24px;pointer-events:none}
+#doc-content-pending{position:absolute;inset:0;z-index:2;display:flex;flex-direction:column;align-items:center;padding:56px 24px 24px;text-align:center;pointer-events:none}
+#doc-content-pending[hidden]{display:none}
+#doc-content-pending[data-stage="quiet"]{visibility:hidden}
+.doc-pending-skeleton{width:min(560px,100%);display:flex;flex-direction:column;gap:12px;margin-bottom:32px;text-align:left}
+.doc-pending-skeleton span{display:block;height:12px;border-radius:6px;background:linear-gradient(90deg,color-mix(in srgb,var(--fg) 7%,transparent) 30%,color-mix(in srgb,var(--fg) 13%,transparent) 50%,color-mix(in srgb,var(--fg) 7%,transparent) 70%);background-size:300% 100%;animation:doc-pending-shimmer 1.6s ease-in-out infinite}
+.doc-pending-skeleton span:first-child{height:22px;margin-bottom:10px;border-radius:8px}
+.doc-pending-skeleton i{display:block;height:4px}
+@keyframes doc-pending-shimmer{from{background-position:100% 0}to{background-position:0 0}}
+@media (prefers-reduced-motion:reduce){.doc-pending-skeleton span{animation:none}}
+#doc-content-pending:is([data-stage="stalled"],[data-stage="offline"],[data-stage="final"]) .doc-pending-skeleton{display:none}
+#doc-content-pending:is([data-stage="stalled"],[data-stage="offline"],[data-stage="final"]){padding-top:22vh}
+#doc-content-pending-msg{color:var(--muted);font:400 var(--fs-md) 'Inter',sans-serif}
+#doc-content-pending:is([data-stage="stalled"],[data-stage="offline"]) #doc-content-pending-msg{color:var(--fg);font-weight:600}
+#doc-content-pending-detail{color:var(--muted);font:400 var(--fs-sm) 'Inter',sans-serif;margin-top:6px;max-width:420px}
+#doc-content-pending-detail:empty{display:none}
+#doc-content-pending-retry{margin-top:16px;pointer-events:auto}
 /* Version history: each entry opens a read-only view of that version (owner 2026-11-21). */
 .history-row-open{appearance:none;border:none;background:none;text-align:left;padding:0;cursor:pointer;color:inherit;font:inherit}
 .history-row-reason{font:400 var(--fs-xs) 'Inter',sans-serif;color:var(--accent);margin-top:2px}
