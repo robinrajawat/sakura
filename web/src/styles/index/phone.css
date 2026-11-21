@@ -4,6 +4,23 @@
    and without this file. Rules are scoped to html.phone too, so they follow the same switch as
    the code. */
 @media screen and (max-width: 767.98px) {
+  /* ---- The iPhone's status bar and home bar (owner 2026-11-21, installed app on iOS 26). ---- */
+  /* The page runs under both (viewport-fit=cover), so every edge that meets them makes room for them
+     itself, in the page's own colour: text no longer scrolls under the clock and blurs, and the
+     drawer and full-screen sheets start at the very top. Variables so tests can stand in for a notch. */
+  html.phone {
+    --safe-top: env(safe-area-inset-top, 0px); --safe-bottom: env(safe-area-inset-bottom, 0px);
+    --safe-left: env(safe-area-inset-left, 0px); --safe-right: env(safe-area-inset-right, 0px);
+  }
+  html.phone body { background: var(--canvas-bg); }
+  html.phone #doc-tab-strip-row { box-sizing: content-box; padding-top: var(--safe-top) !important; }
+  html.phone #appbar, html.phone #sidebar { padding-top: var(--safe-top); padding-bottom: var(--safe-bottom); box-sizing: border-box; }
+  html.phone #settings-panel, html.phone #help-panel, html.phone #todos-panel {
+    padding-top: var(--safe-top) !important; padding-bottom: var(--safe-bottom) !important; box-sizing: border-box !important;
+  }
+  html.phone #editor-pane { padding-bottom: calc(24px + var(--safe-bottom)); }
+  /* A title longer than the screen ends in "…" rather than mid-word (it scrolls while typed in). */
+  html.phone #header-title { text-overflow: ellipsis; }
   /* ---- Drawer: the rail and the File Explorer slide in together from the left (phase 1). ---- */
   /* The rail slides with `left`, not a transform: Settings, Help and the account and notification
      menus live inside it as position:fixed, and a transform would carry them off-screen. */
@@ -38,8 +55,8 @@
   html.phone #doc-path-crumbs { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
   /* ---- Editor: full width, 16px sides (phase 1). ---- */
-  html.phone #editor-title-row { padding: 20px 16px 2px 16px; }
-  html.phone #editor-pane { padding-left: 16px; padding-right: 16px; }
+  html.phone #editor-title-row { padding: 20px calc(16px + var(--safe-right)) 2px calc(16px + var(--safe-left)); }
+  html.phone #editor-pane { padding-left: calc(16px + var(--safe-left)); padding-right: calc(16px + var(--safe-right)); }
 
   /* ---- Settings, Help and To-Dos open full screen (phase 1). ---- */
   html.phone #settings-panel, html.phone #help-panel, html.phone #todos-panel {

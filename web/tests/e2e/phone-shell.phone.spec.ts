@@ -101,6 +101,23 @@ test('a dialog opened from Settings comes in front of it (Feedback inbox, Send f
   }
 });
 
+test('the iPhone status bar and home bar: the top line, drawer and Settings make room for them', async ({ page }) => {
+  // Owner 2026-11-21, installed app on iOS 26: text scrolled under the clock and blurred, and the
+  // drawer and Settings started below a grey band. A notch is stood in for with the variables.
+  expect(await page.locator('meta[name="viewport"]').getAttribute('content')).toContain('viewport-fit=cover');
+  await page.addStyleTag({ content: 'html.phone{--safe-top:47px!important;--safe-bottom:34px!important}' });
+  const top = (sel: string) => page.locator(sel).evaluate((e) => e.getBoundingClientRect().top);
+  const padTop = (sel: string) => page.locator(sel).evaluate((e) => parseFloat(getComputedStyle(e).paddingTop));
+  expect(await top('#phone-menu-btn')).toBeGreaterThanOrEqual(47);
+  await page.locator('#phone-menu-btn').click();
+  expect(await top('#sidebar')).toBe(0);
+  expect(await padTop('#sidebar')).toBe(47);
+  expect(await top('#rail-docs-btn')).toBeGreaterThanOrEqual(47);
+  await page.locator('#rail-settings-btn').click();
+  expect(await top('#settings-panel')).toBe(0);
+  expect(await padTop('#settings-panel')).toBe(47);
+});
+
 test('search does not offer settings a phone hides', async ({ page }) => {
   // Encrypt keys at rest is an AI setting.
   await page.locator('#phone-menu-btn').click();
