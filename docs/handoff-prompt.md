@@ -180,11 +180,11 @@ The flaky To-Dos draft test reports its storage state on failure: read that befo
 
 ### Latest changes
 
+- **Named versions; the view shows removed rows and changed words (2026-11-21, owner: "do what's standard").** `name`/`nameAt` on a version (`saveManualDocVersion` asks, `nameDocVersion` renames; the latest `nameAt` wins between devices in `mergeVersionLists`); named versions are never thinned and the cap skips them. `diffWords` in `src/utils/versionSummary.ts`. Next (agreed): apply another device's copy to an open document automatically when nothing here is unsent, with changed rows briefly highlighted and an "Updated from …" note. Tests: `versionHistory.test.ts`, `versionSummary.test.ts`, `version-history-preview.spec.ts`.
+
 - **Version history polish (2026-11-21).** A row's own history shows times and devices like the document's; entries show a › (they open a view, on touch too); "Restore this version" is the primary button and "Save a version now" is hidden while viewing one. Test: `version-history-preview.spec.ts`. Suggested, not built: apply another device's copy to an open document automatically when nothing here is unsent (the "updated on another device" banner), now that copies merge.
 
 - **Versions kept 30 days (2026-11-21, owner: "30 days is fine").** `thinVersionsByAge` in `src/utils/versionHistory.ts`: nothing older than 30 days, all of the last day, then one Auto version a day; named and safety versions the full 30 days; `REVISION_MAX_PER_DOC` 60 as a storage cap that thins the last day first. To-Dos stay at 5 (owner 2026-10-20). Capture cadence unchanged (10 minutes, like similar apps). Tests: `versionHistory.test.ts`.
-
-- **Rows merge when two devices changed a document (2026-11-21, owner).** Three-way merge on the copy both started from (`setDocBase` / `getDocBase`, IndexedDB `docbase:<id>`, set wherever the base rev is set from a known copy; `mergeDocCopies`, `src/state/docMerge.ts`) in `resolveDocPushConflict` and `applyIncomingDocData`. Version history gets "Your changes on this device" / "Before changes from another device" only on a real conflict. Both devices numbering a new row the same id: this device's row gets a new id (`idRemap`, thread anchors follow). Documents last synced before this have no base yet: old behaviour until their next sync. Tests: `docMerge.test.ts`, `thread-merge-sync.spec.ts`.
 
 ### In progress / not built
 

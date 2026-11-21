@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { isLargeRemoval, mergeVersionLists, pickVersionToDrop, planVersionSync, trimVersions } from '../../src/utils/versionHistory';
+import { isLargeRemoval, mergeVersionLists, pickVersionToDrop, planVersionSync, trimVersions, type VersionEntry } from '../../src/utils/versionHistory';
 
 const M = 60000;
 const H = 60 * M;
@@ -58,6 +58,24 @@ describe('trimVersions', () => {
   it('never drops the newest', () => {
     expect(pickVersionToDrop([{ ts: 0 }, { ts: 1 }], 2)).toBe(0);
     expect(pickVersionToDrop([{ ts: 0 }], 2)).toBe(-1);
+  });
+});
+
+describe('named versions', () => {
+  it('a version you named is kept past 30 days, until the name is removed', () => {
+    const list = [{ ts: 0, reason: 'Manual checkpoint', name: 'Sent to client' }, { ts: 10 * M }, { ts: 40 * D }];
+    expect(trimVersions(list, 60, 40 * D).map((v) => v.name || v.ts)).toEqual(['Sent to client', 40 * D]);
+  });
+  it('the cap drops unnamed versions first', () => {
+    const list = [{ ts: 0, name: 'A' }, { ts: 1 * H }, { ts: 2 * H, name: 'B' }, { ts: 3 * H }];
+    expect(trimVersions(list, 3, 3 * H).map((v) => v.name || 'auto')).toEqual(['A', 'B', 'auto']);
+  });
+  it('between devices, the latest name (or its removal) wins', () => {
+    const here: VersionEntry[] = [{ ts: 5, reason: 'Auto' }];
+    const there = [{ ts: 5, reason: 'Auto', name: 'Before the review', nameAt: 100 }];
+    expect(mergeVersionLists(here, there, 10, 6)[0].name).toBe('Before the review');
+    const removedHere: VersionEntry[] = [{ ts: 5, reason: 'Auto', nameAt: 200 }];
+    expect(mergeVersionLists(removedHere, there, 10, 6)[0].name).toBeUndefined();
   });
 });
 
