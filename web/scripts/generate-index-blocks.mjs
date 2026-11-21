@@ -196,6 +196,14 @@ initVaultState({
     footer: ''
   },
   {
+    name: 'versionSummary',
+    sourceFile: 'src/utils/versionSummary.ts',
+    testFile: 'tests/unit/versionSummary.test.ts',
+    // What Version history says about each version (what changed, which device, when). Spliced just
+    // before openVersionHistory.
+    footer: ''
+  },
+  {
     name: 'fieldGuard',
     sourceFile: 'src/ui/fieldGuard.ts',
     testFile: 'tests/unit/fieldGuard.test.ts',

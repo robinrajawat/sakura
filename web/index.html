@@ -1457,6 +1457,21 @@ body:has(#diagram-viewer.open) .sb-context-menu,body:has(#node-image-viewer.open
 /* A document whose content hasn't arrived yet: locked (inert) with a short note in place of the rows. */
 #editor-wrap.doc-content-pending #editor-pane-inner,#editor-wrap.doc-content-pending #editor-title-inner{visibility:hidden}
 #doc-content-pending-msg{position:absolute;left:0;right:0;top:35%;text-align:center;color:var(--muted);font:400 var(--fs-md) 'Inter',sans-serif;padding:0 24px;pointer-events:none}
+/* Version history: each entry opens a read-only view of that version (owner 2026-11-21). */
+.history-row-open{appearance:none;border:none;background:none;text-align:left;padding:0;cursor:pointer;color:inherit;font:inherit}
+.history-row-reason{font:400 var(--fs-xs) 'Inter',sans-serif;color:var(--accent);margin-top:2px}
+.history-preview-head{display:flex;flex-direction:column;gap:3px;padding:4px 6px 10px;border-bottom:1px solid var(--border);margin-bottom:6px}
+.history-preview-back{appearance:none;align-self:flex-start;border:none;background:none;color:var(--accent);font:500 var(--fs-sm) 'Inter',sans-serif;padding:4px 0;margin-bottom:4px;cursor:pointer}
+.history-preview-vsnow{font:500 var(--fs-sm) 'Inter',sans-serif;color:var(--fg);margin-top:4px;line-height:1.45}
+.history-preview-rows{display:flex;flex-direction:column;gap:1px;padding:2px 0}
+.history-preview-row{font:400 var(--fs-md) 'Inter',sans-serif;color:var(--fg);padding:3px 6px;border-radius:6px;border-left:3px solid transparent;overflow-wrap:anywhere}
+.history-preview-row.is-added{background:color-mix(in srgb,var(--accent) 12%,transparent);border-left-color:var(--accent)}
+.history-preview-row.is-edited{background:color-mix(in srgb,var(--fc-orange) 14%,transparent);border-left-color:var(--fc-orange)}
+.history-preview-actions{position:sticky;bottom:-8px;display:flex;justify-content:flex-end;padding:10px 6px 8px;background:var(--surface-raised);border-top:1px solid var(--border);margin-top:8px}
+.history-preview-key{display:flex;flex-wrap:wrap;gap:4px 14px;margin-top:6px;font:400 var(--fs-xs) 'Inter',sans-serif;color:var(--muted)}
+.history-preview-key span::before{content:'';display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:-1px}
+.history-preview-key .k-added::before{background:color-mix(in srgb,var(--accent) 35%,transparent);border-left:3px solid var(--accent)}
+.history-preview-key .k-edited::before{background:color-mix(in srgb,var(--fc-orange) 35%,transparent);border-left:3px solid var(--fc-orange)}
 /* Tables (plain, polished, and every Show as display) as the computer draws them. Shared by
    index.html and the phone's reader (hub.html), which shows the computer's ready-made copy of each
    table (owner 2026-11-03: the same look on every device). Listed in both pages' style blocks. */
@@ -13780,13 +13795,18 @@ function withDocRevisionLock(id,fn){
 // Resolves true once the version is kept somewhere: on this device, or (when this device's store
 // can't be read or written) in the account. A caller about to replace the content it was made from
 // (resolveDocPushConflict) only does so then.
+// The device a version is made on, shown in Version history ("iPhone app", "Safari on Mac").
+function thisDeviceName(){
+  let installed=false; try{ installed=matchMedia('(display-mode: standalone)').matches||navigator.standalone===true; }catch(e){}
+  return describeDevice(navigator.userAgent,installed);
+}
 async function recordDocRevisionNow(id,contentObj,reason,opts){
   let list, readOk=true;
   try{ list=await loadDocRevisions(id,{strict:true}); }catch(e){ list=[]; readOk=false; }
   const last=list[list.length-1];
   if(opts&&opts.dedupe&&last&&docRevisionContentKey(last)===docRevisionContentKey(contentObj))return true; // already kept
   const now=Date.now();
-  list.push({ts:last&&last.ts>=now?last.ts+1:now,reason:reason||'Auto',...(contentObj.rowFormat?{rowFormat:contentObj.rowFormat}:{}),nodes:contentObj.nodes,title:contentObj.title||'',author:contentObj.author||'',docStatus:typeof contentObj.docStatus==='string'?contentObj.docStatus:'',docLinkedUrl:typeof contentObj.docLinkedUrl==='string'?contentObj.docLinkedUrl:'',docLinkedUrlLabel:typeof contentObj.docLinkedUrlLabel==='string'?contentObj.docLinkedUrlLabel:'',diagrams:trimDiagramsForRevision(contentObj.diagrams),qa:Array.isArray(contentObj.qa)?contentObj.qa:[],remarks:Array.isArray(contentObj.remarks)?contentObj.remarks:[]});
+  list.push({ts:last&&last.ts>=now?last.ts+1:now,reason:reason||'Auto',device:thisDeviceName(),...(contentObj.rowFormat?{rowFormat:contentObj.rowFormat}:{}),nodes:contentObj.nodes,title:contentObj.title||'',author:contentObj.author||'',docStatus:typeof contentObj.docStatus==='string'?contentObj.docStatus:'',docLinkedUrl:typeof contentObj.docLinkedUrl==='string'?contentObj.docLinkedUrl:'',docLinkedUrlLabel:typeof contentObj.docLinkedUrlLabel==='string'?contentObj.docLinkedUrlLabel:'',diagrams:trimDiagramsForRevision(contentObj.diagrams),qa:Array.isArray(contentObj.qa)?contentObj.qa:[],remarks:Array.isArray(contentObj.remarks)?contentObj.remarks:[]});
   // Keeps REVISION_MAX_PER_DOC versions spread over time (src/utils/versionHistory.ts), not just
   // the newest ones.
   const kept=trimVersions(list,REVISION_MAX_PER_DOC,now);
@@ -14856,6 +14876,120 @@ function permanentlyDeleteDocCore(id,opts){
   if(!(opts&&opts.localOnly))deleteDocFromCloud(id,opts&&opts.cloudGuard);
 }
 // === Version History panel ===
+/* GENERATED:versionSummary:START — DO NOT EDIT BY HAND. Source of truth: src/utils/versionSummary.ts (tests: tests/unit/versionSummary.test.ts). Regenerate with `npm run generate` after changing the source; CI fails if this block drifts from what the generator produces (see .github/workflows/ci.yml and scripts/generate-index-blocks.mjs). */
+/**
+ * What Version history says about each version, so the right one can be picked without restoring
+ * blind (owner 2026-11-21: "are we adding enough information in the version history to make a
+ * useful decision from it?" — every entry read "Auto · 28 rows").
+ *
+ * - `summarizeVersionChange` compares two copies of a document: rows added, removed and edited
+ *   (by row id; text, note, tables, pictures, kind and tick count as content), thread entries
+ *   added and removed, and whether the title or status changed.
+ * - `formatVersionSummary` turns that into one line ("3 rows added · 2 edited · title changed").
+ * - `describeDevice` names the device a version was made on ("iPhone app", "Safari on Mac").
+ * - `formatVersionTime` gives "Today, 12:47" / "Yesterday, 16:55" / "16 Nov, 18:11".
+ *
+ * Pure. Wired into index.html via scripts/generate-index-blocks.mjs's `versionSummary` block.
+ */
+/** A row's content, for telling whether it was edited. Position (depth) is compared separately. */
+function versionRowContentKey(r) {
+    return JSON.stringify([r.text ?? '', r.note ?? '', r.tables ?? [], r.images ?? [], !!r.isCheckbox, !!r.checked]);
+}
+function versionRowsById(copy) {
+    const m = new Map();
+    for (const r of Array.isArray(copy?.nodes) ? copy.nodes : [])
+        if (r && r.id != null)
+            m.set(String(r.id), r);
+    return m;
+}
+function versionEntryIds(copy) {
+    const s = new Set();
+    for (const e of Array.isArray(copy?.remarks) ? copy.remarks : [])
+        if (e && e.id != null)
+            s.add(String(e.id));
+    return s;
+}
+/** What changed going from `older` to `newer`. */
+function summarizeVersionChange(older, newer) {
+    const a = versionRowsById(older), b = versionRowsById(newer);
+    let rowsAdded = 0, rowsRemoved = 0, rowsEdited = 0, rowsMoved = 0;
+    for (const [id, r] of b) {
+        const o = a.get(id);
+        if (!o)
+            rowsAdded++;
+        else if (versionRowContentKey(o) !== versionRowContentKey(r))
+            rowsEdited++;
+        else if ((Number(o.depth) || 0) !== (Number(r.depth) || 0))
+            rowsMoved++;
+    }
+    for (const id of a.keys())
+        if (!b.has(id))
+            rowsRemoved++;
+    const ea = versionEntryIds(older), eb = versionEntryIds(newer);
+    let threadAdded = 0, threadRemoved = 0;
+    for (const id of eb)
+        if (!ea.has(id))
+            threadAdded++;
+    for (const id of ea)
+        if (!eb.has(id))
+            threadRemoved++;
+    return {
+        rowsAdded, rowsRemoved, rowsEdited, rowsMoved, threadAdded, threadRemoved,
+        titleChanged: String(older?.title ?? '') !== String(newer?.title ?? ''),
+        statusChanged: String(older?.docStatus ?? '') !== String(newer?.docStatus ?? '')
+    };
+}
+const versionPlural = (n, one, many) => n + ' ' + (n === 1 ? one : many);
+/** One line for a change; "No changes to the content" when nothing that counts changed. */
+function formatVersionSummary(c) {
+    const parts = [];
+    if (c.rowsAdded)
+        parts.push(versionPlural(c.rowsAdded, 'row added', 'rows added'));
+    if (c.rowsRemoved)
+        parts.push(versionPlural(c.rowsRemoved, 'row removed', 'rows removed'));
+    if (c.rowsEdited)
+        parts.push(versionPlural(c.rowsEdited, 'row edited', 'rows edited'));
+    if (c.rowsMoved)
+        parts.push(versionPlural(c.rowsMoved, 'row moved', 'rows moved'));
+    if (c.threadAdded)
+        parts.push(versionPlural(c.threadAdded, 'thread entry added', 'thread entries added'));
+    if (c.threadRemoved)
+        parts.push(versionPlural(c.threadRemoved, 'thread entry removed', 'thread entries removed'));
+    if (c.titleChanged)
+        parts.push('title changed');
+    if (c.statusChanged)
+        parts.push('status changed');
+    return parts.length ? parts.join(' · ') : 'No changes to the content';
+}
+/**
+ * The device a version was made on, from the browser's user agent and whether it runs as an
+ * installed app. Short and human: "iPhone app", "Safari on iPhone", "Chrome on Mac".
+ */
+function describeDevice(ua, installed) {
+    const u = String(ua || '');
+    const isIPad = /iPad/.test(u) || (/Macintosh/.test(u) && /Mobile\//.test(u));
+    const isIPhone = /iPhone|iPod/.test(u);
+    const os = isIPhone ? 'iPhone' : isIPad ? 'iPad' : /Android/.test(u) ? 'Android' : /Windows/.test(u) ? 'Windows' : /Mac OS X|Macintosh/.test(u) ? 'Mac' : /CrOS/.test(u) ? 'Chromebook' : /Linux/.test(u) ? 'Linux' : '';
+    if (installed)
+        return os ? os + ' app' : 'Installed app';
+    const browser = /Edg\//.test(u) ? 'Edge' : /Firefox\/|FxiOS/.test(u) ? 'Firefox' : /CriOS|Chrome\//.test(u) ? 'Chrome' : /Safari\//.test(u) ? 'Safari' : 'Browser';
+    return os ? browser + ' on ' + os : browser;
+}
+/** "Today, 12:47", "Yesterday, 16:55", "16 Nov, 18:11", or with the year when not this year. */
+function formatVersionTime(ts, now, locale) {
+    const d = new Date(ts), n = new Date(now);
+    const time = d.toLocaleTimeString(locale, { hour: 'numeric', minute: '2-digit' });
+    const day = (x) => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
+    const diffDays = Math.round((day(n) - day(d)) / 86400000);
+    if (diffDays === 0)
+        return 'Today, ' + time;
+    if (diffDays === 1)
+        return 'Yesterday, ' + time;
+    const date = d.toLocaleDateString(locale, d.getFullYear() === n.getFullYear() ? { day: 'numeric', month: 'short' } : { day: 'numeric', month: 'short', year: 'numeric' });
+    return date + ', ' + time;
+}
+
+/* GENERATED:versionSummary:END */
 function openVersionHistory(docId){
   if(!docId)return;
   const overlay=el('history-modal-overlay'); if(!overlay)return;
@@ -14945,18 +15079,83 @@ async function renderVersionHistoryList(){
     body.innerHTML='<div class="history-empty">No earlier versions yet. They\'re captured automatically as you edit — roughly every 10 minutes of active changes, never more often — or save one manually below right before a big change.</div>';
     return;
   }
-  revisions.forEach(rev=>{
+  // Each version says when, on which device, and what changed since the version before it
+  // (owner 2026-11-21: every entry read "Auto · 28 rows"); tapping one shows it before restoring.
+  const now=Date.now();
+  revisions.forEach((rev,i)=>{
+    const older=revisions[i+1];
     const row=document.createElement('div'); row.className='history-row';
-    const info=document.createElement('div'); info.className='history-row-info';
-    const time=document.createElement('div'); time.className='history-row-time'; time.textContent=new Date(rev.ts).toLocaleString();
-    const meta=document.createElement('div'); meta.className='history-row-meta'; meta.textContent=(rev.reason||'Auto')+' · '+rev.nodes.length+' row'+(rev.nodes.length===1?'':'s');
+    const info=document.createElement('button'); info.type='button'; info.className='history-row-info history-row-open';
+    info.setAttribute('aria-label','View this version');
+    const time=document.createElement('div'); time.className='history-row-time';
+    time.textContent=formatVersionTime(rev.ts,now)+(rev.device?' \u00b7 '+rev.device:'');
+    const meta=document.createElement('div'); meta.className='history-row-meta';
+    meta.textContent=older?formatVersionSummary(summarizeVersionChange(older,rev)):'Oldest kept \u00b7 '+rev.nodes.length+' row'+(rev.nodes.length===1?'':'s');
     info.appendChild(time); info.appendChild(meta);
+    const why=versionReasonLabel(rev.reason);
+    if(why){ const tag=document.createElement('div'); tag.className='history-row-reason'; tag.textContent=why; info.appendChild(tag); }
+    info.addEventListener('click',()=>showVersionPreview(docId,rev,older));
     row.appendChild(info);
     const restoreBtn=document.createElement('button'); restoreBtn.className='history-row-restore'; restoreBtn.textContent='Restore';
     restoreBtn.addEventListener('click',()=>restoreDocRevision(docId,rev.ts));
     row.appendChild(restoreBtn);
     body.appendChild(row);
   });
+}
+// Why a version was kept, in plain words; nothing for a regular automatic save.
+function versionReasonLabel(reason){
+  const r=String(reason||'Auto');
+  if(r==='Auto')return '';
+  if(r==='Your changes on this device')return 'Your edits, set aside: the document had changed on another device';
+  if(r==='Manual checkpoint')return 'Saved by you';
+  return r;
+}
+// One version, read-only, compared with the document as it is now: rows that would come back are
+// marked, rows that read differently are marked, and the counts say what Restore would do.
+async function showVersionPreview(docId,rev,older){
+  const body=el('history-modal-body'); if(!body)return;
+  let current=null;
+  try{ current=docId===currentDocId?currentDocRevisionContent():await storedDocForRevision(docId,localStorage.getItem(docKey(docId))); }catch(e){}
+  if(historyModalDocId!==docId)return;
+  body.innerHTML='';
+  const head=document.createElement('div'); head.className='history-preview-head';
+  const back=document.createElement('button'); back.type='button'; back.className='history-preview-back'; back.textContent='\u2190 All versions';
+  back.addEventListener('click',()=>renderVersionHistoryList());
+  const title=document.createElement('div'); title.className='history-row-time'; title.textContent=formatVersionTime(rev.ts,Date.now())+(rev.device?' \u00b7 '+rev.device:'');
+  const since=document.createElement('div'); since.className='history-row-meta';
+  since.textContent=older?'Since the version before: '+formatVersionSummary(summarizeVersionChange(older,rev)):'Oldest kept version';
+  const vsNow=document.createElement('div'); vsNow.className='history-preview-vsnow';
+  if(current){
+    const c=summarizeVersionChange(current,rev), bits=[];
+    if(c.rowsAdded)bits.push(c.rowsAdded+' row'+(c.rowsAdded===1?'':'s')+' you don\u2019t have now would come back');
+    if(c.rowsRemoved)bits.push(c.rowsRemoved+' row'+(c.rowsRemoved===1?'':'s')+' you have now would go');
+    if(c.rowsEdited)bits.push(c.rowsEdited+' row'+(c.rowsEdited===1?' reads':'s read')+' differently');
+    if(c.threadAdded||c.threadRemoved)bits.push('thread entries differ');
+    if(c.titleChanged)bits.push('the title differs');
+    vsNow.textContent=bits.length?'If you restore it: '+bits.join(', ')+'.':'Same content as the document now.';
+  }
+  head.append(back,title,since,vsNow);
+  if(current){ const key=document.createElement('div'); key.className='history-preview-key'; key.innerHTML='<span class="k-added">Not in the document now</span><span class="k-edited">Reads differently now</span>'; head.appendChild(key); }
+  body.appendChild(head);
+  const nowRows=new Map((current&&Array.isArray(current.nodes)?current.nodes:[]).map(n=>[String(n.id),n]));
+  const list=document.createElement('div'); list.className='history-preview-rows';
+  (rev.nodes||[]).forEach(n=>{
+    const line=document.createElement('div'); line.className='history-preview-row';
+    const was=nowRows.get(String(n.id));
+    if(current&&!was){ line.classList.add('is-added'); line.dataset.tip='Not in the document now'; }
+    else if(was&&versionRowContentKey(was)!==versionRowContentKey(n)){ line.classList.add('is-edited'); line.dataset.tip='Reads differently now'; }
+    line.style.paddingLeft=(6+Math.min(Number(n.depth)||0,8)*16)+'px';
+    line.textContent=getNodePlainText(n).trim()||'(empty row)';
+    list.appendChild(line);
+  });
+  if(!(rev.nodes||[]).length){ const e=document.createElement('div'); e.className='history-empty'; e.textContent='This version has no rows.'; list.appendChild(e); }
+  body.appendChild(list);
+  const actions=document.createElement('div'); actions.className='history-preview-actions';
+  const restore=document.createElement('button'); restore.type='button'; restore.className='btn history-preview-restore'; restore.textContent='Restore this version';
+  restore.addEventListener('click',()=>restoreDocRevision(docId,rev.ts));
+  actions.appendChild(restore);
+  body.appendChild(actions);
+  body.scrollTop=0;
 }
 function safeNextId(nds){ return nds.reduce((m,n)=>Math.max(m,(Number(n.id)||0)+1),1) }
 // A version restore can roll `nodes` back to an older set while a diagram
