@@ -17176,6 +17176,22 @@ function updateVerifyEmailRow(user){
   const needs=!!(user&&user.email&&!user.emailVerified&&(user.providerData||[]).some(p=>p&&p.providerId==='password'));
   row.style.display=needs?'':'none';
 }
+// The link in the email is opened elsewhere (Mail, Safari), so check again whenever Sakura comes back
+// to the screen or Settings opens, while the row still shows (owner 2026-11-21: verified, but the
+// installed iPhone app kept asking, since it only checked at sign-in).
+function recheckEmailVerified(){
+  const row=el('settings-verify-email-row');
+  const user=currentUser;
+  if(!user||!row||row.style.display==='none'||typeof user.reload!=='function')return;
+  user.reload().then(async()=>{
+    if(!user.emailVerified)return;
+    try{ await user.getIdToken(true); }catch(e){}
+    updateVerifyEmailRow(user); ensureEmailIndex(user);
+  }).catch(()=>{});
+}
+document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible')recheckEmailVerified(); });
+window.addEventListener('focus',recheckEmailVerified);
+new MutationObserver(()=>{ if(el('settings-panel')?.classList.contains('open'))recheckEmailVerified(); }).observe(el('settings-panel')||document.createElement('div'),{attributes:true,attributeFilter:['class']});
 el('settings-verify-email-btn')?.addEventListener('click',async e=>{
   const b=e.currentTarget; if(!currentUser)return;
   b.disabled=true;
