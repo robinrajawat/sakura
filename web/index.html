@@ -3087,6 +3087,11 @@ html.calm-layout #sb-auto-rewrite-chip.is-quiet:hover,html.calm-layout #sb-auto-
 #diagram-editor-close:hover{color:var(--fg);background:var(--hover)}
 #diagram-editor-iframe-wrap{flex:1;min-height:0;position:relative}
 #diagram-editor-iframe-wrap iframe{position:absolute;inset:0;width:100%;height:100%;border:none}
+/* draw.io didn't load (blocked or offline): a note over the editor with Retry and Close (drawioWaitTick). */
+#drawio-wait-note{position:absolute;inset:0;z-index:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:24px;text-align:center;background:var(--bg)}
+#drawio-wait-msg{color:var(--fg);font:600 var(--fs-lg) 'Inter',sans-serif}
+#drawio-wait-detail{color:var(--muted);font:400 var(--fs-md) 'Inter',sans-serif;max-width:420px;line-height:1.5}
+.drawio-wait-actions{display:flex;gap:8px;margin-top:14px}
 #diagram-anchor-suggest{position:fixed;z-index:1110;background:var(--surface-raised);--hover:var(--hover-raised);border:1px solid var(--border);border-radius:var(--radius-menu);box-shadow:var(--shadow-menu);padding:var(--pad-menu);min-width:220px;max-width:320px;max-height:320px;overflow:hidden;display:none;flex-direction:column;font-family:'Inter',sans-serif}
 #diagram-anchor-suggest.open{display:flex}
 .anchor-suggest-search{flex:0 0 auto;width:100%;box-sizing:border-box;border:1px solid var(--border);background:var(--tb-bg);color:var(--fg);border-radius:6px;padding:5px 8px;font:400 12px 'Inter',sans-serif;margin-bottom:4px}
@@ -16170,6 +16175,7 @@ function openDiagramEditor(diagramId){
     try{ msg=typeof e.data==='string'?JSON.parse(e.data):e.data; }catch(err){ return; }
     if(!msg||!msg.event)return;
     if(msg.event==='init'){
+      drawioLoaded(iframe);
       // If this diagram hasn't finished hydrating from the overflow store yet (see
       // hydrateDiagramBlobsForDoc), d.xml right now may still be the blank placeholder it
       // started with — loading that into draw.io would show an empty canvas even though the
@@ -16277,12 +16283,52 @@ function openDiagramEditor(diagramId){
     }
   };
   window.addEventListener('message',handler);
-  _diagramEditorState={diagramId,iframe,handler};
+  _diagramEditorState={diagramId,iframe,handler,openedAt:Date.now()};
   overlay.classList.add('open');
+  drawioWaitTick();
 }
+// draw.io comes from embed.diagrams.net. A network that blocks it (common on company laptops) or
+// a slow connection used to leave "Loading draw.io…" for ever. The wait now goes through the
+// usual stages (loadingStage): "Still loading" after a few seconds, then a note over the editor
+// saying what's wrong, with Retry and Close; it goes away by itself if draw.io arrives after all.
+// Nothing was loaded into draw.io yet, so closing then loses nothing.
+let _drawioWaitTimer=null;
+function drawioWaitTick(){
+  clearTimeout(_drawioWaitTimer); _drawioWaitTimer=null;
+  const st=_diagramEditorState; if(!st||st.inited)return;
+  const online=navigator.onLine!==false, elapsed=Date.now()-st.openedAt;
+  const stage=loadingStage(elapsed,online);
+  const status=el('diagram-editor-status');
+  if(status){ status.textContent=stage==='slow'?'Still loading draw.io…':stage==='quiet'||stage==='loading'?'Loading draw.io…':'draw.io hasn’t loaded'; status.classList.remove('diagram-editor-status-saved'); }
+  const wrap=el('diagram-editor-iframe-wrap');
+  let note=el('drawio-wait-note');
+  if(stage==='stalled'||stage==='offline'){
+    if(!note&&wrap){
+      note=document.createElement('div'); note.id='drawio-wait-note'; note.setAttribute('role','status');
+      note.innerHTML='<div id="drawio-wait-msg"></div><div id="drawio-wait-detail"></div><div class="drawio-wait-actions"><button id="drawio-wait-retry" class="btn primary" type="button">Retry</button><button id="drawio-wait-close" class="btn" type="button">Close</button></div>';
+      wrap.appendChild(note);
+      note.querySelector('#drawio-wait-retry').addEventListener('click',()=>{ const s2=_diagramEditorState; if(!s2)return; s2.openedAt=Date.now(); try{ s2.iframe.src=s2.iframe.src; }catch(e){} el('drawio-wait-note')?.remove(); drawioWaitTick(); });
+      note.querySelector('#drawio-wait-close').addEventListener('click',()=>closeDiagramEditorInternal());
+    }
+    el('drawio-wait-msg').textContent=stage==='offline'?'You’re offline.':'draw.io hasn’t loaded yet.';
+    el('drawio-wait-detail').textContent=stage==='offline'
+      ?'The diagram editor needs a connection. Your diagram is safe; the picture in your document is unchanged.'
+      :'The diagram editor comes from diagrams.net, and your network or a browser extension may be blocking it. Your diagram is safe.';
+    el('drawio-wait-retry').hidden=stage==='offline';
+  }else if(note)note.remove();
+  const wait=msUntilNextLoadingStage(elapsed,online);
+  if(wait!=null)_drawioWaitTimer=setTimeout(drawioWaitTick,wait+20);
+}
+function drawioLoaded(iframe){
+  const st=_diagramEditorState; if(!st||st.iframe!==iframe)return;
+  st.inited=true; clearTimeout(_drawioWaitTimer); _drawioWaitTimer=null; el('drawio-wait-note')?.remove();
+}
+window.addEventListener('offline',()=>{ if(_diagramEditorState&&!_diagramEditorState.inited)drawioWaitTick(); });
+window.addEventListener('online',()=>{ const st=_diagramEditorState; if(st&&!st.inited){ st.openedAt=Date.now(); try{ st.iframe.src=st.iframe.src; }catch(e){} drawioWaitTick(); } });
 function closeDiagramEditorInternal(){
   if(!_diagramEditorState)return;
   window.removeEventListener('message',_diagramEditorState.handler);
+  clearTimeout(_drawioWaitTimer); _drawioWaitTimer=null;
   const overlay=el('diagram-editor-overlay'); if(overlay)overlay.classList.remove('open');
   const wrap=el('diagram-editor-iframe-wrap'); if(wrap)wrap.innerHTML='';
   _diagramEditorState=null;
@@ -16295,6 +16341,7 @@ function closeDiagramEditorInternal(){
 }
 async function closeDiagramEditor(){
   if(!_diagramEditorState)return;
+  if(!_diagramEditorState.inited){ closeDiagramEditorInternal(); return; } // draw.io never loaded: nothing in it to lose
   // draw.io has been sending the drawing as it changes (autosave): nothing to lose. Ask it for the
   // picture (the same safe export a Save makes) and close when it arrives, or after a moment.
   if(_diagramEditorState.autosaved){
@@ -29171,13 +29218,25 @@ function aiCapabilityLabel(systemPrompt){
   const found=AI_CAPABILITY_PREFIXES.find(([prefix])=>systemPrompt.startsWith(prefix));
   return found?found[1]:'other';
 }
+// An AI provider that never answers used to leave "Generating…" on screen for ever. Each request
+// now ends after AI_REQUEST_TIMEOUT_MS (long answers can take a minute) with an error that the
+// fallback chain treats like any other provider failure, so the next provider is tried.
+let AI_REQUEST_TIMEOUT_MS=90000; // let: tests shorten it
+async function aiFetch(url,opts){
+  const ctrl=new AbortController(); const timer=setTimeout(()=>ctrl.abort(),AI_REQUEST_TIMEOUT_MS);
+  try{ return await fetch(url,{...opts,signal:ctrl.signal}); }
+  catch(e){
+    if(e&&e.name==='AbortError')throw new FallbackableError('The AI provider didn\u2019t answer within '+Math.round(AI_REQUEST_TIMEOUT_MS/1000)+' seconds. Try again, or pick another provider in Settings.',408);
+    throw e;
+  }finally{ clearTimeout(timer); }
+}
 async function callAiByShape(shape,baseUrl,key,model,systemPrompt,userContent,maxTokens){
   // Never log systemPrompt/userContent/the response text itself — only their lengths. This is
   // the user's actual outline, notes, or Q&A content; a debug log is meant to be safely
   // copy-pasted into a support conversation, not a place their document ends up verbatim.
   if(shape==='gemini'){
     const url=baseUrl.replace('{model}',encodeURIComponent(model))+(baseUrl.includes('?')?'&':'?')+'key='+encodeURIComponent(key);
-    const res=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contents:[{parts:[{text:(systemPrompt?systemPrompt+'\n\n':'')+userContent}]}],generationConfig:{maxOutputTokens:maxTokens}})});
+    const res=await aiFetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contents:[{parts:[{text:(systemPrompt?systemPrompt+'\n\n':'')+userContent}]}],generationConfig:{maxOutputTokens:maxTokens}})});
     if(!res.ok){const err=await res.json().catch(()=>({}));const msg=err?.error?.message||'Gemini error '+res.status;if(res.status===401)throw new Error(msg);if(isRateLimitStatus(res.status,msg))throw new RateLimitError(msg);throw new FallbackableError(msg,res.status);}
     const data=await res.json();
     return (data?.candidates?.[0]?.content?.parts?.[0]?.text||'').trim();
@@ -29187,12 +29246,12 @@ async function callAiByShape(shape,baseUrl,key,model,systemPrompt,userContent,ma
     const openaiHeaders={'Content-Type':'application/json','Authorization':'Bearer '+key};
     if(isOpenRouter){openaiHeaders['HTTP-Referer']=(location.protocol==='file:'?'https://sakura.app':location.href);openaiHeaders['X-Title']='Sakura';}
     if(isGitHubModels){openaiHeaders['Accept']='application/vnd.github+json';openaiHeaders['X-GitHub-Api-Version']='2022-11-28';}
-    const res=await fetch(baseUrl,{method:'POST',headers:openaiHeaders,body:JSON.stringify({model,max_tokens:maxTokens,messages:[{role:'system',content:systemPrompt||''},{role:'user',content:userContent}]})});
+    const res=await aiFetch(baseUrl,{method:'POST',headers:openaiHeaders,body:JSON.stringify({model,max_tokens:maxTokens,messages:[{role:'system',content:systemPrompt||''},{role:'user',content:userContent}]})});
     if(!res.ok){const errBody=await res.json().catch(()=>({}));const msg=errBody?.error?.metadata?.raw||errBody?.error?.message||errBody?.message||'API error '+res.status;if(res.status===401)throw new Error(msg);if(isRateLimitStatus(res.status,msg))throw new RateLimitError(msg);throw new FallbackableError(msg,res.status);}
     const data=await res.json();
     return (data?.choices?.[0]?.message?.content||'').trim();
   } else if(shape==='cerebras'){
-    const res=await fetch(baseUrl,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},body:JSON.stringify({model,max_completion_tokens:maxTokens,messages:[{role:'system',content:systemPrompt||''},{role:'user',content:userContent}]})});
+    const res=await aiFetch(baseUrl,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},body:JSON.stringify({model,max_completion_tokens:maxTokens,messages:[{role:'system',content:systemPrompt||''},{role:'user',content:userContent}]})});
     if(!res.ok){const errBody=await res.json().catch(()=>({}));const msg=errBody?.message||errBody?.error?.message||'Cerebras error '+res.status;if(res.status===401)throw new Error(msg);if(isRateLimitStatus(res.status,msg))throw new RateLimitError(msg);throw new FallbackableError(msg,res.status);}
     const data=await res.json();
     return (data?.choices?.[0]?.message?.content||'').trim();
@@ -29204,12 +29263,12 @@ async function callAiByShape(shape,baseUrl,key,model,systemPrompt,userContent,ma
     if(!currentUser)throw new Error('Sign in to use Sakura Hosted AI');
     if(!baseUrl||baseUrl==='/ai/complete')throw new Error("Sakura Hosted AI isn't configured yet.");
     const token=await currentUser.getIdToken();
-    const res=await fetch(baseUrl,{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+token},body:JSON.stringify({systemPrompt:systemPrompt||'',userContent,maxTokens})});
+    const res=await aiFetch(baseUrl,{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+token},body:JSON.stringify({systemPrompt:systemPrompt||'',userContent,maxTokens})});
     if(!res.ok){const err=await res.json().catch(()=>({}));const detail=Array.isArray(err?.details)&&err.details.length?' — '+err.details.join('; '):'';const msg=(err?.error||'Sakura Hosted AI error '+res.status)+detail;if(res.status===401)throw new Error('Sign in again to use Sakura Hosted AI — your session expired.');if(isRateLimitStatus(res.status,msg))throw new RateLimitError(msg);throw new FallbackableError(msg,res.status);}
     const data=await res.json();
     return (data?.text||'').trim();
   } else {
-    const res=await fetch(baseUrl,{method:'POST',headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01'},body:JSON.stringify({model,max_tokens:maxTokens,messages:[{role:'user',content:(systemPrompt?systemPrompt+'\n\n':'')+userContent}]})});
+    const res=await aiFetch(baseUrl,{method:'POST',headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01'},body:JSON.stringify({model,max_tokens:maxTokens,messages:[{role:'user',content:(systemPrompt?systemPrompt+'\n\n':'')+userContent}]})});
     if(!res.ok){const err=await res.json().catch(()=>({}));const msg=err?.error?.message||'Claude API error '+res.status;if(res.status===401)throw new Error(msg);if(isRateLimitStatus(res.status,msg))throw new RateLimitError(msg);throw new FallbackableError(msg,res.status);}
     const data=await res.json();
     return (data?.content?.[0]?.text||'').trim();

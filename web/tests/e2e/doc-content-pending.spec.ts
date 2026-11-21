@@ -74,9 +74,10 @@ test('loading shows the shape of a document, then says it is taking longer', asy
 });
 
 test('the stage moves on by itself as time passes', async ({ page }) => {
-  await pendingFor(page, 3900);
+  // 2.5 s left before "slow": room for a busy machine to see "loading" first.
+  await pendingFor(page, 1500);
   await expect(page.locator('#doc-content-pending')).toHaveAttribute('data-stage', 'loading');
-  await expect(page.locator('#doc-content-pending')).toHaveAttribute('data-stage', 'slow', { timeout: 3000 });
+  await expect(page.locator('#doc-content-pending')).toHaveAttribute('data-stage', 'slow', { timeout: 8000 });
 });
 
 test('once it looks stuck there is a Retry that asks the account again', async ({ page }) => {
