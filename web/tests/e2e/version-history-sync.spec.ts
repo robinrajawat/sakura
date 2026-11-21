@@ -47,12 +47,18 @@ test('a version made on one device shows in History on another', async ({ page }
     openVersionHistory(docId);
     await new Promise((res) => setTimeout(res, 300));
     const rows = [...document.querySelectorAll('#history-modal-body .history-row-meta')].map((e) => e.textContent);
+    const why = [...document.querySelectorAll('#history-modal-body .history-row-reason')].map((e) => e.textContent);
+    const when = [...document.querySelectorAll('#history-modal-body .history-row-time')].map((e) => e.textContent);
     // @ts-expect-error
     const local = (await loadDocRevisions(docId)).length;
-    return { cloudKeys: cloudKeys.length, rows, local, hint: document.getElementById('history-modal-footer-hint')?.textContent };
+    return { cloudKeys: cloudKeys.length, rows, why, when, local, hint: document.getElementById('history-modal-footer-hint')?.textContent };
   });
   expect(r.cloudKeys).toBe(1);
   expect(r.local).toBe(1);
-  expect(r.rows).toEqual(['Manual checkpoint · 1 row']);
+  // What the entry says (owner 2026-11-21): what's in it, why it was kept, and which device made it,
+  // which travels with the version through the account.
+  expect(r.rows).toEqual(['Oldest kept · 1 row']);
+  expect(r.why).toEqual(['Saved by you']);
+  expect(r.when[0]).toMatch(/^Today, .* · Chrome on /);
   expect(r.hint).toContain('on all your devices');
 });
