@@ -180,11 +180,11 @@ The flaky To-Dos draft test reports its storage state on failure: read that befo
 
 ### Latest changes
 
+- **New feedback shows as a count in the app (2026-11-21, owner chose this over email or Sentry).** For the admin: a count on the Settings button, a dot on the phone's ☰, "Open (N new)" on the Feedback inbox row, for feedback sent in since the inbox was last opened (`refreshFeedbackUnread`; `feedbackSeenAt` is a synced setting). Not built: email (would need the Worker, an email service and a privacy.html change). Test: `feedback-unread-badge.spec.ts`.
+
 - **Installed iPhone app makes room for the status bar and home bar (2026-11-21, owner, iOS 26).** Text scrolled under the clock and blurred; the drawer and Settings started below a grey band. Now `viewport-fit=cover`, and on a phone the top line, drawer, full-screen sheets and editor pad by `--safe-top/-bottom/-left/-right` (the `env(safe-area-inset-*)` values; tests set the variables to stand in for a notch). A long title ends in "…". Checked with a simulated notch in Chromium, not on a real device: confirm on the iPhone. Test: `phone-shell.phone.spec.ts` "status bar".
 
 - **A thread deleted on one device stays deleted (2026-11-21, owner, iPhone app vs Safari).** When both devices had changed a document (opening one counts: the selected and folded rows are saved), the account's copy was kept with all its entries; this device's deletion records were saved but not applied, so the thread came back. Deletions now win in `mergeThreadEntries`, and the merged copy goes back up when entries were removed, not only added. Row edits in such a collision still go to Version history. Tests: `threadMerge.test.ts`, `thread-merge-sync.spec.ts` "stays deleted" (fails without the fix).
-
-- **Settings from another device show at once; dialogs open in front of Settings on a phone (2026-11-21, owner, iPhone).** Settings (name, PDF mark, switches) already synced (`prefs`, merged per field), but only the values in memory changed: the boxes and switches were filled in only at start. Now `showPrefs()` (the old start-up calls) runs at start and whenever synced settings arrive; the PDF mark box isn't overwritten while typed in. On a phone the Feedback inbox, Send feedback and Delete account dialogs (z 1100) opened behind the full-screen Settings (1300): every `.app-modal-overlay` is now 1340. "Verify your email" stayed after verifying: the status was checked only at sign-in, and the installed iPhone app keeps running; now it's checked again when the app comes back or Settings opens (`recheckEmailVerified`). Tests: `settings-after-start.spec.ts`, `phone-shell.phone.spec.ts`, `verify-email-recheck.spec.ts` (all fail without the fix).
 
 ### In progress / not built
 
