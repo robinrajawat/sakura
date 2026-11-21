@@ -180,11 +180,9 @@ The flaky To-Dos draft test reports its storage state on failure: read that befo
 
 ### Latest changes
 
+- **A thread deleted on one device stays deleted (2026-11-21, owner, iPhone app vs Safari).** When both devices had changed a document (opening one counts: the selected and folded rows are saved), the account's copy was kept with all its entries; this device's deletion records were saved but not applied, so the thread came back. Deletions now win in `mergeThreadEntries`, and the merged copy goes back up when entries were removed, not only added. Row edits in such a collision still go to Version history. Tests: `threadMerge.test.ts`, `thread-merge-sync.spec.ts` "stays deleted" (fails without the fix).
+
 - **Settings from another device show at once; dialogs open in front of Settings on a phone (2026-11-21, owner, iPhone).** Settings (name, PDF mark, switches) already synced (`prefs`, merged per field), but only the values in memory changed: the boxes and switches were filled in only at start. Now `showPrefs()` (the old start-up calls) runs at start and whenever synced settings arrive; the PDF mark box isn't overwritten while typed in. On a phone the Feedback inbox, Send feedback and Delete account dialogs (z 1100) opened behind the full-screen Settings (1300): every `.app-modal-overlay` is now 1340. "Verify your email" stayed after verifying: the status was checked only at sign-in, and the installed iPhone app keeps running; now it's checked again when the app comes back or Settings opens (`recheckEmailVerified`). Tests: `settings-after-start.spec.ts`, `phone-shell.phone.spec.ts`, `verify-email-recheck.spec.ts` (all fail without the fix).
-
-- **A closed thread stays closed after a reload (2026-11-21, owner, iPhone).** A thread with unsent text reopened on every load (`revealThreadDrafts`), even after it was closed. The draft now keeps a `hidden` flag, set when the thread is closed (header, row dot, Collapse all) and cleared when it's opened; the text itself is kept either way. Test: `thread-drafts.spec.ts` "stays closed" (fails without the fix).
-
-- **Thread reply box keeps unsent text as written (2026-11-20, owner, iPhone).** An unsent entry typed as Raja became the owner's reply to a question: Reply reused the row's reply box with its unsent text (`openThreadComposer`), and a draft didn't keep its author. Now a thread draft keeps `person` and its target; opening the box for something else leaves unsent text alone and says "You have an unsent entry here"; unsent text is marked "Not sent". Test: `thread-reply-box.spec.ts` (fails without the fix).
 
 ### In progress / not built
 

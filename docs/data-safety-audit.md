@@ -30,7 +30,8 @@ When in doubt, nothing is sent and nothing is deleted: the worst case is a chang
 - **Thread entries survive a collision.** When two devices changed a document and the account's
   copy is kept, this device's thread entries are merged into it by id (`src/state/threadMerge.ts`):
   entries only this device has are added, unless the account's copy records them as deleted
-  (`remarkTombstones`, kept 90 days) or their row isn't there; the merged copy goes back up. Row
+  (`remarkTombstones`, kept 90 days) or their row isn't there, and entries deleted on this device are
+  removed from it (a deletion is on purpose, so it wins; owner 2026-11-21); the merged copy goes back up. Row
   edits still go to Version history ("Your changes on this device"). Owner 2026-11-20: threads
   vanished between phone and Mac. Test: `thread-merge-sync.spec.ts`.
 - **Documents stay with their account.** A device holding another account's documents asks before

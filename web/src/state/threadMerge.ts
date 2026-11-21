@@ -5,14 +5,15 @@
  * as the sync rules say, but thread entries are merged into it by id, as offline-first apps do,
  * instead of being lost with the rest of this device's copy.
  *
- * - Every entry in the kept copy stays (an entry both copies have keeps the kept copy's version).
- * - An entry only this device has is added, unless the kept copy records it as deleted
- *   (`remarkTombstones`: entry id → time deleted) or its row isn't in the kept copy.
+ * - An entry both copies have keeps the kept copy's version.
+ * - An entry deleted on either device stays deleted (`remarkTombstones`: entry id → time deleted).
+ *   A deletion is something a person did on purpose, so it wins, as in any synced notes app (owner
+ *   2026-11-21: a thread deleted in the installed iPhone app was still there in Safari, because the
+ *   account's copy had changed meanwhile and its entries were all kept).
+ * - An entry only this device has is added, unless its row isn't in the kept copy.
  * - Deletion records from both copies are kept, and dropped after TOMBSTONE_MAX_AGE_MS.
  *
- * A deletion made only on this device doesn't win over the kept copy: when in doubt nothing is
- * deleted (docs/data-safety-audit.md, Sync rules). Pure; called from resolveDocPushConflict and
- * applyIncomingDocData in index.html.
+ * Pure; called from resolveDocPushConflict and applyIncomingDocData in index.html.
  */
 
 export type ThreadEntry = { id: string | number; anchorNodeId?: unknown; answerTo?: unknown; createdAt?: number; [k: string]: unknown };
@@ -39,7 +40,7 @@ export function mergeTombstones(a: Tombstones | null | undefined, b: Tombstones 
   return out;
 }
 
-export type ThreadMergeResult = { remarks: ThreadEntry[]; remarkTombstones: Tombstones; added: number };
+export type ThreadMergeResult = { remarks: ThreadEntry[]; remarkTombstones: Tombstones; added: number; removed: number };
 
 /**
  * Merges this device's thread entries into the kept copy's.
@@ -57,16 +58,18 @@ export function mergeThreadEntries(
   keptRowIds: Iterable<unknown>,
   now: number
 ): ThreadMergeResult {
-  const kept = Array.isArray(keptRemarks) ? keptRemarks.filter((r) => r && r.id != null) : [];
+  const deletedHere = mineTombstones && typeof mineTombstones === 'object' ? mineTombstones : {};
+  const keptAll = Array.isArray(keptRemarks) ? keptRemarks.filter((r) => r && r.id != null) : [];
+  const kept = keptAll.filter((r) => !(String(r.id) in deletedHere));
   const mine = Array.isArray(mineRemarks) ? mineRemarks.filter((r) => r && r.id != null) : [];
   const rows = new Set([...keptRowIds].map((x) => String(x)));
   const deletedInKept = keptTombstones && typeof keptTombstones === 'object' ? keptTombstones : {};
-  const have = new Set(kept.map((r) => String(r.id)));
+  const have = new Set(keptAll.map((r) => String(r.id)));
   const extra = mine.filter((r) => !have.has(String(r.id)) && !(String(r.id) in deletedInKept) && rows.has(String(r.anchorNodeId)));
   const all = [...kept, ...extra.map((r) => ({ ...r }))];
   // A reply whose entry isn't there any more stops pointing at it (as deleting an entry does).
   const ids = new Set(all.map((r) => String(r.id)));
   for (const r of all) if (r.answerTo != null && !ids.has(String(r.answerTo))) delete r.answerTo;
   if (extra.length) all.sort((a, b) => (Number(a.createdAt) || 0) - (Number(b.createdAt) || 0));
-  return { remarks: all, remarkTombstones: mergeTombstones(keptTombstones, mineTombstones, now), added: extra.length };
+  return { remarks: all, remarkTombstones: mergeTombstones(keptTombstones, mineTombstones, now), added: extra.length, removed: keptAll.length - kept.length };
 }
