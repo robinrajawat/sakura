@@ -38,9 +38,11 @@ test('each version says what changed and where, and can be viewed before restori
   await expect(page.locator('.history-preview-vsnow')).toHaveText('If you restore it: 1 row you don’t have now would come back, 1 row reads differently.');
   await expect(page.locator('.history-preview-row.is-added')).toHaveText(['Risks']);
   await expect(page.locator('.history-preview-row.is-edited')).toHaveText(['Scope, revised']);
+  await expect(page.locator('#history-save-now-btn')).toBeHidden(); // only Restore while viewing a version
   // Back to the list, and Restore from the view restores that version.
   await page.locator('.history-preview-back').click();
   await expect(rows).toHaveCount(2);
+  await expect(page.locator('#history-save-now-btn')).toBeVisible();
   await rows.nth(0).locator('.history-row-open').click();
   await page.locator('.history-preview-restore').click();
   await expect.poll(() => page.evaluate('nodes.map((n) => n.text)')).toEqual(['Goal', 'Scope, revised', 'Risks']);

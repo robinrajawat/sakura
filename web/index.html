@@ -1472,6 +1472,9 @@ body:has(#diagram-viewer.open) .sb-context-menu,body:has(#node-image-viewer.open
 .history-preview-key span::before{content:'';display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:-1px}
 .history-preview-key .k-added::before{background:color-mix(in srgb,var(--accent) 35%,transparent);border-left:3px solid var(--accent)}
 .history-preview-key .k-edited::before{background:color-mix(in srgb,var(--fc-orange) 35%,transparent);border-left:3px solid var(--fc-orange)}
+/* A version entry opens its view: a quiet › says so, on touch too (no hover there). */
+.history-row-open{position:relative;padding-right:16px}
+.history-row-open::after{content:'\203A';position:absolute;right:0;top:50%;transform:translateY(-50%);color:var(--muted);font:400 var(--fs-xl) 'Inter',sans-serif}
 /* Tables (plain, polished, and every Show as display) as the computer draws them. Shared by
    index.html and the phone's reader (hub.html), which shows the computer's ready-made copy of each
    table (owner 2026-11-03: the same look on every device). Listed in both pages' style blocks. */
@@ -15052,7 +15055,7 @@ async function renderVersionHistoryList(){
       lastText=text;
       const row=document.createElement('div'); row.className='history-row';
       const info=document.createElement('div'); info.className='history-row-info';
-      const time=document.createElement('div'); time.className='history-row-time'; time.textContent=new Date(rev.ts).toLocaleString();
+      const time=document.createElement('div'); time.className='history-row-time'; time.textContent=formatVersionTime(rev.ts,Date.now())+(rev.device?' \u00b7 '+rev.device:'');
       const meta=document.createElement('div'); meta.className='history-row-meta'; meta.textContent=text?(text.length>180?text.slice(0,180)+'…':text):'(empty)';
       info.appendChild(time); info.appendChild(meta);
       row.appendChild(info);
@@ -15118,6 +15121,7 @@ async function showVersionPreview(docId,rev,older){
   try{ current=docId===currentDocId?currentDocRevisionContent():await storedDocForRevision(docId,localStorage.getItem(docKey(docId))); }catch(e){}
   if(historyModalDocId!==docId)return;
   body.innerHTML='';
+  const saveNow=el('history-save-now-btn'); if(saveNow)saveNow.style.display='none'; // back to the list shows it again
   const head=document.createElement('div'); head.className='history-preview-head';
   const back=document.createElement('button'); back.type='button'; back.className='history-preview-back'; back.textContent='\u2190 All versions';
   back.addEventListener('click',()=>renderVersionHistoryList());
@@ -15151,7 +15155,7 @@ async function showVersionPreview(docId,rev,older){
   if(!(rev.nodes||[]).length){ const e=document.createElement('div'); e.className='history-empty'; e.textContent='This version has no rows.'; list.appendChild(e); }
   body.appendChild(list);
   const actions=document.createElement('div'); actions.className='history-preview-actions';
-  const restore=document.createElement('button'); restore.type='button'; restore.className='btn history-preview-restore'; restore.textContent='Restore this version';
+  const restore=document.createElement('button'); restore.type='button'; restore.className='btn primary history-preview-restore'; restore.textContent='Restore this version';
   restore.addEventListener('click',()=>restoreDocRevision(docId,rev.ts));
   actions.appendChild(restore);
   body.appendChild(actions);
