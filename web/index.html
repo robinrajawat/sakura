@@ -1505,6 +1505,22 @@ body:has(#diagram-viewer.open) .sb-context-menu,body:has(#node-image-viewer.open
 .hv-word-add{background:color-mix(in srgb,var(--accent) 22%,transparent);border-radius:3px}
 .hv-word-del{color:var(--muted);text-decoration:line-through;text-decoration-color:var(--fc-red)}
 .history-preview-key .k-removed::before{background:color-mix(in srgb,var(--fc-red) 25%,transparent);border-left:3px solid var(--fc-red)}
+/* First sync after signing in on this device (startFirstSync): covers the app until the account's
+   documents are in, with a count and the same stages as other waits (loadingStage). */
+#first-sync{position:fixed;inset:0;z-index:1110;display:flex;align-items:center;justify-content:center;padding:24px;background:var(--bg)}
+#first-sync[hidden]{display:none}
+#first-sync[data-stage="quiet"] .first-sync-card{visibility:hidden}
+.first-sync-card{width:min(400px,100%);text-align:center}
+#first-sync-msg{color:var(--fg);font:600 var(--fs-xl) 'Inter',sans-serif}
+#first-sync-detail{color:var(--muted);font:400 var(--fs-md) 'Inter',sans-serif;margin-top:8px;min-height:1.4em}
+.first-sync-bar{height:4px;border-radius:2px;margin:20px auto 0;width:min(280px,100%);background:color-mix(in srgb,var(--fg) 9%,transparent);overflow:hidden}
+.first-sync-bar span{display:block;height:100%;width:0;background:var(--accent);border-radius:2px;transition:width .3s ease}
+.first-sync-bar.indeterminate span{width:35%;animation:first-sync-slide 1.3s ease-in-out infinite}
+@keyframes first-sync-slide{from{transform:translateX(-100%)}to{transform:translateX(290%)}}
+@media (prefers-reduced-motion:reduce){.first-sync-bar.indeterminate span{animation:none;width:100%;opacity:.4}}
+#first-sync:is([data-stage="failed"],[data-stage="offline"]) .first-sync-bar{display:none}
+.first-sync-actions{display:flex;gap:8px;justify-content:center;margin-top:20px}
+.first-sync-actions:not(:has(button:not([hidden]))){display:none}
 /* Tables (plain, polished, and every Show as display) as the computer draws them. Shared by
    index.html and the phone's reader (hub.html), which shows the computer's ready-made copy of each
    table (owner 2026-11-03: the same look on every device). Listed in both pages' style blocks. */
@@ -17219,7 +17235,7 @@ async function signInWithGoogleAccount(){
     el('account-menu')?.classList.remove('open');
     hideLandingOverlay();
     showToast('Signed in as '+(result.user.email||result.user.displayName||'your Google account'));
-    pullAndMergeFromCloud(true);
+    startFirstSync(); pullAndMergeFromCloud(true);
     startRealtimeSync();
   }catch(e){
     // Popup dismissed by the person themselves isn't an error worth surfacing.
@@ -17300,6 +17316,7 @@ function wireEmailAuthForm(prefix){
       hideLandingOverlay();
       passwordInput.value='';
       showToast(mode==='signup'?'Account created. We sent a link to '+(result.user.email||'your email')+' to verify it.':'Signed in as '+(result.user.email||'your account'));
+      if(mode!=='signup')startFirstSync(); // a new account has nothing to bring in
       pullAndMergeFromCloud(true);
       startRealtimeSync();
     }catch(e){
@@ -17394,6 +17411,7 @@ async function signOutOfAccount(){
 }
 async function signOutOfAccountOnce(){
   el('account-menu')?.classList.remove('open');
+  if(typeof endFirstSync==='function')endFirstSync();
   showToast('Making sure everything is in your account\u2026','info',false,20000);
   await otherTabsSaveFirst();
   const safe=await sendEverythingBeforeSignOut();
@@ -19814,6 +19832,75 @@ function merge3(base, local, cloud, prefer) {
 
 /* GENERATED:metaMerge:END */
 let _lastPullAt=0;
+// First sync after signing in on this device: a screen that says the account's documents are
+// coming in, and how many, instead of leaving a blank Untitled document on screen (owner
+// 2026-11-21: "shouldn't it show some indication that the account sync is in progress?"). As
+// other synced apps do on a new device; later launches show the copy here at once and sync
+// quietly. Its stages follow loadingStage, timed from the last progress (a large account
+// that keeps moving isn't stuck). "Continue without waiting" leaves sync running behind it.
+let _firstSync=null, _firstSyncTimer=null;
+function startFirstSync(){
+  _firstSync={startedAt:Date.now(),lastProgressAt:Date.now(),done:0,total:null,failed:false};
+  renderFirstSync();
+}
+function firstSyncProgress(done,total){
+  if(!_firstSync)return;
+  _firstSync.done=done; if(total!=null)_firstSync.total=total; _firstSync.lastProgressAt=Date.now();
+  renderFirstSync();
+}
+function firstSyncOverlay(){
+  let box=el('first-sync');
+  if(!box){
+    box=document.createElement('div'); box.id='first-sync'; box.hidden=true;
+    box.innerHTML='<div class="first-sync-card"><div id="first-sync-msg" role="status"></div><div id="first-sync-detail"></div>'
+      +'<div class="first-sync-bar" aria-hidden="true"><span id="first-sync-bar-fill"></span></div>'
+      +'<div class="first-sync-actions"><button id="first-sync-retry" class="btn primary" type="button" hidden>Retry</button><button id="first-sync-continue" class="btn" type="button" hidden>Continue without waiting</button></div></div>';
+    document.body.appendChild(box);
+    box.querySelector('#first-sync-retry').addEventListener('click',()=>{ startFirstSync(); pullAndMergeFromCloud(true); });
+    box.querySelector('#first-sync-continue').addEventListener('click',()=>endFirstSync());
+  }
+  return box;
+}
+function renderFirstSync(){
+  clearTimeout(_firstSyncTimer); _firstSyncTimer=null;
+  const s=_firstSync;
+  if(!s){ const b=el('first-sync'); if(b)b.hidden=true; return; }
+  const box=firstSyncOverlay(); box.hidden=false;
+  const online=navigator.onLine!==false;
+  const elapsed=Date.now()-s.lastProgressAt;
+  const stage=s.failed?'stalled':loadingStage(elapsed,online);
+  box.dataset.stage=s.failed?'failed':stage;
+  const count=s.total?(Math.min(s.done,s.total)+' of '+s.total+' document'+(s.total===1?'':'s')):'';
+  let head='Bringing in your documents…', more=count, retry=false, cont=false;
+  if(stage==='offline'){ head='You’re offline.'; more='Your documents will come in when you’re back online.'; cont=true; }
+  else if(s.failed){ head='Couldn’t bring in your documents.'; more='Check your connection and try again. Anything already here is safe.'; retry=true; cont=true; }
+  else if(stage==='stalled'){ more=(count?count+'. ':'')+'Your account isn’t responding. You can keep waiting, or carry on and they’ll appear as they arrive.'; cont=true; }
+  else if(stage==='slow'){ more=(count?count+'. ':'')+'This is taking longer than usual.'; }
+  el('first-sync-msg').textContent=head; el('first-sync-detail').textContent=more;
+  el('first-sync-retry').hidden=!retry; el('first-sync-continue').hidden=!cont;
+  const fill=el('first-sync-bar-fill'), bar=fill.parentElement;
+  bar.classList.toggle('indeterminate',!s.total); fill.style.width=s.total?Math.round(100*Math.min(s.done,s.total)/s.total)+'%':'';
+  const wait=s.failed?null:msUntilNextLoadingStage(elapsed,online);
+  if(wait!=null)_firstSyncTimer=setTimeout(renderFirstSync,wait+20);
+}
+// The sync finished: open the most recently edited document from the account in place of a blank
+// one (a document with anything in it stays open), then the screen goes.
+function finishFirstSync(ok){
+  if(!_firstSync)return;
+  if(!ok){ _firstSync.failed=true; renderFirstSync(); return; }
+  try{
+    const here={title:el('header-title')?.value||'',nodes,remarks,diagrams,docStatus,docLinkedUrl};
+    if(currentDocId==null||docPayloadIsBlank(here)){
+      const latest=loadActiveDocsIndex().filter(d=>d.id!==currentDocId&&localStorage.getItem(docKey(d.id))!==null)
+        .sort((a,b)=>(Number(b.updatedAt)||0)-(Number(a.updatedAt)||0))[0];
+      if(latest)switchDoc(latest.id);
+    }
+  }catch(e){ console.warn('[sakura] finishFirstSync: could not open the latest document:',e); }
+  endFirstSync();
+}
+function endFirstSync(){ _firstSync=null; renderFirstSync(); }
+window.addEventListener('offline',()=>{ if(_firstSync)renderFirstSync(); });
+window.addEventListener('online',()=>{ if(_firstSync){ _firstSync.lastProgressAt=Date.now(); renderFirstSync(); pullAndMergeFromCloud(true); } });
 async function pullAndMergeFromCloud(isInitial=false){
   if(!currentUser)return;
   const now=Date.now(); if(!isInitial&&now-_lastPullAt<15000)return; // throttle: focus-spam guard (initial sign-in pull always runs)
@@ -19848,7 +19935,7 @@ async function pullAndMergeFromCloud(isInitial=false){
     // place. Gating the index meta-key application on this fetch having actually succeeded
     // closes that gap. See warnGhostDocFallback for the other half of this fix.
     let cloudDocsSnap=null, docsFetchOk=false;
-    try{ cloudDocsSnap=await mod.getDocs(mod.collection(db,'users',currentUser.uid,'docs')); docsFetchOk=true; }
+    try{ cloudDocsSnap=await mod.getDocs(mod.collection(db,'users',currentUser.uid,'docs')); docsFetchOk=true; firstSyncProgress(0,cloudDocsSnap.docs.length); }
     catch(e){ console.warn('[sakura] pullAndMergeFromCloud: docs collection fetch failed — skipping docsIndex meta sync this round to avoid creating ghost entries:',e); }
 
     const idbSyncMetaKeys=getIdbSyncMetaKeys();
@@ -19895,9 +19982,11 @@ async function pullAndMergeFromCloud(isInitial=false){
     const localIndex=loadDocsIndex();
     const cloudIds=new Set();
     if(cloudDocsSnap){
+      let seen=0;
       for(const docSnap of cloudDocsSnap.docs){
         const id=docSnap.id; cloudIds.add(id);
         const data=docSnap.data();
+        firstSyncProgress(seen++,null);
         if(await applyIncomingDocData(mod,db,currentUser.uid,id,data,false)){ pulledInCount++; continue; }
         // Saved here after the account's last write and never sent (an offline edit whose push
         // didn't run before the tab closed): send it now. The usual rev check still decides.
@@ -19919,6 +20008,7 @@ async function pullAndMergeFromCloud(isInitial=false){
     renderSidebar();
     if(typeof renderDocsList==='function')renderDocsList();
     updateSyncStatusUI('synced');
+    finishFirstSync(docsFetchOk);
     _syncErrorToastShown=false;
     retryPendingVersionPushes();
     if(removedOpenDoc){
@@ -19930,6 +20020,7 @@ async function pullAndMergeFromCloud(isInitial=false){
   }catch(e){
     console.warn('[sakura] cloud sync pull failed:',e);
     updateSyncStatusUI('error');
+    finishFirstSync(false);
     if(!_syncErrorToastShown){ _syncErrorToastShown=true; showToast('Sync ran into a problem — will keep retrying quietly'); }
   }
 }
