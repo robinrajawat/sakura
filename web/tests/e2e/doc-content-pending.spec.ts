@@ -27,7 +27,7 @@ test.beforeEach(async ({ page }) => {
 
 test('a listed document whose content has not arrived is locked and never saved', async ({ page }) => {
   await expect(page.locator('#doc-content-pending-msg')).toBeVisible();
-  await expect(page.locator('#editor-wrap')).toHaveAttribute('inert', '');
+  await expect(page.locator('#editor-pane')).toHaveAttribute('inert', '');
   // Even if rows end up in memory somehow, the placeholder is not written.
   await page.evaluate(() => {
     // @ts-expect-error -- bare globals from index.html
@@ -45,8 +45,79 @@ test('the content shows in place when it arrives from the account', async ({ pag
     await applyIncomingDocData(null, null, 'uid', 'd-remote', cloud, false);
   });
   await expect(page.locator('#doc-content-pending-msg')).toBeHidden();
-  await expect(page.locator('#editor-wrap')).not.toHaveAttribute('inert', '');
+  await expect(page.locator('#editor-pane')).not.toHaveAttribute('inert', '');
+  await expect(page.locator('#doc-content-pending')).toBeHidden();
   await expect(page.locator('#editor-pane')).toContainText('Second real row');
   const stored = await page.evaluate(() => JSON.parse(localStorage.getItem('sakura_doc_v1_d-remote') || 'null'));
   expect(stored.nodes).toHaveLength(2);
+});
+
+// Standard loading stages (owner 2026-11-21: "is it stuck, how long does it take"): the shape of a
+// document while it loads, "taking longer" after a few seconds, Retry once it looks stuck, and
+// offline said at once. The test pretends to be signed in (account active) so it reads as loading.
+async function pendingFor(page, ms: number) {
+  await page.evaluate((ms) => {
+    localStorage.setItem('sakura_account_active', 'true');
+    // @ts-expect-error -- bare globals from index.html
+    const tab = findOpenTab('d-remote'); tab._pendingSince = Date.now() - ms; setDocContentPendingLock(true);
+  }, ms);
+}
+
+test('loading shows the shape of a document, then says it is taking longer', async ({ page }) => {
+  await pendingFor(page, 1000);
+  await expect(page.locator('#doc-content-pending')).toHaveAttribute('data-stage', 'loading');
+  await expect(page.locator('.doc-pending-skeleton')).toBeVisible();
+  await expect(page.locator('#editor-wrap')).toHaveAttribute('aria-busy', 'true');
+  await expect(page.locator('#doc-content-pending-retry')).toBeHidden();
+  await pendingFor(page, 5000);
+  await expect(page.locator('#doc-content-pending-detail')).toHaveText('This is taking longer than usual.');
+});
+
+test('the stage moves on by itself as time passes', async ({ page }) => {
+  await pendingFor(page, 3900);
+  await expect(page.locator('#doc-content-pending')).toHaveAttribute('data-stage', 'loading');
+  await expect(page.locator('#doc-content-pending')).toHaveAttribute('data-stage', 'slow', { timeout: 3000 });
+});
+
+test('once it looks stuck there is a Retry that asks the account again', async ({ page }) => {
+  await pendingFor(page, 13000);
+  await expect(page.locator('#doc-content-pending')).toHaveAttribute('data-stage', 'stalled');
+  await expect(page.locator('.doc-pending-skeleton')).toBeHidden();
+  await expect(page.locator('#doc-content-pending-msg')).toHaveText('This document hasn’t arrived yet.');
+  // Retry with a fake account that answers with the document: it shows in place.
+  await page.evaluate(() => {
+    // @ts-expect-error -- bare globals from index.html
+    currentUser = { uid: 'uid' };
+    // @ts-expect-error -- bare globals from index.html
+    loadFirestoreMods = async () => ({ db: {}, mod: {
+      doc: (...p: string[]) => p.join('/'),
+      getDoc: async () => ({ exists: () => true, data: () => ({ updatedAt: 1, title: 'Plan', nextId: 2, nodes: [{ id: 1, depth: 0, text: 'Arrived on retry' }] }) }),
+    } });
+  });
+  await page.locator('#doc-content-pending-retry').click();
+  await expect(page.locator('#doc-content-pending')).toBeHidden();
+  await expect(page.locator('#editor-pane')).toContainText('Arrived on retry');
+});
+
+test('a failed Retry says the account could not be reached', async ({ page }) => {
+  await pendingFor(page, 13000);
+  await page.evaluate(() => {
+    // @ts-expect-error -- bare globals from index.html
+    currentUser = { uid: 'uid' };
+    // @ts-expect-error -- bare globals from index.html
+    loadFirestoreMods = async () => { throw new Error('network'); };
+  });
+  await page.locator('#doc-content-pending-retry').click();
+  await expect(page.locator('#doc-content-pending-detail')).toHaveText('Couldn’t reach your account. Check your connection and try again.');
+  await expect(page.locator('#doc-content-pending-retry')).toBeVisible();
+  expect(await page.evaluate(() => localStorage.getItem('sakura_doc_v1_d-remote'))).toBeNull();
+});
+
+test('offline says so at once', async ({ page, context }) => {
+  await pendingFor(page, 1000);
+  await context.setOffline(true);
+  await expect(page.locator('#doc-content-pending')).toHaveAttribute('data-stage', 'offline');
+  await expect(page.locator('#doc-content-pending-msg')).toHaveText('You’re offline.');
+  await context.setOffline(false);
+  await expect(page.locator('#doc-content-pending')).not.toHaveAttribute('data-stage', 'offline');
 });

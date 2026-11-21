@@ -594,6 +594,15 @@ initAiProvidersState({
     sourceFile: 'src/utils/deleteImpact.ts',
     testFile: 'tests/unit/deleteImpact.test.ts',
     footer: ''
+  },
+  {
+    // What a loading screen shows after a given wait (nothing, placeholder shapes, "taking
+    // longer", Retry; offline straight away). Spliced just before setDocContentPendingLock, the
+    // document placeholder that uses it. No production wiring needed -- pure functions.
+    name: 'loadingStage',
+    sourceFile: 'src/utils/loadingStage.ts',
+    testFile: 'tests/unit/loadingStage.test.ts',
+    footer: ''
   }
 ];
 

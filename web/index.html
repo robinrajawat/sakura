@@ -1458,9 +1458,25 @@ body:has(#diagram-viewer.open) .sb-context-menu,body:has(#node-image-viewer.open
 .sfmt-url{width:min(260px,62vw);border:1px solid var(--border);border-radius:6px;background:var(--edit-bg);color:var(--fg);font:13px 'Inter',sans-serif;padding:5px 8px;outline:none}
 .sfmt-url:focus{border-color:var(--accent)}
 .sfmt-menu-item.sfmt-url-ok{color:var(--accent);font-weight:600}
-/* A document whose content hasn't arrived yet: locked (inert) with a short note in place of the rows. */
+/* A document whose content hasn't arrived yet: locked (inert) and shown in stages (setDocContentPendingLock):
+   nothing for a moment, then the shape of a document, then "taking longer", then Retry; offline says so at once. */
 #editor-wrap.doc-content-pending #editor-pane-inner,#editor-wrap.doc-content-pending #editor-title-inner{visibility:hidden}
-#doc-content-pending-msg{position:absolute;left:0;right:0;top:35%;text-align:center;color:var(--muted);font:400 var(--fs-md) 'Inter',sans-serif;padding:0 24px;pointer-events:none}
+#doc-content-pending{position:absolute;inset:0;z-index:2;display:flex;flex-direction:column;align-items:center;padding:56px 24px 24px;text-align:center;pointer-events:none}
+#doc-content-pending[hidden]{display:none}
+#doc-content-pending[data-stage="quiet"]{visibility:hidden}
+.doc-pending-skeleton{width:min(560px,100%);display:flex;flex-direction:column;gap:12px;margin-bottom:32px;text-align:left}
+.doc-pending-skeleton span{display:block;height:12px;border-radius:6px;background:linear-gradient(90deg,color-mix(in srgb,var(--fg) 7%,transparent) 30%,color-mix(in srgb,var(--fg) 13%,transparent) 50%,color-mix(in srgb,var(--fg) 7%,transparent) 70%);background-size:300% 100%;animation:doc-pending-shimmer 1.6s ease-in-out infinite}
+.doc-pending-skeleton span:first-child{height:22px;margin-bottom:10px;border-radius:8px}
+.doc-pending-skeleton i{display:block;height:4px}
+@keyframes doc-pending-shimmer{from{background-position:100% 0}to{background-position:0 0}}
+@media (prefers-reduced-motion:reduce){.doc-pending-skeleton span{animation:none}}
+#doc-content-pending:is([data-stage="stalled"],[data-stage="offline"],[data-stage="final"]) .doc-pending-skeleton{display:none}
+#doc-content-pending:is([data-stage="stalled"],[data-stage="offline"],[data-stage="final"]){padding-top:22vh}
+#doc-content-pending-msg{color:var(--muted);font:400 var(--fs-md) 'Inter',sans-serif}
+#doc-content-pending:is([data-stage="stalled"],[data-stage="offline"]) #doc-content-pending-msg{color:var(--fg);font-weight:600}
+#doc-content-pending-detail{color:var(--muted);font:400 var(--fs-sm) 'Inter',sans-serif;margin-top:6px;max-width:420px}
+#doc-content-pending-detail:empty{display:none}
+#doc-content-pending-retry{margin-top:16px;pointer-events:auto}
 /* Version history: each entry opens a read-only view of that version (owner 2026-11-21). */
 .history-row-open{appearance:none;border:none;background:none;text-align:left;padding:0;cursor:pointer;color:inherit;font:inherit}
 .history-row-reason{font:400 var(--fs-xs) 'Inter',sans-serif;color:var(--accent);margin-top:2px}
@@ -14459,20 +14475,107 @@ function warnGhostDocFallback(id,context){
   // The editor itself now says so (setDocContentPendingLock) and fills in when the content arrives.
 }
 
+/* GENERATED:loadingStage:START — DO NOT EDIT BY HAND. Source of truth: src/utils/loadingStage.ts (tests: tests/unit/loadingStage.test.ts). Regenerate with `npm run generate` after changing the source; CI fails if this block drifts from what the generator produces (see .github/workflows/ci.yml and scripts/generate-index-blocks.mjs). */
+/** Below this, show nothing: a spinner that flashes for a moment looks worse than the wait. */
+const LOADING_SHOW_AFTER_MS = 300;
+/** From here, say it is taking longer than usual. */
+const LOADING_SLOW_AFTER_MS = 4000;
+/** From here, treat it as stuck: say so and offer Retry. */
+const LOADING_STALLED_AFTER_MS = 12000;
+function loadingStage(elapsedMs, online = true) {
+    if (!online)
+        return 'offline';
+    const t = Number.isFinite(elapsedMs) ? elapsedMs : 0;
+    if (t < LOADING_SHOW_AFTER_MS)
+        return 'quiet';
+    if (t < LOADING_SLOW_AFTER_MS)
+        return 'loading';
+    if (t < LOADING_STALLED_AFTER_MS)
+        return 'slow';
+    return 'stalled';
+}
+/** Milliseconds until the stage after this one, or null when no later stage comes by waiting. */
+function msUntilNextLoadingStage(elapsedMs, online = true) {
+    if (!online)
+        return null;
+    const t = Number.isFinite(elapsedMs) ? Math.max(0, elapsedMs) : 0;
+    for (const edge of [LOADING_SHOW_AFTER_MS, LOADING_SLOW_AFTER_MS, LOADING_STALLED_AFTER_MS]) {
+        if (t < edge)
+            return edge - t;
+    }
+    return null;
+}
+
+/* GENERATED:loadingStage:END */
 // While the open document is a placeholder, the editor can't be typed into: anything typed would
-// be lost when the real content arrives (saveToStorage never saves a placeholder). It says why.
+// be lost when the real content arrives (saveToStorage never saves a placeholder). It says why, in
+// stages (loadingStage): nothing for a moment, then the shape of a document, then "taking longer",
+// then Retry; offline says so at once and tries again when the connection is back (owner
+// 2026-11-21: "too odd when you don't know what's happening: is it stuck, how long does it take").
+let _docPendingTimer=null;
+function docPendingOverlay(wrap){
+  let box=el('doc-content-pending');
+  if(!box){
+    box=document.createElement('div'); box.id='doc-content-pending'; box.hidden=true;
+    box.innerHTML='<div class="doc-pending-skeleton" aria-hidden="true">'+[62,88,74,0,46,80,68,0,54,72].map((w,i)=>w?'<span style="width:'+w+'%;margin-left:'+([4,5,6,8].includes(i)?'6%':'0')+'"></span>':'<i></i>').join('')+'</div>'
+      +'<div id="doc-content-pending-msg" role="status"></div><div id="doc-content-pending-detail"></div>'
+      +'<button id="doc-content-pending-retry" class="btn primary" type="button" hidden>Retry</button>';
+    wrap.appendChild(box);
+    box.querySelector('#doc-content-pending-retry').addEventListener('click',()=>retryPendingDocLoad());
+  }
+  return box;
+}
 function setDocContentPendingLock(on){
   const wrap=el('editor-wrap'); if(!wrap)return;
+  clearTimeout(_docPendingTimer); _docPendingTimer=null;
   wrap.classList.toggle('doc-content-pending',on);
-  if(on)wrap.setAttribute('inert',''); else wrap.removeAttribute('inert');
-  let msg=el('doc-content-pending-msg');
-  if(on&&!msg){ msg=document.createElement('div'); msg.id='doc-content-pending-msg'; msg.setAttribute('role','status'); wrap.appendChild(msg); }
-  if(!msg)return;
-  msg.hidden=!on;
+  const box=on?docPendingOverlay(wrap):el('doc-content-pending');
+  // Everything but the overlay is locked, so its Retry stays usable.
+  [...wrap.children].forEach(c=>{ if(c!==box)c.toggleAttribute('inert',on); });
+  if(!box)return;
+  box.hidden=!on;
+  if(!on){ wrap.removeAttribute('aria-busy'); return; }
   const tab=findOpenTab(activeTabDocId);
-  if(on)msg.textContent=tab&&tab._missingInAccount?'This document isn\u2019t in your account. It may have been deleted on another device.'
-    :(currentUser||localStorage.getItem('sakura_account_active')==='true')?'Loading this document from your account\u2026':'This document\u2019s content isn\u2019t on this device.';
+  const msg=el('doc-content-pending-msg'), detail=el('doc-content-pending-detail'), retry=el('doc-content-pending-retry');
+  const show=(stage,head,more,canRetry)=>{
+    box.dataset.stage=stage; msg.textContent=head; detail.textContent=more||''; retry.hidden=!canRetry;
+    if(stage==='loading'||stage==='slow'||stage==='quiet')wrap.setAttribute('aria-busy','true'); else wrap.removeAttribute('aria-busy');
+  };
+  if(tab&&tab._missingInAccount){ show('final','This document isn’t in your account. It may have been deleted on another device.'); return; }
+  if(!(currentUser||localStorage.getItem('sakura_account_active')==='true')){ show('final','This document’s content isn’t on this device.'); return; }
+  if(tab&&!tab._pendingSince)tab._pendingSince=Date.now(); // per document: switching away and back doesn't restart the clock
+  const elapsed=Date.now()-((tab&&tab._pendingSince)||Date.now());
+  const stage=tab&&tab._pendingFailed?'stalled':loadingStage(elapsed,navigator.onLine!==false);
+  if(stage==='offline')show(stage,'You’re offline.','This document will open when you’re back online.');
+  else if(stage==='stalled')show(stage,'This document hasn’t arrived yet.',tab&&tab._pendingFailed?'Couldn’t reach your account. Check your connection and try again.':'Your account isn’t responding. Your other documents aren’t affected.',true);
+  else show(stage,'Loading this document from your account…',stage==='slow'?'This is taking longer than usual.':'');
+  const wait=stage==='stalled'?null:msUntilNextLoadingStage(elapsed,navigator.onLine!==false);
+  if(wait!=null)_docPendingTimer=setTimeout(()=>{ if(findOpenTab(activeTabDocId)?._ghostFallback)setDocContentPendingLock(true); },wait+20);
 }
+// Retry: ask the account for just this document. Its content goes on screen through the usual path
+// (applyIncomingDocData), so the placeholder is still never saved over anything.
+let _docPendingRetrying=false;
+async function retryPendingDocLoad(){
+  const id=activeTabDocId, tab=findOpenTab(id);
+  if(!tab||!tab._ghostFallback||_docPendingRetrying)return;
+  tab._pendingSince=Date.now(); tab._pendingFailed=false; setDocContentPendingLock(true);
+  if(!currentUser||navigator.onLine===false)return; // signing in, or reconnecting, brings it in
+  _docPendingRetrying=true;
+  try{
+    const {mod,db}=await loadFirestoreMods();
+    const snap=await mod.getDoc(mod.doc(db,'users',currentUser.uid,'docs',id));
+    if(!snap.exists())tab._missingInAccount=true;
+    else await applyIncomingDocData(mod,db,currentUser.uid,id,snap.data(),false);
+  }catch(e){
+    console.warn('[sakura] retryPendingDocLoad: could not fetch',id,e);
+    tab._pendingFailed=true;
+  }finally{
+    _docPendingRetrying=false;
+    if(findOpenTab(activeTabDocId)?._ghostFallback)setDocContentPendingLock(true);
+  }
+}
+window.addEventListener('offline',()=>{ if(findOpenTab(activeTabDocId)?._ghostFallback)setDocContentPendingLock(true); });
+window.addEventListener('online',()=>{ if(findOpenTab(activeTabDocId)?._ghostFallback)retryPendingDocLoad(); });
 // The real content of the placeholder on screen has just been stored: show it in place.
 function replaceGhostTabWithStored(id){
   const tab=findOpenTab(id); if(!tab||!tab._ghostFallback)return false;
