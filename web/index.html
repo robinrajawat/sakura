@@ -1475,6 +1475,16 @@ body:has(#diagram-viewer.open) .sb-context-menu,body:has(#node-image-viewer.open
 /* A version entry opens its view: a quiet › says so, on touch too (no hover there). */
 .history-row-open{position:relative;padding-right:16px}
 .history-row-open::after{content:'\203A';position:absolute;right:0;top:50%;transform:translateY(-50%);color:var(--muted);font:400 var(--fs-xl) 'Inter',sans-serif}
+/* Named versions (owner 2026-11-21): the name first, in the list and the view. */
+.history-row-name{font:600 var(--fs-md) 'Inter',sans-serif;color:var(--fg)}
+.history-preview-name{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.history-preview-name .history-row-name:empty{display:none}
+.history-preview-namebtn{appearance:none;border:none;background:none;padding:0;color:var(--accent);font:500 var(--fs-sm) 'Inter',sans-serif;cursor:pointer}
+/* Rows you have now that the version doesn't, and the words that differ inside a row. */
+.history-preview-row.is-removed{color:var(--muted);text-decoration:line-through;background:color-mix(in srgb,var(--fc-red) 8%,transparent);border-left-color:var(--fc-red)}
+.hv-word-add{background:color-mix(in srgb,var(--accent) 22%,transparent);border-radius:3px}
+.hv-word-del{color:var(--muted);text-decoration:line-through;text-decoration-color:var(--fc-red)}
+.history-preview-key .k-removed::before{background:color-mix(in srgb,var(--fc-red) 25%,transparent);border-left:3px solid var(--fc-red)}
 /* Tables (plain, polished, and every Show as display) as the computer draws them. Shared by
    index.html and the phone's reader (hub.html), which shows the computer's ready-made copy of each
    table (owner 2026-11-03: the same look on every device). Listed in both pages' style blocks. */
@@ -13809,7 +13819,7 @@ async function recordDocRevisionNow(id,contentObj,reason,opts){
   const last=list[list.length-1];
   if(opts&&opts.dedupe&&last&&docRevisionContentKey(last)===docRevisionContentKey(contentObj))return true; // already kept
   const now=Date.now();
-  list.push({ts:last&&last.ts>=now?last.ts+1:now,reason:reason||'Auto',device:thisDeviceName(),...(contentObj.rowFormat?{rowFormat:contentObj.rowFormat}:{}),nodes:contentObj.nodes,title:contentObj.title||'',author:contentObj.author||'',docStatus:typeof contentObj.docStatus==='string'?contentObj.docStatus:'',docLinkedUrl:typeof contentObj.docLinkedUrl==='string'?contentObj.docLinkedUrl:'',docLinkedUrlLabel:typeof contentObj.docLinkedUrlLabel==='string'?contentObj.docLinkedUrlLabel:'',diagrams:trimDiagramsForRevision(contentObj.diagrams),qa:Array.isArray(contentObj.qa)?contentObj.qa:[],remarks:Array.isArray(contentObj.remarks)?contentObj.remarks:[]});
+  list.push({ts:last&&last.ts>=now?last.ts+1:now,reason:reason||'Auto',device:thisDeviceName(),...(opts&&opts.name?{name:String(opts.name).slice(0,80),nameAt:now}:{}),...(contentObj.rowFormat?{rowFormat:contentObj.rowFormat}:{}),nodes:contentObj.nodes,title:contentObj.title||'',author:contentObj.author||'',docStatus:typeof contentObj.docStatus==='string'?contentObj.docStatus:'',docLinkedUrl:typeof contentObj.docLinkedUrl==='string'?contentObj.docLinkedUrl:'',docLinkedUrlLabel:typeof contentObj.docLinkedUrlLabel==='string'?contentObj.docLinkedUrlLabel:'',diagrams:trimDiagramsForRevision(contentObj.diagrams),qa:Array.isArray(contentObj.qa)?contentObj.qa:[],remarks:Array.isArray(contentObj.remarks)?contentObj.remarks:[]});
   // Keeps versions for 30 days, thinned with age, at most REVISION_MAX_PER_DOC (src/utils/versionHistory.ts), not just
   // the newest ones.
   const kept=trimVersions(list,REVISION_MAX_PER_DOC,now);
@@ -14991,6 +15001,58 @@ function formatVersionTime(ts, now, locale) {
     const date = d.toLocaleDateString(locale, d.getFullYear() === n.getFullYear() ? { day: 'numeric', month: 'short' } : { day: 'numeric', month: 'short', year: 'numeric' });
     return date + ', ' + time;
 }
+/**
+ * Word-level difference from `from` to `to` (owner 2026-11-21: show what changed inside a row, as
+ * Google Docs does): `add` is in `to` only, `del` in `from` only. Whitespace stays with its word.
+ * Longest-common-subsequence on words; long texts (over 400 words a side) fall back to one
+ * del + one add, which is still correct, just coarser.
+ */
+function diffWords(from, to) {
+    const a = String(from ?? '').match(/\S+\s*|\s+/g) || [];
+    const b = String(to ?? '').match(/\S+\s*|\s+/g) || [];
+    const out = [];
+    const push = (t, s) => {
+        const last = out[out.length - 1];
+        if (last && last.t === t)
+            last.s += s;
+        else
+            out.push({ t, s });
+    };
+    if (a.length > 400 || b.length > 400) {
+        if (a.length)
+            push('del', a.join(''));
+        if (b.length)
+            push('add', b.join(''));
+        return out;
+    }
+    const key = (w) => w.trim();
+    const n = a.length, m = b.length;
+    const L = Array.from({ length: n + 1 }, () => new Array(m + 1).fill(0));
+    for (let i = n - 1; i >= 0; i--)
+        for (let j = m - 1; j >= 0; j--)
+            L[i][j] = key(a[i]) === key(b[j]) ? L[i + 1][j + 1] + 1 : Math.max(L[i + 1][j], L[i][j + 1]);
+    let i = 0, j = 0;
+    while (i < n && j < m) {
+        if (key(a[i]) === key(b[j])) {
+            push('same', b[j]);
+            i++;
+            j++;
+        }
+        else if (L[i + 1][j] >= L[i][j + 1]) {
+            push('del', a[i]);
+            i++;
+        }
+        else {
+            push('add', b[j]);
+            j++;
+        }
+    }
+    while (i < n)
+        push('del', a[i++]);
+    while (j < m)
+        push('add', b[j++]);
+    return out;
+}
 
 /* GENERATED:versionSummary:END */
 function openVersionHistory(docId){
@@ -15094,6 +15156,7 @@ async function renderVersionHistoryList(){
     time.textContent=formatVersionTime(rev.ts,now)+(rev.device?' \u00b7 '+rev.device:'');
     const meta=document.createElement('div'); meta.className='history-row-meta';
     meta.textContent=older?formatVersionSummary(summarizeVersionChange(older,rev)):'Oldest kept \u00b7 '+rev.nodes.length+' row'+(rev.nodes.length===1?'':'s');
+    if(rev.name){ const nm=document.createElement('div'); nm.className='history-row-name'; nm.textContent=rev.name; info.appendChild(nm); }
     info.appendChild(time); info.appendChild(meta);
     const why=versionReasonLabel(rev.reason);
     if(why){ const tag=document.createElement('div'); tag.className='history-row-reason'; tag.textContent=why; info.appendChild(tag); }
@@ -15104,6 +15167,23 @@ async function renderVersionHistoryList(){
     row.appendChild(restoreBtn);
     body.appendChild(row);
   });
+}
+// Names (or renames, or unnames) a kept version, here and in the account.
+async function nameDocVersion(docId,ts,current){
+  const name=await sakuraPrompt({title:current?'Rename this version':'Name this version',body:'A named version is kept until you remove its name. Leave it empty to remove the name.',defaultValue:current||'',confirmLabel:'Save',cancelLabel:'Cancel'});
+  if(name===null)return null;
+  const clean=String(name).trim().slice(0,80);
+  let updated=null;
+  await withDocRevisionLock(docId,async()=>{
+    const list=await loadDocRevisions(docId);
+    const v=list.find(x=>x.ts===ts); if(!v)return;
+    if(clean)v.name=clean; else delete v.name;
+    v.nameAt=Date.now();
+    updated=v;
+    await saveDocRevisions(docId,list);
+  });
+  if(updated)pushDocVersionsToCloud(docId,[updated],[]);
+  return updated;
 }
 // Why a version was kept, in plain words; nothing for a regular automatic save.
 function versionReasonLabel(reason){
@@ -15138,19 +15218,44 @@ async function showVersionPreview(docId,rev,older){
     if(c.titleChanged)bits.push('the title differs');
     vsNow.textContent=bits.length?'If you restore it: '+bits.join(', ')+'.':'Same content as the document now.';
   }
-  head.append(back,title,since,vsNow);
-  if(current){ const key=document.createElement('div'); key.className='history-preview-key'; key.innerHTML='<span class="k-added">Not in the document now</span><span class="k-edited">Reads differently now</span>'; head.appendChild(key); }
+  const nameLine=document.createElement('div'); nameLine.className='history-preview-name';
+  const nameText=document.createElement('span'); nameText.className='history-row-name'; nameText.textContent=rev.name||'';
+  const nameBtn=document.createElement('button'); nameBtn.type='button'; nameBtn.className='history-preview-namebtn'; nameBtn.textContent=rev.name?'Rename':'Name this version';
+  nameBtn.addEventListener('click',async()=>{ const u=await nameDocVersion(docId,rev.ts,rev.name||''); if(u){ rev.name=u.name; rev.nameAt=u.nameAt; showVersionPreview(docId,rev,older); } });
+  nameLine.append(nameText,nameBtn);
+  head.append(back,nameLine,title,since,vsNow);
+  if(current){ const key=document.createElement('div'); key.className='history-preview-key'; key.innerHTML='<span class="k-added">Would come back</span><span class="k-edited">Reads differently</span><span class="k-removed">Would go</span>'; head.appendChild(key); }
   body.appendChild(head);
-  const nowRows=new Map((current&&Array.isArray(current.nodes)?current.nodes:[]).map(n=>[String(n.id),n]));
+  const nowList=current&&Array.isArray(current.nodes)?current.nodes:[];
+  const nowRows=new Map(nowList.map(n=>[String(n.id),n]));
+  const verIds=new Set((rev.nodes||[]).map(n=>String(n.id)));
+  // Rows you have now that this version doesn't: shown where they are now, struck through.
+  const goneAfter=new Map(); let lastShared=null;
+  nowList.forEach(n=>{ const id=String(n.id); if(verIds.has(id)){ lastShared=id; return; } const k=lastShared??''; if(!goneAfter.has(k))goneAfter.set(k,[]); goneAfter.get(k).push(n); });
   const list=document.createElement('div'); list.className='history-preview-rows';
-  (rev.nodes||[]).forEach(n=>{
-    const line=document.createElement('div'); line.className='history-preview-row';
-    const was=nowRows.get(String(n.id));
-    if(current&&!was){ line.classList.add('is-added'); line.dataset.tip='Not in the document now'; }
-    else if(was&&versionRowContentKey(was)!==versionRowContentKey(n)){ line.classList.add('is-edited'); line.dataset.tip='Reads differently now'; }
+  const addRow=(n,cls,tip,content)=>{
+    const line=document.createElement('div'); line.className='history-preview-row'+(cls?' '+cls:'');
+    if(tip)line.dataset.tip=tip;
     line.style.paddingLeft=(6+Math.min(Number(n.depth)||0,8)*16)+'px';
-    line.textContent=getNodePlainText(n).trim()||'(empty row)';
+    if(typeof content==='string')line.textContent=content; else line.appendChild(content);
     list.appendChild(line);
+  };
+  const addGone=k=>(goneAfter.get(k)||[]).forEach(n=>addRow(n,'is-removed','You have this now; it would go',getNodePlainText(n).trim()||'(empty row)'));
+  addGone('');
+  (rev.nodes||[]).forEach(n=>{
+    const text=getNodePlainText(n).trim();
+    const was=nowRows.get(String(n.id));
+    if(current&&!was)addRow(n,'is-added','Not in the document now',text||'(empty row)');
+    else if(was&&versionRowContentKey(was)!==versionRowContentKey(n)){
+      // The words that differ: highlighted if they'd come back, struck through if they'd go.
+      const frag=document.createDocumentFragment();
+      const nowText=getNodePlainText(was).trim();
+      if(nowText===text){ frag.append(text||'(empty row)'); }
+      else diffWords(nowText,text).forEach(p=>{ if(p.t==='same'){ frag.append(p.s); return; } const sp=document.createElement('span'); sp.className=p.t==='add'?'hv-word-add':'hv-word-del'; sp.textContent=p.s; frag.appendChild(sp); });
+      addRow(n,'is-edited','Reads differently now',frag);
+    }
+    else addRow(n,'','',text||'(empty row)');
+    addGone(String(n.id));
   });
   if(!(rev.nodes||[]).length){ const e=document.createElement('div'); e.className='history-empty'; e.textContent='This version has no rows.'; list.appendChild(e); }
   body.appendChild(list);
@@ -15288,13 +15393,18 @@ async function restoreNodeTextFromRevision(nodeId,text){
 }
 // docId defaults to the document open in the Version history window; the History chip's menu
 // passes the current document (the window is closed then).
-async function saveManualDocVersion(docId=historyModalDocId){
+async function saveManualDocVersion(docId=historyModalDocId,givenName){
   if(!docId)return;
+  // An optional name, as in Google Docs ("Sent to client"): a named version is kept until you
+  // delete its name (owner 2026-11-21). Asked for unless the caller gives one ('' for none).
+  const name=typeof givenName==='string'?givenName:await sakuraPrompt({title:'Save a version',body:'Give it a name if you like, such as \u201cSent to client\u201d. Named versions are kept until you remove the name.',defaultValue:'',confirmLabel:'Save',cancelLabel:'Cancel'});
+  if(name===null)return;
+  const opts={name:String(name).trim()};
   if(docId===currentDocId){
     commitEdit();
-    await recordDocRevision(docId,currentDocRevisionContent(),'Manual checkpoint');
+    await recordDocRevision(docId,currentDocRevisionContent(),'Manual checkpoint',opts);
   } else {
-    try{ const prev=await storedDocForRevision(docId); if(prev)await recordDocRevision(docId,prev,'Manual checkpoint'); }catch(e){}
+    try{ const prev=await storedDocForRevision(docId); if(prev)await recordDocRevision(docId,prev,'Manual checkpoint',opts); }catch(e){}
   }
   renderVersionHistoryList();
   showToast('Version saved');
@@ -22440,7 +22550,7 @@ function pickVersionToDrop(list, now) {
         const age = Math.max(60000, now - ts[i]);
         // Plain number, not a module constant: index.html can call this before the block's own
         // top-level `const`s have run.
-        const weight = (list[i].reason || 'Auto') === 'Auto' ? 1 : 3;
+        const weight = list[i].name ? 1e9 : (list[i].reason || 'Auto') === 'Auto' ? 1 : 3;
         const score = ((after - before) / age) * weight;
         if (score < bestScore) {
             bestScore = score;
@@ -22468,7 +22578,7 @@ function thinVersionsByAge(sorted, now) {
         lastAutoOfDay.set(d.getFullYear() + '-' + d.getMonth() + '-' + d.getDate(), i);
     });
     return sorted.filter((v, i) => {
-        if (i === newest)
+        if (i === newest || v.name)
             return true;
         const age = now - (Number(v.ts) || 0);
         if (age > 30 * day)
@@ -22498,7 +22608,12 @@ function trimVersions(list, max, now) {
 function mergeVersionLists(a, b, max, now) {
     const byTs = new Map();
     for (const v of [...(Array.isArray(a) ? a : []), ...(Array.isArray(b) ? b : [])]) {
-        if (v && Number.isFinite(Number(v.ts)) && !byTs.has(Number(v.ts)))
+        if (!v || !Number.isFinite(Number(v.ts)))
+            continue;
+        const have = byTs.get(Number(v.ts));
+        // The same version from both lists: the one whose name was set (or removed) last wins, so a
+        // name given on one device reaches the others.
+        if (!have || (Number(v.nameAt) || 0) > (Number(have.nameAt) || 0))
             byTs.set(Number(v.ts), v);
     }
     return trimVersions([...byTs.values()], max, now);

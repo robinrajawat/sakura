@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { summarizeVersionChange, formatVersionSummary, describeDevice, formatVersionTime } from '../../src/utils/versionSummary';
+import { summarizeVersionChange, formatVersionSummary, describeDevice, formatVersionTime, diffWords } from '../../src/utils/versionSummary';
 
 const row = (id: number, text: string, extra: object = {}) => ({ id, text, depth: 0, note: '', tables: [], images: [], ...extra });
 
@@ -51,5 +51,22 @@ describe('formatVersionTime', () => {
     expect(formatVersionTime(new Date(2026, 10, 20, 16, 55).getTime(), now, 'en-GB')).toBe('Yesterday, 16:55');
     expect(formatVersionTime(new Date(2026, 10, 16, 18, 11).getTime(), now, 'en-GB')).toBe('16 Nov, 18:11');
     expect(formatVersionTime(new Date(2025, 0, 2, 9, 5).getTime(), now, 'en-GB')).toBe('2 Jan 2025, 9:05');
+  });
+});
+
+describe('diffWords', () => {
+  it('marks the words added and removed', () => {
+    expect(diffWords('Reduce broken pallets', 'Reduce broken pallets by 30%')).toEqual([
+      { t: 'same', s: 'Reduce broken pallets ' }, { t: 'add', s: 'by 30%' }
+    ]);
+    const d = diffWords('Analysis draft one', 'Analysis draft two');
+    expect(d.filter((p) => p.t === 'del').map((p) => p.s.trim())).toEqual(['one']);
+    expect(d.filter((p) => p.t === 'add').map((p) => p.s.trim())).toEqual(['two']);
+    expect(d.map((p) => p.s).filter((_, i) => d[i].t !== 'del').join('')).toBe('Analysis draft two');
+  });
+  it('same text is one part; very long texts fall back to replace', () => {
+    expect(diffWords('a b', 'a b')).toEqual([{ t: 'same', s: 'a b' }]);
+    const long = Array.from({ length: 500 }, (_, i) => 'w' + i).join(' ');
+    expect(diffWords(long, long + ' x').map((p) => p.t)).toEqual(['del', 'add']);
   });
 });

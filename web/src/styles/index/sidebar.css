@@ -269,3 +269,13 @@ body:has(#diagram-viewer.open) .sb-context-menu,body:has(#node-image-viewer.open
 /* A version entry opens its view: a quiet › says so, on touch too (no hover there). */
 .history-row-open{position:relative;padding-right:16px}
 .history-row-open::after{content:'\203A';position:absolute;right:0;top:50%;transform:translateY(-50%);color:var(--muted);font:400 var(--fs-xl) 'Inter',sans-serif}
+/* Named versions (owner 2026-11-21): the name first, in the list and the view. */
+.history-row-name{font:600 var(--fs-md) 'Inter',sans-serif;color:var(--fg)}
+.history-preview-name{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.history-preview-name .history-row-name:empty{display:none}
+.history-preview-namebtn{appearance:none;border:none;background:none;padding:0;color:var(--accent);font:500 var(--fs-sm) 'Inter',sans-serif;cursor:pointer}
+/* Rows you have now that the version doesn't, and the words that differ inside a row. */
+.history-preview-row.is-removed{color:var(--muted);text-decoration:line-through;background:color-mix(in srgb,var(--fc-red) 8%,transparent);border-left-color:var(--fc-red)}
+.hv-word-add{background:color-mix(in srgb,var(--accent) 22%,transparent);border-radius:3px}
+.hv-word-del{color:var(--muted);text-decoration:line-through;text-decoration-color:var(--fc-red)}
+.history-preview-key .k-removed::before{background:color-mix(in srgb,var(--fc-red) 25%,transparent);border-left:3px solid var(--fc-red)}

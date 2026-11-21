@@ -106,3 +106,39 @@ export function formatVersionTime(ts: number, now: number, locale?: string): str
   const date = d.toLocaleDateString(locale, d.getFullYear() === n.getFullYear() ? { day: 'numeric', month: 'short' } : { day: 'numeric', month: 'short', year: 'numeric' });
   return date + ', ' + time;
 }
+
+export type WordDiffPart = { t: 'same' | 'add' | 'del'; s: string };
+
+/**
+ * Word-level difference from `from` to `to` (owner 2026-11-21: show what changed inside a row, as
+ * Google Docs does): `add` is in `to` only, `del` in `from` only. Whitespace stays with its word.
+ * Longest-common-subsequence on words; long texts (over 400 words a side) fall back to one
+ * del + one add, which is still correct, just coarser.
+ */
+export function diffWords(from: string, to: string): WordDiffPart[] {
+  const a = String(from ?? '').match(/\S+\s*|\s+/g) || [];
+  const b = String(to ?? '').match(/\S+\s*|\s+/g) || [];
+  const out: WordDiffPart[] = [];
+  const push = (t: WordDiffPart['t'], s: string) => {
+    const last = out[out.length - 1];
+    if (last && last.t === t) last.s += s; else out.push({ t, s });
+  };
+  if (a.length > 400 || b.length > 400) {
+    if (a.length) push('del', a.join(''));
+    if (b.length) push('add', b.join(''));
+    return out;
+  }
+  const key = (w: string) => w.trim();
+  const n = a.length, m = b.length;
+  const L: number[][] = Array.from({ length: n + 1 }, () => new Array(m + 1).fill(0));
+  for (let i = n - 1; i >= 0; i--) for (let j = m - 1; j >= 0; j--) L[i][j] = key(a[i]) === key(b[j]) ? L[i + 1][j + 1] + 1 : Math.max(L[i + 1][j], L[i][j + 1]);
+  let i = 0, j = 0;
+  while (i < n && j < m) {
+    if (key(a[i]) === key(b[j])) { push('same', b[j]); i++; j++; }
+    else if (L[i + 1][j] >= L[i][j + 1]) { push('del', a[i]); i++; }
+    else { push('add', b[j]); j++; }
+  }
+  while (i < n) push('del', a[i++]);
+  while (j < m) push('add', b[j++]);
+  return out;
+}

@@ -18,6 +18,10 @@
 export interface VersionEntry {
   ts: number;
   reason?: string;
+  /** A name you gave it ("Sent to client"): kept until the name is removed. */
+  name?: string;
+  /** When the name was last set or removed, so the latest wins between devices. */
+  nameAt?: number;
 }
 
 /** Index of the version to drop next, or -1 when there are fewer than two. */
@@ -36,7 +40,7 @@ export function pickVersionToDrop(list: VersionEntry[], now: number): number {
     const age = Math.max(60000, now - ts[i]);
     // Plain number, not a module constant: index.html can call this before the block's own
     // top-level `const`s have run.
-    const weight = (list[i].reason || 'Auto') === 'Auto' ? 1 : 3;
+    const weight = list[i].name ? 1e9 : (list[i].reason || 'Auto') === 'Auto' ? 1 : 3;
     const score = ((after - before) / age) * weight;
     if (score < bestScore) {
       bestScore = score;
@@ -64,7 +68,7 @@ export function thinVersionsByAge<T extends VersionEntry>(sorted: T[], now: numb
     lastAutoOfDay.set(d.getFullYear() + '-' + d.getMonth() + '-' + d.getDate(), i);
   });
   return sorted.filter((v, i) => {
-    if (i === newest) return true;
+    if (i === newest || v.name) return true;
     const age = now - (Number(v.ts) || 0);
     if (age > 30 * day) return false;
     if (age <= day || (v.reason || 'Auto') !== 'Auto') return true;
@@ -93,7 +97,11 @@ export function trimVersions<T extends VersionEntry>(list: T[], max: number, now
 export function mergeVersionLists<T extends VersionEntry>(a: T[], b: T[], max: number, now: number): T[] {
   const byTs = new Map<number, T>();
   for (const v of [...(Array.isArray(a) ? a : []), ...(Array.isArray(b) ? b : [])]) {
-    if (v && Number.isFinite(Number(v.ts)) && !byTs.has(Number(v.ts))) byTs.set(Number(v.ts), v);
+    if (!v || !Number.isFinite(Number(v.ts))) continue;
+    const have = byTs.get(Number(v.ts));
+    // The same version from both lists: the one whose name was set (or removed) last wins, so a
+    // name given on one device reaches the others.
+    if (!have || (Number(v.nameAt) || 0) > (Number(have.nameAt) || 0)) byTs.set(Number(v.ts), v);
   }
   return trimVersions([...byTs.values()], max, now);
 }

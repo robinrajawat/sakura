@@ -37,7 +37,7 @@ const versions = (page: Page) => page.evaluate(`loadDocRevisions('${DOC}').then(
 
 test('restoring a version brings its threads back with its rows', async ({ page }) => {
   await open(page);
-  await page.evaluate('saveManualDocVersion(currentDocId)');
+  await page.evaluate('saveManualDocVersion(currentDocId, "")');
   await page.evaluate('remarks = []; nodes = nodes.slice(0, 5); markDirty(); saveToStorage();');
   const list = await versions(page);
   expect(list[list.length - 1]).toMatchObject({ reason: 'Manual checkpoint', remarks: 1 });
@@ -48,7 +48,7 @@ test('restoring a version brings its threads back with its rows', async ({ page 
 
 test('Clear all rows soon after a version still keeps the rows as a version', async ({ page }) => {
   await open(page);
-  await page.evaluate('saveManualDocVersion(currentDocId)');
+  await page.evaluate('saveManualDocVersion(currentDocId, "")');
   await page.evaluate('nodes[0].text = "Row 1 edited"; markDirty(); saveToStorage();');
   await page.evaluate('nodes = []; remarks = []; markDirty(); saveToStorage();');
   await expect.poll(async () => (await versions(page)).map((v) => v.reason)).toEqual(['Manual checkpoint', 'Before a large change']);
@@ -61,7 +61,7 @@ test('Clear all rows soon after a version still keeps the rows as a version', as
 
 test('a thread-only change counts as a change', async ({ page }) => {
   await open(page);
-  await page.evaluate('saveManualDocVersion(currentDocId)');
+  await page.evaluate('saveManualDocVersion(currentDocId, "")');
   // Make the last version old enough for the next automatic one.
   await page.evaluate(`loadDocRevisions('${DOC}').then(l => { l[l.length - 1].ts -= 11 * 60000; return saveDocRevisions('${DOC}', l); })`);
   await page.evaluate('remarks[0].text = "Edited comment"; markDirty(); saveToStorage();');
