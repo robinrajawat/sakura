@@ -76,6 +76,21 @@ test('an entry deleted on the other device is not brought back by the collision'
   expect(await queued(page)).not.toContain('doc:d3');
 });
 
+test('a thread deleted on this device stays deleted when the account\'s copy changed meanwhile, and the deletion goes up', async ({ page }) => {
+  // Owner 2026-11-21: a thread deleted in the installed iPhone app was still there in Safari.
+  await page.evaluate(async ({ rows, a, b }) => {
+    localStorage.setItem('sakura_doc_v1_d5', JSON.stringify({ nodes: rows, title: 'Mine', remarks: [] }));
+    saveDocsIndex([{ id: 'd5', title: 'Mine', updatedAt: 1 }]);
+    setDocRemarkTombstones('d5', { a1: Date.now() - 1000, a2: Date.now() - 1000 });
+    recordDocRevision = async () => true;
+    await resolveDocPushConflict(firestoreMods.mod, firestoreMods.db, 'u1', 'd5', { title: 'Theirs', nodes: rows, remarks: [a, b], rev: 5, updatedAt: 2 });
+  }, { rows: [row(1, 'Plan')], a: entry('a1', 1, 10, 'this will be checked.'), b: entry('a2', 1, 11, 'What to say?') });
+  const d = await stored(page, 'd5');
+  expect(d.remarks).toEqual([]);
+  expect(Object.keys(d.remarkTombstones).sort()).toEqual(['a1', 'a2']);
+  expect(await queued(page)).toContain('doc:d5');
+});
+
 test('a newer copy arriving for a document not on screen keeps this device\'s new thread entries', async ({ page }) => {
   await page.evaluate(async ({ rows, mine }) => {
     localStorage.setItem('sakura_doc_v1_d4', JSON.stringify({ nodes: rows, title: 'Offline edit', remarks: [mine] }));

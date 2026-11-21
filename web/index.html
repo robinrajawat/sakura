@@ -5122,14 +5122,15 @@ function mergeDrafts(base, local, cloud) {
  * as the sync rules say, but thread entries are merged into it by id, as offline-first apps do,
  * instead of being lost with the rest of this device's copy.
  *
- * - Every entry in the kept copy stays (an entry both copies have keeps the kept copy's version).
- * - An entry only this device has is added, unless the kept copy records it as deleted
- *   (`remarkTombstones`: entry id → time deleted) or its row isn't in the kept copy.
+ * - An entry both copies have keeps the kept copy's version.
+ * - An entry deleted on either device stays deleted (`remarkTombstones`: entry id → time deleted).
+ *   A deletion is something a person did on purpose, so it wins, as in any synced notes app (owner
+ *   2026-11-21: a thread deleted in the installed iPhone app was still there in Safari, because the
+ *   account's copy had changed meanwhile and its entries were all kept).
+ * - An entry only this device has is added, unless its row isn't in the kept copy.
  * - Deletion records from both copies are kept, and dropped after TOMBSTONE_MAX_AGE_MS.
  *
- * A deletion made only on this device doesn't win over the kept copy: when in doubt nothing is
- * deleted (docs/data-safety-audit.md, Sync rules). Pure; called from resolveDocPushConflict and
- * applyIncomingDocData in index.html.
+ * Pure; called from resolveDocPushConflict and applyIncomingDocData in index.html.
  */
 const TOMBSTONE_MAX_AGE_MS = 90 * 24 * 60 * 60 * 1000;
 /** Records an entry as deleted, at `now`. Returns a new map. */
@@ -5161,11 +5162,13 @@ function mergeTombstones(a, b, now) {
  * @param keptRowIds ids of the rows in the kept copy
  */
 function mergeThreadEntries(keptRemarks, keptTombstones, mineRemarks, mineTombstones, keptRowIds, now) {
-    const kept = Array.isArray(keptRemarks) ? keptRemarks.filter((r) => r && r.id != null) : [];
+    const deletedHere = mineTombstones && typeof mineTombstones === 'object' ? mineTombstones : {};
+    const keptAll = Array.isArray(keptRemarks) ? keptRemarks.filter((r) => r && r.id != null) : [];
+    const kept = keptAll.filter((r) => !(String(r.id) in deletedHere));
     const mine = Array.isArray(mineRemarks) ? mineRemarks.filter((r) => r && r.id != null) : [];
     const rows = new Set([...keptRowIds].map((x) => String(x)));
     const deletedInKept = keptTombstones && typeof keptTombstones === 'object' ? keptTombstones : {};
-    const have = new Set(kept.map((r) => String(r.id)));
+    const have = new Set(keptAll.map((r) => String(r.id)));
     const extra = mine.filter((r) => !have.has(String(r.id)) && !(String(r.id) in deletedInKept) && rows.has(String(r.anchorNodeId)));
     const all = [...kept, ...extra.map((r) => ({ ...r }))];
     // A reply whose entry isn't there any more stops pointing at it (as deleting an entry does).
@@ -5175,7 +5178,7 @@ function mergeThreadEntries(keptRemarks, keptTombstones, mineRemarks, mineTombst
             delete r.answerTo;
     if (extra.length)
         all.sort((a, b) => (Number(a.createdAt) || 0) - (Number(b.createdAt) || 0));
-    return { remarks: all, remarkTombstones: mergeTombstones(keptTombstones, mineTombstones, now), added: extra.length };
+    return { remarks: all, remarkTombstones: mergeTombstones(keptTombstones, mineTombstones, now), added: extra.length, removed: keptAll.length - kept.length };
 }
 
 /* GENERATED:threadMerge:END */
@@ -14011,7 +14014,7 @@ function mergeMyThreadEntriesInto(id,incoming,mine){
     const r=mergeThreadEntries(incoming.remarks,incoming.remarkTombstones,mine.remarks,{...(mine.remarkTombstones||{}),...docRemarkTombstones(id)},rowIds,Date.now());
     incoming.remarks=r.remarks; incoming.remarkTombstones=r.remarkTombstones;
     _remarkTombstonesByDoc.set(id,r.remarkTombstones);
-    return r.added;
+    return r.added+r.removed;
   }catch(e){ console.warn('[sakura] could not merge thread entries:',e); return 0; }
 }
 // Tracks the modifiedAt we last successfully wrote to the diagram-blob overflow store, per
@@ -18330,7 +18333,7 @@ async function resolveDocPushConflict(mod,db,ownerUid,docId,cloud){
   touchDocIndex(docId,docData.title||'Untitled',updatedAt); // the cloud copy's time, not now: see applyIncomingDocData
   setDocBaseRev(docId,readDocRev(rev));
   delete _incomingDocRev[docId];
-  if(addedEntries)queueSync('doc',docId); // the merged copy goes back up, so the other device gets these entries
+  if(addedEntries)queueSync('doc',docId); // the merged copy goes back up, so the other device gets these entries (and deletions)
   const tab=findOpenTab(docId);
   if(tab){
     const fresh=loadTabFromStorageObj(docId);
@@ -18694,7 +18697,7 @@ async function applyIncomingDocData(mod,db,ownerUid,id,cloud,viaRealtime){
   // the other device did the same, so documents bounced between devices on every focus.
   touchDocIndex(id,docData.title||'Untitled',cloud.updatedAt);
   setDocBaseRev(id,readDocRev(cloud.rev));
-  if(addedEntries)queueSync('doc',id); // the merged copy goes back up, so the other device gets these entries
+  if(addedEntries)queueSync('doc',id); // the merged copy goes back up, so the other device gets these entries (and deletions)
   return true;
 }
 // Another device deleted this document forever (its marker in users/{uid}/deletedDocs). The copy

@@ -23,10 +23,13 @@ describe('threadMerge', () => {
     expect(r.added).toBe(0);
   });
 
-  it('a deletion made only on this device does not remove the kept copy\'s entry', () => {
-    const r = mergeThreadEntries([e('a', 1, 1)], {}, [], { a: NOW - 10 }, [1], NOW);
-    expect(r.remarks.map((x) => x.id)).toEqual(['a']);
-    expect(r.remarkTombstones).toEqual({ a: NOW - 10 });
+  it('an entry deleted on this device is removed from the kept copy too', () => {
+    // Owner 2026-11-21: a thread deleted in the iPhone app was still there in Safari.
+    const r = mergeThreadEntries([e('a', 1, 1), e('b', 1, 2, { answerTo: 'a' }), e('c', 1, 3)], {}, [e('c', 1, 3)], { a: NOW - 10, b: NOW - 10 }, [1], NOW);
+    expect(r.remarks.map((x) => x.id)).toEqual(['c']);
+    expect(r.removed).toBe(2);
+    expect(r.added).toBe(0);
+    expect(r.remarkTombstones).toEqual({ a: NOW - 10, b: NOW - 10 });
   });
 
   it('an entry on a row the kept copy doesn\'t have stays out (it is in Version history)', () => {
@@ -41,7 +44,7 @@ describe('threadMerge', () => {
   });
 
   it('copes with missing lists and ids', () => {
-    expect(mergeThreadEntries(null, null, undefined, undefined, [], NOW)).toEqual({ remarks: [], remarkTombstones: {}, added: 0 });
+    expect(mergeThreadEntries(null, null, undefined, undefined, [], NOW)).toEqual({ remarks: [], remarkTombstones: {}, added: 0, removed: 0 });
     expect(mergeThreadEntries([{ anchorNodeId: 1 } as never], {}, [], {}, [1], NOW).remarks).toEqual([]);
   });
 
