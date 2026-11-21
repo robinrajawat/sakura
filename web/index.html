@@ -2941,6 +2941,8 @@ html.calm-layout #help-meta-links .help-coffee-icon{color:var(--support)}
 html.calm-layout #sb-auto-rewrite-chip.is-quiet{width:28px;height:28px;padding:0;margin-bottom:2px;display:inline-flex;align-items:center;justify-content:center;border:1px solid var(--border);background:color-mix(in srgb,var(--edit-bg) 88%,transparent);border-radius:8px;color:var(--hint);opacity:.55;transition:opacity .12s,color .12s}
 html.calm-layout #sb-auto-rewrite-chip.is-quiet:hover,html.calm-layout #sb-auto-rewrite-chip.is-quiet:focus-visible{opacity:1;color:var(--accent);background:color-mix(in srgb,var(--edit-bg) 88%,transparent)}
 
+/* New feedback for the admin: a count on the Settings button (refreshFeedbackUnread). */
+#rail-settings-btn{position:relative}
 /* GENERATED:css-app:END */
 </style>
 <style>
@@ -3540,6 +3542,12 @@ html.calm-layout #sb-auto-rewrite-chip.is-quiet:hover,html.calm-layout #sb-auto-
     display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto;
     width: 40px; height: 40px; margin-left: -4px; border: none; background: none; border-radius: 8px; color: var(--fg);
   }
+  /* New feedback for the admin: a dot on ☰, since the Settings button with its count is in the drawer. */
+  html.phone #phone-menu-btn { position: relative; }
+  html.phone #phone-menu-btn.has-new-feedback::after {
+    content: ''; position: absolute; top: 8px; right: 7px; width: 8px; height: 8px; border-radius: 50%;
+    background: var(--fc-red); outline: 2px solid var(--canvas-bg);
+  }
   html.phone #doc-tab-strip-row { height: 52px; padding: 0 8px 0 8px; gap: 2px; }
   /* The document's menu: a phone has no right-click on the title (Version history lives there). */
   html.phone #phone-doc-menu-btn {
@@ -3828,7 +3836,7 @@ html.calm-layout #sb-auto-rewrite-chip.is-quiet:hover,html.calm-layout #sb-auto-
           <div id="notif-list"></div>
         </div>
       </div>
-      <button class="btn rail-only" id="rail-settings-btn" data-tip="Settings" aria-label="Settings"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
+      <button class="btn rail-only" id="rail-settings-btn" data-tip="Settings" aria-label="Settings"><span id="rail-settings-badge" class="notif-badge" style="display:none" aria-hidden="true"></span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
       <div class="export-wrap" id="account-wrap">
         <button class="btn" id="account-toggle" data-tip="Account &amp; sync" aria-label="Account" aria-haspopup="true">
           <span id="account-toggle-avatar-wrap" style="position:relative;display:none;vertical-align:-5px">
@@ -16183,7 +16191,7 @@ function renderDocsList(){
 }
 function savePrefs(){
   try{
-    const payload={ctxQuickRow:ctxQuickRowCustom,theme:currentTheme,themeMode,editorScale,outlineNumbering,treeIndentWidth,spellcheckEnabled,noteMatchEditorBg,codeMatchEditorBg,pdfMark:previewBrandingText,defaultAuthorName,trashRetentionDays,searchIncludesTrash,featureNoteEnabled,featureCodeEnabled,featureAiEnabled,qaSearchResultsEnabled,qaSearchHiddenCategories,sectionMarkingsEnabled,svgSectionIconsEnabled,rowHighlightStyle,coverPageEnabled,contentsPageEnabled,openItemsPageEnabled,searchMatchCase,searchWholeWord,autoRewriteEnabled,qaLocation,errorReportsOff:!errorReportsEnabled};
+    const payload={ctxQuickRow:ctxQuickRowCustom,theme:currentTheme,themeMode,editorScale,outlineNumbering,treeIndentWidth,spellcheckEnabled,noteMatchEditorBg,codeMatchEditorBg,pdfMark:previewBrandingText,defaultAuthorName,trashRetentionDays,searchIncludesTrash,featureNoteEnabled,featureCodeEnabled,featureAiEnabled,qaSearchResultsEnabled,qaSearchHiddenCategories,sectionMarkingsEnabled,svgSectionIconsEnabled,rowHighlightStyle,coverPageEnabled,contentsPageEnabled,openItemsPageEnabled,searchMatchCase,searchWholeWord,autoRewriteEnabled,qaLocation,errorReportsOff:!errorReportsEnabled,feedbackSeenAt};
     const json=JSON.stringify(payload);
     // Unchanged (every save of a document also saves the settings): nothing to send to the account.
     if(localStorage.getItem(PREFS_KEY)===json)return;
@@ -16208,7 +16216,7 @@ function savePrefs(){
     console.warn('[sakura] savePrefs failed:',e && e.message);
   }
 }
-function loadPrefs(){try{const raw=localStorage.getItem(PREFS_KEY); if(!raw)return; const d=JSON.parse(raw); ctxQuickRowCustom=Array.isArray(d.ctxQuickRow)?d.ctxQuickRow.filter(a=>typeof a==='string').slice(0,12):null; if(d.theme)currentTheme=({default:'light',vscode:'dark','clever-dark':'dark',clever:'light',sakura:'light'}[d.theme]||d.theme); if(!['light','dark'].includes(currentTheme))currentTheme='light'; themeMode=['manual','system'].includes(d.themeMode)?d.themeMode:'manual'; if(Number.isFinite(Number(d.editorScale)))editorScale=Math.min(1.4,Math.max(0.85,Number(d.editorScale))); outlineNumbering=!!d.outlineNumbering; if(Number.isFinite(Number(d.treeIndentWidth)))treeIndentWidth=Math.min(6,Math.max(2,Math.round(Number(d.treeIndentWidth)))); spellcheckEnabled=d.spellcheckEnabled===undefined?true:!!d.spellcheckEnabled;     noteMatchEditorBg=d.noteMatchEditorBg===undefined?false:!!d.noteMatchEditorBg; codeMatchEditorBg=d.codeMatchEditorBg===undefined?false:!!d.codeMatchEditorBg;   previewBrandingText=typeof d.pdfMark==='string'?d.pdfMark:(d.previewBrandingEnabled===false?'':((typeof d.previewBrandingText==='string'&&d.previewBrandingText.trim())||'SAKURA')); defaultAuthorName=typeof d.defaultAuthorName==='string'&&d.defaultAuthorName.trim()?d.defaultAuthorName:(typeof d.greetingDisplayName==='string'?d.greetingDisplayName:''); trashRetentionDays=Number.isFinite(Number(d.trashRetentionDays))?Math.min(30,Math.max(0,Math.round(Number(d.trashRetentionDays)))):7; searchIncludesTrash=!!d.searchIncludesTrash; featureNoteEnabled=d.featureNoteEnabled===undefined?true:!!d.featureNoteEnabled; featureCodeEnabled=d.featureCodeEnabled===undefined?true:!!d.featureCodeEnabled; featureAiEnabled=d.featureAiEnabled===undefined?true:!!d.featureAiEnabled; qaSearchResultsEnabled=d.qaSearchResultsEnabled===undefined?true:!!d.qaSearchResultsEnabled; qaSearchHiddenCategories=Array.isArray(d.qaSearchHiddenCategories)?d.qaSearchHiddenCategories.filter(k=>QA_SEARCH_CATEGORIES.some(c=>c.key===k)):[];  sectionMarkingsEnabled=d.sectionMarkingsEnabled===undefined?false:!!d.sectionMarkingsEnabled; svgSectionIconsEnabled=d.svgSectionIconsEnabled===undefined?true:!!d.svgSectionIconsEnabled; rowHighlightStyle=['original','dot','bar','outline'].includes(d.rowHighlightStyle)?d.rowHighlightStyle:'original'; coverPageEnabled=d.coverPageEnabled===undefined?true:!!d.coverPageEnabled; contentsPageEnabled=d.contentsPageEnabled===undefined?true:!!d.contentsPageEnabled; openItemsPageEnabled=!!d.openItemsPageEnabled;  searchMatchCase=!!d.searchMatchCase; searchWholeWord=!!d.searchWholeWord; autoRewriteEnabled=!!d.autoRewriteEnabled; qaLocation=d.qaLocation==='statusbar'?'statusbar':'appbar'; errorReportsEnabled=d.errorReportsOff!==true;}catch(e){console.warn('[sakura] loadPrefs threw — prefs were NOT restored this load:',e); try{ if(typeof showToast==='function') showToast('Your settings could not be loaded this session — they were reset to defaults for now, but are still saved.'); }catch(e2){} }}
+function loadPrefs(){try{const raw=localStorage.getItem(PREFS_KEY); if(!raw)return; const d=JSON.parse(raw); feedbackSeenAt=Number.isFinite(d.feedbackSeenAt)?d.feedbackSeenAt:0; ctxQuickRowCustom=Array.isArray(d.ctxQuickRow)?d.ctxQuickRow.filter(a=>typeof a==='string').slice(0,12):null; if(d.theme)currentTheme=({default:'light',vscode:'dark','clever-dark':'dark',clever:'light',sakura:'light'}[d.theme]||d.theme); if(!['light','dark'].includes(currentTheme))currentTheme='light'; themeMode=['manual','system'].includes(d.themeMode)?d.themeMode:'manual'; if(Number.isFinite(Number(d.editorScale)))editorScale=Math.min(1.4,Math.max(0.85,Number(d.editorScale))); outlineNumbering=!!d.outlineNumbering; if(Number.isFinite(Number(d.treeIndentWidth)))treeIndentWidth=Math.min(6,Math.max(2,Math.round(Number(d.treeIndentWidth)))); spellcheckEnabled=d.spellcheckEnabled===undefined?true:!!d.spellcheckEnabled;     noteMatchEditorBg=d.noteMatchEditorBg===undefined?false:!!d.noteMatchEditorBg; codeMatchEditorBg=d.codeMatchEditorBg===undefined?false:!!d.codeMatchEditorBg;   previewBrandingText=typeof d.pdfMark==='string'?d.pdfMark:(d.previewBrandingEnabled===false?'':((typeof d.previewBrandingText==='string'&&d.previewBrandingText.trim())||'SAKURA')); defaultAuthorName=typeof d.defaultAuthorName==='string'&&d.defaultAuthorName.trim()?d.defaultAuthorName:(typeof d.greetingDisplayName==='string'?d.greetingDisplayName:''); trashRetentionDays=Number.isFinite(Number(d.trashRetentionDays))?Math.min(30,Math.max(0,Math.round(Number(d.trashRetentionDays)))):7; searchIncludesTrash=!!d.searchIncludesTrash; featureNoteEnabled=d.featureNoteEnabled===undefined?true:!!d.featureNoteEnabled; featureCodeEnabled=d.featureCodeEnabled===undefined?true:!!d.featureCodeEnabled; featureAiEnabled=d.featureAiEnabled===undefined?true:!!d.featureAiEnabled; qaSearchResultsEnabled=d.qaSearchResultsEnabled===undefined?true:!!d.qaSearchResultsEnabled; qaSearchHiddenCategories=Array.isArray(d.qaSearchHiddenCategories)?d.qaSearchHiddenCategories.filter(k=>QA_SEARCH_CATEGORIES.some(c=>c.key===k)):[];  sectionMarkingsEnabled=d.sectionMarkingsEnabled===undefined?false:!!d.sectionMarkingsEnabled; svgSectionIconsEnabled=d.svgSectionIconsEnabled===undefined?true:!!d.svgSectionIconsEnabled; rowHighlightStyle=['original','dot','bar','outline'].includes(d.rowHighlightStyle)?d.rowHighlightStyle:'original'; coverPageEnabled=d.coverPageEnabled===undefined?true:!!d.coverPageEnabled; contentsPageEnabled=d.contentsPageEnabled===undefined?true:!!d.contentsPageEnabled; openItemsPageEnabled=!!d.openItemsPageEnabled;  searchMatchCase=!!d.searchMatchCase; searchWholeWord=!!d.searchWholeWord; autoRewriteEnabled=!!d.autoRewriteEnabled; qaLocation=d.qaLocation==='statusbar'?'statusbar':'appbar'; errorReportsEnabled=d.errorReportsOff!==true;}catch(e){console.warn('[sakura] loadPrefs threw — prefs were NOT restored this load:',e); try{ if(typeof showToast==='function') showToast('Your settings could not be loaded this session — they were reset to defaults for now, but are still saved.'); }catch(e2){} }}
 function setBacklinksEnabled(on,persist=true){backlinksEnabled=!!on; if(!backlinksEnabled)closeAtSuggest(); if(persist){savePrefs(); scheduleAutoSave()} syncFeatureToggleUi('backlinks',backlinksEnabled); applyFeatureVisibility();}
 
 // === Feature Activation ===========================================
@@ -16677,8 +16685,8 @@ function updateAccountUI(user){
   // All three sign-in paths (Google popup, email/password, and restored-session
   // onAuthStateChanged) funnel through here uniformly, so this is the one place that needs to
   // know "a user just became signed in" rather than repeating the hook at each call site.
-  if(user){ ensureEmailIndex(user); startNotificationsListener(); }
-  else { stopNotificationsListener(); updateVerifyEmailRow(null); }
+  if(user){ ensureEmailIndex(user); startNotificationsListener(); setTimeout(()=>refreshFeedbackUnread(true),3000); }
+  else { stopNotificationsListener(); updateVerifyEmailRow(null); feedbackUnread=0; showFeedbackUnread(); }
   if(typeof updateDocShareChipVisibility==='function')updateDocShareChipVisibility();
   if(typeof updateAiHostedStatusUI==='function')updateAiHostedStatusUI();
   if(typeof resumeAutoRewriteIfPaused==='function')resumeAutoRewriteIfPaused();
@@ -17211,7 +17219,7 @@ function recheckEmailVerified(){
 }
 document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible')recheckEmailVerified(); });
 window.addEventListener('focus',recheckEmailVerified);
-new MutationObserver(()=>{ if(el('settings-panel')?.classList.contains('open'))recheckEmailVerified(); }).observe(el('settings-panel')||document.createElement('div'),{attributes:true,attributeFilter:['class']});
+new MutationObserver(()=>{ if(el('settings-panel')?.classList.contains('open')){ recheckEmailVerified(); refreshFeedbackUnread(false); } }).observe(el('settings-panel')||document.createElement('div'),{attributes:true,attributeFilter:['class']});
 el('settings-verify-email-btn')?.addEventListener('click',async e=>{
   const b=e.currentTarget; if(!currentUser)return;
   b.disabled=true;
@@ -17945,6 +17953,29 @@ function requestDeleteFeedback(item){
     feedbackInboxItems.splice(Math.min(at,feedbackInboxItems.length),0,item); renderFeedbackInboxList(); showToast(result.error);
   },5200);
 }
+// New feedback for the admin (owner 2026-11-21, instead of an email): a count on the Settings button,
+// the phone's ☰ and the Feedback inbox row, for anything sent in since the inbox was last opened.
+// "Last opened" is a setting, so it syncs: opening the inbox on one device clears the count on all.
+var feedbackSeenAt=0, feedbackUnread=0, _feedbackUnreadCheckedAt=0;
+async function refreshFeedbackUnread(force){
+  if(!isAdmin||!currentUser){ feedbackUnread=0; showFeedbackUnread(); return; }
+  if(!force&&Date.now()-_feedbackUnreadCheckedAt<60000)return;
+  _feedbackUnreadCheckedAt=Date.now();
+  try{
+    const {mod,db}=await loadFirestoreMods();
+    const snap=await mod.getDocs(mod.query(mod.collection(db,'feedback'),mod.where('createdAt','>',feedbackSeenAt||0),mod.limit(100)));
+    feedbackUnread=snap.docs.length;
+  }catch(e){ console.warn('[sakura] could not count new feedback:',e); }
+  showFeedbackUnread();
+}
+function showFeedbackUnread(){
+  const n=isAdmin?feedbackUnread:0, label=n>99?'99+':String(n);
+  const badge=el('rail-settings-badge'); if(badge){ badge.style.display=n?'flex':'none'; badge.textContent=n>9?'9+':label; }
+  el('phone-menu-btn')?.classList.toggle('has-new-feedback',n>0);
+  const b=el('account-feedback-inbox-btn'); if(b)b.textContent=n?'Open ('+label+' new)':'Open…';
+}
+document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible')refreshFeedbackUnread(false); });
+window.addEventListener('focus',()=>refreshFeedbackUnread(false));
 async function openFeedbackInboxModal(){
   const ov=el('feedback-inbox-modal-overlay'); if(!ov||!isAdmin)return;
   ov.classList.add('open');
@@ -17952,6 +17983,9 @@ async function openFeedbackInboxModal(){
   renderFeedbackInboxList();
   feedbackInboxItems=await loadFeedbackInboxItems();
   feedbackInboxLoading=false;
+  const newest=feedbackInboxItems.reduce((m,f)=>Math.max(m,Number(f.createdAt)||0),0);
+  if(newest>feedbackSeenAt){ feedbackSeenAt=newest; savePrefs(); }
+  feedbackUnread=0; showFeedbackUnread();
   renderFeedbackInboxList();
 }
 function closeFeedbackInboxModal(){
@@ -18577,7 +18611,7 @@ async function pushMetaToCloud(mod,db,metaKey){
   setMetaBase(metaKey,written);
   if(!sameJson(written,value)){
     try{ localStorage.setItem(localKeyName,JSON.stringify(written)); }catch(e){}
-    if(metaKey==='prefs'){ loadPrefs(); showPrefs(); }
+    if(metaKey==='prefs'){ loadPrefs(); showPrefs(); refreshFeedbackUnread(true); }
     await refreshHubPanelAfterSync(metaKey);
     renderSidebar();
   }
@@ -19195,7 +19229,7 @@ async function startRealtimeSync(){
         if(!snap.exists())return;
         applyIncomingMetaData(metaKey,snap.data()).then(applied=>{
           if(applied){
-            if(metaKey==='prefs'){ loadPrefs(); showPrefs(); }
+            if(metaKey==='prefs'){ loadPrefs(); showPrefs(); refreshFeedbackUnread(true); }
             refreshHubPanelAfterSync(metaKey);
             renderSidebar();
           }

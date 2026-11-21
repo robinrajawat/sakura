@@ -45,6 +45,12 @@
     display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto;
     width: 40px; height: 40px; margin-left: -4px; border: none; background: none; border-radius: 8px; color: var(--fg);
   }
+  /* New feedback for the admin: a dot on ☰, since the Settings button with its count is in the drawer. */
+  html.phone #phone-menu-btn { position: relative; }
+  html.phone #phone-menu-btn.has-new-feedback::after {
+    content: ''; position: absolute; top: 8px; right: 7px; width: 8px; height: 8px; border-radius: 50%;
+    background: var(--fc-red); outline: 2px solid var(--canvas-bg);
+  }
   html.phone #doc-tab-strip-row { height: 52px; padding: 0 8px 0 8px; gap: 2px; }
   /* The document's menu: a phone has no right-click on the title (Version history lives there). */
   html.phone #phone-doc-menu-btn {
