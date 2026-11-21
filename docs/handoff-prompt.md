@@ -125,7 +125,9 @@ the local checks — nothing in the build or tests reads them. Decide from the
 changed-file list (`git diff --name-only origin/main...`), not from how small
 the change feels; one non-docs file means the full gauntlet. CI makes the
 same call (`.github/scripts/docs-only.sh`): docs-only PRs get skipped,
-passing verify jobs. CI runs once per PR plus on pushes to `main`; a branch
+passing verify jobs, and a docs-only merge doesn't redeploy the site
+(`deploy.yml` `paths-ignore`). Cloudflare's preview builds are set in its
+dashboard (Build watch paths), not here. CI runs once per PR plus on pushes to `main`; a branch
 push with no PR gets no CI.
 
 **CI flake:** `tests/unit/generateId.test.ts`'s collision test fails
