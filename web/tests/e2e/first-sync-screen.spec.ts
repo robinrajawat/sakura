@@ -128,3 +128,23 @@ test('a failed sync says so, with Retry and Continue; Retry brings the documents
   await expect(page.locator('#first-sync')).toBeHidden();
   expect(await page.evaluate(() => localStorage.getItem('sakura_doc_v1_dNew'))).not.toBeNull();
 });
+
+test('a document arriving does not blink the screen (owner 2026-11-21)', async ({ page }) => {
+  await page.evaluate(() => {
+    // @ts-expect-error -- bare globals from index.html
+    startFirstSync(); _firstSync.startedAt = Date.now() - 2000; firstSyncProgress(1, 40);
+  });
+  // Straight after a document arrives the card stays shown (it used to hide for 300 ms each time).
+  expect(await page.evaluate(() => document.getElementById('first-sync')!.dataset.stage)).toBe('loading');
+  await expect(page.locator('#first-sync .first-sync-card')).toBeVisible();
+  await expect(page.locator('#first-sync-detail')).toHaveText('1 of 40 documents');
+});
+
+test('at the very start it still waits a moment before showing', async ({ page }) => {
+  await page.evaluate(() => {
+    // @ts-expect-error -- bare global from index.html
+    startFirstSync();
+  });
+  expect(await page.evaluate(() => document.getElementById('first-sync')!.dataset.stage)).toBe('quiet');
+  await expect(page.locator('#first-sync')).toHaveAttribute('data-stage', 'loading');
+});

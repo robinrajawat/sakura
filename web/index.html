@@ -19923,7 +19923,10 @@ function renderFirstSync(){
   const box=firstSyncOverlay(); box.hidden=false; setFirstSyncInert(true);
   const online=navigator.onLine!==false;
   const elapsed=Date.now()-s.lastProgressAt;
-  const stage=s.failed?'stalled':loadingStage(elapsed,online);
+  // "Slow" and "stalled" count from the last progress, but the brief blank at the start counts
+  // from the start only: each document arriving used to restart it, so the screen blinked.
+  let stage=s.failed?'stalled':loadingStage(elapsed,online);
+  if(stage==='quiet'&&Date.now()-s.startedAt>=LOADING_SHOW_AFTER_MS)stage='loading';
   box.dataset.stage=s.failed?'failed':stage;
   const count=s.total?(Math.min(s.done,s.total)+' of '+s.total+' document'+(s.total===1?'':'s')):'';
   let head='Bringing in your documents…', more=count, retry=false, cont=false;
@@ -19936,7 +19939,8 @@ function renderFirstSync(){
   el('first-sync-continue').textContent=stage==='stalled'&&!s.failed?'Continue without waiting':'Continue';
   const fill=el('first-sync-bar-fill'), bar=fill.parentElement;
   bar.classList.toggle('indeterminate',!s.total); fill.style.width=s.total?Math.round(100*Math.min(s.done,s.total)/s.total)+'%':'';
-  const wait=s.failed?null:msUntilNextLoadingStage(elapsed,online);
+  let wait=s.failed?null:msUntilNextLoadingStage(elapsed,online);
+  if(stage==='loading'&&elapsed<LOADING_SHOW_AFTER_MS)wait=LOADING_SLOW_AFTER_MS-elapsed; // next real change: "slow"
   if(wait!=null)_firstSyncTimer=setTimeout(renderFirstSync,wait+20);
 }
 // The sync finished: open the most recently edited document from the account in place of a blank
