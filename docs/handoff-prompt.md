@@ -180,11 +180,11 @@ The flaky To-Dos draft test reports its storage state on failure: read that befo
 
 ### Latest changes
 
-- **Named versions; the view shows removed rows and changed words (2026-11-21, owner: "do what's standard").** `name`/`nameAt` on a version (`saveManualDocVersion` asks, `nameDocVersion` renames; the latest `nameAt` wins between devices in `mergeVersionLists`); named versions are never thinned and the cap skips them. `diffWords` in `src/utils/versionSummary.ts`. Next (agreed): apply another device's copy to an open document automatically when nothing here is unsent, with changed rows briefly highlighted and an "Updated from …" note. Tests: `versionHistory.test.ts`, `versionSummary.test.ts`, `version-history-preview.spec.ts`.
+- **Another device's changes appear live in the open document (2026-11-21, owner: standard, "absolutely sure no bugs").** `applyIncomingToOpenDoc` (serialized per document, `_docBaseCache` so a second copy merges on the first's base); changed rows glow (`.row-updated`), "Updated from <device>" (`lastDevice` on the account copy only, never stored). Fixed on the way: merge renumbering could reuse an id with a stale nextId (a row was overwritten); rows from an older app looked edited (defaults now ignored); a stale copy arriving late could replace a newer one. Randomised tests: `docMergeProperties.test.ts`.
+
+- **Named versions; the view shows removed rows and changed words (2026-11-21, owner: "do what's standard").** `name`/`nameAt` on a version (`saveManualDocVersion` asks, `nameDocVersion` renames; the latest `nameAt` wins between devices in `mergeVersionLists`); named versions are never thinned and the cap skips them. `diffWords` in `src/utils/versionSummary.ts`. Tests: `versionHistory.test.ts`, `versionSummary.test.ts`, `version-history-preview.spec.ts`.
 
 - **Version history polish (2026-11-21).** A row's own history shows times and devices like the document's; entries show a › (they open a view, on touch too); "Restore this version" is the primary button and "Save a version now" is hidden while viewing one. Test: `version-history-preview.spec.ts`. Suggested, not built: apply another device's copy to an open document automatically when nothing here is unsent (the "updated on another device" banner), now that copies merge.
-
-- **Versions kept 30 days (2026-11-21, owner: "30 days is fine").** `thinVersionsByAge` in `src/utils/versionHistory.ts`: nothing older than 30 days, all of the last day, then one Auto version a day; named and safety versions the full 30 days; `REVISION_MAX_PER_DOC` 60 as a storage cap that thins the last day first. To-Dos stay at 5 (owner 2026-10-20). Capture cadence unchanged (10 minutes, like similar apps). Tests: `versionHistory.test.ts`.
 
 ### In progress / not built
 

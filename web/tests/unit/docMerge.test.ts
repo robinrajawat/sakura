@@ -73,4 +73,22 @@ describe('mergeDocs', () => {
     expect(m.doc.nodes![0].note).toBe('why');
     expect(m.conflicts).toBe(0);
   });
+  it('a stale nextId (lower than the ids in use) never makes two rows share an id', () => {
+    const b = { nodes: [r(1, 'A'), r(5, 'E')], nextId: 3 };
+    const m = mergeDocs(b, { nodes: [r(1, 'A'), r(5, 'E'), r(6, 'Mine')], nextId: 3 }, { nodes: [r(1, 'A'), r(5, 'E'), r(6, 'Theirs')], nextId: 3 });
+    const list = m.doc.nodes!.map((x) => x.id);
+    expect(new Set(list).size).toBe(list.length);
+    expect(Number(m.doc.nextId)).toBeGreaterThan(Math.max(...list.map(Number)));
+    expect(texts(m.doc)).toContain('Mine');
+    expect(texts(m.doc)).toContain('Theirs');
+  });
+  it('a copy with fewer fields (an older app, not normalised) doesn\'t look edited', () => {
+    const full = (id: number, text: string) => ({ id, text, depth: 0, note: '', noteTitle: '', tables: [], images: [], tags: [], checked: false, isCheckbox: false, marker: '', styles: { bold: false, heading: 0 }, createdAt: 5, completedAt: null });
+    const b = { nodes: [full(1, 'A'), full(2, 'B')], nextId: 3 };
+    const mine = { nodes: [full(1, 'A, edited here'), full(2, 'B')], nextId: 3 };
+    const theirs = { nodes: [{ id: 1, text: 'A', depth: 0 }, { id: 2, text: 'B, edited there', depth: 0 }], nextId: 3 };
+    const m = mergeDocs(b, mine, theirs);
+    expect(texts(m.doc)).toEqual(['A, edited here', 'B, edited there']);
+    expect(m.conflicts).toBe(0);
+  });
 });

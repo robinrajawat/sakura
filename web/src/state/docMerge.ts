@@ -33,10 +33,23 @@ function dmStable(v: unknown): string {
   return JSON.stringify(v, (_k, x) =>
     x && typeof x === 'object' && !Array.isArray(x) ? Object.fromEntries(Object.keys(x).sort().map((k) => [k, (x as Record<string, unknown>)[k]])) : x) ?? 'undefined';
 }
-/** A row's content: everything but where it sits and when it was last touched. */
+/** Empty or default: missing, '', false, null, [], {}, or a styles object with nothing set. */
+function dmIsDefault(v: unknown): boolean {
+  if (v === undefined || v === null || v === '' || v === false) return true;
+  if (Array.isArray(v)) return v.length === 0;
+  if (typeof v === 'object') return Object.values(v as Record<string, unknown>).every((x) => x === undefined || x === null || x === false || x === 0 || x === '');
+  return false;
+}
+/**
+ * A row's content: everything but where it sits and when it was made or last touched. A field
+ * that's missing and one holding its empty default count as the same, so a copy saved by an older
+ * app (rows without its newer fields) or not yet normalised doesn't look edited everywhere.
+ */
 export function mergeRowContent(r: MergeRow): string {
-  const { id: _i, depth: _d, parentId: _p, modifiedAt: _m, ...rest } = r;
-  return dmStable(rest);
+  const { id: _i, depth: _d, parentId: _p, modifiedAt: _m, createdAt: _c, ...rest } = r;
+  const o: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(rest)) if (!dmIsDefault(v)) o[k] = v;
+  return dmStable(o);
 }
 
 /** The side that changed, or the account's on a real conflict. */
@@ -62,7 +75,8 @@ export function mergeDocs(base: MergeDoc, mine: MergeDoc, theirs: MergeDoc): Doc
   const idRemap: Record<string, number> = {};
   let maxId = 0;
   for (const m of [B, M, T]) for (const r of m.values()) { const n = Number(r.id); if (Number.isFinite(n) && n > maxId) maxId = n; }
-  maxId = Math.max(maxId, Number(base.nextId) || 0, Number(mine.nextId) || 0, Number(theirs.nextId) || 0) - 1;
+  // The highest id in use (rows, or what nextId says was handed out): a new id is above both.
+  maxId = Math.max(maxId, (Number(base.nextId) || 0) - 1, (Number(mine.nextId) || 0) - 1, (Number(theirs.nextId) || 0) - 1);
 
   // Rows to keep, keyed by their id in the result.
   const out = new Map<string, MergeRow>();

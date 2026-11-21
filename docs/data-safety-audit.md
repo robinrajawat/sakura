@@ -40,6 +40,16 @@ When in doubt, nothing is sent and nothing is deleted: the worst case is a chang
   does the account's version win, and then this device's copy is also kept in Version history
   ("Your changes on this device"). With no shared copy known (a document last synced before this
   change), the old way applies: the account's copy wins and this one goes to Version history.
+- **The open document updates live (owner 2026-11-21).** Another device's copy of the document on
+  screen is merged in at once when nothing is being typed (`applyIncomingToOpenDoc`): the content
+  changes, where you are (selection, folds, scroll) stays, changed rows glow briefly and a note says
+  "Updated from <device>" (at most once a minute). Typing: nothing changes under the caret; the next
+  save merges. A real conflict keeps this device's copy in Version history first. Undo steps from
+  before are cleared, as Reload latest does, so Undo can't take back the other device's changes.
+  Copies are applied one at a time, and a copy older than the one this device has (the account's
+  rev only grows) is ignored everywhere. Row content is compared with empty defaults ignored, so a
+  copy from an older app version doesn't look edited. Tests: `docMergeProperties.test.ts`
+  (thousands of random two-device edits), `live-merge-open-doc.spec.ts`.
 - **Documents stay with their account.** A device holding another account's documents asks before
   anything syncs; they are never merged into a different account.
 
