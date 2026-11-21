@@ -31,9 +31,15 @@ When in doubt, nothing is sent and nothing is deleted: the worst case is a chang
   copy is kept, this device's thread entries are merged into it by id (`src/state/threadMerge.ts`):
   entries only this device has are added, unless the account's copy records them as deleted
   (`remarkTombstones`, kept 90 days) or their row isn't there, and entries deleted on this device are
-  removed from it (a deletion is on purpose, so it wins; owner 2026-11-21); the merged copy goes back up. Row
-  edits still go to Version history ("Your changes on this device"). Owner 2026-11-20: threads
-  vanished between phone and Mac. Test: `thread-merge-sync.spec.ts`.
+  removed from it (a deletion is on purpose, so it wins; owner 2026-11-21); the merged copy goes back up.
+  Owner 2026-11-20: threads vanished between phone and Mac. Test: `thread-merge-sync.spec.ts`.
+- **Rows merge too (owner 2026-11-21).** Each device keeps the account's copy its edits started from
+  (`docbase:<id>` in IndexedDB, next to its rev). When two devices changed a document, the copies
+  are merged row by row on it (`src/state/docMerge.ts`): edits to different rows, rows added on
+  either side and deletions are all kept; only when both changed the same row or field differently
+  does the account's version win, and then this device's copy is also kept in Version history
+  ("Your changes on this device"). With no shared copy known (a document last synced before this
+  change), the old way applies: the account's copy wins and this one goes to Version history.
 - **Documents stay with their account.** A device holding another account's documents asks before
   anything syncs; they are never merged into a different account.
 

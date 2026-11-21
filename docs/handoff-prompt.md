@@ -180,11 +180,9 @@ The flaky To-Dos draft test reports its storage state on failure: read that befo
 
 ### Latest changes
 
+- **Rows merge when two devices changed a document (2026-11-21, owner).** Three-way merge on the copy both started from (`setDocBase` / `getDocBase`, IndexedDB `docbase:<id>`, set wherever the base rev is set from a known copy; `mergeDocCopies`, `src/state/docMerge.ts`) in `resolveDocPushConflict` and `applyIncomingDocData`. Version history gets "Your changes on this device" / "Before changes from another device" only on a real conflict. Both devices numbering a new row the same id: this device's row gets a new id (`idRemap`, thread anchors follow). Documents last synced before this have no base yet: old behaviour until their next sync. Tests: `docMerge.test.ts`, `thread-merge-sync.spec.ts`.
+
 - **Version history says enough to choose by (2026-11-21, owner).** Each entry: time ("Today, 12:47"), device (`device` on new versions, `thisDeviceName`), what changed since the version before, and the reason only when it isn't Auto; tapping one shows it compared with the document now before restoring (`showVersionPreview`). Logic in `src/utils/versionSummary.ts`. Collisions checked first: view state already doesn't sync (`DOC_VIEW_ONLY_FIELDS`) and opening a document doesn't change it, so "Your edits, set aside" entries are real overlapping edits (iOS suspends the installed app before an edit goes up). The fix for those is a row-level merge, not built. Tests: `versionSummary.test.ts`, `version-history-preview.spec.ts`.
-
-- **Polish from reviewing today's changes (2026-11-21).** A closed thread holding unsent text shows an accent dot on its icon ("unsent reply" in the tip); on a phone, toasts sit above the home bar; the collision message says "thread changes" (it now covers deletions too). Test: `thread-drafts.spec.ts` "stays closed".
-
-- **New feedback shows as a count in the app (2026-11-21, owner chose this over email or Sentry).** For the admin: a count on the Settings button, a dot on the phone's ☰, "Open (N new)" on the Feedback inbox row, for feedback sent in since the inbox was last opened (`refreshFeedbackUnread`; `feedbackSeenAt` is a synced setting). Not built: email (would need the Worker, an email service and a privacy.html change). Test: `feedback-unread-badge.spec.ts`.
 
 ### In progress / not built
 

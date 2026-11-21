@@ -18564,15 +18564,231 @@ function cloudDocStateOf(snap){ const d=snap.exists()?snap.data():null; return {
 // (and on screen, if open), and the person is told where their edits went.
 // This device's copy is replaced only once that version is confirmed kept (here or in the account);
 // otherwise nothing changes and the next sync tries again.
+/* GENERATED:docMerge:START — DO NOT EDIT BY HAND. Source of truth: src/state/docMerge.ts (tests: tests/unit/docMerge.test.ts). Regenerate with `npm run generate` after changing the source; CI fails if this block drifts from what the generator produces (see .github/workflows/ci.yml and scripts/generate-index-blocks.mjs). */
+/**
+ * Three-way merge of a document's rows when two devices changed it (owner 2026-11-21: edits made
+ * in the installed iPhone app and in Safari kept ending up in Version history as "Your edits, set
+ * aside", because the account's copy was kept whole and this device's copy was put away).
+ *
+ * `base` is the copy both devices last agreed on (the account's copy this device's edits started
+ * from), `mine` this device's copy, `theirs` the account's newer copy. Rows are matched by id:
+ *
+ * - A row changed on one side only takes that side's change. Text and everything else in the row
+ *   (note, tables, pictures, marks) count as its content; its indent is merged separately.
+ * - A row changed differently on both sides keeps the account's version: a conflict.
+ * - A row added on either side is kept. When both sides added a row with the same id (each device
+ *   numbers new rows from the same nextId), this device's row gets a new id (`idRemap`).
+ * - A row deleted on one side goes, unless the other side edited it: then it stays (a conflict).
+ * - Order: the account's order, with this device's new rows placed after the row they followed
+ *   here; if only this device reordered rows, this device's order is used instead.
+ * - Indents are made valid again (a row is at most one level deeper than the row above it).
+ * - The title, author, status, link and Q&A merge as whole values the same way. Diagrams are
+ *   compared by the caller (their stored form differs between devices: see mergeDocCopies).
+ *
+ * `conflicts` counts what couldn't be merged; the caller keeps this device's copy in Version
+ * history only then. Thread entries are merged separately (threadMerge.ts). Pure.
+ */
+/** Fields merged as whole values. */
+const DOC_MERGE_FIELDS = ['title', 'author', 'docStatus', 'docLinkedUrl', 'docLinkedUrlLabel', 'qa'];
+function dmStable(v) {
+    return JSON.stringify(v, (_k, x) => x && typeof x === 'object' && !Array.isArray(x) ? Object.fromEntries(Object.keys(x).sort().map((k) => [k, x[k]])) : x) ?? 'undefined';
+}
+/** A row's content: everything but where it sits and when it was last touched. */
+function mergeRowContent(r) {
+    const { id: _i, depth: _d, parentId: _p, modifiedAt: _m, ...rest } = r;
+    return dmStable(rest);
+}
+/** The side that changed, or the account's on a real conflict. */
+function dmPick3(b, m, t, eq) {
+    if (eq(m, b))
+        return { v: t, conflict: false };
+    if (eq(t, b))
+        return { v: m, conflict: false };
+    if (eq(m, t))
+        return { v: t, conflict: false };
+    return { v: t, conflict: true };
+}
+function dmById(rows) {
+    const m = new Map();
+    for (const r of Array.isArray(rows) ? rows : [])
+        if (r && r.id != null)
+            m.set(String(r.id), r);
+    return m;
+}
+function mergeDocs(base, mine, theirs) {
+    const B = dmById(base.nodes), M = dmById(mine.nodes), T = dmById(theirs.nodes);
+    const mineOrder = (mine.nodes || []).map((r) => String(r.id));
+    const theirOrder = (theirs.nodes || []).map((r) => String(r.id));
+    const baseOrder = (base.nodes || []).map((r) => String(r.id));
+    let conflicts = 0;
+    const idRemap = {};
+    let maxId = 0;
+    for (const m of [B, M, T])
+        for (const r of m.values()) {
+            const n = Number(r.id);
+            if (Number.isFinite(n) && n > maxId)
+                maxId = n;
+        }
+    maxId = Math.max(maxId, Number(base.nextId) || 0, Number(mine.nextId) || 0, Number(theirs.nextId) || 0) - 1;
+    // Rows to keep, keyed by their id in the result.
+    const out = new Map();
+    const mineKeyFor = new Map(); // a row of mine -> its id in the result
+    for (const id of new Set([...T.keys(), ...M.keys(), ...B.keys()])) {
+        const b = B.get(id), m = M.get(id), t = T.get(id);
+        if (b && m && t) {
+            const c = dmPick3(mergeRowContent(b), mergeRowContent(m), mergeRowContent(t), (x, y) => x === y);
+            const d = dmPick3(Number(b.depth) || 0, Number(m.depth) || 0, Number(t.depth) || 0, (x, y) => x === y);
+            if (c.conflict)
+                conflicts++;
+            const src = c.v === mergeRowContent(m) && c.v !== mergeRowContent(t) ? m : t;
+            out.set(id, { ...src, id: t.id, depth: d.v });
+            mineKeyFor.set(id, id);
+        }
+        else if (b && !m && t) {
+            if (mergeRowContent(t) !== mergeRowContent(b)) {
+                conflicts++;
+                out.set(id, { ...t });
+            } // edited there, deleted here: kept
+        }
+        else if (b && m && !t) {
+            if (mergeRowContent(m) !== mergeRowContent(b)) {
+                conflicts++;
+                out.set(id, { ...m });
+                mineKeyFor.set(id, id);
+            } // deleted there, edited here: kept
+        }
+        else if (!b && m && t) {
+            if (mergeRowContent(m) === mergeRowContent(t)) {
+                out.set(id, { ...t });
+                mineKeyFor.set(id, id);
+            }
+            else {
+                // Both added a row with this id: two different rows. Theirs keeps it, mine gets a new one.
+                out.set(id, { ...t });
+                const nid = ++maxId;
+                idRemap[id] = nid;
+                out.set(String(nid), { ...m, id: nid });
+                mineKeyFor.set(id, String(nid));
+            }
+        }
+        else if (!b && m && !t) {
+            out.set(id, { ...m });
+            mineKeyFor.set(id, id);
+        }
+        else if (!b && !m && t) {
+            out.set(id, { ...t });
+        }
+        // b only: deleted on both sides.
+    }
+    // Order. Which side's order of the shared rows to follow.
+    const shared = (order) => order.filter((id) => B.has(id) && M.has(id) && T.has(id));
+    const sameOrder = (x, y) => x.length === y.length && x.every((v, i) => v === y[i]);
+    const useMine = sameOrder(shared(theirOrder), shared(baseOrder)) && !sameOrder(shared(mineOrder), shared(baseOrder));
+    const skeleton = (useMine ? mineOrder.map((id) => mineKeyFor.get(id) || id) : theirOrder).filter((id) => out.has(id));
+    const placed = new Set(skeleton);
+    const result = [...skeleton];
+    // The other side's rows not yet placed go after the row they followed on that side.
+    const otherOrder = useMine ? theirOrder.map((id) => ({ src: id, key: id })) : mineOrder.map((id) => ({ src: id, key: mineKeyFor.get(id) || id }));
+    let prev = null;
+    for (const { key } of otherOrder) {
+        if (!out.has(key))
+            continue;
+        if (!placed.has(key)) {
+            const at = prev === null ? 0 : result.indexOf(prev) + 1;
+            result.splice(at, 0, key);
+            placed.add(key);
+        }
+        prev = key;
+    }
+    for (const key of out.keys())
+        if (!placed.has(key))
+            result.push(key); // rows kept against a deletion, if not placed yet
+    // Valid indents, and nothing below them pointing at a parent by an old guess.
+    const nodes = [];
+    let lastDepth = -1;
+    for (const key of result) {
+        const r = { ...out.get(key) };
+        const want = Math.max(0, Number(r.depth) || 0);
+        r.depth = Math.min(want, lastDepth + 1);
+        lastDepth = r.depth;
+        nodes.push(r);
+    }
+    const doc = { ...theirs, nodes };
+    for (const f of DOC_MERGE_FIELDS) {
+        const p = dmPick3(base[f], mine[f], theirs[f], (x, y) => dmStable(x) === dmStable(y));
+        if (p.conflict)
+            conflicts++;
+        if (p.v !== undefined)
+            doc[f] = p.v;
+        else
+            delete doc[f];
+    }
+    doc.nextId = Math.max(maxId + 1, Number(theirs.nextId) || 0, Number(mine.nextId) || 0);
+    const changedFromTheirs = dmStable(nodes) !== dmStable(theirs.nodes || []) || DOC_MERGE_FIELDS.some((f) => dmStable(doc[f]) !== dmStable(theirs[f])) || doc.nextId !== theirs.nextId;
+    return { doc, conflicts, idRemap, changedFromTheirs };
+}
+
+/* GENERATED:docMerge:END */
+// The account's copy each local copy is based on (the "base" of a three-way merge), kept on the
+// device next to its rev: set wherever setDocBaseRev is set from a known copy.
+function docBaseContent(d){
+  if(!d||typeof d!=='object')return null;
+  const o={nodes:Array.isArray(d.nodes)?d.nodes:[],nextId:d.nextId,remarks:Array.isArray(d.remarks)?d.remarks:[],diagrams:diagramsForMerge(d.diagrams)};
+  DOC_MERGE_FIELDS.forEach(f=>{ if(d[f]!==undefined)o[f]=d[f]; });
+  return o;
+}
+// A diagram as compared between copies: without its drawing data and cache flags, which are stored
+// differently on each device.
+function diagramsForMerge(list){ return (Array.isArray(list)?list:[]).map(({xml,previewSvg,pageSvgs,blobSynced,_hydrated,...meta})=>meta); }
+function setDocBase(id,rev,doc){
+  setDocBaseRev(id,rev);
+  const content=docBaseContent(doc);
+  if(content)idbSet('docbase:'+id,{rev,doc:content}).catch(()=>{});
+}
+async function getDocBase(id){ try{ const b=await idbGet('docbase:'+id); return b&&b.doc?b:null; }catch(e){ return null; } }
+// Merges this device's copy (`mine`) with the account's (`theirs`, a stored-form document) on the
+// base they share. Returns null when there's no base to merge on (then the old way applies: the
+// account's copy is kept and this one goes to Version history). Otherwise {doc, conflicts, changed,
+// idRemap}: `doc` is `theirs` with the merged rows and fields; thread entries are merged after.
+async function mergeDocCopies(id,mine,theirs){
+  try{
+    const base=await getDocBase(id);
+    if(!base||!mine||!theirs||base.rev!==getDocBaseRev(id))return null;
+    const r=mergeDocs(base.doc,mine,theirs);
+    const doc={...theirs,...r.doc};
+    // Diagrams: the side that changed them, the account's when both did.
+    const dB=stableJson(base.doc.diagrams||[]), dM=stableJson(diagramsForMerge(mine.diagrams)), dT=stableJson(diagramsForMerge(theirs.diagrams));
+    let conflicts=r.conflicts, changed=r.changedFromTheirs, mineDiagrams=false;
+    if(dM!==dB&&dT===dB){ doc.diagrams=mine.diagrams; changed=true; mineDiagrams=true; }
+    else if(dM!==dB&&dT!==dB&&dM!==dT)conflicts++;
+    return {doc,conflicts,changed,idRemap:r.idRemap,mineDiagrams};
+  }catch(e){ console.warn('[sakura] could not merge the two copies:',e); return null; }
+}
+// This device's thread entries, with the ids of its rows that were renumbered in a merge.
+function remapThreadAnchors(mineThread,idRemap){
+  if(!mineThread||!idRemap||!Object.keys(idRemap).length)return mineThread;
+  return {...mineThread,remarks:(mineThread.remarks||[]).map(e=>e&&idRemap[String(e.anchorNodeId)]!==undefined?{...e,anchorNodeId:idRemap[String(e.anchorNodeId)]}:e)};
+}
 const _conflictNotKeptToastShown=new Set();
 async function resolveDocPushConflict(mod,db,ownerUid,docId,cloud){
-  let kept=true, _mineForThreadMerge=null;
+  let kept=true, _mineForThreadMerge=null, merged=null, theirs=null;
   try{
     const open=docId===currentDocId&&activeTabDocId===docId;
     if(open)commitEdit();
     const mine=open?currentDocRevisionContent():await storedDocForRevision(docId,localStorage.getItem(docKey(docId)));
     _mineForThreadMerge=mine?{remarks:mine.remarks,remarkTombstones:docRemarkTombstones(docId)}:null;
-    if(mine&&Array.isArray(mine.nodes)&&mine.nodes.length)kept=await recordDocRevision(docId,mine,'Your changes on this device',{dedupe:true});
+    // Both copies merged row by row on the copy they share (owner 2026-11-21): this device's copy
+    // goes to Version history only when the two changed the same thing differently.
+    if(cloud){
+      const {updatedAt:_u,rev:_r,...raw}=cloud;
+      merged=await mergeDocCopies(docId,mine,raw);
+      // The account's drawings are fetched (into this device's store) only when its diagrams are the
+      // ones kept: when only this device changed them, its own drawings stay.
+      theirs=merged&&merged.mineDiagrams?raw:await hydrateCloudDocBlobs(mod,db,ownerUid,docId,raw);
+      if(merged&&!merged.mineDiagrams)merged.doc.diagrams=theirs.diagrams;
+    }
+    if(merged)_mineForThreadMerge=remapThreadAnchors(_mineForThreadMerge,merged.idRemap);
+    if((!merged||merged.conflicts)&&mine&&Array.isArray(mine.nodes)&&mine.nodes.length)kept=await recordDocRevision(docId,mine,'Your changes on this device',{dedupe:true});
   }catch(e){ kept=false; console.warn('[sakura] could not keep this device\'s copy as a version:',e); }
   if(!kept){
     if(!_conflictNotKeptToastShown.has(docId)){ _conflictNotKeptToastShown.add(docId); showToast('This document changed on another device. Your edits here are kept as they are until they can be saved as a version; then the other device\u2019s copy is shown.'); }
@@ -18580,14 +18796,14 @@ async function resolveDocPushConflict(mod,db,ownerUid,docId,cloud){
   }
   _conflictNotKeptToastShown.delete(docId);
   if(!cloud)return;
-  const {updatedAt,rev,...rawDocData}=cloud;
-  const docData=await hydrateCloudDocBlobs(mod,db,ownerUid,docId,rawDocData);
+  const {updatedAt,rev}=cloud;
+  const docData=merged?merged.doc:theirs;
   const addedEntries=mergeMyThreadEntriesInto(docId,docData,_mineForThreadMerge);
   localStorage.setItem(docKey(docId),JSON.stringify(docData));
   touchDocIndex(docId,docData.title||'Untitled',updatedAt); // the cloud copy's time, not now: see applyIncomingDocData
-  setDocBaseRev(docId,readDocRev(rev));
+  setDocBase(docId,readDocRev(rev),theirs);
   delete _incomingDocRev[docId];
-  if(addedEntries)queueSync('doc',docId); // the merged copy goes back up, so the other device gets these entries (and deletions)
+  if(addedEntries||(merged&&merged.changed))queueSync('doc',docId); // the merged copy goes back up, so the other device gets this one's changes
   const tab=findOpenTab(docId);
   if(tab){
     const fresh=loadTabFromStorageObj(docId);
@@ -18597,6 +18813,8 @@ async function resolveDocPushConflict(mod,db,ownerUid,docId,cloud){
     }
   }
   renderSidebar();
+  if(merged&&!merged.conflicts){ showToast('Merged with changes from another device'); return; }
+  if(merged){ showActionToast('Merged with changes from another device. Where you both changed the same thing, theirs was kept; yours is in Version history.','Version history',()=>openVersionHistory(docId),8000); return; }
   showActionToast(addedEntries?'Changed on another device. Your thread changes are kept; your other edits here are in Version history.':'Changed on another device. Your edits here are kept in Version history.','Version history',()=>openVersionHistory(docId),8000);
   _actionToastUndo=null; // Ctrl/Cmd+Z stays undo
 }
@@ -18667,7 +18885,7 @@ async function pushDocToCloud(mod,db,docId){
       return {conflict:false,rev:decision.nextRev};
     });
     if(outcome.conflict){ await resolveDocPushConflict(mod,db,ownerUid,docId,outcome.cloud); return; }
-    setDocBaseRev(docId,outcome.rev);
+    setDocBase(docId,outcome.rev,dataToSend);
     _docTooLargeToastShown.delete(docId); // clears the one-time-per-incident gate below, so a genuinely new occurrence (after this got fixed once) is reported again rather than staying silently suppressed forever
   }catch(e){
     // Firestore's 1MB-per-document limit still applies to EACH write above — the parent doc, and
@@ -18920,7 +19138,7 @@ async function applyIncomingDocData(mod,db,ownerUid,id,cloud,viaRealtime){
     const docData=await hydrateCloudDocBlobs(mod,db,ownerUid,id,rawDocData);
     localStorage.setItem(docKey(id),JSON.stringify(docData));
     touchDocIndex(id,docData.title||'Untitled',cloud.updatedAt);
-    setDocBaseRev(id,readDocRev(cloud.rev));
+    setDocBase(id,readDocRev(cloud.rev),docData);
     replaceGhostTabWithStored(id);
     return true;
   }
@@ -18941,17 +19159,23 @@ async function applyIncomingDocData(mod,db,ownerUid,id,cloud,viaRealtime){
     return true;
   }
   const {updatedAt,rev:_rev,...rawDocData}=cloud;
-  if(!await keepLocalDocBeforeIncoming(id,rawDocData))return false; // before hydrateCloudDocBlobs replaces the local diagram blobs
   let mineForMerge=null; try{ const lr=localStorage.getItem(docKey(id)); if(lr)mineForMerge=JSON.parse(lr); }catch(e){}
-  const docData=await hydrateCloudDocBlobs(mod,db,ownerUid,id,rawDocData);
+  // This device's copy merged with the arriving one, row by row, on the copy they share (owner
+  // 2026-11-21); kept as a version first only when they can't be merged cleanly. With no shared copy
+  // known, the old way: kept as a version whenever it differs.
+  const merged=await mergeDocCopies(id,mineForMerge,rawDocData);
+  if((!merged||merged.conflicts)&&!await keepLocalDocBeforeIncoming(id,rawDocData))return false; // before hydrateCloudDocBlobs replaces the local diagram blobs
+  if(merged&&merged.idRemap)mineForMerge=remapThreadAnchors(mineForMerge,merged.idRemap);
+  const theirs=merged&&merged.mineDiagrams?rawDocData:await hydrateCloudDocBlobs(mod,db,ownerUid,id,rawDocData);
+  const docData=merged?{...merged.doc,diagrams:merged.mineDiagrams?merged.doc.diagrams:theirs.diagrams}:theirs;
   const addedEntries=mergeMyThreadEntriesInto(id,docData,mineForMerge);
   localStorage.setItem(docKey(id),JSON.stringify(docData));
   // The copy taken from the cloud is stamped with the cloud's time, not now: stamped now, the next
   // catch-up saw it as newer here than in the account (localCopyIsNewer) and sent it back up, and
   // the other device did the same, so documents bounced between devices on every focus.
   touchDocIndex(id,docData.title||'Untitled',cloud.updatedAt);
-  setDocBaseRev(id,readDocRev(cloud.rev));
-  if(addedEntries)queueSync('doc',id); // the merged copy goes back up, so the other device gets these entries (and deletions)
+  setDocBase(id,readDocRev(cloud.rev),theirs);
+  if(addedEntries||(merged&&merged.changed))queueSync('doc',id); // the merged copy goes back up, so the other device gets this one's changes
   return true;
 }
 // Another device deleted this document forever (its marker in users/{uid}/deletedDocs). The copy
@@ -31555,7 +31779,7 @@ function reloadCurrentDocFromOtherTab(){
   // (when it differs), so Reload latest can never lose this tab's own edits.
   commitEdit();
   if(_foreignDocVersionPending===id)_foreignDocVersionPending=null; // the other copy becomes the one on screen
-  if(_incomingDocRev[id]!==undefined){ setDocBaseRev(id,_incomingDocRev[id]); delete _incomingDocRev[id]; } // another device's copy
+  if(_incomingDocRev[id]!==undefined){ let other=null; try{ other=JSON.parse(localStorage.getItem(docKey(id))||'null'); }catch(e){} setDocBase(id,_incomingDocRev[id],other); delete _incomingDocRev[id]; } // another device's copy
   let sameAsOther=false; try{ const o=JSON.parse(localStorage.getItem(docKey(id))||'null'); sameAsOther=!!o&&JSON.stringify([o.nodes,o.remarks||[]])===JSON.stringify([nodes,remarks]); }catch(e){}
   if(!sameAsOther)recordDocRevision(id,currentDocRevisionContent(),'Before reloading the other version',{dedupe:true});
   const fresh=loadTabFromStorageObj(id);

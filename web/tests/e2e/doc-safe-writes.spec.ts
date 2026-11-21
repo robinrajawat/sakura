@@ -88,7 +88,7 @@ test('a copy based on an older rev never overwrites another device\'s save', asy
   // The other device's copy is now on screen, and this device's edit is a version.
   await expect(page.locator('#editor-pane')).toContainText('Written on the other device');
   const toast = page.locator('#toast');
-  await expect(toast).toContainText('Changed on another device');
+  await expect(toast).toContainText('Where you both changed the same thing, theirs was kept'); // the same row changed on both: a conflict
   // Its button opens Version history, where this device's edits are.
   await toast.locator('.toast-action-btn', { hasText: 'Version history' }).click();
   await expect(page.locator('#history-modal-overlay')).toHaveClass(/open/);

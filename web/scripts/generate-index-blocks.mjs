@@ -196,6 +196,13 @@ initVaultState({
     footer: ''
   },
   {
+    name: 'docMerge',
+    sourceFile: 'src/state/docMerge.ts',
+    testFile: 'tests/unit/docMerge.test.ts',
+    // Row-level merge of two devices' copies of a document. Spliced just before resolveDocPushConflict.
+    footer: ''
+  },
+  {
     name: 'versionSummary',
     sourceFile: 'src/utils/versionSummary.ts',
     testFile: 'tests/unit/versionSummary.test.ts',

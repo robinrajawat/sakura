@@ -91,6 +91,47 @@ test('a thread deleted on this device stays deleted when the account\'s copy cha
   expect(await queued(page)).toContain('doc:d5');
 });
 
+test('two devices\' edits to different rows merge, with nothing set aside in Version history', async ({ page }) => {
+  // Owner 2026-11-21: edits in the iPhone app and in Safari kept going to Version history as
+  // "Your edits, set aside". With the copy both started from, they merge row by row.
+  const r = await page.evaluate(async ({ base, mine, theirs }) => {
+    localStorage.setItem('sakura_doc_v1_d7', JSON.stringify(mine));
+    saveDocsIndex([{ id: 'd7', title: 'Plan', updatedAt: 1 }]);
+    setDocBase('d7', 3, base);
+    await new Promise((res) => setTimeout(res, 100));
+    let versions = 0; recordDocRevision = async () => { versions++; return true; };
+    await resolveDocPushConflict(firestoreMods.mod, firestoreMods.db, 'u1', 'd7', { ...theirs, rev: 4, updatedAt: 2 });
+    return { doc: JSON.parse(localStorage.getItem('sakura_doc_v1_d7')), versions };
+  }, {
+    base: { nodes: [row(1, 'Goal'), row(2, 'Scope')], nextId: 3, title: 'Plan', remarks: [] },
+    mine: { nodes: [row(1, 'Goal'), row(2, 'Scope, revised on the phone'), row(3, 'Added on the phone')], nextId: 4, title: 'Plan', remarks: [] },
+    theirs: { nodes: [row(1, 'Goal for Q4 (Mac)'), row(2, 'Scope'), row(3, 'Added on the Mac')], nextId: 4, title: 'Plan', remarks: [] }
+  });
+  expect(r.doc.nodes.map((n: { text: string }) => n.text)).toEqual(['Goal for Q4 (Mac)', 'Scope, revised on the phone', 'Added on the phone', 'Added on the Mac']);
+  // Both devices numbered their new row 3: this device's becomes 4 (it sits right after the row it followed here).
+  expect(r.doc.nodes.map((n: { id: number }) => n.id)).toEqual([1, 2, 4, 3]);
+  expect(r.versions).toBe(0);
+  expect(await queued(page)).toContain('doc:d7');
+});
+
+test('the same row changed on both devices keeps the account\'s, and this device\'s copy goes to Version history', async ({ page }) => {
+  const r = await page.evaluate(async ({ base, mine, theirs }) => {
+    localStorage.setItem('sakura_doc_v1_d8', JSON.stringify(mine));
+    saveDocsIndex([{ id: 'd8', title: 'Plan', updatedAt: 1 }]);
+    setDocBase('d8', 3, base);
+    await new Promise((res) => setTimeout(res, 100));
+    let versions = 0; recordDocRevision = async () => { versions++; return true; };
+    await resolveDocPushConflict(firestoreMods.mod, firestoreMods.db, 'u1', 'd8', { ...theirs, rev: 4, updatedAt: 2 });
+    return { doc: JSON.parse(localStorage.getItem('sakura_doc_v1_d8')), versions };
+  }, {
+    base: { nodes: [row(1, 'Goal'), row(2, 'Scope')], nextId: 3, title: 'Plan', remarks: [] },
+    mine: { nodes: [row(1, 'Goal (phone)'), row(2, 'Scope'), row(3, 'Added on the phone')], nextId: 4, title: 'Plan', remarks: [] },
+    theirs: { nodes: [row(1, 'Goal (Mac)'), row(2, 'Scope')], nextId: 3, title: 'Plan', remarks: [] }
+  });
+  expect(r.doc.nodes.map((n: { text: string }) => n.text)).toEqual(['Goal (Mac)', 'Scope', 'Added on the phone']);
+  expect(r.versions).toBe(1);
+});
+
 test('a newer copy arriving for a document not on screen keeps this device\'s new thread entries', async ({ page }) => {
   await page.evaluate(async ({ rows, mine }) => {
     localStorage.setItem('sakura_doc_v1_d4', JSON.stringify({ nodes: rows, title: 'Offline edit', remarks: [mine] }));
