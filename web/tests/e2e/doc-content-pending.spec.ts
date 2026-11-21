@@ -122,3 +122,10 @@ test('offline says so at once', async ({ page, context }) => {
   await context.setOffline(false);
   await expect(page.locator('#doc-content-pending')).not.toHaveAttribute('data-stage', 'offline');
 });
+
+test('Share does not export or send the empty placeholder', async ({ page }) => {
+  await expect(page.locator('#doc-content-pending-msg')).toBeVisible();
+  await page.locator('#doc-share-chip').click();
+  await expect(page.locator('#toast')).toContainText('This document is still loading.');
+  await expect(page.locator('#share-menu')).toHaveCount(0);
+});

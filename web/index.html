@@ -17801,8 +17801,16 @@ async function addSentCopyToMyDocs(n){
 function updateDocShareChipVisibility(){
   const wrap=el('doc-share-wrap'); if(wrap)wrap.style.display='';
 }
+// A document still loading from the account is an empty placeholder: exporting or sending it would
+// hand over an empty copy. Share and Export say so instead (polish check, 2026-11-21).
+function docStillLoading(){
+  if(!findOpenTab(activeTabDocId)?._ghostFallback)return false;
+  showToast('This document is still loading. Try again once it has arrived.');
+  return true;
+}
 el('doc-share-chip')?.addEventListener('click',e=>{
   e.stopPropagation();
+  if(docStillLoading())return;
   const menu=el('share-dd-menu'); if(!menu)return;
   if(menu.classList.contains('open')){ closeShareDropdown(); return; }
   document.querySelectorAll('.todo-dd-menu.open').forEach(m=>m.classList.remove('open'));
@@ -19911,8 +19919,8 @@ function firstSyncOverlay(){
 function renderFirstSync(){
   clearTimeout(_firstSyncTimer); _firstSyncTimer=null;
   const s=_firstSync;
-  if(!s){ const b=el('first-sync'); if(b)b.hidden=true; return; }
-  const box=firstSyncOverlay(); box.hidden=false;
+  if(!s){ const b=el('first-sync'); if(b)b.hidden=true; setFirstSyncInert(false); return; }
+  const box=firstSyncOverlay(); box.hidden=false; setFirstSyncInert(true);
   const online=navigator.onLine!==false;
   const elapsed=Date.now()-s.lastProgressAt;
   const stage=s.failed?'stalled':loadingStage(elapsed,online);
@@ -19925,6 +19933,7 @@ function renderFirstSync(){
   else if(stage==='slow'){ more=(count?count+'. ':'')+'This is taking longer than usual.'; }
   el('first-sync-msg').textContent=head; el('first-sync-detail').textContent=more;
   el('first-sync-retry').hidden=!retry; el('first-sync-continue').hidden=!cont;
+  el('first-sync-continue').textContent=stage==='stalled'&&!s.failed?'Continue without waiting':'Continue';
   const fill=el('first-sync-bar-fill'), bar=fill.parentElement;
   bar.classList.toggle('indeterminate',!s.total); fill.style.width=s.total?Math.round(100*Math.min(s.done,s.total)/s.total)+'%':'';
   const wait=s.failed?null:msUntilNextLoadingStage(elapsed,online);
@@ -19946,6 +19955,15 @@ function finishFirstSync(ok){
   endFirstSync();
 }
 function endFirstSync(){ _firstSync=null; renderFirstSync(); }
+// While the screen is up, the app behind it can't be reached with Tab or a screen reader (it only
+// covered it visually). Only what this set is unset; the toast stays live.
+function setFirstSyncInert(on){
+  [...document.body.children].forEach(c=>{
+    if(c.id==='first-sync'||c.id==='toast'||c.tagName==='SCRIPT')return;
+    if(on){ if(!c.hasAttribute('inert')){ c.setAttribute('inert',''); c.dataset.firstSyncInert='1'; } }
+    else if(c.dataset.firstSyncInert){ c.removeAttribute('inert'); delete c.dataset.firstSyncInert; }
+  });
+}
 window.addEventListener('offline',()=>{ if(_firstSync)renderFirstSync(); });
 window.addEventListener('online',()=>{ if(_firstSync){ _firstSync.lastProgressAt=Date.now(); renderFirstSync(); pullAndMergeFromCloud(true); } });
 async function pullAndMergeFromCloud(isInitial=false){
@@ -28387,9 +28405,9 @@ const SB_PEOPLE_ICON='<svg width="13" height="13" viewBox="0 0 24 24" fill="none
 const SB_MD_ICON='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2.5"/><path d="M6 15V9l2.5 3L11 9v6"/><path d="M17 9v6"/><path d="M14.5 12.5L17 15l2.5-2.5"/></svg>';
 const SB_OPML_ICON='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="2.4"/><circle cx="6" cy="18" r="2.4"/><circle cx="17" cy="12" r="2.4"/><path d="M8 6h4a4 4 0 0 1 4 4"/><path d="M8 18h4a4 4 0 0 0 4-4"/></svg>';
 function exportMenuItems(){ return [
-  {label:'PDF', meta:'.pdf', icon:SB_PDF_ICON, data:{save:'pdf'}, onClick:()=>exportPdfDirect()},
-  {label:'Markdown', meta:'.md', icon:SB_MD_ICON, data:{save:'md'}, onClick:()=>exportMarkdown()},
-  {label:'OPML', meta:'.opml', icon:SB_OPML_ICON, data:{save:'opml'}, onClick:()=>exportOpml()}
+  {label:'PDF', meta:'.pdf', icon:SB_PDF_ICON, data:{save:'pdf'}, onClick:()=>{ if(!docStillLoading())exportPdfDirect(); }},
+  {label:'Markdown', meta:'.md', icon:SB_MD_ICON, data:{save:'md'}, onClick:()=>{ if(!docStillLoading())exportMarkdown(); }},
+  {label:'OPML', meta:'.opml', icon:SB_OPML_ICON, data:{save:'opml'}, onClick:()=>{ if(!docStillLoading())exportOpml(); }}
 ]; }
 function importMenuItems(){ return [
   {label:'Markdown or OPML', meta:'.md, .opml', icon:SB_IMPORT_ICON, data:{import:'file'}, onClick:()=>triggerDocumentImport()}

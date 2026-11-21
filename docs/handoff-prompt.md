@@ -180,11 +180,11 @@ The flaky To-Dos draft test reports its storage state on failure: read that befo
 
 ### Latest changes
 
+- **Polish check after the loading work (2026-11-21).** The sign-in screen now makes the app behind it `inert` (`setFirstSyncInert`; Tab could reach the editor), its button reads "Continue" when sync failed or is offline ("Continue without waiting" only while stalled), and Share/Export refuse a document that is still a loading placeholder (`docStillLoading`; it would have exported or sent an empty copy). Checked and fine: phone layout of the loading screens, light/dark. Tests: `first-sync-screen.spec.ts`, `doc-content-pending.spec.ts`.
+
 - **Waits on outside services always end (2026-11-21, polish audit).** draw.io: `drawioWaitTick` (stages from `loadingStage`; a note with Retry/Close after 12 s or offline; `drawioLoaded` on draw.io's `init`; closing before `init` doesn't ask). AI: every provider request goes through `aiFetch` with a 90 s timeout (`AI_REQUEST_TIMEOUT_MS`), raised as a `FallbackableError` so the fallback chain runs. Test: `slow-services.spec.ts`. Not done on purpose: the bare "Loading…" in the feedback inbox and the hosted-AI providers list (admin-only); no Cancel for AI actions yet (the timeout bounds them).
 
 - **Signing in shows "Bringing in your documents…" instead of a blank document (2026-11-21, owner).** `startFirstSync` (both sign-in flows; not sign-up, not a restored session) covers the app; `pullAndMergeFromCloud` reports progress (`firstSyncProgress`) and ends it (`finishFirstSync`: opens the newest document if the open one is blank). Stages from `loadingStage`, timed from the last progress. Test: `first-sync-screen.spec.ts`.
-
-- **A document still loading from the account says how it's going (2026-11-21, owner: "do what's standard").** `setDocContentPendingLock` now shows stages from `src/utils/loadingStage.ts` (nothing under 300 ms, skeleton, "taking longer" at 4 s, Retry at 12 s, offline at once; per document via `tab._pendingSince`). Retry (`retryPendingDocLoad`) fetches just that document and goes through `applyIncomingDocData`, so the placeholder is still never saved. Only the editor's children are `inert` now (the overlay's Retry must stay clickable). Tests: `loadingStage.test.ts`, `doc-content-pending.spec.ts`. Next, agreed in chat: a first-sync screen after sign-in on a new device ("Bringing in your documents…", then open the latest document) instead of a blank Untitled; then the same staged loading for the other bare "Loading…" texts (AI providers, feedback inbox, draw.io). Owner asked about Google-only sign-in: advised keeping email (Microsoft 365 users), maybe email links instead of passwords later; nothing decided.
 
 ### In progress / not built
 
