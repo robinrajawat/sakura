@@ -148,3 +148,18 @@ test('at the very start it still waits a moment before showing', async ({ page }
   expect(await page.evaluate(() => document.getElementById('first-sync')!.dataset.stage)).toBe('quiet');
   await expect(page.locator('#first-sync')).toHaveAttribute('data-stage', 'loading');
 });
+
+test('once offered, Continue stays when documents start arriving again (owner 2026-11-21)', async ({ page }) => {
+  await page.evaluate(() => {
+    // @ts-expect-error -- bare globals from index.html
+    startFirstSync(); _firstSync.startedAt = Date.now() - 20000; _firstSync.lastProgressAt = Date.now() - 13000; renderFirstSync();
+  });
+  await expect(page.locator('#first-sync-continue')).toBeVisible();
+  await page.evaluate(() => {
+    // @ts-expect-error -- bare global from index.html
+    firstSyncProgress(5, 40);
+  });
+  await expect(page.locator('#first-sync')).toHaveAttribute('data-stage', 'loading');
+  await expect(page.locator('#first-sync-continue')).toBeVisible();
+  await expect(page.locator('#first-sync-continue')).toHaveText('Continue without waiting');
+});

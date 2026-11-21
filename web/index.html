@@ -19906,6 +19906,8 @@ function firstSyncProgress(done,total){
   _firstSync.done=done; if(total!=null)_firstSync.total=total; _firstSync.lastProgressAt=Date.now();
   renderFirstSync();
 }
+// A step that isn't a document (settings, folders, deletes) finished: still moving, not stuck.
+function firstSyncAlive(){ if(_firstSync){ _firstSync.lastProgressAt=Date.now(); } }
 function firstSyncOverlay(){
   let box=el('first-sync');
   if(!box){
@@ -19936,10 +19938,13 @@ function renderFirstSync(){
   if(stage==='offline'){ head='You’re offline.'; more='Your documents will come in when you’re back online.'; cont=true; }
   else if(s.failed){ head='Couldn’t bring in your documents.'; more='Check your connection and try again. Anything already here is safe.'; retry=true; cont=true; }
   else if(stage==='stalled'){ more=(count?count+'. ':'')+'Your account isn’t responding. You can keep waiting, or carry on and they’ll appear as they arrive.'; cont=true; }
+  // Once offered, the way out stays: it used to vanish as soon as the next document arrived and come
+  // back at the next pause (owner 2026-11-21: "comes and goes").
+  if(cont)s.offeredContinue=true; else if(s.offeredContinue)cont=true;
   else if(stage==='slow'){ more=(count?count+'. ':'')+'This is taking longer than usual.'; }
   el('first-sync-msg').textContent=head; el('first-sync-detail').textContent=more;
   el('first-sync-retry').hidden=!retry; el('first-sync-continue').hidden=!cont;
-  el('first-sync-continue').textContent=stage==='stalled'&&!s.failed?'Continue without waiting':'Continue';
+  el('first-sync-continue').textContent=s.failed||stage==='offline'?'Continue':'Continue without waiting';
   const fill=el('first-sync-bar-fill'), bar=fill.parentElement;
   bar.classList.toggle('indeterminate',!s.total); fill.style.width=s.total?Math.round(100*Math.min(s.done,s.total)/s.total)+'%':'';
   let wait=s.failed?null:msUntilNextLoadingStage(elapsed,online);
@@ -20017,6 +20022,7 @@ async function pullAndMergeFromCloud(isInitial=false){
       const idbKeyName=idbSyncMetaKeys[metaKey];
       const localKeyName=syncMetaKeys[metaKey];
       let snap; try{ snap=await mod.getDoc(mod.doc(db,'users',currentUser.uid,'meta',metaKey)); }catch(e){ continue; }
+      firstSyncAlive();
       if(snap.exists()){
         const cloud=snap.data();
         const applied=await applyIncomingMetaData(metaKey,cloud);
@@ -20042,6 +20048,7 @@ async function pullAndMergeFromCloud(isInitial=false){
     let deletesOk=false, removedOpenDoc=false;
     try{
       const tomb=await mod.getDocs(mod.collection(db,'users',currentUser.uid,'deletedDocs'));
+      firstSyncAlive();
       for(const t of tomb.docs){
         const at=Number(t.data().deletedAt)||0;
         // Markers older than 180 days are cleared, so this read stays small; a device offline for
