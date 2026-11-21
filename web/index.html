@@ -849,6 +849,10 @@ body.zen-mode #quick-bar{display:none}
    (owner 2026-11-21; the text is kept, see revealThreadDrafts). */
 .node-remark-dot.has-draft{position:relative}
 .node-remark-dot.has-draft::before{content:'';position:absolute;top:-1px;right:-3px;width:6px;height:6px;border-radius:50%;background:var(--accent);outline:1.5px solid var(--canvas-bg)}
+/* A row another device just changed, applied live (owner 2026-11-21): a brief glow, then nothing. */
+@keyframes row-updated-glow{from{background:color-mix(in srgb,var(--accent) 18%,transparent)}to{background:transparent}}
+.row-updated{animation:row-updated-glow 2.4s ease-out 1}
+@media (prefers-reduced-motion:reduce){.row-updated{animation-duration:.01s}}
 /* === Outline numbering === */
 .node-number{color:var(--muted);margin-right:7px;font-variant-numeric:tabular-nums;user-select:none;font-size:.92em;flex:0 0 auto}
 
@@ -14136,7 +14140,7 @@ function maybePromptGuestSignIn(savedNodes){
 // with the next real edit, but alone not a change. Folding a row or a table once sent the whole
 // document up ("Saving…"), moved its version on, and could turn a real edit on another device into
 // a conflict (owner 2026-11-17: "when I expand a table on phone or any dot then it triggers a save?").
-const DOC_VIEW_ONLY_FIELDS=['selectedId','multiSelectedIds','selectionAnchorId','focusedId','collapsed','collapsedTables','collapsedImages'];
+const DOC_VIEW_ONLY_FIELDS=['selectedId','multiSelectedIds','selectionAnchorId','focusedId','collapsed','collapsedTables','collapsedImages','lastDevice']; // lastDevice: which device last sent the account's copy (shown as "Updated from …")
 let _lastSavedDocSig={id:null,raw:null,sig:null};
 function docSyncSignature(d){
   if(!d||typeof d!=='object')return '';
@@ -18707,10 +18711,28 @@ const DOC_MERGE_FIELDS = ['title', 'author', 'docStatus', 'docLinkedUrl', 'docLi
 function dmStable(v) {
     return JSON.stringify(v, (_k, x) => x && typeof x === 'object' && !Array.isArray(x) ? Object.fromEntries(Object.keys(x).sort().map((k) => [k, x[k]])) : x) ?? 'undefined';
 }
-/** A row's content: everything but where it sits and when it was last touched. */
+/** Empty or default: missing, '', false, null, [], {}, or a styles object with nothing set. */
+function dmIsDefault(v) {
+    if (v === undefined || v === null || v === '' || v === false)
+        return true;
+    if (Array.isArray(v))
+        return v.length === 0;
+    if (typeof v === 'object')
+        return Object.values(v).every((x) => x === undefined || x === null || x === false || x === 0 || x === '');
+    return false;
+}
+/**
+ * A row's content: everything but where it sits and when it was made or last touched. A field
+ * that's missing and one holding its empty default count as the same, so a copy saved by an older
+ * app (rows without its newer fields) or not yet normalised doesn't look edited everywhere.
+ */
 function mergeRowContent(r) {
-    const { id: _i, depth: _d, parentId: _p, modifiedAt: _m, ...rest } = r;
-    return dmStable(rest);
+    const { id: _i, depth: _d, parentId: _p, modifiedAt: _m, createdAt: _c, ...rest } = r;
+    const o = {};
+    for (const [k, v] of Object.entries(rest))
+        if (!dmIsDefault(v))
+            o[k] = v;
+    return dmStable(o);
 }
 /** The side that changed, or the account's on a real conflict. */
 function dmPick3(b, m, t, eq) {
@@ -18743,7 +18765,8 @@ function mergeDocs(base, mine, theirs) {
             if (Number.isFinite(n) && n > maxId)
                 maxId = n;
         }
-    maxId = Math.max(maxId, Number(base.nextId) || 0, Number(mine.nextId) || 0, Number(theirs.nextId) || 0) - 1;
+    // The highest id in use (rows, or what nextId says was handed out): a new id is above both.
+    maxId = Math.max(maxId, (Number(base.nextId) || 0) - 1, (Number(mine.nextId) || 0) - 1, (Number(theirs.nextId) || 0) - 1);
     // Rows to keep, keyed by their id in the result.
     const out = new Map();
     const mineKeyFor = new Map(); // a row of mine -> its id in the result
@@ -18854,12 +18877,20 @@ function docBaseContent(d){
 // A diagram as compared between copies: without its drawing data and cache flags, which are stored
 // differently on each device.
 function diagramsForMerge(list){ return (Array.isArray(list)?list:[]).map(({xml,previewSvg,pageSvgs,blobSynced,_hydrated,...meta})=>meta); }
+// Also kept in memory: the store's write finishes later, and a second copy arriving right after the
+// first must merge on the base the first one set (not fall back for want of it).
+const _docBaseCache=new Map();
 function setDocBase(id,rev,doc){
   setDocBaseRev(id,rev);
   const content=docBaseContent(doc);
-  if(content)idbSet('docbase:'+id,{rev,doc:content}).catch(()=>{});
+  if(!content){ _docBaseCache.delete(id); return; }
+  _docBaseCache.set(id,{rev,doc:content});
+  idbSet('docbase:'+id,{rev,doc:content}).catch(()=>{});
 }
-async function getDocBase(id){ try{ const b=await idbGet('docbase:'+id); return b&&b.doc?b:null; }catch(e){ return null; } }
+async function getDocBase(id){
+  const c=_docBaseCache.get(id); if(c&&c.rev===getDocBaseRev(id))return c;
+  try{ const b=await idbGet('docbase:'+id); return b&&b.doc?b:null; }catch(e){ return null; }
+}
 // Merges this device's copy (`mine`) with the account's (`theirs`, a stored-form document) on the
 // base they share. Returns null when there's no base to merge on (then the old way applies: the
 // account's copy is kept and this one goes to Version history). Otherwise {doc, conflicts, changed,
@@ -18883,6 +18914,76 @@ function remapThreadAnchors(mineThread,idRemap){
   if(!mineThread||!idRemap||!Object.keys(idRemap).length)return mineThread;
   return {...mineThread,remarks:(mineThread.remarks||[]).map(e=>e&&idRemap[String(e.anchorNodeId)]!==undefined?{...e,anchorNodeId:idRemap[String(e.anchorNodeId)]}:e)};
 }
+// Whether a three-way merge is possible for this document: its shared copy is known.
+async function canMergeDoc(id){ const b=await getDocBase(id); return !!b&&b.rev===getDocBaseRev(id); }
+// Something is being typed in the document right now (a row, a note, a thread reply, the title):
+// the screen isn't changed under the caret.
+function typingInOpenDoc(){
+  if(editingId!==null)return true;
+  const a=document.activeElement;
+  return !!(a&&a!==document.body&&isTextEntryTarget(a)&&a.closest&&a.closest('#editor-pane,#editor-title-row,#header-title,#doc-author'));
+}
+const _liveUpdateToastAt={};
+// Another device's copy of the open document, applied live when nothing is being typed (a real
+// conflict keeps this device's copy in Version history first). Returns true when it was applied.
+// One at a time per document: two copies arriving together are applied in turn, each on the base
+// the one before it left.
+const _liveApplyChain={};
+function applyIncomingToOpenDoc(mod,db,ownerUid,id,cloud){
+  const run=(_liveApplyChain[id]||Promise.resolve()).then(()=>applyIncomingToOpenDocNow(mod,db,ownerUid,id,cloud));
+  _liveApplyChain[id]=run.catch(()=>false);
+  return run;
+}
+async function applyIncomingToOpenDocNow(mod,db,ownerUid,id,cloud){
+  try{
+    // An older copy than the one already applied (they can arrive out of order): nothing to do.
+    { const known=getDocBaseRev(id); if(known!==undefined&&readDocRev(cloud.rev)>0&&readDocRev(cloud.rev)<=known)return true; }
+    if(typingInOpenDoc()||activeTabDocId!==id)return false;
+    const {updatedAt,rev,lastDevice,...raw}=cloud;
+    const before=currentDocRevisionContent();
+    const merged=await mergeDocCopies(id,before,raw);
+    if(!merged)return false;
+    // Both changed the same thing differently: the account's version is kept there, so this
+    // device's copy is kept in Version history first (as when a save collides).
+    if(merged.conflicts&&!await recordDocRevision(id,before,'Your changes on this device',{dedupe:true}))return false;
+    // Re-check after the awaits: typing may have started, or another document been opened.
+    if(typingInOpenDoc()||currentDocId!==id||activeTabDocId!==id)return false;
+    const theirs=merged.mineDiagrams?raw:await hydrateCloudDocBlobs(mod,db,ownerUid,id,raw);
+    if(typingInOpenDoc()||currentDocId!==id)return false;
+    const docData={...merged.doc,diagrams:merged.mineDiagrams?merged.doc.diagrams:theirs.diagrams};
+    const addedEntries=mergeMyThreadEntriesInto(id,docData,remapThreadAnchors({remarks:before.remarks,remarkTombstones:docRemarkTombstones(id)},merged.idRemap));
+    // What changes on screen, to glow briefly.
+    const was=new Map((before.nodes||[]).map(n=>[String(n.id),versionRowContentKey(n)]));
+    const changedIds=(docData.nodes||[]).filter(n=>was.get(String(n.id))!==versionRowContentKey(n)).map(n=>String(n.id));
+    const stored=(()=>{ try{ return JSON.parse(localStorage.getItem(docKey(id))||'{}'); }catch(e){ return {}; } })();
+    localStorage.setItem(docKey(id),JSON.stringify({...stored,...docData}));
+    touchDocIndex(id,docData.title||'Untitled',updatedAt);
+    setDocBase(id,readDocRev(rev),theirs);
+    delete _incomingDocRev[id];
+    if(_foreignDocVersionPending===id)_foreignDocVersionPending=null;
+    hideCrossTabWarning();
+    // The content changes; where you are (selection, folds, scroll) stays.
+    const pane=el('editor-pane'), scroll=pane?pane.scrollTop:0;
+    nodes=(docData.nodes||[]).map(normalizeNode); rebuildParentIds();
+    nextId=Math.max(nextId,Number(docData.nextId)||0,...nodes.map(n=>Number(n.id)+1).filter(Number.isFinite));
+    remarks=Array.isArray(docData.remarks)?docData.remarks:[];
+    qaItems=Array.isArray(docData.qa)?docData.qa:[];
+    diagrams=Array.isArray(docData.diagrams)?docData.diagrams:[];
+    setDocTitleField(docData.title||''); setDocAuthorField(docData.author||'');
+    setDocStatus(typeof docData.docStatus==='string'?docData.docStatus:'',false);
+    setDocLinkedUrl(typeof docData.docLinkedUrl==='string'?docData.docLinkedUrl:'',typeof docData.docLinkedUrlLabel==='string'?docData.docLinkedUrlLabel:'',false);
+    // Undo steps from before would undo the other device's changes too, so they go (as Reload latest does).
+    undoStack=[]; redoStack=[];
+    hydrateDiagramBlobsForDoc(id);
+    ensureSelection(); render(); renderSidebar();
+    if(pane)pane.scrollTop=scroll;
+    changedIds.forEach(rid=>{ const row=pane&&pane.querySelector('[data-id="'+CSS.escape(rid)+'"]'); if(row){ row.classList.remove('row-updated'); void row.offsetWidth; row.classList.add('row-updated'); } });
+    if(merged.changed||addedEntries)queueSync('doc',id); // this device's own unsent changes go up, merged
+    if(merged.conflicts)showActionToast('Merged with changes from another device. Where you both changed the same thing, theirs was kept; yours is in Version history.','Version history',()=>openVersionHistory(id),8000);
+    else if(changedIds.length&&Date.now()-(_liveUpdateToastAt[id]||0)>60000){ _liveUpdateToastAt[id]=Date.now(); showToast('Updated from '+(lastDevice||'another device')); } // at most once a minute
+    return true;
+  }catch(e){ console.warn('[sakura] could not apply the other device\'s changes live:',e); return false; }
+}
 const _conflictNotKeptToastShown=new Set();
 async function resolveDocPushConflict(mod,db,ownerUid,docId,cloud){
   let kept=true, _mineForThreadMerge=null, merged=null, theirs=null;
@@ -18894,7 +18995,7 @@ async function resolveDocPushConflict(mod,db,ownerUid,docId,cloud){
     // Both copies merged row by row on the copy they share (owner 2026-11-21): this device's copy
     // goes to Version history only when the two changed the same thing differently.
     if(cloud){
-      const {updatedAt:_u,rev:_r,...raw}=cloud;
+      const {updatedAt:_u,rev:_r,lastDevice:_ld,...raw}=cloud;
       merged=await mergeDocCopies(docId,mine,raw);
       // The account's drawings are fetched (into this device's store) only when its diagrams are the
       // ones kept: when only this device changed them, its own drawings stay.
@@ -18987,7 +19088,7 @@ async function pushDocToCloud(mod,db,docId){
     // dataUrls) from before the Files feature was removed — dropped here rather than pushed,
     // since there's no longer any subcollection or UI on the other end to read it back from.
     const {attachments:_droppedAttachments,...dataWithoutAttachments}=data;
-    const dataToSend={...dataWithoutAttachments,diagrams};
+    const dataToSend={...dataWithoutAttachments,diagrams,lastDevice:thisDeviceName()};
     // One transaction: the write happens only if the cloud is still at the rev this copy is based
     // on (decideDocPush). {merge:true}: fields this device doesn't keep locally (such as an old
     // sharedWith map) stay as they are.
@@ -19239,7 +19340,7 @@ async function hydrateCloudDocBlobs(mod,db,ownerUid,docId,docData){
 async function applyIncomingDocData(mod,db,ownerUid,id,cloud,viaRealtime){
   // This device's own upload coming back, or the version this device already has: nothing new.
   if(isOwnPush('doc:'+id,cloud.updatedAt))return false;
-  { const r=readDocRev(cloud.rev); if(r>0&&r===getDocBaseRev(id)&&localStorage.getItem(docKey(id))!==null)return false; }
+  { const r=readDocRev(cloud.rev), known=getDocBaseRev(id); if(r>0&&known!==undefined&&r<=known&&localStorage.getItem(docKey(id))!==null)return false; } // the copy this one is based on, or an older one arriving late (the account's rev only grows)
   const localIndex=loadDocsIndex();
   const localEntry=localIndex.find(d=>d.id===id);
   // Listed but with no content stored (the list arrived first): always take the cloud copy, so a
@@ -19248,7 +19349,7 @@ async function applyIncomingDocData(mod,db,ownerUid,id,cloud,viaRealtime){
   if(!shouldApplyIncomingSyncCore(cloud.updatedAt,(localEntry&&hasLocalContent)?Number(localEntry.updatedAt)||0:null,_lastPushedTs['doc:'+id]))return false;
   if(findOpenTab(id)?._ghostFallback){
     // On screen (or cached) as a placeholder: nothing real to protect, so show the content now.
-    const {updatedAt,rev:_rev,...rawDocData}=cloud;
+    const {updatedAt,rev:_rev,lastDevice:_ld,...rawDocData}=cloud;
     const docData=await hydrateCloudDocBlobs(mod,db,ownerUid,id,rawDocData);
     localStorage.setItem(docKey(id),JSON.stringify(docData));
     touchDocIndex(id,docData.title||'Untitled',cloud.updatedAt);
@@ -19258,12 +19359,20 @@ async function applyIncomingDocData(mod,db,ownerUid,id,cloud,viaRealtime){
   }
   if(id===currentDocId){
     if(!viaRealtime)return false; // polling: leave the active doc alone entirely
-    const {updatedAt,rev:_rev,...rawDocData}=cloud;
+    // Another device's changes come in live, as in Google Docs or Notion (owner 2026-11-21): when
+    // nothing is being typed here, the two copies are merged on the copy they share and the
+    // result goes on screen, the changed rows glowing briefly. Typing here, or no shared copy known,
+    // or a real conflict: the old way (kept for the next save to merge, or the banner).
+    if(await applyIncomingToOpenDoc(mod,db,ownerUid,id,cloud))return true;
+    const {updatedAt,rev:_rev,lastDevice:_ld,...rawDocData}=cloud;
     const docData=await hydrateCloudDocBlobs(mod,db,ownerUid,id,rawDocData);
     localStorage.setItem(docKey(id),JSON.stringify(docData)); // safe: not touching live `nodes`
     // The editor is still based on the older rev, so its next push is refused (see
     // resolveDocPushConflict) unless Reload latest takes this copy first.
     _incomingDocRev[id]=readDocRev(cloud.rev);
+    // With the shared copy known, the next save's push merges both (resolveDocPushConflict): no
+    // banner, and no version of the other copy first.
+    if(await canMergeDoc(id))return true;
     _foreignDocVersionPending=currentDocId; // the next save here keeps the other copy as a version first
     if(crossTabWarningDocId!==currentDocId){
       crossTabWarningDocId=currentDocId;
@@ -19272,7 +19381,7 @@ async function applyIncomingDocData(mod,db,ownerUid,id,cloud,viaRealtime){
     }
     return true;
   }
-  const {updatedAt,rev:_rev,...rawDocData}=cloud;
+  const {updatedAt,rev:_rev,lastDevice:_ld,...rawDocData}=cloud;
   let mineForMerge=null; try{ const lr=localStorage.getItem(docKey(id)); if(lr)mineForMerge=JSON.parse(lr); }catch(e){}
   // This device's copy merged with the arriving one, row by row, on the copy they share (owner
   // 2026-11-21); kept as a version first only when they can't be merged cleanly. With no shared copy

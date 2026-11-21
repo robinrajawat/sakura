@@ -159,3 +159,16 @@ test('deleting a thread entry records it, and the record is saved with the docum
   }, [row(1, 'Plan')]);
   expect(Object.keys(t)).toEqual(['x1']);
 });
+
+test('an older copy arriving late for a document not on screen is ignored', async ({ page }) => {
+  const r = await page.evaluate(async ({ rows }) => {
+    localStorage.setItem('sakura_doc_v1_d9', JSON.stringify({ nodes: rows, nextId: 3, title: 'Plan', remarks: [] }));
+    saveDocsIndex([{ id: 'd9', title: 'Plan', updatedAt: 1 }]);
+    setDocBase('d9', 5, { nodes: rows, nextId: 3, title: 'Plan', remarks: [] });
+    const applied = await applyIncomingDocData(firestoreMods.mod, firestoreMods.db, 'u1', 'd9', { nodes: [rows[0]], nextId: 3, title: 'Old', remarks: [], rev: 4, updatedAt: Date.now() + 5000 }, true);
+    return { applied, doc: JSON.parse(localStorage.getItem('sakura_doc_v1_d9')), rev: getDocBaseRev('d9') };
+  }, { rows: [row(1, 'Goal'), row(2, 'Scope')] });
+  expect(r.applied).toBe(false);
+  expect(r.doc.nodes.map((n: { text: string }) => n.text)).toEqual(['Goal', 'Scope']);
+  expect(r.rev).toBe(5);
+});
