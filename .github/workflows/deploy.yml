@@ -8,9 +8,15 @@ name: Deploy
 # Runs on push to main only (not every branch/PR — that's what `verify` (ci.yml) is for), so
 # what's published always matches what's actually on main.
 
+# A push that only changes documentation (everything under docs/ or ending in .md, the same rule
+# as ci.yml's docs-only check) changes nothing that is built, so it doesn't redeploy. A push with
+# any other file deploys as before; a manual run always deploys.
 on:
   push:
     branches: [main]
+    paths-ignore:
+      - 'docs/**'
+      - '**.md'
   workflow_dispatch: {}
 
 permissions:
