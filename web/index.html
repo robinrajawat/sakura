@@ -16307,7 +16307,7 @@ function drawioWaitTick(){
       note=document.createElement('div'); note.id='drawio-wait-note'; note.setAttribute('role','status');
       note.innerHTML='<div id="drawio-wait-msg"></div><div id="drawio-wait-detail"></div><div class="drawio-wait-actions"><button id="drawio-wait-retry" class="btn primary" type="button">Retry</button><button id="drawio-wait-close" class="btn" type="button">Close</button></div>';
       wrap.appendChild(note);
-      note.querySelector('#drawio-wait-retry').addEventListener('click',()=>{ const s2=_diagramEditorState; if(!s2)return; s2.openedAt=Date.now(); try{ s2.iframe.src=s2.iframe.src; }catch(e){} el('drawio-wait-note')?.remove(); drawioWaitTick(); });
+      note.querySelector('#drawio-wait-retry').addEventListener('click',()=>{ const s2=_diagramEditorState; if(!s2)return; s2.openedAt=Date.now(); try{ s2.iframe.src=s2.iframe.src; }catch(e){} drawioWaitTick(); });
       note.querySelector('#drawio-wait-close').addEventListener('click',()=>closeDiagramEditorInternal());
     }
     el('drawio-wait-msg').textContent=stage==='offline'?'You’re offline.':'draw.io hasn’t loaded yet.';
@@ -16315,13 +16315,16 @@ function drawioWaitTick(){
       ?'The diagram editor needs a connection. Your diagram is safe; the picture in your document is unchanged.'
       :'The diagram editor comes from diagrams.net, and your network or a browser extension may be blocking it. Your diagram is safe.';
     el('drawio-wait-retry').hidden=stage==='offline';
-  }else if(note)note.remove();
+    // The frame behind (a failed load, or the browser's error page) mustn't take the note's clicks or
+    // the focus: it's hidden while the note shows (a click on Close once landed in the frame).
+    st.iframe.style.visibility='hidden';
+  }else{ if(note)note.remove(); st.iframe.style.visibility=''; }
   const wait=msUntilNextLoadingStage(elapsed,online);
   if(wait!=null)_drawioWaitTimer=setTimeout(drawioWaitTick,wait+20);
 }
 function drawioLoaded(iframe){
   const st=_diagramEditorState; if(!st||st.iframe!==iframe)return;
-  st.inited=true; clearTimeout(_drawioWaitTimer); _drawioWaitTimer=null; el('drawio-wait-note')?.remove();
+  st.inited=true; clearTimeout(_drawioWaitTimer); _drawioWaitTimer=null; el('drawio-wait-note')?.remove(); iframe.style.visibility='';
 }
 window.addEventListener('offline',()=>{ if(_diagramEditorState&&!_diagramEditorState.inited)drawioWaitTick(); });
 window.addEventListener('online',()=>{ const st=_diagramEditorState; if(st&&!st.inited){ st.openedAt=Date.now(); try{ st.iframe.src=st.iframe.src; }catch(e){} drawioWaitTick(); } });
