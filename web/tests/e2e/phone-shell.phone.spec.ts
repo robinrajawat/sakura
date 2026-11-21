@@ -85,6 +85,22 @@ test('Settings opens full screen without the desktop-only categories, and the dr
   for (const cat of ['general', 'documents', 'about']) await expect(page.locator(`#settings-rail .settings-rail-btn[data-cat="${cat}"]`)).toBeVisible();
 });
 
+test('a dialog opened from Settings comes in front of it (Feedback inbox, Send feedback, Delete account)', async ({ page }) => {
+  // Owner 2026-11-21: the Feedback inbox opened behind the full-screen Settings, so nothing seemed to happen.
+  await page.locator('#phone-menu-btn').click();
+  await page.locator('#rail-settings-btn').click();
+  await expect(page.locator('#settings-panel')).toHaveClass(/open/);
+  for (const id of ['feedback-inbox-modal-overlay', 'feedback-modal-overlay', 'account-delete-modal-overlay']) {
+    const inFront = await page.evaluate((id) => {
+      const ov = document.getElementById(id)!; ov.classList.add('open');
+      const m = ov.querySelector('.app-modal')!.getBoundingClientRect();
+      const hit = document.elementFromPoint(m.x + m.width / 2, m.y + 10);
+      const ok = ov.contains(hit); ov.classList.remove('open'); return ok;
+    }, id);
+    expect(inFront, id).toBe(true);
+  }
+});
+
 test('search does not offer settings a phone hides', async ({ page }) => {
   // Encrypt keys at rest is an AI setting.
   await page.locator('#phone-menu-btn').click();

@@ -3683,6 +3683,10 @@ html.calm-layout #sb-auto-rewrite-chip.is-quiet:hover,html.calm-layout #sb-auto-
      Settings, Help and To-Dos sheets (1300). Below them, a dialog opened from one of those screens
      was hidden behind it and took every tap, so the app seemed frozen (owner 2026-11-19). */
   html.phone #sakura-modal-overlay { z-index: 1350; }
+  /* The same for every app dialog (Feedback inbox, Send feedback, Delete account), all opened from
+     Settings: each opened behind it, so nothing seemed to happen (owner 2026-11-21). Just below
+     sakura-modal so a question asked from one of them still comes in front. */
+  html.phone .app-modal-overlay { z-index: 1340; }
   /* Right-click-style menus (a task's ⋯, a table's menu) open over the full-screen panels. */
   html.phone .sb-context-menu { z-index: 1450; }
 
@@ -18537,7 +18541,7 @@ async function pushMetaToCloud(mod,db,metaKey){
   setMetaBase(metaKey,written);
   if(!sameJson(written,value)){
     try{ localStorage.setItem(localKeyName,JSON.stringify(written)); }catch(e){}
-    if(metaKey==='prefs')loadPrefs();
+    if(metaKey==='prefs'){ loadPrefs(); showPrefs(); }
     await refreshHubPanelAfterSync(metaKey);
     renderSidebar();
   }
@@ -19155,7 +19159,7 @@ async function startRealtimeSync(){
         if(!snap.exists())return;
         applyIncomingMetaData(metaKey,snap.data()).then(applied=>{
           if(applied){
-            if(metaKey==='prefs')loadPrefs();
+            if(metaKey==='prefs'){ loadPrefs(); showPrefs(); }
             refreshHubPanelAfterSync(metaKey);
             renderSidebar();
           }
@@ -33748,7 +33752,7 @@ function getBrandingDisplayText(){
 }
 function setPreviewBrandingText(text,persist=true){
   previewBrandingText=String(text||'');
-  const input=el('preview-branding-text-input'); if(input&&input.value!==previewBrandingText)input.value=previewBrandingText;
+  const input=el('preview-branding-text-input'); if(input&&document.activeElement!==input&&input.value!==previewBrandingText)input.value=previewBrandingText;
   if(persist){savePrefs()}
 }
 el('preview-branding-text-input')?.addEventListener('input',e=>setPreviewBrandingText(e.target.value));
@@ -37903,12 +37907,16 @@ function todosHistorySummary(list) {
   window.todosTextUndo=todosTextUndo;
   window.todosTextRedo=todosTextRedo;
 })();
+// Shows the saved settings everywhere they appear (switches, text boxes, the theme): at start, and
+// again when another device's settings arrive (owner 2026-11-21: a name or PDF mark changed on one
+// device didn't show on the other until a reload).
+function showPrefs(){ setTheme(currentTheme||'light',true,false); setThemeMode(themeMode,false); setEditorScale(editorScale,false); setTreeIndentWidth(treeIndentWidth,false); setOutlineNumbering(outlineNumbering,false); setBacklinksEnabled(backlinksEnabled,false); setSpellcheckEnabled(spellcheckEnabled,false); setSectionMarkingsEnabled(sectionMarkingsEnabled,false); setSvgSectionIconsEnabled(svgSectionIconsEnabled,false); setRowHighlightStyle(rowHighlightStyle,false); setCoverPageEnabled(coverPageEnabled,false); setContentsPageEnabled(contentsPageEnabled,false); setOpenItemsPageEnabled(openItemsPageEnabled,false); applyAccentColor(); setSearchMatchCase(searchMatchCase,false); setSearchWholeWord(searchWholeWord,false); setAutoRewriteEnabled(autoRewriteEnabled,false); setErrorReportsEnabled(errorReportsEnabled,false); setPreviewBrandingText(previewBrandingText,false); setQaSearchResultsEnabled(qaSearchResultsEnabled,false); applyQaSearchCategorySettings(); setDefaultAuthorName(defaultAuthorName,false); setTrashRetentionDays(trashRetentionDays,false); setSearchIncludesTrash(searchIncludesTrash,false); }
 // ===== Start the app =====
 // Last, after every declaration above (standard: declare everything, then start). Startup used to
 // run two thirds of the way down, so whatever it drew could reach code further down that wasn't set
 // up yet. On the owner's iPhone an open thread did ("Cannot access '_threadKeptQuestions' before
 // initialization"), which stopped startup and left the app frozen (2026-11-20).
-loadPrefs(); migrateStaleModelIds(); loadAiFallbackPrefs(); loadAiPrefs(); applyFallbackToggle(); ensureDocSystem(); purgeExpiredTrash(); restoreOpenTabsOnStartup(null); setTheme(currentTheme||'light',true,false); setThemeMode(themeMode,false); setEditorScale(editorScale,false); setTreeIndentWidth(treeIndentWidth,false); setOutlineNumbering(outlineNumbering,false); setBacklinksEnabled(backlinksEnabled,false); setSpellcheckEnabled(spellcheckEnabled,false); setSectionMarkingsEnabled(sectionMarkingsEnabled,false); setSvgSectionIconsEnabled(svgSectionIconsEnabled,false); setRowHighlightStyle(rowHighlightStyle,false); setCoverPageEnabled(coverPageEnabled,false); setContentsPageEnabled(contentsPageEnabled,false); setOpenItemsPageEnabled(openItemsPageEnabled,false); applyAccentColor(); setSearchMatchCase(searchMatchCase,false); setSearchWholeWord(searchWholeWord,false); setAutoRewriteEnabled(autoRewriteEnabled,false); setErrorReportsEnabled(errorReportsEnabled,false); setPreviewBrandingText(previewBrandingText,false); setQaSearchResultsEnabled(qaSearchResultsEnabled,false); applyQaSearchCategorySettings(); setTimeout(announceErrorReportsOnce,2500); applyCalmLayout(); noteDocVisit(null,currentDocId); setQaLocation('appbar',false); setDefaultAuthorName(defaultAuthorName,false); setTrashRetentionDays(trashRetentionDays,false); setSearchIncludesTrash(searchIncludesTrash,false); initFeatureActivationPanel(); ensureSelection(); render(); document.documentElement.classList.remove('presetup-doc-pending'); resetDirty(); focusPane(); updateExportStatus(); updatePreRestoreSnapshotStatus(); updateAiUsageDisplay(); restoreAccountSessionIfNeeded(); renderNotifBell();
+loadPrefs(); migrateStaleModelIds(); loadAiFallbackPrefs(); loadAiPrefs(); applyFallbackToggle(); ensureDocSystem(); purgeExpiredTrash(); restoreOpenTabsOnStartup(null); showPrefs(); setTimeout(announceErrorReportsOnce,2500); applyCalmLayout(); noteDocVisit(null,currentDocId); setQaLocation('appbar',false); initFeatureActivationPanel(); ensureSelection(); render(); document.documentElement.classList.remove('presetup-doc-pending'); resetDirty(); focusPane(); updateExportStatus(); updatePreRestoreSnapshotStatus(); updateAiUsageDisplay(); restoreAccountSessionIfNeeded(); renderNotifBell();
 // The last line of the main script: startup got all the way through (see __sakuraCheckStartup).
 window.__sakuraMainDone=true;
 </script>
