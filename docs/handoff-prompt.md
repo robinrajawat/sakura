@@ -180,11 +180,11 @@ The flaky To-Dos draft test reports its storage state on failure: read that befo
 
 ### Latest changes
 
+- **Polish from reviewing today's changes (2026-11-21).** A closed thread holding unsent text shows an accent dot on its icon ("unsent reply" in the tip); on a phone, toasts sit above the home bar; the collision message says "thread changes" (it now covers deletions too). Test: `thread-drafts.spec.ts` "stays closed".
+
 - **New feedback shows as a count in the app (2026-11-21, owner chose this over email or Sentry).** For the admin: a count on the Settings button, a dot on the phone's ☰, "Open (N new)" on the Feedback inbox row, for feedback sent in since the inbox was last opened (`refreshFeedbackUnread`; `feedbackSeenAt` is a synced setting). Not built: email (would need the Worker, an email service and a privacy.html change). Test: `feedback-unread-badge.spec.ts`.
 
 - **Installed iPhone app makes room for the status bar and home bar (2026-11-21, owner, iOS 26).** Text scrolled under the clock and blurred; the drawer and Settings started below a grey band. Now `viewport-fit=cover`, and on a phone the top line, drawer, full-screen sheets and editor pad by `--safe-top/-bottom/-left/-right` (the `env(safe-area-inset-*)` values; tests set the variables to stand in for a notch). A long title ends in "…". Checked with a simulated notch in Chromium, not on a real device: confirm on the iPhone. Test: `phone-shell.phone.spec.ts` "status bar".
-
-- **A thread deleted on one device stays deleted (2026-11-21, owner, iPhone app vs Safari).** When both devices had changed a document (opening one counts: the selected and folded rows are saved), the account's copy was kept with all its entries; this device's deletion records were saved but not applied, so the thread came back. Deletions now win in `mergeThreadEntries`, and the merged copy goes back up when entries were removed, not only added. Row edits in such a collision still go to Version history. Tests: `threadMerge.test.ts`, `thread-merge-sync.spec.ts` "stays deleted" (fails without the fix).
 
 ### In progress / not built
 

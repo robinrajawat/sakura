@@ -96,9 +96,13 @@ test('A thread closed with unsent text in it stays closed after a reload; openin
   await expect.poll(() => page.evaluate('typeof render === "function" && !!currentDocId && nodes.length > 1'), { timeout: 15000 }).toBe(true);
   await expect(page.locator('.thread-head')).toHaveCount(0);
   expect(Object.values(await drafts(page)).map((d) => d.html)).toEqual(['Ask the DBA first.']);
+  // The closed thread's icon says it holds unsent text.
+  await expect(page.locator('.node-remark-dot.has-draft')).toHaveCount(1);
+  expect(await page.locator('.node-remark-dot').first().getAttribute('data-tip')).toContain('unsent reply');
   // The row's thread dot opens it with the text, and the next reload keeps it open.
   await page.locator('.node-remark-dot').first().click();
   await expect(page.locator('.thread-composer .thread-composer-input')).toHaveText('Ask the DBA first.');
+  await expect(page.locator('.node-remark-dot.has-draft')).toHaveCount(0);
   await page.reload();
   await expect.poll(() => page.evaluate('typeof render === "function" && !!currentDocId && nodes.length > 1'), { timeout: 15000 }).toBe(true);
   await expect(page.locator('.thread-composer .thread-composer-input')).toHaveText('Ask the DBA first.');
