@@ -180,11 +180,9 @@ The flaky To-Dos draft test reports its storage state on failure: read that befo
 
 ### Latest changes
 
+- **Sign-in screen: Continue stays once offered (2026-11-21, owner: "comes and goes").** `s.offeredContinue` keeps the button after the first stall; non-document steps (settings, folders, deletes) count as progress (`firstSyncAlive`), so a slow phone doesn't look stuck. Test: `first-sync-screen.spec.ts`. Open, owner-reported the same day: the iPhone stopped showing diagram pictures. Not reproduced here (no WebKit in the container); the picture code is unchanged today. Likely cause, unconfirmed: previews never sync (only `xml`, `hydrateCloudDocBlobs` writes `previewSvg:''`), so a device that signed out and in must redraw every picture through a hidden embed.diagrams.net frame. Proposed fix if confirmed: sync `previewSvg` with the diagram. Asked the owner for details first.
+
 - **Polish check after the loading work (2026-11-21).** The sign-in screen now makes the app behind it `inert` (`setFirstSyncInert`; Tab could reach the editor), its button reads "Continue" when sync failed or is offline ("Continue without waiting" only while stalled), and Share/Export refuse a document that is still a loading placeholder (`docStillLoading`; it would have exported or sent an empty copy). Owner-reported: the sign-in screen blinked as each document arrived (the 300 ms blank stage was timed from the last progress, so every document restarted it); the blank now counts from the start only. Checked and fine: phone layout of the loading screens, light/dark. Tests: `first-sync-screen.spec.ts`, `doc-content-pending.spec.ts`.
-
-- **Waits on outside services always end (2026-11-21, polish audit).** draw.io: `drawioWaitTick` (stages from `loadingStage`; a note with Retry/Close after 12 s or offline; `drawioLoaded` on draw.io's `init`; closing before `init` doesn't ask). AI: every provider request goes through `aiFetch` with a 90 s timeout (`AI_REQUEST_TIMEOUT_MS`), raised as a `FallbackableError` so the fallback chain runs. Test: `slow-services.spec.ts`. Not done on purpose: the bare "Loading…" in the feedback inbox and the hosted-AI providers list (admin-only); no Cancel for AI actions yet (the timeout bounds them).
-
-- **Signing in shows "Bringing in your documents…" instead of a blank document (2026-11-21, owner).** `startFirstSync` (both sign-in flows; not sign-up, not a restored session) covers the app; `pullAndMergeFromCloud` reports progress (`firstSyncProgress`) and ends it (`finishFirstSync`: opens the newest document if the open one is blank). Stages from `loadingStage`, timed from the last progress. Test: `first-sync-screen.spec.ts`.
 
 ### In progress / not built
 
