@@ -59,12 +59,16 @@ test('the screen shows while the account is read, then the newest document opens
   });
   await expect(page.locator('#first-sync-msg')).toHaveText('Bringing in your documents…');
   await expect(page.locator('#first-sync .first-sync-card')).toBeVisible();
+  // The app behind can't be reached with Tab while it shows.
+  await expect(page.locator('#editor-pane')).not.toBeFocused();
+  expect(await page.evaluate(() => document.getElementById('editor-pane')!.closest('[inert]') !== null)).toBe(true);
   await page.evaluate(async () => {
     // @ts-expect-error -- bare global from index.html
     await pullAndMergeFromCloud(true);
   });
   await expect(page.locator('#first-sync')).toBeHidden();
   await expect(page.locator('#header-title')).toHaveValue('Newest plan');
+  expect(await page.evaluate(() => document.querySelectorAll('[data-first-sync-inert]').length)).toBe(0);
   await expect(page.locator('#editor-pane')).toContainText('Newest plan row');
 });
 
@@ -98,6 +102,7 @@ test('when nothing moves for a while it says so and lets you carry on', async ({
     startFirstSync(); _firstSync.lastProgressAt = Date.now() - 13000; renderFirstSync();
   });
   await expect(page.locator('#first-sync')).toHaveAttribute('data-stage', 'stalled');
+  await expect(page.locator('#first-sync-continue')).toHaveText('Continue without waiting');
   await page.locator('#first-sync-continue').click();
   await expect(page.locator('#first-sync')).toBeHidden();
 });
@@ -114,7 +119,7 @@ test('a failed sync says so, with Retry and Continue; Retry brings the documents
   });
   await expect(page.locator('#first-sync-msg')).toHaveText('Couldn’t bring in your documents.');
   await expect(page.locator('#first-sync-retry')).toBeVisible();
-  await expect(page.locator('#first-sync-continue')).toBeVisible();
+  await expect(page.locator('#first-sync-continue')).toHaveText('Continue');
   await page.evaluate(() => {
     // @ts-expect-error -- bare globals from index.html
     firestoreMods = (window as unknown as { __real: unknown }).__real;
@@ -122,4 +127,24 @@ test('a failed sync says so, with Retry and Continue; Retry brings the documents
   await page.locator('#first-sync-retry').click();
   await expect(page.locator('#first-sync')).toBeHidden();
   expect(await page.evaluate(() => localStorage.getItem('sakura_doc_v1_dNew'))).not.toBeNull();
+});
+
+test('a document arriving does not blink the screen (owner 2026-11-21)', async ({ page }) => {
+  await page.evaluate(() => {
+    // @ts-expect-error -- bare globals from index.html
+    startFirstSync(); _firstSync.startedAt = Date.now() - 2000; firstSyncProgress(1, 40);
+  });
+  // Straight after a document arrives the card stays shown (it used to hide for 300 ms each time).
+  expect(await page.evaluate(() => document.getElementById('first-sync')!.dataset.stage)).toBe('loading');
+  await expect(page.locator('#first-sync .first-sync-card')).toBeVisible();
+  await expect(page.locator('#first-sync-detail')).toHaveText('1 of 40 documents');
+});
+
+test('at the very start it still waits a moment before showing', async ({ page }) => {
+  await page.evaluate(() => {
+    // @ts-expect-error -- bare global from index.html
+    startFirstSync();
+  });
+  expect(await page.evaluate(() => document.getElementById('first-sync')!.dataset.stage)).toBe('quiet');
+  await expect(page.locator('#first-sync')).toHaveAttribute('data-stage', 'loading');
 });
