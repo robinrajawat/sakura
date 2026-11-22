@@ -177,7 +177,7 @@ contradicts README.md or docs/feature-reference.md, trust them.)*
 1. **Confirm the iPhone shows diagram pictures again** (#941, not verifiable in the container). The owner opens Sakura once on the computer (it sends its pictures up, `backfillDiagramPreviewsToAccount`), then opens documents on the iPhone. If pictures still don't show, read Settings → About → Details on the iPhone before changing code.
 2. **Root-cause the flaky To-Dos draft test** (`phone-background-safety.phone.spec.ts`, plan step 5): it prints its storage state on failure; read that before changing code.
 3. **Before the first outside users:** plan step 6 (deploy on a published release) and the launch checklist under Parked, Firestore backups included.
-4. **iPad:** the touch fixes are built (see Latest changes). The owner checks the sign-in screen and general use on the iPad via the preview, and sends screenshots of anything still off.
+4. **iPad:** touch fixes live (#946, #948: keyboard, zoom, long-press menu, rail height, title, typing above the keyboard). The owner checks real use on the iPad and sends screenshots of anything still off. Known gap: the on-screen keyboard has no Tab, so indenting rows without a hardware keyboard relies on the long-press menu; consider a row toolbar on touch (as on the phone) if the owner finds it awkward.
 
 Not built: a Cancel for AI actions (the 90 s timeout, #938, bounds them for now); the AI code still loads at startup inside index.html (startup on the Mac's Safari confirmed clean after #915); Sentry source maps. Watch: diagram pictures now live in the account (up to ~700k characters each, read when documents arrive); check Firebase usage against the free plan's limits now and then.
 
@@ -187,11 +187,11 @@ Not built: a Cancel for AI actions (the 90 s timeout, #938, bounds them for now)
 
 ### Latest changes
 
+- **draw.io "hasn't loaded" note: Retry and Close always work (2026-11-22).** `slow-services.spec.ts` failed about half the time, on `main` too. Root cause: a blocked load leaves the browser's error page (another origin) in the hidden frame, and Chrome sent the click on Retry or Close to it (no event reached the page; `visibility`, `pointer-events` and `display` didn't help). Once the note shows, the frame is pointed at `about:blank`; Retry and coming back online reload draw.io's address (`drawioReload`, `_diagramEditorState.src`). 100/100 on repeat; the test now checks both.
+
 - **iPad layout from the owner's screenshot (2026-11-22).** Rail and side panels `100dvh` on touch (Safari's `100vh` ran under its toolbar and cut the account button); a long title ends in "…"; while the keyboard is up (computer layout), `html.kb-open` sizes the page to `--vv-h` from `visualViewport` and `selectionchange` keeps the caret's line above it. Tests in `tablet-touch.tablet.spec.ts` use a stand-in `visualViewport`. Not checked on a real iPad here.
 
 - **Welcome dialog for new people only (2026-11-22, owner: after signing in on the iPad the welcome showed instead of the documents loading).** Cause: it opened 0.5 s after start on any device that hadn't seen it, hidden behind the sign-in screen, and appeared once that closed. Now `maybeOpenWelcome` never runs under the sign-in screen or for a signed-in device; "Try it without an account" and a new account (email sign-up, or Google's `isNewUser`) open it; an existing account signing in marks it seen (`welcomeAfterSignIn`). Test: `welcome-new-people-only.spec.ts`.
-
-- **Show password on sign-in (2026-11-22, owner).** An eye button inside the email form's password field (`wireEmailAuthForm`, `.pw-field`/`.pw-toggle` in welcome.css; 44px on touch); hidden to start, again after sign-in or closing the form; keeps the focus in the field; Edge's own reveal button hidden. Test: `show-password.spec.ts`.
 
 ### In progress / not built
 
@@ -250,7 +250,6 @@ Not built: a Cancel for AI actions (the 90 s timeout, #938, bounds them for now)
 - npm 10.9 (this environment's) can crash with "Cannot read properties of null (reading 'edgesOut')" on peer-dependency upgrades; `npx npm@11.6.2 install` works, and npm 10's `npm ci` reads its lockfile. Don't delete node_modules to "fix" it: the crash stays and the install is gone (`git stash` + `npm ci` restores).
 - e2e: `undo-not-confirm.spec.ts` "Reset settings … Undo" reloads the page twice within a 30s budget and can time out under the full parallel suite; it passes alone. Rerun it alone before blaming a change.
 - Stored HTML (notes, tables, anything later rendered with innerHTML) must pass `sakuraSanitizeRichHtml` on the way in: add any new HTML field to `normalizeNode` (and to any import path that skips it). Never assign stored HTML to innerHTML raw, not even on a detached element: images in it still load and fire onerror.
-- e2e: `slow-services.spec.ts` "draw.io that does not load … Retry and Close" fails about half the time under `--repeat-each` (the Retry step's `#drawio-wait-note` count), on `main` too (checked 2026-11-22); not yet root-caused. Compare against `main` before blaming a change.
 - e2e: opening the To-Dos panel focuses `#todos-input` 40ms later; wait for it before focusing anything else in the
   panel, or it takes the focus back (flaked once in CI, 2026-10-25).
 - e2e: seed `localStorage.sakura_welcome_seen` in an `addInitScript` before load (the welcome

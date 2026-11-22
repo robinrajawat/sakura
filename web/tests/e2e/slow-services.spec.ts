@@ -39,11 +39,15 @@ test('draw.io that does not load says so, with Retry and Close', async ({ page }
   await expect(page.locator('#drawio-wait-retry')).toBeVisible();
   // The frame behind can't take the note's clicks or the focus.
   await expect(page.locator('#diagram-editor-iframe-wrap iframe')).toHaveCSS('visibility', 'hidden');
+  // The failed load is stopped: the browser's error page (another origin) could take a click meant
+  // for Retry or Close, so the frame shows an empty page (this test failed about half the time).
+  await expect(page.locator('#diagram-editor-iframe-wrap iframe')).toHaveAttribute('src', 'about:blank');
   // Retry starts the wait again.
   await page.locator('#drawio-wait-retry').click();
   await expect(page.locator('#drawio-wait-note')).toHaveCount(0);
   await expect(page.locator('#diagram-editor-status')).toHaveText('Loading draw.io…');
   await expect(page.locator('#diagram-editor-iframe-wrap iframe')).toHaveCSS('visibility', 'visible');
+  await expect(page.locator('#diagram-editor-iframe-wrap iframe')).toHaveAttribute('src', /^https:\/\/embed\.diagrams\.net\//);
   // Close (from the note, or the editor's own ×) closes without asking: nothing was loaded.
   await waited(page, 13000);
   await page.locator('#drawio-wait-close').click();

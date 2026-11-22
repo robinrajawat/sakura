@@ -118,7 +118,7 @@ function a(e,t){return n(e)||r(e,t)||o(e,t)||i()}function o(e,n){if(e){if(typeof
 (function(){try{var raw=localStorage.getItem('sakura_v001_prefs');var d=raw?JSON.parse(raw):{};var t={vscode:'dark','clever-dark':'dark'}[d.theme]||d.theme;var dark=d.themeMode==='system'||!t?matchMedia('(prefers-color-scheme: dark)').matches:t==='dark';if(dark){document.querySelector('meta[name="theme-color"]').setAttribute('content','#181816');document.documentElement.style.background='#181816';}}catch(e){}})();
 </script>
 <link rel="icon" type="image/svg+xml" href="flower-glyph.svg">
-<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192-pwa.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png" media="(prefers-color-scheme: light)">
 <link rel="apple-touch-icon" href="apple-touch-icon-dark.png" media="(prefers-color-scheme: dark)">
 <script>if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(e=>console.warn('[sakura] the offline copy could not be set up here (private browsing or blocked storage?):',e)));}
@@ -133,7 +133,9 @@ try{ if(navigator.storage&&navigator.storage.persist)navigator.storage.persisted
   baked-in tile would read as a tile within a tile (the maskable one keeps the glyph in Android's
   safe zone). icon-192-pwa / icon-512-pwa ("any" in the manifests) are what desktop Chrome, Windows
   and macOS show as-is, so they carry their own Apple-style rounded tile (90% of the canvas, flower ~78% of the tile as in the original icon, 22.5% corners, soft
-  shadow, subtle top-to-bottom shading, transparent outside). -->
+  shadow, subtle top-to-bottom shading, transparent outside). The PNG page icon (rel="icon") is that
+  tile too (owner 2026-11-22): browsers that don't use the SVG (Safari's tabs, favourites, history)
+  show it unmasked, and the flat icon-192.png there was a sharp white square. -->
 <!-- Inter ships with the app (owner 2026-11-02): preloaded, it is ready before the first paint, so text
      no longer shifts 1-2px when a Google-hosted copy arrives half a second in. SIL OFL 1.1, see
      THIRD-PARTY-NOTICES.md. Fira Code ships with it too (owner 2026-11-17): Google
@@ -16375,7 +16377,7 @@ function openDiagramEditor(diagramId){
     }
   };
   window.addEventListener('message',handler);
-  _diagramEditorState={diagramId,iframe,handler,openedAt:Date.now()};
+  _diagramEditorState={diagramId,iframe,handler,openedAt:Date.now(),src:iframe.src};
   overlay.classList.add('open');
   drawioWaitTick();
 }
@@ -16399,7 +16401,7 @@ function drawioWaitTick(){
       note=document.createElement('div'); note.id='drawio-wait-note'; note.setAttribute('role','status');
       note.innerHTML='<div id="drawio-wait-msg"></div><div id="drawio-wait-detail"></div><div class="drawio-wait-actions"><button id="drawio-wait-retry" class="btn primary" type="button">Retry</button><button id="drawio-wait-close" class="btn" type="button">Close</button></div>';
       wrap.appendChild(note);
-      note.querySelector('#drawio-wait-retry').addEventListener('click',()=>{ const s2=_diagramEditorState; if(!s2)return; s2.openedAt=Date.now(); try{ s2.iframe.src=s2.iframe.src; }catch(e){} drawioWaitTick(); });
+      note.querySelector('#drawio-wait-retry').addEventListener('click',()=>drawioReload());
       note.querySelector('#drawio-wait-close').addEventListener('click',()=>closeDiagramEditorInternal());
     }
     el('drawio-wait-msg').textContent=stage==='offline'?'You’re offline.':'draw.io hasn’t loaded yet.';
@@ -16409,7 +16411,12 @@ function drawioWaitTick(){
     el('drawio-wait-retry').hidden=stage==='offline';
     // The frame behind (a failed load, or the browser's error page) mustn't take the note's clicks or
     // the focus: it's hidden while the note shows (a click on Close once landed in the frame).
+    // Hiding it wasn't enough: a blocked load leaves the browser's error page (another origin) in the
+    // frame, and Chrome could still send a click on Retry or Close to it, so the button did nothing
+    // (about half the time in tests, 2026-11-22). The load has failed by now, so the frame is pointed
+    // at an empty page; Retry and coming back online load draw.io again (drawioReload).
     st.iframe.style.visibility='hidden';
+    if(st.iframe.getAttribute('src')!=='about:blank'){ try{ st.iframe.src='about:blank'; }catch(e){} }
   }else{ if(note)note.remove(); st.iframe.style.visibility=''; }
   const wait=msUntilNextLoadingStage(elapsed,online);
   if(wait!=null)_drawioWaitTimer=setTimeout(drawioWaitTick,wait+20);
@@ -16419,7 +16426,13 @@ function drawioLoaded(iframe){
   st.inited=true; clearTimeout(_drawioWaitTimer); _drawioWaitTimer=null; el('drawio-wait-note')?.remove(); iframe.style.visibility='';
 }
 window.addEventListener('offline',()=>{ if(_diagramEditorState&&!_diagramEditorState.inited)drawioWaitTick(); });
-window.addEventListener('online',()=>{ const st=_diagramEditorState; if(st&&!st.inited){ st.openedAt=Date.now(); try{ st.iframe.src=st.iframe.src; }catch(e){} drawioWaitTick(); } });
+/** Starts the wait again and loads draw.io from its own address (the frame may be on about:blank). */
+function drawioReload(){
+  const st=_diagramEditorState; if(!st||st.inited)return;
+  st.openedAt=Date.now(); try{ st.iframe.src=st.src; }catch(e){}
+  drawioWaitTick();
+}
+window.addEventListener('online',()=>drawioReload());
 function closeDiagramEditorInternal(){
   if(!_diagramEditorState)return;
   window.removeEventListener('message',_diagramEditorState.handler);
