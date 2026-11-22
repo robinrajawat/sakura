@@ -120,6 +120,7 @@ One task list for everything, separate from any document, on the rail on the lef
 - A task can **link** to a document, a row or a web address. Tasks made from a follow-up say where they came from.
 - Titles are written for real work items: long text, formatting and links all work.
 - On a phone, Sakura is the same app in a phone layout, and you can add it to your home screen. Read and lightly edit documents (type in rows, indent, notes, threads, statuses), and your To-Dos open full screen, with a swipe to complete or delete a task. Tables, charts and diagrams are edited on a computer. On Android, you can share a link or text from another app straight into a new task.
+- On a tablet (an iPad), Sakura keeps the computer layout, adapted for a finger: long-press opens the right-click menu, text fields don't zoom, and the sign-in screen and dialogs move above the on-screen keyboard.
 
 ## Markdown
 
