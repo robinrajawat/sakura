@@ -215,6 +215,9 @@ Not built: a Cancel for AI actions (the 90 s timeout, #938, bounds them for now)
 - **iPad (owner asked 2026-11-21, undecided).** Today the layout is chosen by width only (`PHONE_LAYOUT_QUERY`, phone below 768 px): every current iPad gets the computer layout in portrait and landscape; Split View/Slide Over at narrow widths gets the phone layout. That is the owner's decision of 2026-11-13 (`docs/mobile-plan.md`, Decisions: tablets keep the desktop layout); what's open is touch on that layout. Nothing is iPad-specific or tested (CI covers desktop Chromium and iPhone WebKit). Risk (inferred, not seen): the computer layout assumes a mouse — hover-only actions, right-click menus, small targets. Standard practice is the desktop layout adapted for touch (`@media (hover:none) and (pointer:coarse)`: larger targets, no hover-only actions, long-press for the context menu), as Notion and Google Docs do. Next: the owner's 10-minute check on a real iPad, then decide whether to add an iPad (WebKit, ~820×1180, touch) Playwright project and the touch fixes. Diagram pictures on iPad are covered by the picture sync (#941).
 
 
+- **Read-only MCP server (owner asked 2026-11-22, parked).** Let AI assistants read a person's notes.
+  Design in `docs/mcp-plan.md`: free on the current plans, read-only, opt-in, reads with the person's own
+  sign-in token (never admin credentials). Build only if 2+ of the 3–5 target users ask for it.
 - **Launch checklist (owner, 2026-11-17), besides the backups below:** (0) switch on the release process (`docs/standard-practice-plan.md` step 6: deploy on a published release, not every merge) before the first outside users; (1) a lawyer's read of
   `privacy.html` / `terms.html` if possible (drafted, not reviewed; include the new "Sakura itself" ownership section); (2) test the positioning pitch
   with 3–5 target users. The name is decided: **Sakura Notes** (owner, 2026-11-18, after weighing
