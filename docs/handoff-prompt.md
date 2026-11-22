@@ -114,8 +114,9 @@ npm run test:e2e -w sakura-web
 ```
 (`generate:verify` catches drift between `web/src/` and the generated
 blocks spliced into `index.html`/`hub.html` at build time — a real, silent
-failure mode if skipped.) CI (`.github/workflows/ci.yml`, `verify-web`
-job) runs the same checks plus an HTML-structure validation script, and `verify-rules` runs the
+failure mode if skipped.) CI (`.github/workflows/ci.yml`, `verify-web`,
+since 2026-11-22 a gate over `web-checks` and four parallel `web-e2e` shards; rerun a failed
+shard, not the whole run) runs the same checks plus an HTML-structure validation script, and `verify-rules` runs the
 Firestore rules tests in the emulator (`cd firebase && npm ci && npm test`, needs Java 11+; run it
 locally whenever `firebase/firestore.rules` changes)
 (`web/scripts/validate_html_structure.py`) — safe to rely on CI for that
@@ -188,11 +189,11 @@ Not built: a Cancel for AI actions (the 90 s timeout, #938, bounds them for now)
 
 ### Latest changes
 
+- **Faster CI, and closing the deploy gap (2026-11-22, owner).** Deploy runs on every push to `main` without waiting for CI there, so CI's protection is the PR run. `verify-web` is now `web-checks` (typecheck, lint, unit, generate, build, HTML) plus `web-e2e` in 4 shards (`--shard=n/4`, Playwright browsers cached), gated by a `verify-web` job that keeps the name branch protection requires. **Owner step:** in GitHub → Settings → Branches → the `main` rule, turn on "Require branches to be up to date before merging", so what merges is exactly what CI tested and deploying straight away stays safe (chosen over making Deploy wait for CI on `main`, which would add ~9 min).
+
 - **Rounded icon in Safari's tabs on the iPad (2026-11-22, owner screenshot: still sharp white squares after #949, private window).** Safari on an iPad uses `apple-touch-icon` for the tab, not the `rel="icon"` PNG, so the fix had to be there: `apple-touch-icon(-dark).png` (180px) are now a soft-gradient tile with 18% corners, transparent outside, rendered from `flower-glyph.svg`; iOS's home-screen mask is rounder, so it covers the corners (no black). SW cache `v13`. Not checked on a real iPad here.
 
 - **Row toolbar on tablets (2026-11-22, owner).** The phone's `#phone-edit-bar` shows while typing on any touch screen (`TOUCH_INPUT_QUERY`), computer layout included; styled in `touch.css` (buttons centred, 44px); ⋯ opens the full row menu (`showContextMenu`) outside the phone layout; the caret reveal clears the bar. Tests in `tablet-touch.tablet.spec.ts`.
-
-- **"Verify your email" only after the server says so (2026-11-22, owner: it flashed up after signing in on the phone, and kept showing on one computer tab for an address verified the day before).** `updateVerifyEmailRow` needs a fresh answer from the account server (`noteEmailVerifiedCheck` after `user.reload()`); a failed check hides it and `recheckEmailVerified` asks again on focus/Settings. Details now shows the account, its sign-in providers and "Email verified: … (checked … at HH:MM)". **Open:** the computer tab that keeps showing it: the owner reads Details there; if the server says "no", that account's email really is unverified (perhaps a different account, or verified on another one). Test: `verify-email-row.spec.ts`.
 
 ### In progress / not built
 
