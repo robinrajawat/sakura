@@ -362,6 +362,12 @@ layout rule stays (ground rule 1), and a second rule follows the input instead:
   does, and then this stays out of the way); the finger lifting is not also a tap.
 - Controls shown only on hover (a task's ⋯, thread Reply, notification dismiss, Settings row
   actions, subtask delete/add) stay shown; hover tooltips are off.
+- Owner's iPad screenshot the same day: the rail ran past the bottom (Safari counts `100vh` as the
+  screen under its toolbar too; the rail and side panels use `100dvh` on touch), a long title was cut
+  mid-word (now "…" while not being typed in), and typing near the bottom put the line under the
+  keyboard. While the keyboard is up, `html.kb-open` makes the page as tall as what is visible
+  (`--vv-h`), the document scrolls in that space, and the line with the caret is kept above the
+  keyboard (`selectionchange`); computer layout only (the phone has its own).
 - Tests: `*.tablet.spec.ts` on `tablet-ios` (WebKit, iPad Pro 11, CI only) and `tablet-android`
   (Chromium, Galaxy Tab S4 landscape). The keyboard itself can't be shown in a test browser, so the
   test stands in for its height.

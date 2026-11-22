@@ -39,6 +39,19 @@
     margin: -8px -6px -8px 0;
   }
   #todos-body .todo-row:hover .todo-end .todo-due { visibility: visible; }
+  /* Safari on an iPad counts 100vh as the screen under its toolbar too, so the rail and side panels
+     ran past the bottom (the account button was cut in half; owner 2026-11-22). dvh is the height
+     actually visible. */
+  html.calm-layout:not(.phone) #appbar { height: 100dvh; }
+  html.calm-layout:not(.phone) .settings-panel, html.calm-layout:not(.phone) .help-panel,
+  html.calm-layout:not(.phone) #todos-panel { height: 100dvh !important; }
+  /* While the on-screen keyboard is up, the page is as tall as what is still visible (--vv-h, set by
+     index.html's touch wiring), so the document scrolls above the keyboard and the line being typed
+     is never under it (owner 2026-11-22, iPad). */
+  html.kb-open:not(.phone), html.kb-open:not(.phone) body { height: var(--vv-h, 100%); }
+  html.kb-open.calm-layout:not(.phone) #appbar { height: var(--vv-h, 100dvh); }
+  /* A title wider than the page ends in "…" instead of being cut mid-word (it scrolls while typed in). */
+  #header-title:not(:focus) { text-overflow: ellipsis; }
   /* Show password: a finger-sized eye. */
   .pw-toggle { width: 44px; height: 44px; right: 0; }
   .pw-field input { padding-right: 46px !important; }
