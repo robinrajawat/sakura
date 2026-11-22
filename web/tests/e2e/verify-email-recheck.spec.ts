@@ -16,6 +16,8 @@ test('"Verify your email" goes away once the address is verified elsewhere and t
     currentUser = { uid: 'u1', email: 'a@example.com', emailVerified: false, providerData: [{ providerId: 'password' }],
       reload() { this.emailVerified = window.__verifiedOnServer; return Promise.resolve(); },
       getIdToken() { return Promise.resolve('t'); } };
+    // The account server has said "not verified" (since 2026-11-22 the row waits for that answer).
+    noteEmailVerifiedCheck(currentUser, null);
     updateVerifyEmailRow(currentUser);
   `);
   const row = page.locator('#settings-verify-email-row');

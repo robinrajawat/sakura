@@ -3635,6 +3635,24 @@ html.calm-layout #sb-auto-rewrite-chip.is-quiet:hover,html.calm-layout #sb-auto-
   /* Show password: a finger-sized eye. */
   .pw-toggle { width: 44px; height: 44px; right: 0; }
   .pw-field input { padding-right: 46px !important; }
+  /* The row toolbar while typing (outdent, indent, checkbox, move, ⋯, Done), on top of the on-screen
+     keyboard, as on a phone (owner 2026-11-22: an iPad's keyboard has no Tab). phone.css styles it
+     the same way on a phone; here it also serves the computer layout, its buttons centred. */
+  #phone-edit-bar {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 1100; display: flex; align-items: center; gap: 2px;
+    height: 48px; padding: 0 max(6px, calc((100% - 640px) / 2)); background: var(--surface-raised);
+    border-top: 1px solid var(--border); box-shadow: 0 -2px 10px rgba(0,0,0,.06);
+  }
+  #phone-edit-bar[hidden] { display: none; }
+  #phone-edit-bar button {
+    display: inline-flex; align-items: center; justify-content: center; min-width: 44px; height: 44px;
+    border: none; background: none; border-radius: 8px; color: var(--fg); font: 600 var(--fs-xl) 'Inter', sans-serif;
+    flex: 0 1 44px;
+  }
+  #phone-edit-bar button:active { background: var(--hover); }
+  #phone-edit-bar .peb-spacer { flex: 1 0 0; }
+  #phone-edit-bar .peb-done { flex: 0 0 auto; padding: 0 12px; color: var(--accent); }
+  html.phone-editing #editor-pane { padding-bottom: 56px; }
   /* Hover tooltips: a tap would leave one stuck. */
   #node-timestamp-tip { display: none !important; }
 }
@@ -17807,8 +17825,9 @@ async function ensureEmailIndex(user){
     // A link opened in the verification email only shows up after a reload and a fresh token
     // (the rules read email_verified from the token).
     if(user.email&&!user.emailVerified&&typeof user.reload==='function'){
-      try{ await user.reload(); if(user.emailVerified)await user.getIdToken(true); }catch(e){}
-    }
+      try{ await user.reload(); noteEmailVerifiedCheck(user,null); if(user.emailVerified)await user.getIdToken(true); }
+      catch(e){ noteEmailVerifiedCheck(user,e); }
+    }else noteEmailVerifiedCheck(user,null,'session');
     if(user.email&&user.emailVerified){
       // Written once per device and address; Delete account removes it.
       const id=await emailIndexId(user.email), key='sakura_email_index_v1_'+user.uid;
@@ -17818,10 +17837,20 @@ async function ensureEmailIndex(user){
   }catch(e){ console.warn('[sakura] ensureEmailIndex failed:',e); }
   updateVerifyEmailRow(user);
 }
+// What the account server last said about the email (Settings → About → Details shows it).
+let _emailVerifiedCheck=null;
+function noteEmailVerifiedCheck(user,err,source){
+  _emailVerifiedCheck={uid:user.uid,at:Date.now(),verified:!!user.emailVerified,source:source||'server',error:err?((err.code||err.name||'error')+''):null};
+}
 // Settings → Account: only an email-and-password account can be unverified (Google's are verified).
+// Shown only once the account server has just said "not verified": a session restored on this device
+// carries the state from when it signed in, so it could say unverified for an address verified since,
+// and the row flashed up and went again (owner 2026-11-22). If asking failed, it stays hidden and is
+// asked again when Sakura comes back to the screen or Settings opens.
 function updateVerifyEmailRow(user){
   const row=el('settings-verify-email-row'); if(!row)return;
-  const needs=!!(user&&user.email&&!user.emailVerified&&(user.providerData||[]).some(p=>p&&p.providerId==='password'));
+  const c=_emailVerifiedCheck, confirmed=!!(user&&c&&c.uid===user.uid&&!c.error);
+  const needs=!!(user&&confirmed&&user.email&&!user.emailVerified&&(user.providerData||[]).some(p=>p&&p.providerId==='password'));
   row.style.display=needs?'':'none';
 }
 // The link in the email is opened elsewhere (Mail, Safari), so check again whenever Sakura comes back
@@ -17830,12 +17859,15 @@ function updateVerifyEmailRow(user){
 function recheckEmailVerified(){
   const row=el('settings-verify-email-row');
   const user=currentUser;
-  if(!user||!row||row.style.display==='none'||typeof user.reload!=='function')return;
+  if(!user||!row||typeof user.reload!=='function'||!user.email||user.emailVerified)return;
+  // Only while it is showing, or the last check failed (nothing confirmed yet).
+  const c=_emailVerifiedCheck, unconfirmed=!c||c.uid!==user.uid||!!c.error;
+  if(row.style.display==='none'&&!unconfirmed)return;
   user.reload().then(async()=>{
-    if(!user.emailVerified)return;
-    try{ await user.getIdToken(true); }catch(e){}
-    updateVerifyEmailRow(user); ensureEmailIndex(user);
-  }).catch(()=>{});
+    noteEmailVerifiedCheck(user,null);
+    if(user.emailVerified){ try{ await user.getIdToken(true); }catch(e){} ensureEmailIndex(user); }
+    updateVerifyEmailRow(user);
+  }).catch(e=>{ noteEmailVerifiedCheck(user,e); updateVerifyEmailRow(user); });
 }
 document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible')recheckEmailVerified(); });
 window.addEventListener('focus',recheckEmailVerified);
@@ -32149,8 +32181,11 @@ function swipeAxis(dx, dy, slop = 10) {
 (function(){
   const bar=el('phone-edit-bar'), menu=el('phone-row-menu'), pane=el('editor-pane'); if(!bar||!menu||!pane)return;
   const placeBar=()=>{ bar.style.bottom=keyboardInset(window.innerHeight,window.visualViewport)+'px'; };
+  // Also on a tablet in the computer layout (owner 2026-11-22: an iPad's on-screen keyboard has no
+  // Tab, so indenting needs these buttons); a trackpad or mouse turns it off (TOUCH_INPUT_QUERY).
+  const barWanted=()=>{ if(isPhoneLayout())return true; try{ return matchMedia(TOUCH_INPUT_QUERY).matches; }catch(e){ return false; } };
   const syncBar=()=>{
-    const inp=getEditingInput(); const on=isPhoneLayout()&&!!inp&&document.activeElement===inp;
+    const inp=getEditingInput(); const on=barWanted()&&!!inp&&document.activeElement===inp;
     bar.hidden=!on; document.documentElement.classList.toggle('phone-editing',on); if(on)placeBar();
   };
   document.addEventListener('focusin',()=>setTimeout(syncBar,0));
@@ -32164,7 +32199,13 @@ function swipeAxis(dx, dy, slop = 10) {
     const inp=getEditingInput(); const off=(inp&&getEditableCaretOffset(inp))??0; const act=b.dataset.act;
     if(act==='done'){ commitEdit(); if(document.activeElement&&document.activeElement.blur)document.activeElement.blur(); syncBar(); return; }
     // ⋯ opens the row's menu (the same one a long-press opens), so its actions can be found.
-    if(act==='more'){ commitEdit(); if(document.activeElement&&document.activeElement.blur)document.activeElement.blur(); syncBar(); openMenu(id); return; }
+    if(act==='more'){
+      commitEdit(); if(document.activeElement&&document.activeElement.blur)document.activeElement.blur(); syncBar();
+      if(isPhoneLayout()){ openMenu(id); return; }
+      // Computer layout on a tablet: the row's own full menu, under the row.
+      const row=document.querySelector('.node-row[data-id="'+id+'"]'), r=row&&row.getBoundingClientRect();
+      showContextMenu(r?r.left+32:120,r?r.bottom+4:120,id); return;
+    }
     commitEdit(); setSingleSelection(id);
     if(act==='indent')indentSelected(); else if(act==='outdent')outdentSelected();
     else if(act==='up')moveSelected(-1); else if(act==='down')moveSelected(1);
@@ -32240,7 +32281,8 @@ function swipeAxis(dx, dy, slop = 10) {
     const pane=el('editor-pane'), a=document.activeElement; if(!pane||!a||!pane.contains(a))return;
     let r=null; try{ const sel=window.getSelection(); if(sel&&sel.rangeCount){ const rr=sel.getRangeAt(0).getClientRects(); r=rr[rr.length-1]||null; } }catch(_){}
     if(!r||!r.height)r=a.getBoundingClientRect();
-    const box=pane.getBoundingClientRect(), bottom=Math.min(box.bottom,vv?vv.height:window.innerHeight)-24;
+    const bar=el('phone-edit-bar'), barH=bar&&!bar.hidden?bar.getBoundingClientRect().height:0; // the row toolbar sits above the keyboard
+    const box=pane.getBoundingClientRect(), bottom=Math.min(box.bottom,vv?vv.height:window.innerHeight)-24-barH;
     if(r.bottom>bottom)pane.scrollTop+=r.bottom-bottom; else if(r.top<box.top+8)pane.scrollTop-=box.top+8-r.top;
   };
   let caretFrame=0;
@@ -32396,6 +32438,16 @@ async function storageDiagnosticsText(onUpdate){
   await say('Storage test now',storageOpenTest,v=>String(v));
   await say('Storage used',()=>navigator.storage.estimate(),v=>`${mb(v&&v.usage)} of ${mb(v&&v.quota)} allowed`);
   await say('Kept by the browser',()=>navigator.storage.persisted(),v=>v?'yes':'no');
+  try{
+    const u=currentUser, c=_emailVerifiedCheck;
+    if(!u)push('Account: not signed in');
+    else{
+      const how=(u.providerData||[]).map(p=>p&&p.providerId==='password'?'email and password':p&&p.providerId==='google.com'?'Google':p&&p.providerId).filter(Boolean).join(' + ')||'unknown';
+      const when=c&&c.uid===u.uid?new Date(c.at).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}):null;
+      push('Account: '+(u.email||'no email')+' \u00b7 signed in with '+how);
+      push('Email verified: '+(u.emailVerified?'yes':'no')+(when?(c.error?' (last check at '+when+' failed: '+c.error+')':c.source==='session'?' (from this sign-in)':' (checked with the account server at '+when+')'):' (not checked yet)'));
+    }
+  }catch(e){ push('Account: unreadable ('+describe(e)+')'); }
   push('Browser: '+navigator.userAgent);
   return lines.join('\n');
 }

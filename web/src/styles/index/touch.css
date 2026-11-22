@@ -55,6 +55,24 @@
   /* Show password: a finger-sized eye. */
   .pw-toggle { width: 44px; height: 44px; right: 0; }
   .pw-field input { padding-right: 46px !important; }
+  /* The row toolbar while typing (outdent, indent, checkbox, move, ⋯, Done), on top of the on-screen
+     keyboard, as on a phone (owner 2026-11-22: an iPad's keyboard has no Tab). phone.css styles it
+     the same way on a phone; here it also serves the computer layout, its buttons centred. */
+  #phone-edit-bar {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 1100; display: flex; align-items: center; gap: 2px;
+    height: 48px; padding: 0 max(6px, calc((100% - 640px) / 2)); background: var(--surface-raised);
+    border-top: 1px solid var(--border); box-shadow: 0 -2px 10px rgba(0,0,0,.06);
+  }
+  #phone-edit-bar[hidden] { display: none; }
+  #phone-edit-bar button {
+    display: inline-flex; align-items: center; justify-content: center; min-width: 44px; height: 44px;
+    border: none; background: none; border-radius: 8px; color: var(--fg); font: 600 var(--fs-xl) 'Inter', sans-serif;
+    flex: 0 1 44px;
+  }
+  #phone-edit-bar button:active { background: var(--hover); }
+  #phone-edit-bar .peb-spacer { flex: 1 0 0; }
+  #phone-edit-bar .peb-done { flex: 0 0 auto; padding: 0 12px; color: var(--accent); }
+  html.phone-editing #editor-pane { padding-bottom: 56px; }
   /* Hover tooltips: a tap would leave one stuck. */
   #node-timestamp-tip { display: none !important; }
 }
