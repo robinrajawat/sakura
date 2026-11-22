@@ -33,6 +33,10 @@ exists so that distinction is visible without opening every file.
 - **`data-safety-audit.md`**: what was checked for data loss on 2026-11-16 (after a title went
   missing on an iPhone), what was fixed, and what is still open.
 
+- **`mcp-plan.md`**: parked idea (2026-11-22). A read-only MCP server so AI assistants can read a
+  person's notes; free on the current plans, using the person's own sign-in token so Firestore's
+  rules still decide access. Not approved: build only if target users ask for it.
+
 ## Closed / historical reference (`history/`)
 
 Real, accurate records of finished work — not stale, just done. Nothing here needs further
