@@ -118,7 +118,7 @@ function a(e,t){return n(e)||r(e,t)||o(e,t)||i()}function o(e,n){if(e){if(typeof
 (function(){try{var raw=localStorage.getItem('sakura_v001_prefs');var d=raw?JSON.parse(raw):{};var t={vscode:'dark','clever-dark':'dark'}[d.theme]||d.theme;var dark=d.themeMode==='system'||!t?matchMedia('(prefers-color-scheme: dark)').matches:t==='dark';if(dark){document.querySelector('meta[name="theme-color"]').setAttribute('content','#181816');document.documentElement.style.background='#181816';}}catch(e){}})();
 </script>
 <link rel="icon" type="image/svg+xml" href="flower-glyph.svg">
-<link rel="icon" type="image/png" sizes="192x192" href="icon-192-pwa.png">
+<link rel="icon" type="image/png" sizes="192x192" href="favicon-192.png">
 <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png" media="(prefers-color-scheme: light)">
 <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon-dark.png" media="(prefers-color-scheme: dark)">
 <script>if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(e=>console.warn('[sakura] the offline copy could not be set up here (private browsing or blocked storage?):',e)));}
@@ -135,9 +135,10 @@ try{ if(navigator.storage&&navigator.storage.persist)navigator.storage.persisted
   sharp white square; on the home screen iOS's own, rounder mask covers the corners, so no black
   shows there. icon-192-pwa / icon-512-pwa ("any" in the manifests) are what desktop Chrome, Windows
   and macOS show as-is, so they carry their own Apple-style rounded tile (90% of the canvas, flower ~78% of the tile as in the original icon, 22.5% corners, soft
-  shadow, subtle top-to-bottom shading, transparent outside). The PNG page icon (rel="icon") is that
-  tile too (owner 2026-11-22): browsers that don't use the SVG (Safari's tabs, favourites, history)
-  show it unmasked, and the flat icon-192.png there was a sharp white square. -->
+  shadow, subtle top-to-bottom shading, transparent outside). The PNG page icon (rel="icon") is
+  favicon-192.png, the glyph alone on transparent (owner 2026-11-22): Safari on an iPad uses it for
+  the tab (found by colour-coding every icon on a preview) and draws its own rounded white plate behind
+  transparent icons, so a baked-in tile showed as a tile within a tile, a fuzzy white square. -->
 <!-- Inter ships with the app (owner 2026-11-02): preloaded, it is ready before the first paint, so text
      no longer shifts 1-2px when a Google-hosted copy arrives half a second in. SIL OFL 1.1, see
      THIRD-PARTY-NOTICES.md. Fira Code ships with it too (owner 2026-11-17): Google
