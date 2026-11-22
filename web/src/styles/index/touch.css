@@ -1,0 +1,44 @@
+/* Touch screens at any width (docs/mobile-plan.md, "Touch and the on-screen keyboard"): an iPad, an
+   Android tablet, a touch laptop used by finger. The layout still follows the width (phone.css below
+   768px); these rules follow the input instead: no hover, a finger, and an on-screen keyboard. Every
+   rule sits inside this one query, which matches TOUCH_INPUT_QUERY in src/ui/phoneEditing.ts;
+   tests/unit/touchCss.test.ts fails on anything outside it. A mouse or trackpad (an iPad with a
+   trackpad included) reports hover, so a computer never sees these rules. */
+@media screen and (hover: none) and (pointer: coarse) {
+  /* Safari zooms the page in when a field under 16px gets focus and leaves it zoomed and shifted
+     (owner 2026-11-22, iPad: "things get misaligned"). Every text field is at least 16px. */
+  input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=file]):not([type=color]):not(#header-title),
+  textarea, select,
+  [contenteditable="true"]:not(.node-input) { font-size: max(16px, 1em) !important; }
+  /* The document is 16px too (as on a phone), so a row is the same size read and typed in and
+     tapping it doesn't zoom. Headings keep their larger sizes. */
+  #editor-pane { font-size: calc(16px * var(--editor-scale)); }
+  html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+
+  /* The on-screen keyboard covers the bottom of the screen without making the page shorter.
+     --kb-inset (set from visualViewport by index.html's touch wiring) is how far it reaches up;
+     full-screen dialogs end above it and scroll, so the field being typed in can be seen
+     (owner 2026-11-22, iPad: the password box was under the keyboard). */
+  #sakura-landing-overlay, .app-modal-overlay, #sakura-modal-overlay {
+    bottom: var(--kb-inset, 0px); overflow-y: auto; align-items: safe center;
+  }
+
+  /* Long-press a row for its menu (index.html's touch wiring opens the right-click menu): the
+     system's own callout and word selection stay off rows that aren't being typed in. */
+  .node-row .node-label { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
+  .fold-dot, .fold-toggle, .node-note-dot { -webkit-tap-highlight-color: transparent; }
+
+  /* Controls that appear only on hover stay shown: a finger can't hover. */
+  .settings-row-actions, .notif-item-dismiss, .thread-reply-btn, .thread-head-copy,
+  .thread-time.is-same-day, .todo-subtask-delete,
+  #todos-body .todo-subtasks-foot .todo-subtask-add-btn { opacity: 1; }
+  /* A task's ⋯ sits beside its date rather than over it. */
+  #todos-body .todo-end { gap: 2px; align-items: center; }
+  #todos-body .todo-more-btn {
+    position: static; transform: none; opacity: 1; pointer-events: auto; background: none; width: 36px; height: 36px;
+    margin: -8px -6px -8px 0;
+  }
+  #todos-body .todo-row:hover .todo-end .todo-due { visibility: visible; }
+  /* Hover tooltips: a tap would leave one stuck. */
+  #node-timestamp-tip { display: none !important; }
+}

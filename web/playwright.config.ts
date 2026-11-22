@@ -19,15 +19,20 @@ export default defineConfig({
   // docs/mobile-plan.md: the existing suite runs at desktop size, as before. `*.phone.spec.ts` runs
   // on two phone profiles: `phone-ios` in WebKit, Safari's own engine, and `phone-android` in
   // Chromium (docs/standard-practice-plan.md step 1; owner 2026-11-19: a startup failure on iPhone
-  // Safari passed every Chromium test). `*.safari.spec.ts` runs in WebKit only. Gestures go through
+  // Safari passed every Chromium test). `*.tablet.spec.ts` runs on an iPad in WebKit (`tablet-ios`) and
+  // an Android tablet in Chromium (`tablet-android`): the computer layout with touch (owner 2026-11-22).
+  // `*.safari.spec.ts` runs in WebKit only. Gestures go through
   // tests/e2e/fixtures/touch.ts, which works in both engines.
   projects: [
-    { name: 'desktop', testIgnore: /\.(phone|safari)\.spec\.ts$/ },
+    { name: 'desktop', testIgnore: /\.(phone|safari|tablet)\.spec\.ts$/ },
     ...webkitProjects([
       { name: 'safari-iphone', testMatch: /\.safari\.spec\.ts$/, use: { ...devices['iPhone 13'] } },
-      { name: 'phone-ios', testMatch: /\.phone\.spec\.ts$/, use: { ...devices['iPhone 13'] } }
+      { name: 'phone-ios', testMatch: /\.phone\.spec\.ts$/, use: { ...devices['iPhone 13'] } },
+      { name: 'tablet-ios', testMatch: /\.tablet\.spec\.ts$/, use: { ...devices['iPad Pro 11'] } }
     ]),
-    { name: 'phone-android', testMatch: /\.phone\.spec\.ts$/, use: { ...devices['Pixel 7'] } }
+    { name: 'phone-android', testMatch: /\.phone\.spec\.ts$/, use: { ...devices['Pixel 7'] } },
+    // Landscape, so it is wider than 768px and gets the computer layout, like an iPad.
+    { name: 'tablet-android', testMatch: /\.tablet\.spec\.ts$/, use: { ...devices['Galaxy Tab S4 landscape'] } }
   ]
 });
 
@@ -39,6 +44,6 @@ function webkitProjects<T>(projects: T[]): T[] {
   let found = false;
   try { found = fs.existsSync(webkit.executablePath()); } catch { /* not installed */ }
   if (found) return projects;
-  console.warn('[playwright] WebKit is not installed here: skipping safari-iphone and phone-ios (CI runs them).');
+  console.warn('[playwright] WebKit is not installed here: skipping safari-iphone, phone-ios and tablet-ios (CI runs them).');
   return [];
 }

@@ -7,7 +7,8 @@ const indexPath = path.resolve(__dirname, '../../index.html');
 
 // docs/mobile-plan.md, ground rule 1: building the phone layout never changes the desktop. Each
 // main desktop screen is photographed as shipped, then again with the phone stylesheet
-// (<style id="sakura-phone-css">) switched off, in the same page with its clock paused so nothing
+// (<style id="sakura-phone-css">) and the touch stylesheet (<style id="sakura-touch-css">, for an
+// iPad) switched off, in the same page with its clock paused so nothing
 // moves in between, and the pixels must be identical. 768px is the narrowest desktop width.
 const WIDTHS = [1280, 800, 768];
 
@@ -42,9 +43,11 @@ async function shootBoth(page: Page, width: number, open: (page: Page) => Promis
   const shot = () => page.screenshot({ animations: 'disabled', caret: 'hide' });
   const shipped = await shot();
   await page.evaluate(() => {
-    const el = document.getElementById('sakura-phone-css') as HTMLStyleElement | null;
-    if (!el) throw new Error('no #sakura-phone-css');
-    el.disabled = true;
+    for (const id of ['sakura-phone-css', 'sakura-touch-css']) {
+      const el = document.getElementById(id) as HTMLStyleElement | null;
+      if (!el) throw new Error('no #' + id);
+      el.disabled = true;
+    }
   });
   const without = await shot();
   return [shipped, without];

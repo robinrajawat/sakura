@@ -3566,6 +3566,54 @@ html.calm-layout #sb-auto-rewrite-chip.is-quiet:hover,html.calm-layout #sb-auto-
 
 /* GENERATED:css-todos:END */
 </style>
+<style id="sakura-touch-css">
+/* GENERATED:css-touch:START — DO NOT EDIT BY HAND. Source of truth: src/styles/index/touch.css. Regenerate with `npm run generate` after changing them; CI fails if this block drifts (see scripts/generate-index-blocks.mjs). */
+/* Touch screens at any width (docs/mobile-plan.md, "Touch and the on-screen keyboard"): an iPad, an
+   Android tablet, a touch laptop used by finger. The layout still follows the width (phone.css below
+   768px); these rules follow the input instead: no hover, a finger, and an on-screen keyboard. Every
+   rule sits inside this one query, which matches TOUCH_INPUT_QUERY in src/ui/phoneEditing.ts;
+   tests/unit/touchCss.test.ts fails on anything outside it. A mouse or trackpad (an iPad with a
+   trackpad included) reports hover, so a computer never sees these rules. */
+@media screen and (hover: none) and (pointer: coarse) {
+  /* Safari zooms the page in when a field under 16px gets focus and leaves it zoomed and shifted
+     (owner 2026-11-22, iPad: "things get misaligned"). Every text field is at least 16px. */
+  input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=file]):not([type=color]):not(#header-title),
+  textarea, select,
+  [contenteditable="true"]:not(.node-input) { font-size: max(16px, 1em) !important; }
+  /* The document is 16px too (as on a phone), so a row is the same size read and typed in and
+     tapping it doesn't zoom. Headings keep their larger sizes. */
+  #editor-pane { font-size: calc(16px * var(--editor-scale)); }
+  html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+
+  /* The on-screen keyboard covers the bottom of the screen without making the page shorter.
+     --kb-inset (set from visualViewport by index.html's touch wiring) is how far it reaches up;
+     full-screen dialogs end above it and scroll, so the field being typed in can be seen
+     (owner 2026-11-22, iPad: the password box was under the keyboard). */
+  #sakura-landing-overlay, .app-modal-overlay, #sakura-modal-overlay {
+    bottom: var(--kb-inset, 0px); overflow-y: auto; align-items: safe center;
+  }
+
+  /* Long-press a row for its menu (index.html's touch wiring opens the right-click menu): the
+     system's own callout and word selection stay off rows that aren't being typed in. */
+  .node-row .node-label { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
+  .fold-dot, .fold-toggle, .node-note-dot { -webkit-tap-highlight-color: transparent; }
+
+  /* Controls that appear only on hover stay shown: a finger can't hover. */
+  .settings-row-actions, .notif-item-dismiss, .thread-reply-btn, .thread-head-copy,
+  .thread-time.is-same-day, .todo-subtask-delete,
+  #todos-body .todo-subtasks-foot .todo-subtask-add-btn { opacity: 1; }
+  /* A task's ⋯ sits beside its date rather than over it. */
+  #todos-body .todo-end { gap: 2px; align-items: center; }
+  #todos-body .todo-more-btn {
+    position: static; transform: none; opacity: 1; pointer-events: auto; background: none; width: 36px; height: 36px;
+    margin: -8px -6px -8px 0;
+  }
+  #todos-body .todo-row:hover .todo-end .todo-due { visibility: visible; }
+  /* Hover tooltips: a tap would leave one stuck. */
+  #node-timestamp-tip { display: none !important; }
+}
+/* GENERATED:css-touch:END */
+</style>
 <style id="sakura-phone-css">
 /* GENERATED:css-phone:START — DO NOT EDIT BY HAND. Source of truth: src/styles/index/phone.css. Regenerate with `npm run generate` after changing them; CI fails if this block drifts (see scripts/generate-index-blocks.mjs). */
 /* Phone layout (docs/mobile-plan.md). Every rule here sits inside this one query, which matches
@@ -31978,6 +32026,12 @@ try{ matchMedia(PHONE_LAYOUT_QUERY).addEventListener('change',e=>{ if(!e.matches
  * the menu and their actions are wired by hand next to the phone drawer.
  */
 /**
+ * Touch screens at any width: no hover, a finger (an iPad, an Android tablet). Must match the
+ * `@media` query every rule in src/styles/index/touch.css sits in. A trackpad or mouse reports
+ * hover, so an iPad with a trackpad counts as a computer.
+ */
+const TOUCH_INPUT_QUERY = 'screen and (hover: none) and (pointer: coarse)';
+/**
  * How far the on-screen keyboard reaches up from the bottom of the layout viewport, from
  * window.visualViewport. 0 with no keyboard, or where visualViewport is missing.
  */
@@ -32113,6 +32167,50 @@ function swipeAxis(dx, dy, slop = 10) {
   });
   document.addEventListener('keydown',e=>{ if(e.key==='Escape'&&!menu.hidden){ e.preventDefault(); closeMenu(); } });
   try{ matchMedia(PHONE_LAYOUT_QUERY).addEventListener('change',()=>{ closeMenu(); syncBar(); }); }catch(e){}
+})();
+// Touch screens at any width, iPad included (docs/mobile-plan.md, "Touch and the on-screen keyboard";
+// owner 2026-11-22). The layout follows the width; this follows the input. Styles: touch.css.
+(function(){
+  const root=document.documentElement, vv=window.visualViewport;
+  const isTouch=()=>{ try{ return matchMedia(TOUCH_INPUT_QUERY).matches; }catch(e){ return false; } };
+  // --kb-inset: how far the on-screen keyboard reaches up. touch.css ends full-screen dialogs above it.
+  const syncKb=()=>{
+    const inset=keyboardInset(window.innerHeight,vv);
+    root.style.setProperty('--kb-inset',inset+'px');
+    // Safari scrolls the whole page up to show a field and can leave it there after the keyboard
+    // closes, so everything sits too high. The app never scrolls as a page: put it back.
+    if(!inset&&isTouch()&&!isPhoneLayout()&&(window.scrollY||window.scrollX))window.scrollTo(0,0);
+  };
+  vv?.addEventListener('resize',syncKb); vv?.addEventListener('scroll',syncKb);
+  // Once the keyboard is up, bring the field being typed in into view inside its dialog.
+  document.addEventListener('focusin',e=>{
+    const t=e.target; if(!isTouch()||!(t instanceof Element))return;
+    if(!t.matches('input,textarea,select,[contenteditable="true"]'))return;
+    if(!t.closest('#sakura-landing-overlay,.app-modal-overlay,#sakura-modal-overlay'))return;
+    setTimeout(()=>{ try{ t.scrollIntoView({block:'nearest'}); }catch(_){} },350);
+  });
+  // Long-press for the right-click menu outside the phone layout (the phone has its own row menu).
+  // Android sends contextmenu itself; iOS doesn't, so a press held still for 500ms sends one.
+  let nativeCtx=false, swallowClick=false;
+  const lp=createLongPress(p=>{
+    if(nativeCtx||!p.target.isConnected)return;
+    swallowClick=true;
+    p.target.dispatchEvent(new MouseEvent('contextmenu',{bubbles:true,cancelable:true,clientX:p.x,clientY:p.y,button:2}));
+  },{set:(f,ms)=>setTimeout(f,ms),clear:h=>clearTimeout(h)});
+  document.addEventListener('pointerdown',e=>{
+    swallowClick=false;
+    if(e.pointerType!=='touch'||!e.isPrimary||isPhoneLayout())return;
+    const t=e.target; if(!(t instanceof Element))return;
+    if(t.closest('input,textarea,select,[contenteditable="true"]'))return; // a press in text selects words
+    nativeCtx=false; lp.down(e.clientX,e.clientY,{target:t,x:e.clientX,y:e.clientY});
+  },true);
+  document.addEventListener('pointermove',e=>{ if(e.pointerType==='touch')lp.move(e.clientX,e.clientY); },true);
+  ['pointerup','pointercancel'].forEach(t=>document.addEventListener(t,()=>lp.cancel(),true));
+  document.addEventListener('scroll',()=>lp.cancel(),{capture:true,passive:true});
+  document.addEventListener('contextmenu',e=>{ if(e.isTrusted)nativeCtx=true; },true);
+  // The finger lifting after a long-press is not also a tap on what it pressed (Chrome sends one).
+  // On window, so it runs before the document's own capture listener that closes menus on a click.
+  window.addEventListener('click',e=>{ if(swallowClick){ swallowClick=false; e.preventDefault(); e.stopImmediatePropagation(); } },true);
 })();
 el('sidebar-toggle').addEventListener('click',toggleDocumentsPanel);
 el('sidebar-reopen-btn')?.addEventListener('click',openDocumentsPanel);

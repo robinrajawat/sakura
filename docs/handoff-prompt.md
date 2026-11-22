@@ -177,7 +177,7 @@ contradicts README.md or docs/feature-reference.md, trust them.)*
 1. **Confirm the iPhone shows diagram pictures again** (#941, not verifiable in the container). The owner opens Sakura once on the computer (it sends its pictures up, `backfillDiagramPreviewsToAccount`), then opens documents on the iPhone. If pictures still don't show, read Settings → About → Details on the iPhone before changing code.
 2. **Root-cause the flaky To-Dos draft test** (`phone-background-safety.phone.spec.ts`, plan step 5): it prints its storage state on failure; read that before changing code.
 3. **Before the first outside users:** plan step 6 (deploy on a published release) and the launch checklist under Parked, Firestore backups included.
-4. **iPad (owner asked 2026-11-21; open question under Parked):** the owner tries Sakura on an iPad for ~10 minutes and notes anything that needs hover or right-click; then decide on an iPad test project and touch fixes.
+4. **iPad:** the touch fixes are built (see Latest changes). The owner checks the sign-in screen and general use on the iPad via the preview, and sends screenshots of anything still off.
 
 Not built: a Cancel for AI actions (the 90 s timeout, #938, bounds them for now); the AI code still loads at startup inside index.html (startup on the Mac's Safari confirmed clean after #915); Sentry source maps. Watch: diagram pictures now live in the account (up to ~700k characters each, read when documents arrive); check Firebase usage against the free plan's limits now and then.
 
@@ -187,11 +187,11 @@ Not built: a Cancel for AI actions (the 90 s timeout, #938, bounds them for now)
 
 ### Latest changes
 
+- **iPad and other touch screens (2026-11-22, owner: password box under the keyboard, app "misaligned").** Cause: touch/keyboard fixes were phone-only, and an iPad gets the computer layout. Now `src/styles/index/touch.css` follows the input (`(hover: none) and (pointer: coarse)`, any width): 16px fields and document (no Safari zoom), sign-in screen and dialogs end above the keyboard (`--kb-inset` from `visualViewport`) and scroll, long-press sends the right-click menu (iOS sends none), hover-only controls stay shown. Tests: `tablet-touch.tablet.spec.ts` on new projects `tablet-ios` (WebKit, CI only) and `tablet-android`. Not checked on a real iPad here.
+
 - **Diagram pictures sync with the drawing (2026-11-21, owner: iPhone showed "no picture yet" for every diagram after signing out and in).** Cause: only `xml` went to the account (pictures deliberately left out since 2026-11-13), `hydrateCloudDocBlobs` wiped this device's picture on every incoming copy, and the iPhone's own redraw (hidden embed.diagrams.net frame, 8 s cap, tried once per session) didn't manage. Now: `previewSvg` + `previewOf` (`diagramXmlSig` of the drawing) go up when they fit (`diagramPreviewForSync`, 700k chars with the xml); a device without a picture leaves the account's alone (`pushDocBlobSubcollection` skips missing optional fields); incoming copies use the account's picture only when `previewOf` matches, else keep this device's when the drawing is unchanged; a diagram missing its picture asks the account first (`fetchDiagramPreviewFromAccount`) before redrawing; existing pictures go up once per device and account (`backfillDiagramPreviewsToAccount`, only where the account's drawing is the same; writes picture fields only). Rules unchanged (subcollections are owner-only). Test: `diagram-picture-sync.spec.ts`. Not verified on a real iPhone here (no WebKit in the container).
 
 - **Sign-in screen: Continue stays once offered (2026-11-21, owner: "comes and goes").** `s.offeredContinue` keeps the button after the first stall; non-document steps (settings, folders, deletes) count as progress (`firstSyncAlive`), so a slow phone doesn't look stuck. Test: `first-sync-screen.spec.ts`.
-
-- **Polish check after the loading work (2026-11-21).** The sign-in screen now makes the app behind it `inert` (`setFirstSyncInert`; Tab could reach the editor), its button reads "Continue" when sync failed or is offline ("Continue without waiting" only while stalled), and Share/Export refuse a document that is still a loading placeholder (`docStillLoading`; it would have exported or sent an empty copy). Owner-reported: the sign-in screen blinked as each document arrived (the 300 ms blank stage was timed from the last progress, so every document restarted it); the blank now counts from the start only. Checked and fine: phone layout of the loading screens, light/dark. Tests: `first-sync-screen.spec.ts`, `doc-content-pending.spec.ts`.
 
 ### In progress / not built
 
@@ -211,8 +211,6 @@ Not built: a Cancel for AI actions (the 90 s timeout, #938, bounds them for now)
 - Suggested, not chosen: a "down is good" option so a falling change shows green.
 
 ### Parked / open questions for the owner
-
-- **iPad (owner asked 2026-11-21, undecided).** Today the layout is chosen by width only (`PHONE_LAYOUT_QUERY`, phone below 768 px): every current iPad gets the computer layout in portrait and landscape; Split View/Slide Over at narrow widths gets the phone layout. That is the owner's decision of 2026-11-13 (`docs/mobile-plan.md`, Decisions: tablets keep the desktop layout); what's open is touch on that layout. Nothing is iPad-specific or tested (CI covers desktop Chromium and iPhone WebKit). Risk (inferred, not seen): the computer layout assumes a mouse — hover-only actions, right-click menus, small targets. Standard practice is the desktop layout adapted for touch (`@media (hover:none) and (pointer:coarse)`: larger targets, no hover-only actions, long-press for the context menu), as Notion and Google Docs do. Next: the owner's 10-minute check on a real iPad, then decide whether to add an iPad (WebKit, ~820×1180, touch) Playwright project and the touch fixes. Diagram pictures on iPad are covered by the picture sync (#941).
 
 
 - **Read-only MCP server (owner asked 2026-11-22, parked).** Let AI assistants read a person's notes.

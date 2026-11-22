@@ -340,6 +340,35 @@ extremely careful about these data loss issues."
   templates) on demand. That splits the page's single script, so it is a bigger and riskier
   change; measure on a real phone first.
 
+### Touch and the on-screen keyboard (owner, 2026-11-22, after trying an iPad)
+
+Owner on an iPad: the password box on the sign-in screen stayed under the keyboard, and the app
+"got misaligned". Cause: the phone's touch and keyboard fixes were written as *phone* rules, and an
+iPad (wider than 768px) gets the computer layout, so it had none of them. Standard practice (Notion,
+Google Docs): one design; the layout follows the width, the behaviour follows the input. So the
+layout rule stays (ground rule 1), and a second rule follows the input instead:
+
+- `src/styles/index/touch.css`, all inside `@media screen and (hover: none) and (pointer: coarse)`
+  (`TOUCH_INPUT_QUERY`; `tests/unit/touchCss.test.ts`). A mouse or trackpad reports hover, so a
+  computer, and an iPad with a trackpad, never sees it (`desktop-unchanged.spec.ts` switches it off
+  too). It applies at every width, phones included, where it repeats some phone rules.
+- Text fields and the document are 16px, so Safari doesn't zoom in on a field and leave the page
+  shifted.
+- `--kb-inset` (index.html's touch wiring, from `visualViewport`): the sign-in screen and the app's
+  dialogs end above the on-screen keyboard and scroll, and the field being typed in is scrolled
+  into view. After the keyboard closes, a page Safari left scrolled is put back (computer layout
+  only).
+- Long-press anywhere outside the phone layout sends the right-click menu (iOS sends none; Android
+  does, and then this stays out of the way); the finger lifting is not also a tap.
+- Controls shown only on hover (a task's ⋯, thread Reply, notification dismiss, Settings row
+  actions, subtask delete/add) stay shown; hover tooltips are off.
+- Tests: `*.tablet.spec.ts` on `tablet-ios` (WebKit, iPad Pro 11, CI only) and `tablet-android`
+  (Chromium, Galaxy Tab S4 landscape). The keyboard itself can't be shown in a test browser, so the
+  test stands in for its height.
+
+Not done (needs the owner's screenshots or a real iPad): larger tap targets across the computer
+layout, drag and drop by touch, and anything else the owner finds.
+
 ## Risks
 
 1. **Phone performance.** Measured in phase 0: 700 KB compressed, about 4.5 s for a first visit on
@@ -357,10 +386,6 @@ extremely careful about these data loss issues."
 
 - Breakpoint: 768px, the same as today's redirect. Tablets in portrait (768–1024px) keep the
   desktop layout.
-  Open (owner asked 2026-11-21): touch on that desktop layout. It assumes a mouse (hover-only
-  actions, right-click menus, small targets) and no tablet is tested. Standard practice keeps the
-  desktop layout and adapts it for touch (`@media (hover:none) and (pointer:coarse)`: larger
-  targets, no hover-only actions, long-press for the context menu). Next: the owner tries it on an
-  iPad, then decides on an iPad test project and the touch fixes. See the handoff's Parked list.
+  Touch on that desktop layout: built 2026-11-22, see "Touch and the on-screen keyboard" below.
 - Guests on the phone: allowed, as on desktop (try first, sign in to sync).
 - Thread replies on the phone: allowed (a short text box).
