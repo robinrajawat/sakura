@@ -3,7 +3,8 @@ name: CI
 # Verification only — see .github/workflows/deploy.yml for the separate publish workflow
 # (production, www.sakura-notes.com, is served from web/'s CI-built dist/ via GitHub
 # Actions as of Stage 2, docs/history/architecture-plan.md). This workflow's job is to make sure
-# every change is well-verified before it ever reaches deploy.yml. verify-web runs the full
+# every change is well-verified before it ever reaches deploy.yml. verify-web (web-checks plus
+# web-e2e's shards, below) runs the full
 # gauntlet — typecheck, lint, unit tests, generated-code drift check, build, e2e tests, and HTML
 # structure validation — the four checks that would have caught this project's past bugs (the
 # FOLDERS_KEY-class TDZ crashes, and the RAWTEXT-hijack class
@@ -50,7 +51,10 @@ jobs:
           HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
         run: sh .github/scripts/docs-only.sh >> "$GITHUB_OUTPUT"
 
-  verify-web:
+  # verify-web is split so it takes minutes, not ~9 (owner 2026-11-22): `web-checks` runs the fast
+  # checks, `web-e2e` runs the browser tests in 4 parallel shards, and `verify-web` (the name branch
+  # protection requires) passes only when all of them passed. Same checks as before, run in parallel.
+  web-checks:
     needs: changes
     if: needs.changes.outputs.docs_only != 'true'
     # Pinned: ubuntu-latest moved to 26.04, which Playwright 1.56 can't install Chromium on.
@@ -79,27 +83,71 @@ jobs:
       - name: Verify generated code matches source (Phase 2 codegen)
         run: npm run generate:verify -w sakura-web
 
-      - name: Install Playwright browsers
-        run: npx playwright install --with-deps chromium webkit
-
       - name: Build
         run: npm run build -w sakura-web
-
-      - name: End-to-end tests (includes build-output verification)
-        run: npm run test:e2e -w sakura-web
 
       - name: HTML structure validation (existing repo safeguard)
         run: |
           pip install html5lib --break-system-packages --quiet
           cd web && python3 scripts/validate_html_structure.py
 
+  web-e2e:
+    needs: changes
+    if: needs.changes.outputs.docs_only != 'true'
+    runs-on: ubuntu-24.04 # pinned, see web-checks
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install dependencies (root — installs every workspace)
+        run: npm ci
+
+      # The browsers are kept between runs (keyed on the lockfile, so a Playwright upgrade fetches
+      # new ones); the system libraries they need are still installed each time.
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium webkit
+
+      - name: Build (some tests check the built output)
+        run: npm run build -w sakura-web
+
+      - name: End-to-end tests, shard ${{ matrix.shard }} of 4
+        run: npm run test:e2e -w sakura-web -- --shard=${{ matrix.shard }}/4
+
       - name: Upload Playwright report on failure
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: playwright-report
+          name: playwright-report-${{ matrix.shard }}
           path: web/playwright-report/
           retention-days: 14
+
+  verify-web:
+    needs: [changes, web-checks, web-e2e]
+    # Runs even when a part failed, so it can fail too; skipped (and so passing) for docs-only changes.
+    if: always() && needs.changes.outputs.docs_only != 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: All web checks and every test shard passed
+        env:
+          CHECKS: ${{ needs.web-checks.result }}
+          E2E: ${{ needs.web-e2e.result }}
+        run: |
+          echo "web-checks: $CHECKS, web-e2e: $E2E"
+          test "$CHECKS" = success && test "$E2E" = success
 
   verify-worker:
     needs: changes
