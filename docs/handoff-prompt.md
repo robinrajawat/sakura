@@ -187,11 +187,11 @@ Not built: a Cancel for AI actions (the 90 s timeout, #938, bounds them for now)
 
 ### Latest changes
 
+- **iPad layout from the owner's screenshot (2026-11-22).** Rail and side panels `100dvh` on touch (Safari's `100vh` ran under its toolbar and cut the account button); a long title ends in "…"; while the keyboard is up (computer layout), `html.kb-open` sizes the page to `--vv-h` from `visualViewport` and `selectionchange` keeps the caret's line above it. Tests in `tablet-touch.tablet.spec.ts` use a stand-in `visualViewport`. Not checked on a real iPad here.
+
 - **Welcome dialog for new people only (2026-11-22, owner: after signing in on the iPad the welcome showed instead of the documents loading).** Cause: it opened 0.5 s after start on any device that hadn't seen it, hidden behind the sign-in screen, and appeared once that closed. Now `maybeOpenWelcome` never runs under the sign-in screen or for a signed-in device; "Try it without an account" and a new account (email sign-up, or Google's `isNewUser`) open it; an existing account signing in marks it seen (`welcomeAfterSignIn`). Test: `welcome-new-people-only.spec.ts`.
 
 - **Show password on sign-in (2026-11-22, owner).** An eye button inside the email form's password field (`wireEmailAuthForm`, `.pw-field`/`.pw-toggle` in welcome.css; 44px on touch); hidden to start, again after sign-in or closing the form; keeps the focus in the field; Edge's own reveal button hidden. Test: `show-password.spec.ts`.
-
-- **iPad and other touch screens (2026-11-22, owner: password box under the keyboard, app "misaligned").** Cause: touch/keyboard fixes were phone-only, and an iPad gets the computer layout. Now `src/styles/index/touch.css` follows the input (`(hover: none) and (pointer: coarse)`, any width): 16px fields and document (no Safari zoom), sign-in screen and dialogs end above the keyboard (`--kb-inset` from `visualViewport`) and scroll, long-press sends the right-click menu (iOS sends none), hover-only controls stay shown. Tests: `tablet-touch.tablet.spec.ts` on new projects `tablet-ios` (WebKit, CI only) and `tablet-android`. Not checked on a real iPad here.
 
 ### In progress / not built
 

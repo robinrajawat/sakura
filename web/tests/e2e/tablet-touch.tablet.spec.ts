@@ -17,14 +17,14 @@ const ROWS = [
   { id: 2, depth: 0, text: 'Second row', parentId: null }
 ].map((n) => ({ isCheckbox: false, checked: false, note: '', tables: [], tags: [], styles: {}, ...n }));
 
-async function open(page: Page, { landing = false } = {}) {
+async function open(page: Page, { landing = false, rows = ROWS as unknown[] } = {}) {
   await page.addInitScript(({ rows, landing }) => {
     localStorage.setItem('sakura_welcome_seen', '1');
     if (!landing) sessionStorage.setItem('sakura_landing_dismissed', 'true');
     localStorage.setItem('sakura_doc_v1_ab', JSON.stringify({ nodes: rows, nextId: 3, selectedId: null, multiSelectedIds: [], selectionAnchorId: null, collapsed: [], title: 'Tablet check' }));
     localStorage.setItem('sakura_docs_index_v1', JSON.stringify([{ id: 'ab', title: 'Tablet check', updatedAt: 1767225600000 }]));
     localStorage.setItem('sakura_current_doc_v1', 'ab');
-  }, { rows: ROWS, landing });
+  }, { rows, landing });
   await page.goto('file://' + indexPath);
   await page.waitForFunction(() => typeof (window as unknown as { createDoc?: unknown }).createDoc === 'function');
 }
@@ -89,4 +89,47 @@ test('a task’s ⋯ shows without hovering', async ({ page }) => {
   const more = page.locator('#todos-body .todo-more-btn').first();
   await expect(more).toBeVisible();
   expect(await more.evaluate((e) => getComputedStyle(e).opacity)).toBe('1');
+});
+
+// Owner 2026-11-22, iPad screenshot: typing near the bottom of a document, the keyboard covered the
+// line, and the screen didn't move. A test browser has no keyboard, so a stand-in visualViewport
+// shrinks the way Safari's does when one opens.
+test('typing near the bottom keeps the line above the keyboard', async ({ page }) => {
+  await page.addInitScript(() => {
+    const vv = new EventTarget() as EventTarget & { height: number; width: number; offsetTop: number; offsetLeft: number; scale: number; pageTop: number; pageLeft: number };
+    Object.assign(vv, { height: window.innerHeight, width: window.innerWidth, offsetTop: 0, offsetLeft: 0, scale: 1, pageTop: 0, pageLeft: 0 });
+    Object.defineProperty(window, 'visualViewport', { value: vv, configurable: true });
+    (window as unknown as { __kb: (h: number) => void }).__kb = (h: number) => { vv.height = window.innerHeight - h; vv.dispatchEvent(new Event('resize')); };
+  });
+  const many = Array.from({ length: 60 }, (_, i) => ({ id: i + 1, depth: 0, text: 'Row ' + (i + 1), parentId: null, isCheckbox: false, checked: false, note: '', tables: [], tags: [], styles: {} }));
+  await open(page, { rows: many });
+  // A row low on the screen, where the keyboard will come up.
+  const target = await page.evaluate(() => {
+    const h = window.innerHeight;
+    const rows = [...document.querySelectorAll('.node-row .node-label')] as HTMLElement[];
+    const low = rows.find((r) => r.getBoundingClientRect().top > h * 0.75 && r.getBoundingClientRect().bottom < h - 10);
+    return low ? low.textContent : null;
+  });
+  expect(target).toBeTruthy();
+  await page.locator('.node-row .node-label', { hasText: new RegExp('^' + target + '$') }).tap();
+  await expect(page.locator('.node-row .node-input')).toBeFocused();
+  const kb = await page.evaluate(() => Math.round(window.innerHeight * 0.45));
+  await page.evaluate((kb) => (window as unknown as { __kb: (h: number) => void }).__kb(kb), kb);
+  await expect(page.locator('html')).toHaveClass(/\bkb-open\b/);
+  await expect.poll(() => page.evaluate((kb) => {
+    const r = document.querySelector('.node-row .node-input')!.getBoundingClientRect();
+    return r.bottom <= window.innerHeight - kb;
+  }, kb)).toBe(true);
+  // The page itself is only as tall as what is visible, so nothing sits under the keyboard.
+  expect(await page.evaluate(() => Math.round(document.body.getBoundingClientRect().height))).toBe(await page.evaluate((kb) => window.innerHeight - kb, kb));
+  // Keyboard closed: full height again.
+  await page.evaluate(() => (window as unknown as { __kb: (h: number) => void }).__kb(0));
+  await expect(page.locator('html')).not.toHaveClass(/\bkb-open\b/);
+});
+
+test('the rail fits the visible screen, and a long title ends in an ellipsis', async ({ page }) => {
+  await open(page);
+  const railBottom = await page.locator('#appbar').evaluate((e) => e.getBoundingClientRect().bottom);
+  expect(railBottom).toBeLessThanOrEqual(await page.evaluate(() => window.innerHeight));
+  expect(await page.locator('#header-title').evaluate((e) => getComputedStyle(e).textOverflow)).toBe('ellipsis');
 });
