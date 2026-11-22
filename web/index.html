@@ -16375,7 +16375,7 @@ function openDiagramEditor(diagramId){
     }
   };
   window.addEventListener('message',handler);
-  _diagramEditorState={diagramId,iframe,handler,openedAt:Date.now()};
+  _diagramEditorState={diagramId,iframe,handler,openedAt:Date.now(),src:iframe.src};
   overlay.classList.add('open');
   drawioWaitTick();
 }
@@ -16399,7 +16399,7 @@ function drawioWaitTick(){
       note=document.createElement('div'); note.id='drawio-wait-note'; note.setAttribute('role','status');
       note.innerHTML='<div id="drawio-wait-msg"></div><div id="drawio-wait-detail"></div><div class="drawio-wait-actions"><button id="drawio-wait-retry" class="btn primary" type="button">Retry</button><button id="drawio-wait-close" class="btn" type="button">Close</button></div>';
       wrap.appendChild(note);
-      note.querySelector('#drawio-wait-retry').addEventListener('click',()=>{ const s2=_diagramEditorState; if(!s2)return; s2.openedAt=Date.now(); try{ s2.iframe.src=s2.iframe.src; }catch(e){} drawioWaitTick(); });
+      note.querySelector('#drawio-wait-retry').addEventListener('click',()=>drawioReload());
       note.querySelector('#drawio-wait-close').addEventListener('click',()=>closeDiagramEditorInternal());
     }
     el('drawio-wait-msg').textContent=stage==='offline'?'You’re offline.':'draw.io hasn’t loaded yet.';
@@ -16409,7 +16409,12 @@ function drawioWaitTick(){
     el('drawio-wait-retry').hidden=stage==='offline';
     // The frame behind (a failed load, or the browser's error page) mustn't take the note's clicks or
     // the focus: it's hidden while the note shows (a click on Close once landed in the frame).
+    // Hiding it wasn't enough: a blocked load leaves the browser's error page (another origin) in the
+    // frame, and Chrome could still send a click on Retry or Close to it, so the button did nothing
+    // (about half the time in tests, 2026-11-22). The load has failed by now, so the frame is pointed
+    // at an empty page; Retry and coming back online load draw.io again (drawioReload).
     st.iframe.style.visibility='hidden';
+    if(st.iframe.getAttribute('src')!=='about:blank'){ try{ st.iframe.src='about:blank'; }catch(e){} }
   }else{ if(note)note.remove(); st.iframe.style.visibility=''; }
   const wait=msUntilNextLoadingStage(elapsed,online);
   if(wait!=null)_drawioWaitTimer=setTimeout(drawioWaitTick,wait+20);
@@ -16419,7 +16424,13 @@ function drawioLoaded(iframe){
   st.inited=true; clearTimeout(_drawioWaitTimer); _drawioWaitTimer=null; el('drawio-wait-note')?.remove(); iframe.style.visibility='';
 }
 window.addEventListener('offline',()=>{ if(_diagramEditorState&&!_diagramEditorState.inited)drawioWaitTick(); });
-window.addEventListener('online',()=>{ const st=_diagramEditorState; if(st&&!st.inited){ st.openedAt=Date.now(); try{ st.iframe.src=st.iframe.src; }catch(e){} drawioWaitTick(); } });
+/** Starts the wait again and loads draw.io from its own address (the frame may be on about:blank). */
+function drawioReload(){
+  const st=_diagramEditorState; if(!st||st.inited)return;
+  st.openedAt=Date.now(); try{ st.iframe.src=st.src; }catch(e){}
+  drawioWaitTick();
+}
+window.addEventListener('online',()=>drawioReload());
 function closeDiagramEditorInternal(){
   if(!_diagramEditorState)return;
   window.removeEventListener('message',_diagramEditorState.handler);
