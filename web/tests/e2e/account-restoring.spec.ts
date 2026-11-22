@@ -7,8 +7,9 @@ const indexPath = path.resolve(__dirname, '../../index.html');
 
 // Owner bug 2026-11-13: on refresh the account menu said "Sign in" for a few seconds before the
 // account came back. While a browser that was signed in restores its session, the menu says
-// "Signing you in…" and the button never shows "Sign in".
-test('a returning account shows "Signing you in…" until the session is back, never "Sign in"', async ({ page }) => {
+// "Connecting to your account…" and the button never shows "Sign in". (Was "Signing you in…" until
+// 2026-11-22: the owner read it as not signed in yet while the documents were already showing.)
+test('a returning account shows "Connecting to your account…" until the session is back, never "Sign in"', async ({ page }) => {
   await page.route('**/firebasejs/**', () => { /* a slow connection: the restore doesn't finish */ });
   await page.addInitScript(() => {
     localStorage.setItem('sakura_welcome_seen', '1');
@@ -17,7 +18,7 @@ test('a returning account shows "Signing you in…" until the session is back, n
   await page.goto('file://' + indexPath);
   await expect(page.locator('#account-toggle-label')).toBeHidden();
   await page.evaluate(() => document.getElementById('account-toggle')!.click());
-  await expect(page.locator('#account-restoring')).toHaveText('Signing you in…');
+  await expect(page.locator('#account-restoring')).toHaveText('Connecting to your account…');
   await expect(page.locator('#account-signed-out')).toBeHidden();
   // The session turns out to be gone: now Sign in shows.
   await page.evaluate(() => {
