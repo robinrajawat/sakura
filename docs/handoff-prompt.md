@@ -250,6 +250,7 @@ Not built: a Cancel for AI actions (the 90 s timeout, #938, bounds them for now)
 - npm 10.9 (this environment's) can crash with "Cannot read properties of null (reading 'edgesOut')" on peer-dependency upgrades; `npx npm@11.6.2 install` works, and npm 10's `npm ci` reads its lockfile. Don't delete node_modules to "fix" it: the crash stays and the install is gone (`git stash` + `npm ci` restores).
 - e2e: `undo-not-confirm.spec.ts` "Reset settings … Undo" reloads the page twice within a 30s budget and can time out under the full parallel suite; it passes alone. Rerun it alone before blaming a change.
 - Stored HTML (notes, tables, anything later rendered with innerHTML) must pass `sakuraSanitizeRichHtml` on the way in: add any new HTML field to `normalizeNode` (and to any import path that skips it). Never assign stored HTML to innerHTML raw, not even on a detached element: images in it still load and fire onerror.
+- e2e: `slow-services.spec.ts` "draw.io that does not load … Retry and Close" fails about half the time under `--repeat-each` (the Retry step's `#drawio-wait-note` count), on `main` too (checked 2026-11-22); not yet root-caused. Compare against `main` before blaming a change.
 - e2e: opening the To-Dos panel focuses `#todos-input` 40ms later; wait for it before focusing anything else in the
   panel, or it takes the focus back (flaked once in CI, 2026-10-25).
 - e2e: seed `localStorage.sakura_welcome_seen` in an `addInitScript` before load (the welcome
