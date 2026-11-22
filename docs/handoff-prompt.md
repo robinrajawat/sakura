@@ -177,7 +177,7 @@ contradicts README.md or docs/feature-reference.md, trust them.)*
 1. **Confirm the iPhone shows diagram pictures again** (#941, not verifiable in the container). The owner opens Sakura once on the computer (it sends its pictures up, `backfillDiagramPreviewsToAccount`), then opens documents on the iPhone. If pictures still don't show, read Settings → About → Details on the iPhone before changing code.
 2. **Root-cause the flaky To-Dos draft test** (`phone-background-safety.phone.spec.ts`, plan step 5): it prints its storage state on failure; read that before changing code.
 3. **Before the first outside users:** plan step 6 (deploy on a published release) and the launch checklist under Parked, Firestore backups included.
-4. **iPad:** touch fixes live (#946, #948: keyboard, zoom, long-press menu, rail height, title, typing above the keyboard). The owner checks real use on the iPad and sends screenshots of anything still off. Known gap: the on-screen keyboard has no Tab, so indenting rows without a hardware keyboard relies on the long-press menu; consider a row toolbar on touch (as on the phone) if the owner finds it awkward.
+4. **iPad:** touch fixes live (#946, #948) plus the row toolbar while typing (no Tab on the on-screen keyboard). The owner checks real use on the iPad and sends screenshots of anything still off.
 
 Not built: a Cancel for AI actions (the 90 s timeout, #938, bounds them for now); the AI code still loads at startup inside index.html (startup on the Mac's Safari confirmed clean after #915); Sentry source maps. Watch: diagram pictures now live in the account (up to ~700k characters each, read when documents arrive); check Firebase usage against the free plan's limits now and then.
 
@@ -187,11 +187,11 @@ Not built: a Cancel for AI actions (the 90 s timeout, #938, bounds them for now)
 
 ### Latest changes
 
+- **Row toolbar on tablets (2026-11-22, owner).** The phone's `#phone-edit-bar` shows while typing on any touch screen (`TOUCH_INPUT_QUERY`), computer layout included; styled in `touch.css` (buttons centred, 44px); ⋯ opens the full row menu (`showContextMenu`) outside the phone layout; the caret reveal clears the bar. Tests in `tablet-touch.tablet.spec.ts`.
+
 - **"Verify your email" only after the server says so (2026-11-22, owner: it flashed up after signing in on the phone, and kept showing on one computer tab for an address verified the day before).** `updateVerifyEmailRow` needs a fresh answer from the account server (`noteEmailVerifiedCheck` after `user.reload()`); a failed check hides it and `recheckEmailVerified` asks again on focus/Settings. Details now shows the account, its sign-in providers and "Email verified: … (checked … at HH:MM)". **Open:** the computer tab that keeps showing it: the owner reads Details there; if the server says "no", that account's email really is unverified (perhaps a different account, or verified on another one). Test: `verify-email-row.spec.ts`.
 
 - **draw.io "hasn't loaded" note: Retry and Close always work (2026-11-22).** `slow-services.spec.ts` failed about half the time, on `main` too. Root cause: a blocked load leaves the browser's error page (another origin) in the hidden frame, and Chrome sent the click on Retry or Close to it (no event reached the page; `visibility`, `pointer-events` and `display` didn't help). Once the note shows, the frame is pointed at `about:blank`; Retry and coming back online reload draw.io's address (`drawioReload`, `_diagramEditorState.src`). 100/100 on repeat; the test now checks both.
-
-- **iPad layout from the owner's screenshot (2026-11-22).** Rail and side panels `100dvh` on touch (Safari's `100vh` ran under its toolbar and cut the account button); a long title ends in "…"; while the keyboard is up (computer layout), `html.kb-open` sizes the page to `--vv-h` from `visualViewport` and `selectionchange` keeps the caret's line above it. Tests in `tablet-touch.tablet.spec.ts` use a stand-in `visualViewport`. Not checked on a real iPad here.
 
 ### In progress / not built
 

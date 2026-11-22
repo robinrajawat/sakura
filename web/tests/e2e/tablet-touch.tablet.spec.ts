@@ -133,3 +133,31 @@ test('the rail fits the visible screen, and a long title ends in an ellipsis', a
   expect(railBottom).toBeLessThanOrEqual(await page.evaluate(() => window.innerHeight));
   expect(await page.locator('#header-title').evaluate((e) => getComputedStyle(e).textOverflow)).toBe('ellipsis');
 });
+
+// Owner 2026-11-22: an iPad's on-screen keyboard has no Tab, so the phone's row toolbar shows while
+// typing on a tablet too; ⋯ opens the row's full menu (the computer layout's).
+test('the row toolbar shows while typing, indents, and ⋯ opens the row menu', async ({ page }) => {
+  await open(page);
+  const bar = page.locator('#phone-edit-bar');
+  await expect(bar).toBeHidden();
+  await page.locator('.node-row .node-label', { hasText: 'Second row' }).tap();
+  await expect(bar).toBeVisible();
+  // Every button is finger-sized.
+  for (const h of await bar.locator('button').evaluateAll((bs) => bs.map((b) => b.getBoundingClientRect().height))) expect(h).toBeGreaterThanOrEqual(44);
+  await bar.locator('[data-act="indent"]').tap();
+  // @ts-expect-error -- bare global from index.html
+  await expect.poll(() => page.evaluate(() => nodes.find((n: { text: string }) => n.text === 'Second row').depth)).toBe(1);
+  await bar.locator('[data-act="more"]').tap();
+  await expect(page.locator('#context-menu')).toBeVisible();
+  await expect(bar).toBeHidden();
+});
+
+test('Done closes the toolbar and leaves the row', async ({ page }) => {
+  await open(page);
+  await page.locator('.node-row .node-label', { hasText: 'First row' }).tap();
+  await expect(page.locator('#phone-edit-bar')).toBeVisible();
+  await page.locator('#phone-edit-bar [data-act="done"]').tap();
+  await expect(page.locator('#phone-edit-bar')).toBeHidden();
+  // The keyboard goes: nothing is being typed in.
+  expect(await page.evaluate(() => { const a = document.activeElement as HTMLElement | null; return !!a && (a.isContentEditable || a.tagName === 'INPUT'); })).toBe(false);
+});

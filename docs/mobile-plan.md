@@ -368,6 +368,9 @@ layout rule stays (ground rule 1), and a second rule follows the input instead:
   keyboard. While the keyboard is up, `html.kb-open` makes the page as tall as what is visible
   (`--vv-h`), the document scrolls in that space, and the line with the caret is kept above the
   keyboard (`selectionchange`); computer layout only (the phone has its own).
+- The row toolbar (outdent, indent, checkbox, move up/down, ⋯, Done) shows while typing on a touch
+  screen in the computer layout too (owner 2026-11-22: an iPad's on-screen keyboard has no Tab); ⋯
+  opens the row's full menu there. A trackpad or mouse turns it off.
 - Tests: `*.tablet.spec.ts` on `tablet-ios` (WebKit, iPad Pro 11, CI only) and `tablet-android`
   (Chromium, Galaxy Tab S4 landscape). The keyboard itself can't be shown in a test browser, so the
   test stands in for its height.
