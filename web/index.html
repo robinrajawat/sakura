@@ -17339,6 +17339,7 @@ function hideLandingOverlay(){
 function dismissLandingOverlay(){
   try{sessionStorage.setItem('sakura_landing_dismissed','true')}catch(e){}
   hideLandingOverlay();
+  setTimeout(()=>maybeOpenWelcome(),300); // a first visit, trying it without an account
 }
 el('sakura-landing-continue-btn')?.addEventListener('click',dismissLandingOverlay);
 el('sakura-landing-google-signin-btn')?.addEventListener('click',()=>signInWithGoogleAccount());
@@ -17363,6 +17364,8 @@ async function signInWithGoogleAccount(){
     updateAccountUI(result.user);
     el('account-menu')?.classList.remove('open');
     hideLandingOverlay();
+    let isNew=false; try{ isNew=!!_firebaseMods?.authMod?.getAdditionalUserInfo?.(result)?.isNewUser; }catch(e){}
+    welcomeAfterSignIn(isNew);
     showToast('Signed in as '+(result.user.email||result.user.displayName||'your Google account'));
     startFirstSync(); pullAndMergeFromCloud(true);
     startRealtimeSync();
@@ -17462,6 +17465,7 @@ function wireEmailAuthForm(prefix){
       updateAccountUI(result.user);
       el('account-menu')?.classList.remove('open');
       hideLandingOverlay();
+      welcomeAfterSignIn(mode==='signup');
       passwordInput.value=''; setPwShown(false);
       showToast(mode==='signup'?'Account created. We sent a link to '+(result.user.email||'your email')+' to verify it.':'Signed in as '+(result.user.email||'your account'));
       if(mode!=='signup')startFirstSync(); // a new account has nothing to bring in
@@ -33103,6 +33107,13 @@ function openWelcomeModal(){
   ov.classList.add('open');
   el('welcome-pick-tour')?.focus();
 }
+function markWelcomeSeen(){ try{ localStorage.setItem(WELCOME_SEEN_KEY,'true'); }catch(e){} }
+/** After signing in: a new account gets the welcome; an existing one never sees it on this device. */
+function welcomeAfterSignIn(isNew){
+  if(isNew){ setTimeout(()=>maybeOpenWelcome({newAccount:true}),400); return; }
+  markWelcomeSeen();
+  if(el('welcome-overlay')?.classList.contains('open'))closeWelcomeModal();
+}
 function closeWelcomeModal(cb){
   const ov=el('welcome-overlay'); if(!ov)return;
   ov.classList.add('closing');
@@ -33248,14 +33259,21 @@ document.addEventListener('keydown',e=>{
   if(e.key==='Escape'){ e.stopPropagation(); closeWelcomeModal(); }
 },{capture:true});
 
-try{
-  const neverSeen=!localStorage.getItem(WELCOME_SEEN_KEY)&&!localStorage.getItem(TOUR_SEEN_KEY);
-  if(neverSeen&&loadActiveDocsIndex().length===0){
-    // Not on a phone: its two choices, the guided tour and the demo, walk through the desktop layout
-    // (docs/mobile-plan.md). Nothing is marked seen, so a computer still shows it the first time.
-    setTimeout(()=>{ if(!tourActive&&!demoActive&&!isPhoneLayout()) openWelcomeModal(); },500);
-  }
-}catch(e){}
+// The welcome is for someone new: a first visit without an account, or an account just created
+// (owner 2026-11-22: it opened after signing in on a new iPad, hidden behind the sign-in screen
+// until then). Never for an account signing in; never while the sign-in screen is up.
+// Not on a phone: its two choices, the guided tour and the demo, walk through the desktop layout
+// (docs/mobile-plan.md). Nothing is marked seen there, so a computer still shows it the first time.
+function maybeOpenWelcome({newAccount=false}={}){
+  try{
+    if(localStorage.getItem(WELCOME_SEEN_KEY)||localStorage.getItem(TOUR_SEEN_KEY))return;
+    if(tourActive||demoActive||isPhoneLayout())return;
+    if(el('sakura-landing-overlay')?.style.display==='flex'||document.documentElement.classList.contains('presetup-landing'))return;
+    if(!newAccount&&(currentUser||localStorage.getItem('sakura_account_active')==='true'||loadActiveDocsIndex().length))return;
+    openWelcomeModal();
+  }catch(e){}
+}
+setTimeout(()=>maybeOpenWelcome(),500);
 
 /* === Demo: a sandboxed, scripted walkthrough. Everything here runs against a
    throwaway mini-recreation of the UI (#demo-stage) — it never touches real
