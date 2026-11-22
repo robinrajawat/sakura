@@ -187,11 +187,11 @@ Not built: a Cancel for AI actions (the 90 s timeout, #938, bounds them for now)
 
 ### Latest changes
 
+- **Welcome dialog for new people only (2026-11-22, owner: after signing in on the iPad the welcome showed instead of the documents loading).** Cause: it opened 0.5 s after start on any device that hadn't seen it, hidden behind the sign-in screen, and appeared once that closed. Now `maybeOpenWelcome` never runs under the sign-in screen or for a signed-in device; "Try it without an account" and a new account (email sign-up, or Google's `isNewUser`) open it; an existing account signing in marks it seen (`welcomeAfterSignIn`). Test: `welcome-new-people-only.spec.ts`.
+
+- **Show password on sign-in (2026-11-22, owner).** An eye button inside the email form's password field (`wireEmailAuthForm`, `.pw-field`/`.pw-toggle` in welcome.css; 44px on touch); hidden to start, again after sign-in or closing the form; keeps the focus in the field; Edge's own reveal button hidden. Test: `show-password.spec.ts`.
+
 - **iPad and other touch screens (2026-11-22, owner: password box under the keyboard, app "misaligned").** Cause: touch/keyboard fixes were phone-only, and an iPad gets the computer layout. Now `src/styles/index/touch.css` follows the input (`(hover: none) and (pointer: coarse)`, any width): 16px fields and document (no Safari zoom), sign-in screen and dialogs end above the keyboard (`--kb-inset` from `visualViewport`) and scroll, long-press sends the right-click menu (iOS sends none), hover-only controls stay shown. Tests: `tablet-touch.tablet.spec.ts` on new projects `tablet-ios` (WebKit, CI only) and `tablet-android`. Not checked on a real iPad here.
-
-- **Diagram pictures sync with the drawing (2026-11-21, owner: iPhone showed "no picture yet" for every diagram after signing out and in).** Cause: only `xml` went to the account (pictures deliberately left out since 2026-11-13), `hydrateCloudDocBlobs` wiped this device's picture on every incoming copy, and the iPhone's own redraw (hidden embed.diagrams.net frame, 8 s cap, tried once per session) didn't manage. Now: `previewSvg` + `previewOf` (`diagramXmlSig` of the drawing) go up when they fit (`diagramPreviewForSync`, 700k chars with the xml); a device without a picture leaves the account's alone (`pushDocBlobSubcollection` skips missing optional fields); incoming copies use the account's picture only when `previewOf` matches, else keep this device's when the drawing is unchanged; a diagram missing its picture asks the account first (`fetchDiagramPreviewFromAccount`) before redrawing; existing pictures go up once per device and account (`backfillDiagramPreviewsToAccount`, only where the account's drawing is the same; writes picture fields only). Rules unchanged (subcollections are owner-only). Test: `diagram-picture-sync.spec.ts`. Not verified on a real iPhone here (no WebKit in the container).
-
-- **Sign-in screen: Continue stays once offered (2026-11-21, owner: "comes and goes").** `s.offeredContinue` keeps the button after the first stall; non-document steps (settings, folders, deletes) count as progress (`firstSyncAlive`), so a slow phone doesn't look stuck. Test: `first-sync-screen.spec.ts`.
 
 ### In progress / not built
 
@@ -271,6 +271,7 @@ Not built: a Cancel for AI actions (the 90 s timeout, #938, bounds them for now)
 - A stop hook in this environment asks to re-author commits as `Claude <noreply@anthropic.com>` ("Unverified"
   commits). That contradicts CLAUDE.md's identity rule: decline, keep `robinrajawat`, and tell the owner. The
   "verified signatures" bypass notice on push is expected.
+- A click that must be stopped before any of the app's own handlers (e.g. the tap after a long-press) needs a `window` capture listener: index.html has a `document` capture click listener that closes menus, registered early, so a `document` one runs too late (2026-11-22).
 - Interface text uses the `--fs-*` scale only (tests/unit/textSizeTokens.test.ts fails on a px `font-size`); use the
   tokens in `font:` shorthands too.
 - Verify any delegated subagent's diff yourself before merging (both under- and over-removal have

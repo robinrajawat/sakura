@@ -24,7 +24,8 @@ exists so that distinction is visible without opening every file.
 
 - **`mobile-plan.md`**: approved and built (2026-11-13). One app for every screen size, with a limited
   phone layout that leaves the desktop untouched; hub.html, the old phone page, now only forwards to it.
-  Phases 0–5 done; a real-phone typing check and the faster first load remain.
+  Phases 0–5 done; a real-phone typing check and the faster first load remain. Tablets (2026-11-22): the
+  computer layout adapted for touch (`touch.css`), see its "Touch and the on-screen keyboard" section.
 
 - **`standard-practice-plan.md`**: adopted 2026-11-20, after an iPhone-only startup failure. The
   steps are: test in Safari's engine, error reports from devices, a preview before going live,

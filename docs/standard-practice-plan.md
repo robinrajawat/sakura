@@ -24,7 +24,8 @@ Built: `phone-ios` runs in WebKit. Long-press, swipe and pinch go through
 events Sakura listens for, dispatched in the page (with pointer capture honoured, which the diagram
 viewer needs). `SAKURA_SYNTH_TOUCH=1` forces the WebKit path in Chromium to check it locally; all 48
 gesture tests pass both ways. A local run without WebKit leaves the two WebKit projects out with a
-warning; CI always runs them. The flaky To-Dos draft test did not fail once in 400+ local runs
+warning; CI always runs them. Since 2026-11-22 the same goes for tablets: `*.tablet.spec.ts` runs on
+`tablet-ios` (WebKit, iPad) and `tablet-android` (Chromium), so the local warning lists three WebKit projects. The flaky To-Dos draft test did not fail once in 400+ local runs
 (alone, under CPU load, and in the full phone suite four times), and CI's history no longer has its
 error, so it now prints what storage held when it fails instead of getting a guessed fix.
 
