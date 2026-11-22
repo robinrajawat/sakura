@@ -80,12 +80,11 @@ test('a long-press on a row opens its right-click menu, and the lift is not a ta
 });
 
 test('a task’s ⋯ shows without hovering', async ({ page }) => {
-  await open(page);
-  await page.evaluate(() => {
+  // Seeded before load: reloading a file:// page can lose localStorage under Playwright.
+  await page.addInitScript(() => {
     localStorage.setItem('sakura_todos_v1', JSON.stringify([{ id: 't1', text: 'Call Sam', done: false, createdAt: 1767225600000 }]));
   });
-  await page.reload();
-  await page.waitForFunction(() => typeof (window as unknown as { createDoc?: unknown }).createDoc === 'function');
+  await open(page);
   await page.locator('#dock-panel-appbar-toggle').tap();
   const more = page.locator('#todos-body .todo-more-btn').first();
   await expect(more).toBeVisible();
