@@ -650,6 +650,13 @@ const STYLE_BLOCKS = [
     styleFiles: ['src/styles/index/todos-panel.css', 'src/styles/index/hub-dock.css']
   },
   {
+    // Touch screens at any width (an iPad): no hover, a finger, an on-screen keyboard. Every rule sits
+    // in the touch @media query (docs/mobile-plan.md, "Touch and the on-screen keyboard").
+    name: 'css-touch',
+    targetFile: 'index.html',
+    styleFiles: ['src/styles/index/touch.css']
+  },
+  {
     // Last, so phone rules win ties. Every rule sits in the phone @media query (docs/mobile-plan.md).
     name: 'css-phone',
     targetFile: 'index.html',

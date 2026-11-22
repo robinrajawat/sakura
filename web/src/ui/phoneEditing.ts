@@ -8,6 +8,13 @@
  */
 
 /**
+ * Touch screens at any width: no hover, a finger (an iPad, an Android tablet). Must match the
+ * `@media` query every rule in src/styles/index/touch.css sits in. A trackpad or mouse reports
+ * hover, so an iPad with a trackpad counts as a computer.
+ */
+export const TOUCH_INPUT_QUERY = 'screen and (hover: none) and (pointer: coarse)';
+
+/**
  * How far the on-screen keyboard reaches up from the bottom of the layout viewport, from
  * window.visualViewport. 0 with no keyboard, or where visualViewport is missing.
  */
