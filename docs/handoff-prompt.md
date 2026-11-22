@@ -188,11 +188,11 @@ Not built: a Cancel for AI actions (the 90 s timeout, #938, bounds them for now)
 
 ### Latest changes
 
+- **Rounded icon in Safari's tabs on the iPad (2026-11-22, owner screenshot: still sharp white squares after #949, private window).** Safari on an iPad uses `apple-touch-icon` for the tab, not the `rel="icon"` PNG, so the fix had to be there: `apple-touch-icon(-dark).png` (180px) are now a soft-gradient tile with 18% corners, transparent outside, rendered from `flower-glyph.svg`; iOS's home-screen mask is rounder, so it covers the corners (no black). SW cache `v13`. Not checked on a real iPad here.
+
 - **Row toolbar on tablets (2026-11-22, owner).** The phone's `#phone-edit-bar` shows while typing on any touch screen (`TOUCH_INPUT_QUERY`), computer layout included; styled in `touch.css` (buttons centred, 44px); ⋯ opens the full row menu (`showContextMenu`) outside the phone layout; the caret reveal clears the bar. Tests in `tablet-touch.tablet.spec.ts`.
 
 - **"Verify your email" only after the server says so (2026-11-22, owner: it flashed up after signing in on the phone, and kept showing on one computer tab for an address verified the day before).** `updateVerifyEmailRow` needs a fresh answer from the account server (`noteEmailVerifiedCheck` after `user.reload()`); a failed check hides it and `recheckEmailVerified` asks again on focus/Settings. Details now shows the account, its sign-in providers and "Email verified: … (checked … at HH:MM)". **Open:** the computer tab that keeps showing it: the owner reads Details there; if the server says "no", that account's email really is unverified (perhaps a different account, or verified on another one). Test: `verify-email-row.spec.ts`.
-
-- **draw.io "hasn't loaded" note: Retry and Close always work (2026-11-22).** `slow-services.spec.ts` failed about half the time, on `main` too. Root cause: a blocked load leaves the browser's error page (another origin) in the hidden frame, and Chrome sent the click on Retry or Close to it (no event reached the page; `visibility`, `pointer-events` and `display` didn't help). Once the note shows, the frame is pointed at `about:blank`; Retry and coming back online reload draw.io's address (`drawioReload`, `_diagramEditorState.src`). 100/100 on repeat; the test now checks both.
 
 ### In progress / not built
 

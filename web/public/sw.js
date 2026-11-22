@@ -21,7 +21,7 @@
 // origin's Cache Storage, only the OS-level shortcut, so the newly-redesigned icon on the
 // server was never actually seen. Bump the version suffix whenever an asset in
 // PRECACHE_URLS (or anything else served under a STATIC_DESTINATIONS type) changes.
-const CACHE_NAME = 'sakura-shell-v12';
+const CACHE_NAME = 'sakura-shell-v13';
 
 // The app shell and the assets it always needs, precached on install so the very first offline
 // visit already has them. Every font is served from the site itself (no Google Fonts since
