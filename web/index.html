@@ -118,7 +118,7 @@ function a(e,t){return n(e)||r(e,t)||o(e,t)||i()}function o(e,n){if(e){if(typeof
 (function(){try{var raw=localStorage.getItem('sakura_v001_prefs');var d=raw?JSON.parse(raw):{};var t={vscode:'dark','clever-dark':'dark'}[d.theme]||d.theme;var dark=d.themeMode==='system'||!t?matchMedia('(prefers-color-scheme: dark)').matches:t==='dark';if(dark){document.querySelector('meta[name="theme-color"]').setAttribute('content','#181816');document.documentElement.style.background='#181816';}}catch(e){}})();
 </script>
 <link rel="icon" type="image/svg+xml" href="flower-glyph.svg">
-<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192-pwa.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png" media="(prefers-color-scheme: light)">
 <link rel="apple-touch-icon" href="apple-touch-icon-dark.png" media="(prefers-color-scheme: dark)">
 <script>if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(e=>console.warn('[sakura] the offline copy could not be set up here (private browsing or blocked storage?):',e)));}
@@ -133,7 +133,9 @@ try{ if(navigator.storage&&navigator.storage.persist)navigator.storage.persisted
   baked-in tile would read as a tile within a tile (the maskable one keeps the glyph in Android's
   safe zone). icon-192-pwa / icon-512-pwa ("any" in the manifests) are what desktop Chrome, Windows
   and macOS show as-is, so they carry their own Apple-style rounded tile (90% of the canvas, flower ~78% of the tile as in the original icon, 22.5% corners, soft
-  shadow, subtle top-to-bottom shading, transparent outside). -->
+  shadow, subtle top-to-bottom shading, transparent outside). The PNG page icon (rel="icon") is that
+  tile too (owner 2026-11-22): browsers that don't use the SVG (Safari's tabs, favourites, history)
+  show it unmasked, and the flat icon-192.png there was a sharp white square. -->
 <!-- Inter ships with the app (owner 2026-11-02): preloaded, it is ready before the first paint, so text
      no longer shifts 1-2px when a Google-hosted copy arrives half a second in. SIL OFL 1.1, see
      THIRD-PARTY-NOTICES.md. Fira Code ships with it too (owner 2026-11-17): Google
