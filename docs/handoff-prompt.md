@@ -177,7 +177,7 @@ contradicts README.md or docs/feature-reference.md, trust them.)*
 1. **Confirm the iPhone shows diagram pictures again** (#941, not verifiable in the container). The owner opens Sakura once on the computer (it sends its pictures up, `backfillDiagramPreviewsToAccount`), then opens documents on the iPhone. If pictures still don't show, read Settings → About → Details on the iPhone before changing code.
 2. **Root-cause the flaky To-Dos draft test** (`phone-background-safety.phone.spec.ts`, plan step 5): it prints its storage state on failure; read that before changing code.
 3. **Before the first outside users:** plan step 6 (deploy on a published release) and the launch checklist under Parked, Firestore backups included.
-4. **iPad:** the touch fixes are built (see Latest changes). The owner checks the sign-in screen and general use on the iPad via the preview, and sends screenshots of anything still off.
+4. **iPad:** touch fixes live (#946, #948: keyboard, zoom, long-press menu, rail height, title, typing above the keyboard). The owner checks real use on the iPad and sends screenshots of anything still off. Known gap: the on-screen keyboard has no Tab, so indenting rows without a hardware keyboard relies on the long-press menu; consider a row toolbar on touch (as on the phone) if the owner finds it awkward.
 
 Not built: a Cancel for AI actions (the 90 s timeout, #938, bounds them for now); the AI code still loads at startup inside index.html (startup on the Mac's Safari confirmed clean after #915); Sentry source maps. Watch: diagram pictures now live in the account (up to ~700k characters each, read when documents arrive); check Firebase usage against the free plan's limits now and then.
 
