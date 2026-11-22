@@ -17807,8 +17807,9 @@ async function ensureEmailIndex(user){
     // A link opened in the verification email only shows up after a reload and a fresh token
     // (the rules read email_verified from the token).
     if(user.email&&!user.emailVerified&&typeof user.reload==='function'){
-      try{ await user.reload(); if(user.emailVerified)await user.getIdToken(true); }catch(e){}
-    }
+      try{ await user.reload(); noteEmailVerifiedCheck(user,null); if(user.emailVerified)await user.getIdToken(true); }
+      catch(e){ noteEmailVerifiedCheck(user,e); }
+    }else noteEmailVerifiedCheck(user,null,'session');
     if(user.email&&user.emailVerified){
       // Written once per device and address; Delete account removes it.
       const id=await emailIndexId(user.email), key='sakura_email_index_v1_'+user.uid;
@@ -17818,10 +17819,20 @@ async function ensureEmailIndex(user){
   }catch(e){ console.warn('[sakura] ensureEmailIndex failed:',e); }
   updateVerifyEmailRow(user);
 }
+// What the account server last said about the email (Settings → About → Details shows it).
+let _emailVerifiedCheck=null;
+function noteEmailVerifiedCheck(user,err,source){
+  _emailVerifiedCheck={uid:user.uid,at:Date.now(),verified:!!user.emailVerified,source:source||'server',error:err?((err.code||err.name||'error')+''):null};
+}
 // Settings → Account: only an email-and-password account can be unverified (Google's are verified).
+// Shown only once the account server has just said "not verified": a session restored on this device
+// carries the state from when it signed in, so it could say unverified for an address verified since,
+// and the row flashed up and went again (owner 2026-11-22). If asking failed, it stays hidden and is
+// asked again when Sakura comes back to the screen or Settings opens.
 function updateVerifyEmailRow(user){
   const row=el('settings-verify-email-row'); if(!row)return;
-  const needs=!!(user&&user.email&&!user.emailVerified&&(user.providerData||[]).some(p=>p&&p.providerId==='password'));
+  const c=_emailVerifiedCheck, confirmed=!!(user&&c&&c.uid===user.uid&&!c.error);
+  const needs=!!(user&&confirmed&&user.email&&!user.emailVerified&&(user.providerData||[]).some(p=>p&&p.providerId==='password'));
   row.style.display=needs?'':'none';
 }
 // The link in the email is opened elsewhere (Mail, Safari), so check again whenever Sakura comes back
@@ -17830,12 +17841,15 @@ function updateVerifyEmailRow(user){
 function recheckEmailVerified(){
   const row=el('settings-verify-email-row');
   const user=currentUser;
-  if(!user||!row||row.style.display==='none'||typeof user.reload!=='function')return;
+  if(!user||!row||typeof user.reload!=='function'||!user.email||user.emailVerified)return;
+  // Only while it is showing, or the last check failed (nothing confirmed yet).
+  const c=_emailVerifiedCheck, unconfirmed=!c||c.uid!==user.uid||!!c.error;
+  if(row.style.display==='none'&&!unconfirmed)return;
   user.reload().then(async()=>{
-    if(!user.emailVerified)return;
-    try{ await user.getIdToken(true); }catch(e){}
-    updateVerifyEmailRow(user); ensureEmailIndex(user);
-  }).catch(()=>{});
+    noteEmailVerifiedCheck(user,null);
+    if(user.emailVerified){ try{ await user.getIdToken(true); }catch(e){} ensureEmailIndex(user); }
+    updateVerifyEmailRow(user);
+  }).catch(e=>{ noteEmailVerifiedCheck(user,e); updateVerifyEmailRow(user); });
 }
 document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible')recheckEmailVerified(); });
 window.addEventListener('focus',recheckEmailVerified);
@@ -32396,6 +32410,16 @@ async function storageDiagnosticsText(onUpdate){
   await say('Storage test now',storageOpenTest,v=>String(v));
   await say('Storage used',()=>navigator.storage.estimate(),v=>`${mb(v&&v.usage)} of ${mb(v&&v.quota)} allowed`);
   await say('Kept by the browser',()=>navigator.storage.persisted(),v=>v?'yes':'no');
+  try{
+    const u=currentUser, c=_emailVerifiedCheck;
+    if(!u)push('Account: not signed in');
+    else{
+      const how=(u.providerData||[]).map(p=>p&&p.providerId==='password'?'email and password':p&&p.providerId==='google.com'?'Google':p&&p.providerId).filter(Boolean).join(' + ')||'unknown';
+      const when=c&&c.uid===u.uid?new Date(c.at).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}):null;
+      push('Account: '+(u.email||'no email')+' \u00b7 signed in with '+how);
+      push('Email verified: '+(u.emailVerified?'yes':'no')+(when?(c.error?' (last check at '+when+' failed: '+c.error+')':c.source==='session'?' (from this sign-in)':' (checked with the account server at '+when+')'):' (not checked yet)'));
+    }
+  }catch(e){ push('Account: unreadable ('+describe(e)+')'); }
   push('Browser: '+navigator.userAgent);
   return lines.join('\n');
 }

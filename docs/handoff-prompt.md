@@ -187,11 +187,11 @@ Not built: a Cancel for AI actions (the 90 s timeout, #938, bounds them for now)
 
 ### Latest changes
 
+- **"Verify your email" only after the server says so (2026-11-22, owner: it flashed up after signing in on the phone, and kept showing on one computer tab for an address verified the day before).** `updateVerifyEmailRow` needs a fresh answer from the account server (`noteEmailVerifiedCheck` after `user.reload()`); a failed check hides it and `recheckEmailVerified` asks again on focus/Settings. Details now shows the account, its sign-in providers and "Email verified: … (checked … at HH:MM)". **Open:** the computer tab that keeps showing it: the owner reads Details there; if the server says "no", that account's email really is unverified (perhaps a different account, or verified on another one). Test: `verify-email-row.spec.ts`.
+
 - **draw.io "hasn't loaded" note: Retry and Close always work (2026-11-22).** `slow-services.spec.ts` failed about half the time, on `main` too. Root cause: a blocked load leaves the browser's error page (another origin) in the hidden frame, and Chrome sent the click on Retry or Close to it (no event reached the page; `visibility`, `pointer-events` and `display` didn't help). Once the note shows, the frame is pointed at `about:blank`; Retry and coming back online reload draw.io's address (`drawioReload`, `_diagramEditorState.src`). 100/100 on repeat; the test now checks both.
 
 - **iPad layout from the owner's screenshot (2026-11-22).** Rail and side panels `100dvh` on touch (Safari's `100vh` ran under its toolbar and cut the account button); a long title ends in "…"; while the keyboard is up (computer layout), `html.kb-open` sizes the page to `--vv-h` from `visualViewport` and `selectionchange` keeps the caret's line above it. Tests in `tablet-touch.tablet.spec.ts` use a stand-in `visualViewport`. Not checked on a real iPad here.
-
-- **Welcome dialog for new people only (2026-11-22, owner: after signing in on the iPad the welcome showed instead of the documents loading).** Cause: it opened 0.5 s after start on any device that hadn't seen it, hidden behind the sign-in screen, and appeared once that closed. Now `maybeOpenWelcome` never runs under the sign-in screen or for a signed-in device; "Try it without an account" and a new account (email sign-up, or Google's `isNewUser`) open it; an existing account signing in marks it seen (`welcomeAfterSignIn`). Test: `welcome-new-people-only.spec.ts`.
 
 ### In progress / not built
 
