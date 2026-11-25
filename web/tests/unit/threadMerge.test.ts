@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { mergeThreadEntries, mergeTombstones, addTombstone, TOMBSTONE_MAX_AGE_MS } from '../../src/state/threadMerge';
+import { mergeThreadEntries, mergeTombstones, addTombstone, reviveDeletedEntries, TOMBSTONE_MAX_AGE_MS } from '../../src/state/threadMerge';
 
 const e = (id: string, row: number, createdAt: number, extra: object = {}) => ({ id, anchorNodeId: row, createdAt, text: id, ...extra });
 const NOW = 1_800_000_000_000;
@@ -52,5 +52,22 @@ describe('threadMerge', () => {
     expect(addTombstone(null, 7, 5)).toEqual({ '7': 5 });
     const t = mergeTombstones({ a: NOW - 5, old: NOW - TOMBSTONE_MAX_AGE_MS - 1 }, { a: NOW - 1, b: NOW - 2, bad: 'x' as never }, NOW);
     expect(t).toEqual({ a: NOW - 1, b: NOW - 2 });
+  });
+
+  it('a restored entry that was deleted since comes back under a new id, and survives the next merge', () => {
+    let n = 0;
+    const dead = { a: NOW - 1000 };
+    const r = reviveDeletedEntries([e('a', 1, 1), e('b', 1, 2, { answerTo: 'a' }), e('c', 1, 3)], dead, () => 'new' + n++);
+    expect(r.revived).toBe(1);
+    expect(r.remarks.map((x) => x.id)).toEqual(['new0', 'b', 'c']);
+    expect(r.remarks[1].answerTo).toBe('new0');
+    // Another device still holds the deletion record for 'a': the restored entries stay.
+    const m = mergeThreadEntries(r.remarks, {}, [], dead, [1], NOW);
+    expect(m.remarks.map((x) => x.id)).toEqual(['new0', 'b', 'c']);
+  });
+
+  it('nothing deleted: entries keep their ids', () => {
+    const r = reviveDeletedEntries([e('a', 1, 1)], {}, () => 'x');
+    expect(r).toEqual({ remarks: [e('a', 1, 1)], revived: 0 });
   });
 });
