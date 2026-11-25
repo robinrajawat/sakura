@@ -1531,6 +1531,9 @@ body:has(#diagram-viewer.open) .sb-context-menu,body:has(#node-image-viewer.open
 .first-sync-actions{display:flex;gap:8px;justify-content:center;margin-top:20px}
 .first-sync-actions:not(:has(button:not([hidden]))){display:none}
 .history-row-extras{margin-left:8px;font-size:var(--fs-xs);color:var(--muted);white-space:nowrap}
+.inbox-preview-actions{display:flex;gap:8px}
+.inbox-preview-heading{font-weight:600}
+.notif-from-assistant .notif-item-text::before{content:"\2726";margin-right:6px;color:var(--accent)}
 /* Tables (plain, polished, and every Show as display) as the computer draws them. Shared by
    index.html and the phone's reader (hub.html), which shows the computer's ready-made copy of each
    table (owner 2026-11-03: the same look on every device). Listed in both pages' style blocks. */
@@ -4215,7 +4218,7 @@ html.calm-layout #sb-auto-rewrite-chip.is-quiet:hover,html.calm-layout #sb-auto-
           <div class="settings-section" data-cat="account" id="settings-section-account-assistants" data-feature-hidden="1" style="display:none">
             <div class="settings-section-title">AI assistants</div>
             <div class="settings-list">
-              <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Connect an assistant</span><span class="settings-row-desc">Lets Claude, ChatGPT or another assistant that supports MCP read your documents. It can never change them. Add this address as a connector in the assistant, then allow it when Sakura asks. What it reads goes to that assistant's provider.</span><code id="mcp-connect-url" class="mcp-connect-url">https://ai.sakura-notes.com/mcp</code></div><button type="button" class="btn" id="mcp-copy-url-btn">Copy address</button></div>
+              <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Connect an assistant</span><span class="settings-row-desc">Lets Claude, ChatGPT or another assistant that supports MCP read your documents, and, if you allow it, send new drafts to your inbox for you to preview and add. It never changes your existing documents. Add this address as a connector in the assistant, then allow it when Sakura asks. What it reads goes to that assistant's provider.</span><code id="mcp-connect-url" class="mcp-connect-url">https://ai.sakura-notes.com/mcp</code></div><button type="button" class="btn" id="mcp-copy-url-btn">Copy address</button></div>
             </div>
             <div id="mcp-connections-status" class="muted-help mcp-connections-status"></div>
             <div class="settings-list" id="mcp-connections-list" hidden></div>
@@ -4503,7 +4506,7 @@ html.calm-layout #sb-auto-rewrite-chip.is-quiet:hover,html.calm-layout #sb-auto-
 <h4>Share and PDF</h4>
 <ul>
 <li>Share → Export as → PDF saves the whole document as a PDF file, with notes, threads, tables and images (signed out or offline, or once the day's PDF files are used up, the print dialog opens: choose Save as PDF). Cover page and PDF mark are in Settings → Documents</li>
-<li>Share → Send a copy (signed in) gives another Sakura user their own copy to edit and keep: type the exact email their account uses (it must be verified). It arrives in their notifications with Add to my documents and Decline; nothing is added until they choose</li>
+<li>Share → Send a copy (signed in) gives another Sakura user their own copy to edit and keep: type the exact email their account uses (it must be verified). It arrives in their notifications with Preview and Decline; they see it before choosing Add to my documents, and nothing is added until they do</li>
 <li>Share → Export as → Markdown saves the document as a .md file other notes apps open: headings, nested rows, To-Dos, notes, tables, bold, italic, strikethrough and links. Pictures, diagrams, threads and remarks are listed by name only (PDF keeps them). OPML saves the outline for other outliners</li>
 <li>The File Explorer's + → Import (.md, .opml)… opens a Markdown or OPML file as a new document, or drop one on the File Explorer or the page. Headings nest, lists become rows, prose right under a heading becomes its note, and anything Markdown-only (math, HTML) comes in as plain text</li>
 </ul>
@@ -4543,6 +4546,7 @@ html.calm-layout #sb-auto-rewrite-chip.is-quiet:hover,html.calm-layout #sb-auto-
 <ul>
 <li>Let Claude, ChatGPT or another assistant that supports MCP read your documents while you're signed in: add https://ai.sakura-notes.com/mcp as a connector in the assistant (in Claude: Settings → Connectors → Add custom connector)</li>
 <li>The assistant opens Sakura; sign in if asked, then Allow. It can list, read and search your documents, find what's still open, say what changed lately, and go through your To-Dos; never change anything. Documents in Trash are left out</li>
+<li>Ask it to "put this in Sakura" and, if you allowed it when connecting, it sends a new draft to your inbox (the bell): preview it, then Add (it starts as a Draft) or Decline. Before you add it, ask for changes and it replaces the draft. It never changes your existing documents</li>
 <li>Not sure what to ask? Just say "Sakura": the assistant lists your recent documents and what it can do. In Claude, the Sakura connector also offers ready-made starters: Work on a document, What's still open, Search my notes</li>
 <li>Useful phrases: "Be my assistant for my Sakura document <i>System landscape</i>", "What's still open in <i>…</i>?", "Search my Sakura notes for <i>…</i>". It re-reads a document before answering, so it sees your latest edits</li>
 <li>What it reads goes to that assistant's provider. Settings → Account → AI assistants shows what's connected; Disconnect ends access at once</li>
@@ -5176,6 +5180,19 @@ html.calm-layout #sb-auto-rewrite-chip.is-quiet:hover,html.calm-layout #sb-auto-
       <div id="sakura-modal-input-wrap"><span id="sakura-modal-input-label" style="display:none"></span><input id="sakura-modal-input" type="text" autocomplete="off" spellcheck="false" /></div>
       <div id="sakura-modal-input2-wrap" style="display:none;margin-top:-8px"><span id="sakura-modal-input2-label" style="display:none"></span><input id="sakura-modal-input2" type="text" autocomplete="off" spellcheck="false" /></div>
       <div id="sakura-modal-actions"></div>
+    </div>
+  </div>
+  <div id="inbox-preview-overlay" class="history-modal-overlay" role="dialog" aria-modal="true" aria-label="Document in your inbox">
+    <div class="history-modal">
+      <div class="app-modal-head">
+        <div><h2 id="inbox-preview-title"></h2><div class="cs-sub" id="inbox-preview-sub"></div></div>
+        <button id="inbox-preview-close-x" class="app-modal-close-btn" aria-label="Close"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="4" y1="4" x2="20" y2="20"/><line x1="20" y1="4" x2="4" y2="20"/></svg></button>
+      </div>
+      <div id="inbox-preview-body" class="history-modal-body"></div>
+      <div class="history-modal-footer">
+        <span class="history-modal-footer-hint">Not in your documents until you add it</span>
+        <span class="inbox-preview-actions"><button id="inbox-preview-decline" class="btn">Decline</button><button id="inbox-preview-add" class="btn primary">Add to my documents</button></span>
+      </div>
     </div>
   </div>
   <div id="history-modal-overlay" class="history-modal-overlay">
@@ -18054,7 +18071,7 @@ async function findAccountByEmail(email){
 // ---------- Send a copy ----------
 // Sharing is a copy, not live editing (owner, 2026-10-30): the sender writes a snapshot of the
 // document into the recipient's copies/{uid}/items inbox plus a doc_copy notification; the
-// recipient's "Add to my documents" turns it into an ordinary document of their own and removes
+// recipient previews it, and "Add to my documents" turns it into an ordinary document of their own and removes
 // the inbox copy. Nothing links the two documents afterwards, so nothing can conflict.
 const DOC_COPY_MAX_BYTES=900000; // one Firestore document holds at most 1MB, leave room for the other fields
 // Builds the snapshot of a local document: its stored JSON with each diagram's xml put back
@@ -18089,32 +18106,224 @@ async function sendDocCopy(docId,docTitle,profile){
     return {ok:true};
   }catch(e){ console.warn('[sakura] sendDocCopy failed:',e); return {ok:false,error:'Could not send — try again'}; }
 }
+/* GENERATED:receivedCopy:START — DO NOT EDIT BY HAND. Source of truth: src/utils/receivedCopy.ts (tests: tests/unit/receivedCopy.test.ts). Regenerate with `npm run generate` after changing the source; CI fails if this block drifts from what the generator produces (see .github/workflows/ci.yml and scripts/generate-index-blocks.mjs). */
+/**
+ * A document that arrives in the inbox (Send a copy, or a draft from your AI assistant's
+ * send_document), made safe and well-formed before it can become a document (owner 2026-11-25:
+ * "should not end up in a duplicate, corrupt document").
+ *
+ * - Stored HTML is cleaned on the way in (standing rule): notes, tables and thread entries, through
+ *   the cleaners the caller passes (index.html's sakuraSanitizeRichHtml / tidyTableHtml).
+ * - It is repaired: unique positive row ids, indents that step down one level at a time, parent
+ *   links from the indents (the rule rebuildParentIdsCore applies in the editor; that one needs the
+ *   app's globals, so it can't run here), a next id past every row, diagrams with
+ *   an id and a drawing, anchored to a row that exists, and thread entries only on existing rows.
+ * - `docIdForCopy` gives each inbox item one document id, so adding it twice, or on two devices,
+ *   lands on the same document.
+ *
+ * Wired into index.html via scripts/generate-index-blocks.mjs's `receivedCopy` block.
+ */
+const isRec = (v) => !!v && typeof v === 'object' && !Array.isArray(v);
+/** The document id an inbox item becomes: the same every time, on every device. */
+function docIdForCopy(copyId) {
+    return 'dc' + String(copyId || '').replace(/[^A-Za-z0-9]/g, '').slice(0, 40);
+}
+/** Cleans and repairs a received document in place, and returns it. */
+function cleanReceivedCopy(d, c) {
+    if (!isRec(d))
+        return d;
+    const seen = new Set();
+    let maxId = 0;
+    let prevDepth = -1;
+    const nodes = (Array.isArray(d.nodes) ? d.nodes : []).filter(isRec).map((n) => {
+        let id = Number(n.id);
+        if (!Number.isInteger(id) || id < 1 || seen.has(id))
+            id = 0;
+        if (id) {
+            seen.add(id);
+            maxId = Math.max(maxId, id);
+        }
+        const asked = Number(n.depth);
+        const depth = Math.max(0, Math.min(Number.isInteger(asked) ? asked : 0, prevDepth + 1));
+        prevDepth = depth;
+        return {
+            ...n, id, depth, parentId: null,
+            styles: isRec(n.styles) ? n.styles : {},
+            text: typeof n.text === 'string' ? n.text : '',
+            note: typeof n.note === 'string' ? c.sanitize(n.note) : '',
+            tables: Array.isArray(n.tables) ? n.tables.filter((t) => typeof t === 'string').map((t) => c.tidyTable(c.sanitize(t))) : [],
+            images: Array.isArray(n.images) ? n.images : []
+        };
+    });
+    for (const n of nodes)
+        if (!n.id) {
+            n.id = ++maxId;
+            seen.add(n.id);
+        }
+    const parent = [];
+    for (const n of nodes) {
+        parent.length = n.depth;
+        n.parentId = n.depth ? parent[n.depth - 1] ?? null : null;
+        parent[n.depth] = n.id;
+    }
+    d.nodes = nodes;
+    d.nextId = maxId + 1;
+    d.title = typeof d.title === 'string' ? d.title : '';
+    const firstRow = nodes[0]?.id ?? null;
+    d.diagrams = (Array.isArray(d.diagrams) ? d.diagrams : [])
+        .filter((g) => isRec(g) && typeof g.xml === 'string' && !!g.xml.trim())
+        .map((g) => ({ ...g, id: typeof g.id === 'string' && g.id ? g.id : c.newDiagramId(), anchorNodeId: seen.has(Number(g.anchorNodeId)) ? Number(g.anchorNodeId) : firstRow }));
+    d.remarks = (Array.isArray(d.remarks) ? d.remarks : []).filter((r) => isRec(r) && seen.has(Number(r.anchorNodeId))).map((r) => {
+        const out = { ...r };
+        for (const k of ['text', 'title'])
+            if (typeof out[k] === 'string')
+                out[k] = c.sanitize(out[k]);
+        return out;
+    });
+    return d;
+}
+
+/* GENERATED:receivedCopy:END */
+// The cleaners and id maker a received copy is repaired with (src/utils/receivedCopy.ts).
+function copyCleaners(){ return {sanitize:sakuraSanitizeRichHtml,tidyTable:tidyTableHtml,newDiagramId}; }
+// A copy your AI assistant sent you: inbox items and their notices carry your own account as the
+// sender, which firestore.rules lets no one else set (fromDisplayName is the sender's own choice).
+function isFromMe(fromUid){ return !!(currentUser&&fromUid===currentUser.uid); }
+function isAssistantCopy(n){ return !!(n&&n.type==='doc_copy'&&isFromMe(n.fromUid)); }
+const countLabel=(k,one,many)=>k+' '+(k===1?one:(many||one+'s'));
+const INBOX_PREVIEW_BUTTONS=['inbox-preview-add','inbox-preview-decline'];
+// Preview of a document in your inbox, read-only, before it can become a document (owner
+// 2026-11-25: for every inbox document, whoever sent it): its rows with what each holds, then Add or
+// Decline. A draft from your AI assistant is marked as such and added as a Draft. What the preview
+// read and cleaned is what Add stores, so it is read once.
+let _inboxPreview=null; // {n, d, fromMe}
+const INBOX_PREVIEW_ROWS=300; // a very long document shows its first rows here; all of it is added
+async function openInboxCopyPreview(n){
+  const overlay=el('inbox-preview-overlay'), body=el('inbox-preview-body'); if(!overlay||!body||!currentUser)return;
+  let d, fromMe;
+  try{
+    const {mod,db}=await loadFirestoreMods();
+    const snap=await mod.getDoc(mod.doc(db,'copies',currentUser.uid,'items',n.docId));
+    if(!snap.exists()){ showToast('This document was already added or is no longer available'); return; }
+    const data=snap.data();
+    d=cleanReceivedCopy(JSON.parse(data.doc||'{}'),copyCleaners());
+    fromMe=isFromMe(data.fromUid);
+  }catch(e){ showToast('Could not open this document — try again'); return; }
+  _inboxPreview={n,d,fromMe};
+  el('inbox-preview-title').textContent=d.title||n.docTitle||'Untitled';
+  const nodes=d.nodes, diagrams=d.diagrams;
+  const tables=nodes.reduce((a,x)=>a+x.tables.length,0), follow=nodes.filter(x=>normalizeThreadStatus(x.marker)==='followup').length;
+  el('inbox-preview-sub').textContent=[
+    fromMe?'From your AI assistant':'From '+(n.fromDisplayName||n.fromEmail||'someone'),
+    countLabel(nodes.length,'row'),
+    tables&&countLabel(tables,'table'),
+    diagrams.length&&countLabel(diagrams.length,'diagram'),
+    follow&&countLabel(follow,'follow-up'),
+    fromMe?'Draft':(d.docStatus?docStatusLabel(d.docStatus):'')
+  ].filter(Boolean).join(' · ');
+  body.innerHTML='';
+  const list=document.createElement('div'); list.className='history-preview-rows';
+  const note=text=>{ const e=document.createElement('div'); e.className='history-empty'; e.textContent=text; list.appendChild(e); };
+  if(!nodes.length)note('This document is empty.');
+  nodes.slice(0,INBOX_PREVIEW_ROWS).forEach(x=>{
+    const line=document.createElement('div'); line.className='history-preview-row'+(x.styles.heading?' inbox-preview-heading':'');
+    line.style.paddingLeft=(6+Math.min(x.depth,8)*16)+'px';
+    line.textContent=(x.isCheckbox?(x.checked?'☑ ':'☐ '):'')+(x.text.trim()||'(empty row)');
+    const extras=[nodeMarkerLabel(normalizeThreadStatus(x.marker)),versionRowExtras(x,diagrams)].filter(Boolean).join(' · ');
+    if(extras){ const e=document.createElement('span'); e.className='history-row-extras'; e.textContent=extras; line.appendChild(e); }
+    list.appendChild(line);
+  });
+  if(nodes.length>INBOX_PREVIEW_ROWS)note('…and '+(nodes.length-INBOX_PREVIEW_ROWS)+' more rows');
+  body.appendChild(list);
+  setInboxPreviewBusy(false);
+  overlay.classList.add('open');
+  setTimeout(()=>el('inbox-preview-add')?.focus(),30);
+}
+function setInboxPreviewBusy(on){ INBOX_PREVIEW_BUTTONS.forEach(id=>{ const b=el(id); if(b)b.disabled=on; }); }
+function closeInboxCopyPreview(){ el('inbox-preview-overlay')?.classList.remove('open'); _inboxPreview=null; }
+el('inbox-preview-close-x')?.addEventListener('click',closeInboxCopyPreview);
+el('inbox-preview-overlay')?.addEventListener('keydown',e=>{ if(e.key==='Escape'){ e.stopPropagation(); closeInboxCopyPreview(); } });
+onOverlayBackdropClick(el('inbox-preview-overlay'),closeInboxCopyPreview);
+el('inbox-preview-add')?.addEventListener('click',async()=>{
+  const p=_inboxPreview; if(!p)return;
+  setInboxPreviewBusy(true);
+  await addSentCopyToMyDocs(p.n,p); // says why when it can't (already added elsewhere, offline)
+  setInboxPreviewBusy(false);
+  if(p.n.addedDocId||_inboxPreview!==p)closeInboxCopyPreview(); // added: done; failed: stay, so Add can be tried again
+});
+el('inbox-preview-decline')?.addEventListener('click',()=>{ const p=_inboxPreview; closeInboxCopyPreview(); if(p)declineInboxCopy(p.n); });
+// Decline with Undo (owner 2026-11-25, Sakura's rule: anything that can't be brought back offers
+// Undo). A colleague's copy can't be re-created once deleted (only its sender may create it), so
+// Decline hides it at once and deletes it when the Undo window closes; if the page closes first,
+// it simply comes back.
+var _decliningCopies=new Set(); // var: renderNotifList can run before this line (start-up)
+var DECLINE_UNDO_MS=6000;
+function declineInboxCopy(n){
+  if(!n||!n.id||_decliningCopies.has(n.id))return;
+  _decliningCopies.add(n.id);
+  renderNotifList();
+  let undone=false;
+  const timer=setTimeout(()=>{ if(undone)return; deleteNotification(n.id).finally(()=>{ _decliningCopies.delete(n.id); renderNotifList(); }); },DECLINE_UNDO_MS);
+  showActionToast('Declined \u201c'+(n.docTitle||'a document')+'\u201d','Undo',()=>{ undone=true; clearTimeout(timer); _decliningCopies.delete(n.id); renderNotifList(); },DECLINE_UNDO_MS);
+}
+// Drafts from your AI assistant that you never added are removed after 30 days (owner 2026-11-25),
+// as long as versions are kept; a colleague's copy waits until you decide.
+var ASSISTANT_DRAFT_KEEP_MS=30*24*60*60*1000;
+var _expiringDrafts=new Set();
+function sweepExpiredAssistantDrafts(){
+  const now=Date.now();
+  for(const n of notifItems){
+    if(!isAssistantCopy(n)||n.addedDocId||_expiringDrafts.has(n.id))continue;
+    if(now-(Number(n.createdAt)||now)<ASSISTANT_DRAFT_KEEP_MS)continue;
+    _expiringDrafts.add(n.id);
+    deleteNotification(n.id).finally(()=>_expiringDrafts.delete(n.id));
+  }
+}
 // Recipient side: a doc_copy notification's docId is the id of the copy in copies/{uid}/items.
-async function addSentCopyToMyDocs(n){
-  if(!currentUser)return;
+// One document per inbox item, whatever happens (owner 2026-11-25: "should not end up in duplicate"):
+// its id comes from the inbox item's id (docIdForCopy), so Add twice, or on two devices at once,
+// lands on the same document (sync then sees one document, not two), and a second Add while one
+// runs does nothing. `prepared` is what the preview already read and cleaned ({d, fromMe}).
+const _copyAdding=new Set();
+async function addSentCopyToMyDocs(n,prepared){
+  if(!currentUser||!n||!n.docId||_copyAdding.has(n.docId))return;
+  _copyAdding.add(n.docId);
   try{
     const {mod,db}=await loadFirestoreMods();
     const ref=mod.doc(db,'copies',currentUser.uid,'items',n.docId);
+    const markAdded=async id=>{
+      // The notification stays as "Added … to your documents" with Open, rather than vanishing.
+      n.addedDocId=id; n.read=true;
+      await Promise.all([
+        mod.deleteDoc(ref).catch(e=>console.warn('[sakura] could not remove the sent copy after adding it:',e)),
+        n.id?mod.updateDoc(mod.doc(db,'notifications',currentUser.uid,'items',n.id),{addedDocId:id,read:true}).catch(e=>console.warn('[sakura] could not mark the sent copy as added:',e)):null
+      ]);
+      renderSidebar(); renderNotifList();
+    };
+    const newId=docIdForCopy(n.docId);
+    // Already added (here, or on another device and synced): never a second copy.
+    if(loadDocsIndex().some(x=>x.id===newId)){ await markAdded(newId); showToast('Already in your documents'); return; }
+    // The copy must still be in the inbox, even when the preview already read it.
     const snap=await mod.getDoc(ref);
     if(!snap.exists()){ showToast('This copy was already added or is no longer available'); return; }
-    const d=JSON.parse(snap.data().doc||'{}');
-    const newId=genDocId();
+    const data=snap.data();
+    const d=prepared?prepared.d:cleanReceivedCopy(JSON.parse(data.doc||'{}'),copyCleaners());
+    // A draft from your own AI assistant (sent with your own account: no one else can) starts as Draft.
+    if(prepared?prepared.fromMe:isFromMe(data.fromUid))d.docStatus='draft';
     const diagrams=[];
-    for(const dg of (Array.isArray(d.diagrams)?d.diagrams:[])){
+    for(const dg of d.diagrams){
       const {xml,...meta}=dg;
-      try{ await idbSet('diagblob:'+newId+':'+dg.id,{xml:xml||'',previewSvg:'',pageSvgs:[]}); }catch(e){}
-      diagrams.push({...meta,xml:xml||'',blobSynced:false}); // inline xml stays until saveToStorage confirms the blob
+      try{ await idbSet('diagblob:'+newId+':'+dg.id,{xml,previewSvg:'',pageSvgs:[]}); }catch(e){}
+      diagrams.push({...meta,xml,blobSynced:false}); // inline xml stays until saveToStorage confirms the blob
     }
     const title=(d.title||n.docTitle||'Untitled').trim()||'Untitled';
+    // Stored whole or not at all: a full device leaves nothing half-written, and the inbox keeps it.
     localStorage.setItem(docKey(newId),JSON.stringify({...d,title,diagrams}));
     touchDocIndex(newId,title);
-    try{ await mod.deleteDoc(ref); }catch(e){ console.warn('[sakura] could not remove the sent copy after adding it:',e); }
-    // The notification stays as "Added … to your documents" with Open, rather than vanishing.
-    n.addedDocId=newId; n.read=true;
-    if(n.id)try{ await mod.updateDoc(mod.doc(db,'notifications',currentUser.uid,'items',n.id),{addedDocId:newId,read:true}); }catch(e){ console.warn('[sakura] could not mark the sent copy as added:',e); }
-    renderSidebar(); renderNotifList();
+    await markAdded(newId);
     showToast('Added to your documents');
   }catch(e){ console.warn('[sakura] addSentCopyToMyDocs failed:',e); showToast('Could not add this copy — try again'); }
+  finally{ _copyAdding.delete(n.docId); }
 }
 
 // Share is how a document leaves Sakura (PDF, Export, a copy to someone), so it is always there.
@@ -18488,7 +18697,8 @@ document.addEventListener('keydown',e=>{ if(e.key==='Escape'&&isNotifMenuOpen())
 function renderNotifList(){
   const list=el('notif-list'); if(!list)return;
   list.innerHTML='';
-  const items=combinedNotifItems();
+  if(typeof _expiringDrafts!=='undefined')sweepExpiredAssistantDrafts();
+  const items=combinedNotifItems().filter(n=>typeof _decliningCopies==='undefined'||!_decliningCopies.has(n.id));
   const clearBtn=el('notif-clear-all-btn'); if(clearBtn)clearBtn.style.display=items.length?'':'none';
   if(!items.length){
     const empty=document.createElement('div'); empty.className='notif-empty'; empty.textContent="You're all caught up";
@@ -18507,13 +18717,16 @@ function renderNotifList(){
     const isCopy=n.type==='doc_copy'&&n.docId;
     if(isCopy){
       item.classList.add('notif-copy');
-      const title=n.docTitle||'a document', from=n.fromDisplayName||n.fromEmail||'Someone';
+      const fromAssistant=isAssistantCopy(n);
+      if(fromAssistant)item.classList.add('notif-from-assistant');
+      const title=n.docTitle||'a document', from=fromAssistant?'Your AI assistant':(n.fromDisplayName||n.fromEmail||'Someone');
       text.textContent='';
       const strong=document.createElement('span'); strong.className='notif-copy-title'; strong.textContent=title;
       if(n.addedDocId)text.append('Added ',strong,' to your documents');
+      else if(fromAssistant)text.append('Your AI assistant sent you a draft: ',strong);
       else text.append(from+' sent you a copy of ',strong);
       const ago=formatRelativeTime(n.createdAt||Date.now());
-      meta.textContent=n.addedDocId?('From '+from+' \u00B7 '+ago):('Not in your documents until you add it \u00B7 '+ago);
+      meta.textContent=n.addedDocId?('From '+from+' \u00B7 '+ago):((fromAssistant?'Draft \u00B7 not in your documents until you add it':'Not in your documents until you add it')+' \u00B7 '+ago);
       const actions=document.createElement('div'); actions.className='notif-copy-actions';
       const btn=(label,primary,fn)=>{ const b=document.createElement('button'); b.type='button'; b.className='notif-copy-btn'+(primary?' primary':''); b.textContent=label; b.addEventListener('click',e=>{ e.stopPropagation(); fn(b); }); actions.appendChild(b); return b; };
       if(n.addedDocId){
@@ -18522,8 +18735,9 @@ function renderNotifList(){
           toggleNotifMenu(false); switchDoc(n.addedDocId);
         });
       }else{
-        btn('Add to my documents',true,async b=>{ actions.querySelectorAll('button').forEach(x=>x.disabled=true); b.textContent='Adding\u2026'; await addSentCopyToMyDocs(n); if(!n.addedDocId)renderNotifList(); });
-        btn('Decline',false,()=>deleteNotification(n.id));
+        // Every inbox document is previewed before it can be added (owner 2026-11-25), whoever sent it.
+        btn('Preview',true,()=>{ toggleNotifMenu(false); openInboxCopyPreview(n); });
+        btn('Decline',false,()=>declineInboxCopy(n));
       }
       body.appendChild(actions);
     }
@@ -18873,7 +19087,7 @@ async function refreshMcpConnections(){
     const row=document.createElement('div'); row.className='settings-list-row';
     const text=document.createElement('div'); text.className='settings-row-text';
     const name=document.createElement('span'); name.className='settings-switch-text'; name.textContent=String(c.name||'AI assistant');
-    const when=document.createElement('span'); when.className='settings-row-desc'; when.textContent='Connected '+new Date(Number(c.connectedAt)||Date.now()).toLocaleDateString(undefined,{day:'numeric',month:'short',year:'numeric'})+' \u00b7 can read your documents';
+    const when=document.createElement('span'); when.className='settings-row-desc'; when.textContent='Connected '+new Date(Number(c.connectedAt)||Date.now()).toLocaleDateString(undefined,{day:'numeric',month:'short',year:'numeric'})+' \u00b7 can read your documents'+(c.canSend?' and send drafts to your inbox':'');
     text.append(name,when);
     const btn=document.createElement('button'); btn.type='button'; btn.className='btn'; btn.textContent='Disconnect';
     btn.addEventListener('click',()=>disconnectMcpConnection(c.id,String(c.name||'AI assistant'),btn));

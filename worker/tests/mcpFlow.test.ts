@@ -138,10 +138,15 @@ describe('MCP connection flow', () => {
     expect(init.result.protocolVersion).toBe('2025-06-18');
     expect((await rpc({ jsonrpc: '2.0', method: 'notifications/initialized' })).status).toBe(202);
     const tools = (await (await rpc({ jsonrpc: '2.0', id: 2, method: 'tools/list' })).json()) as { result: { tools: Array<{ name: string }> } };
+    // Connected read-only (no "send drafts" ticked): send_document isn't offered.
     expect(tools.result.tools.map((t) => t.name)).toEqual(['list_documents', 'get_document', 'search', 'open_items', 'current_document', 'what_changed', 'todos']);
     const listed = (await (await rpc({ jsonrpc: '2.0', id: 3, method: 'tools/call', params: { name: 'list_documents', arguments: {} } })).json()) as { result: { content: Array<{ text: string }>; isError: boolean } };
     expect(listed.result.isError).toBe(false);
     expect(JSON.parse(listed.result.content[0].text)[0]).toMatchObject({ id: 'd1', title: 'Plan' });
+    // Connected without "send new drafts": the token has no inbox:write, so sending is refused with how to allow it.
+    const sent = (await (await rpc({ jsonrpc: '2.0', id: 4, method: 'tools/call', params: { name: 'send_document', arguments: { title: 'x', markdown: '- a' } } })).json()) as { result: { content: Array<{ text: string }>; isError: boolean } };
+    expect(sent.result.isError).toBe(true);
+    expect(sent.result.content[0].text).toMatch(/can only read/);
   });
 
   it('Settings lists the connection, and Disconnect ends it at once', async () => {

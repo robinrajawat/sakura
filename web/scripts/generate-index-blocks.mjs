@@ -412,6 +412,14 @@ initAiProvidersState({
     footer: ''
   },
   {
+    // A document arriving in the inbox (Send a copy, an AI assistant's draft): cleaned and repaired
+    // before it can become a document; one document id per inbox item (owner 2026-11-25).
+    name: 'receivedCopy',
+    sourceFile: 'src/utils/receivedCopy.ts',
+    testFile: 'tests/unit/receivedCopy.test.ts',
+    footer: ''
+  },
+  {
     // Markdown import (owner 2026-11-19, docs/markdown-plan.md): pure parser. importMarkdownText in
     // index.html turns its rows into nodes and sanitizes every note and table, like OPML.
     name: 'markdownImport',

@@ -50,6 +50,16 @@ test('signed in: shows who asks and where access goes; Allow sends the sign-in t
   expect(body.get('decision')).toBe('allow');
   expect(body.get('idToken')).toBe('id-1');
   expect(body.get('refreshToken')).toBe('refresh-1');
+  expect(body.get('send')).toBe('1'); // "send new drafts to your inbox" is ticked by default
+});
+
+test('unticking "send new drafts" connects it read-only', async ({ page }) => {
+  const posts = await open(page, true, request);
+  await expect(page.locator('#send-input')).toBeChecked();
+  await page.uncheck('#send-input');
+  await page.click('#allow-btn');
+  await expect(page.locator('#done')).toBeVisible();
+  expect(new URLSearchParams(posts[0]).get('send')).toBe('');
 });
 
 test('Don\'t allow sends no sign-in', async ({ page }) => {

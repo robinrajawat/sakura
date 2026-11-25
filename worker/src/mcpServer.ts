@@ -8,7 +8,8 @@
 
 import { toolListDocuments, toolGetDocument, toolSearch } from './mcpNotes';
 import { toolOpenItems, toolCurrentDocument, toolWhatChanged, toolTodos } from './mcpMore';
-import type { FirestoreReader } from './firestoreRest';
+import type { FirestoreReader, FirestoreWriter } from './firestoreRest';
+import { toolSendDocument, INBOX_SCOPE } from './mcpSend';
 import { SignInExpiredError } from './firestoreRest';
 
 export const SUPPORTED_PROTOCOL_VERSIONS = ['2026-07-28', '2025-11-25', '2025-06-18', '2025-03-26'];
@@ -64,6 +65,23 @@ export const TOOLS = [
     description: 'The person\'s Sakura To-Do list in its sections (Pinned, Today, Upcoming, Anytime, Waiting), with due dates, repeats, subtasks and who each task is waiting for. Done tasks only when asked.',
     inputSchema: { type: 'object', properties: { include_done: { type: 'boolean', description: 'Also list done tasks.' } }, additionalProperties: false },
     annotations: READ_ONLY
+  },
+  {
+    name: 'send_document',
+    title: 'Send a new draft to Sakura',
+    description: 'Creates a NEW Sakura document from Markdown and puts it in the person\'s Sakura inbox as a draft. It never changes an existing document: the person previews it in Sakura and decides to Add or Decline it, and it starts with status Draft. Use # headings and - list items (nesting = outline depth), a paragraph after a blank line, indented under an item, becomes its note, Markdown tables become tables, "- [ ]" a checkbox. Put [follow-up], [agreed] or [out of scope] in a list item to set its status. Optional draw.io diagrams (XML) are placed under the row whose words contain "under". To revise a draft still waiting in the inbox, pass its id as "replaces". Needs the person\'s permission to send drafts (asked when connecting).',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        title: { type: 'string', description: 'The document\'s title.' },
+        markdown: { type: 'string', description: 'The content as Markdown (see the description for how it maps to Sakura).' },
+        diagrams: { type: 'array', description: 'Optional draw.io diagrams.', items: { type: 'object', properties: { title: { type: 'string' }, xml: { type: 'string', description: 'draw.io XML (<mxfile> or <mxGraphModel>), at most 200 KB.' }, under: { type: 'string', description: 'Words of the row it belongs under.' } }, required: ['xml'] } },
+        replaces: { type: 'string', description: 'Optional: the id of a draft sent before and still waiting in the inbox; this one replaces it.' }
+      },
+      required: ['title', 'markdown'],
+      additionalProperties: false
+    },
+    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false }
   }
 ];
 
@@ -79,12 +97,13 @@ const SERVER_INFO = {
   websiteUrl: 'https://www.sakura-notes.com',
   icons: [{ src: SERVER_ICON, mimeType: 'image/png', sizes: ['512x512'] }]
 };
-const INSTRUCTIONS = [
-  'Read-only access to one person\'s Sakura Notes: outlines of their own thinking (designs, analyses, decisions). Use search to find where something was worked out, then get_document to read it. Nothing can be changed through this server.',
-  'The person keeps editing their documents in Sakura while you talk. Before answering about a document\'s content, read it again with get_document; an earlier read may be out of date.',
-  'When they say "this document" or "what I am working on" without naming one, use current_document. For a long document, read one part with get_document and section.',
-  'If the person just mentions Sakura or asks what you can do with it, list their five most recently changed documents (list_documents) and offer to: work on one of them with them, summarise it, find what is still open (open_items), say what changed lately (what_changed), go through their To-Dos (todos), or search across their notes. Keep the offer short.'
-].join(' ');
+// What every connection is told; the parts about sending drafts only when it may (scope inbox:write).
+const ABOUT = 'Access to one person\'s Sakura Notes: outlines of their own thinking (designs, analyses, decisions). Use search to find where something was worked out, then get_document to read it. Existing documents can never be changed through this server.';
+const ABOUT_SENDING = 'With the person\'s permission, send_document puts a NEW draft in their Sakura inbox for them to review and add. When they give you material (notes, an email, requirements) and want it in Sakura, structure it as an outline and use send_document; tell them it is waiting in their Sakura inbox. To refine it before they add it, send it again with replaces.';
+const FRESH = 'The person keeps editing their documents in Sakura while you talk. Before answering about a document\'s content, read it again with get_document; an earlier read may be out of date. When they say "this document" or "what I am working on" without naming one, use current_document. For a long document, read one part with get_document and section.';
+const offer = (canSend: boolean) => 'If the person just mentions Sakura or asks what you can do with it, list their five most recently changed documents (list_documents) and offer to: work on one of them with them, summarise it, find what is still open (open_items), say what changed lately (what_changed), go through their To-Dos (todos), ' + (canSend ? 'search across their notes, or turn something they paste into a new Sakura draft (send_document).' : 'or search across their notes.') + ' Keep the offer short.';
+const INSTRUCTIONS = [ABOUT, ABOUT_SENDING, FRESH, offer(true)].join(' ');
+const READ_ONLY_INSTRUCTIONS = [ABOUT, FRESH, offer(false)].join(' ');
 
 /** Ready-made starters (MCP prompts): assistants that support them list them under the connector, so
  * nobody has to remember wording (owner 2026-11-25). */
@@ -132,7 +151,9 @@ export function allowCall(uid: string, now = Date.now()): boolean {
   return true;
 }
 
-async function callTool(name: string, args: Json, uid: string, db: FirestoreReader): Promise<{ text: string; isError: boolean }> {
+interface McpExtras { write?: FirestoreWriter; scopes?: string[] }
+
+async function callTool(name: string, args: Json, uid: string, db: FirestoreReader, extras: McpExtras = {}): Promise<{ text: string; isError: boolean }> {
   try {
     if (!allowCall(uid)) return { text: 'Too many requests; try again in a minute.', isError: true };
     if (name === 'list_documents') return { text: await toolListDocuments(db, uid), isError: false };
@@ -141,6 +162,10 @@ async function callTool(name: string, args: Json, uid: string, db: FirestoreRead
     if (name === 'current_document') return { text: await toolCurrentDocument(db, uid), isError: false };
     if (name === 'what_changed') return { text: await toolWhatChanged(db, uid, String(args.id ?? ''), String(args.since ?? '')), isError: false };
     if (name === 'todos') return { text: await toolTodos(db, uid, args.include_done === true), isError: false };
+    if (name === 'send_document') {
+      if (!extras.write) return { text: 'Sending drafts isn\'t available here.', isError: true };
+      return await toolSendDocument(db, extras.write, uid, args, extras.scopes || []);
+    }
     if (name === 'search') return { text: await toolSearch(db, uid, String(args.query ?? '')), isError: false };
     return { text: 'Unknown tool: ' + name, isError: true };
   } catch (e) {
@@ -150,7 +175,7 @@ async function callTool(name: string, args: Json, uid: string, db: FirestoreRead
   }
 }
 
-async function handleMessage(msg: unknown, uid: string, db: FirestoreReader): Promise<Json | null> {
+async function handleMessage(msg: unknown, uid: string, db: FirestoreReader, extras: McpExtras = {}): Promise<Json | null> {
   if (!msg || typeof msg !== 'object' || (msg as Json).jsonrpc !== '2.0') return rpcError(null, -32600, 'Invalid request');
   const m = msg as Json;
   const isNotification = !('id' in m);
@@ -159,14 +184,17 @@ async function handleMessage(msg: unknown, uid: string, db: FirestoreReader): Pr
   if (isNotification) return null;
   switch (method) {
     case 'initialize': {
+      const canSend = (extras.scopes || []).includes(INBOX_SCOPE);
       const asked = String(params.protocolVersion || '');
       const protocolVersion = SUPPORTED_PROTOCOL_VERSIONS.includes(asked) ? asked : SUPPORTED_PROTOCOL_VERSIONS[2];
-      return rpcResult(m.id, { protocolVersion, capabilities: { tools: { listChanged: false }, prompts: { listChanged: false } }, serverInfo: SERVER_INFO, instructions: INSTRUCTIONS });
+      return rpcResult(m.id, { protocolVersion, capabilities: { tools: { listChanged: false }, prompts: { listChanged: false } }, serverInfo: SERVER_INFO, instructions: canSend ? INSTRUCTIONS : READ_ONLY_INSTRUCTIONS });
     }
     case 'ping':
       return rpcResult(m.id, {});
     case 'tools/list':
-      return rpcResult(m.id, { tools: TOOLS });
+      // A connection without permission to send drafts isn't offered send_document at all (calling it
+      // anyway still says how to allow it).
+      return rpcResult(m.id, { tools: (extras.scopes || []).includes(INBOX_SCOPE) ? TOOLS : TOOLS.filter((t) => t.name !== 'send_document') });
     case 'prompts/list':
       return rpcResult(m.id, { prompts: PROMPTS });
     case 'prompts/get': {
@@ -181,7 +209,7 @@ async function handleMessage(msg: unknown, uid: string, db: FirestoreReader): Pr
       const name = String(params.name || '');
       if (!TOOLS.some((t) => t.name === name)) return rpcError(m.id, -32602, 'Unknown tool: ' + name);
       const args = (params.arguments && typeof params.arguments === 'object' ? params.arguments : {}) as Json;
-      const r = await callTool(name, args, uid, db);
+      const r = await callTool(name, args, uid, db, extras);
       return rpcResult(m.id, { content: [{ type: 'text', text: r.text }], isError: r.isError });
     }
     default:
@@ -190,7 +218,7 @@ async function handleMessage(msg: unknown, uid: string, db: FirestoreReader): Pr
 }
 
 /** POST /mcp. `db` reads as the connection's person; `uid` is theirs. */
-export async function handleMcpRequest(request: Request, uid: string, db: FirestoreReader): Promise<Response> {
+export async function handleMcpRequest(request: Request, uid: string, db: FirestoreReader, extras: McpExtras = {}): Promise<Response> {
   if (request.method !== 'POST') return new Response('Method not allowed', { status: 405, headers: { Allow: 'POST' } });
   let body: unknown;
   try {
@@ -199,9 +227,9 @@ export async function handleMcpRequest(request: Request, uid: string, db: Firest
     return Response.json(rpcError(null, -32700, 'Parse error'), { status: 400 });
   }
   if (Array.isArray(body)) {
-    const out = (await Promise.all(body.map((b) => handleMessage(b, uid, db)))).filter(Boolean);
+    const out = (await Promise.all(body.map((b) => handleMessage(b, uid, db, extras)))).filter(Boolean);
     return out.length ? Response.json(out) : new Response(null, { status: 202 });
   }
-  const out = await handleMessage(body, uid, db);
+  const out = await handleMessage(body, uid, db, extras);
   return out ? Response.json(out) : new Response(null, { status: 202 });
 }

@@ -52,6 +52,11 @@ describe('prompts and guidance', () => {
     const init = (await (await handleMcpRequest(post({ jsonrpc: '2.0', id: 1, method: 'initialize', params: { protocolVersion: '2025-06-18' } }), 'u', db)).json()) as { result: { capabilities: { prompts?: unknown }; instructions: string } };
     expect(init.result.capabilities.prompts).toBeTruthy();
     expect(init.result.instructions).toMatch(/read it again with get_document/);
+    expect(init.result.instructions).not.toMatch(/send_document/); // read-only by default
+    const sending = (await (await handleMcpRequest(post({ jsonrpc: '2.0', id: 5, method: 'initialize', params: { protocolVersion: '2025-06-18' } }), 'u', db, { scopes: ['notes:read', 'inbox:write'] })).json()) as { result: { instructions: string } };
+    expect(sending.result.instructions).toMatch(/send_document puts a NEW draft/);
+    const tools = (await (await handleMcpRequest(post({ jsonrpc: '2.0', id: 6, method: 'tools/list' }), 'u', db, { scopes: ['notes:read', 'inbox:write'] })).json()) as { result: { tools: Array<{ name: string }> } };
+    expect(tools.result.tools.map((t) => t.name)).toContain('send_document');
     const list = (await (await handleMcpRequest(post({ jsonrpc: '2.0', id: 2, method: 'prompts/list' }), 'u', db)).json()) as { result: { prompts: Array<{ name: string }> } };
     expect(list.result.prompts.map((p) => p.name)).toEqual(PROMPTS.map((p) => p.name));
     const got = (await (await handleMcpRequest(post({ jsonrpc: '2.0', id: 3, method: 'prompts/get', params: { name: 'work_on_document', arguments: { document: 'System landscape' } } }), 'u', db)).json()) as { result: { messages: Array<{ role: string; content: { text: string } }> } };
