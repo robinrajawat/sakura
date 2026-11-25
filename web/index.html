@@ -19035,7 +19035,7 @@ function docSaveState(){
   }
   if(navigator.onLine===false)return 'offline';
   if(_syncLastStatus==='error')return 'error';
-  if(_syncInFlightKeys.has('doc:'+currentDocId)||_syncPushQueue.has('doc:'+currentDocId))return 'saving';
+  if(_syncInFlightKeys.has('doc:'+currentDocId)||_syncPushQueue.has('doc:'+currentDocId)||(typeof _docConflictWaitsForTyping!=='undefined'&&_docConflictWaitsForTyping.has(currentDocId)))return 'saving';
   return 'saved';
 }
 function renderDocSaveState(){
@@ -19442,7 +19442,27 @@ async function applyIncomingToOpenDocNow(mod,db,ownerUid,id,cloud){
   }catch(e){ console.warn('[sakura] could not apply the other device\'s changes live:',e); return false; }
 }
 const _conflictNotKeptToastShown=new Set();
+// Documents whose push met another device's copy while you were typing in them. Settling it ends
+// the edit and redraws the page, which closed the iPhone keyboard mid-sentence once rows saved as
+// you type (owner 2026-11-25), so it waits until you stop, like another device's changes do
+// (applyIncomingToOpenDoc). Your text is safe meanwhile: it's in this device's stored copy.
+var _docConflictWaitsForTyping=new Set();
+let _docConflictWaitTimer=null;
+function waitForTypingThenSync(docId){
+  _docConflictWaitsForTyping.add(docId);
+  renderDocSaveState();
+  if(_docConflictWaitTimer)return;
+  _docConflictWaitTimer=setInterval(()=>{
+    for(const id of [..._docConflictWaitsForTyping]){
+      if(id===currentDocId&&typingInOpenDoc())continue;
+      _docConflictWaitsForTyping.delete(id);
+      queueSync('doc',id); // pushes again; the clash is settled now, with nothing being typed
+    }
+    if(!_docConflictWaitsForTyping.size){ clearInterval(_docConflictWaitTimer); _docConflictWaitTimer=null; }
+  },1000);
+}
 async function resolveDocPushConflict(mod,db,ownerUid,docId,cloud){
+  if(docId===currentDocId&&activeTabDocId===docId&&typingInOpenDoc()){ waitForTypingThenSync(docId); return; }
   let kept=true, _mineForThreadMerge=null, merged=null, theirs=null;
   try{
     const open=docId===currentDocId&&activeTabDocId===docId;
@@ -19503,6 +19523,7 @@ const _ownPushTs={};
 function noteOwnPush(key,ts){ const a=_ownPushTs[key]||(_ownPushTs[key]=[]); a.push(ts); if(a.length>20)a.shift(); }
 function isOwnPush(key,ts){ const a=_ownPushTs[key]; return !!a&&a.includes(Number(ts)); }
 async function pushDocToCloud(mod,db,docId){
+  if(_docConflictWaitsForTyping.has(docId)&&docId===currentDocId&&typingInOpenDoc())return; // still typing: waitForTypingThenSync sends it after
   const raw=(_docUnstoredPayload&&_docUnstoredPayload.get(docId))??localStorage.getItem(docKey(docId)); if(raw===null||raw===undefined)return;
   let data; try{data=JSON.parse(raw)}catch(e){return}
   const ts=Date.now(); _lastPushedTs['doc:'+docId]=ts; noteOwnPush('doc:'+docId,ts);
