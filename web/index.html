@@ -3661,9 +3661,9 @@ html.calm-layout #sb-auto-rewrite-chip.is-quiet:hover,html.calm-layout #sb-auto-
   html.phone-editing #editor-pane { padding-bottom: 56px; }
   /* Hover tooltips: a tap would leave one stuck. */
   #node-timestamp-tip { display: none !important; }
-  /* Sidebar folders: a finger-sized row, and the whole row is the target (owner 2026-11-25, iPhone:
+  /* Sidebar folders and documents: a finger-sized row (44pt, Apple's minimum), and the whole row is the target (owner 2026-11-25, iPhone:
      closing one folder closed another). */
-  .sfolder-row { min-height: 40px; }
+  .sfolder-row, .sdoc-item { min-height: 44px; }
   .sfolder-toggle { padding: 11px 6px 11px 10px; }
 }
 /* GENERATED:css-touch:END */
@@ -3704,10 +3704,14 @@ html.calm-layout #sb-auto-rewrite-chip.is-quiet:hover,html.calm-layout #sb-auto-
     position: fixed; left: 52px; top: 0; bottom: 0; height: 100dvh; z-index: 1200;
     width: min(320px, calc(100vw - 52px - 56px)) !important; flex-basis: auto !important;
     opacity: 1; pointer-events: auto;
-    transform: translateX(calc(-100% - 52px)); transition: transform .2s cubic-bezier(.22,.8,.34,1);
+    transform: translateX(calc(-100% - 52px)); transition: transform .2s cubic-bezier(.22,.8,.34,1), visibility 0s .2s;
+    /* Closed, it is hidden once it has slid away, not only moved off-screen: iPhone Safari tints its
+       bars from fixed panels at the screen's edges and kept the open drawer's darker colour after it
+       closed (owner 2026-11-25: "the editor gets a sharp top edge"). Also off-limits to VoiceOver and Tab. */
+    visibility: hidden;
   }
   html.phone.phone-drawer-open #appbar { left: 0; }
-  html.phone.phone-drawer-open #sidebar { transform: none; box-shadow: 8px 0 24px rgba(0,0,0,.12); }
+  html.phone.phone-drawer-open #sidebar { transform: none; box-shadow: 8px 0 24px rgba(0,0,0,.12); visibility: visible; transition: transform .2s cubic-bezier(.22,.8,.34,1), visibility 0s; }
   html.phone #phone-drawer-backdrop { position: fixed; inset: 0; z-index: 1199; background: rgba(0,0,0,.28); }
   html.phone #sidebar-resize-handle { display: none; }
   html.phone body:has(#todos-panel.open) #app-layout, html.phone body:has(.help-panel.open) #app-layout { margin: 0; }
@@ -4488,7 +4492,7 @@ html.calm-layout #sb-auto-rewrite-chip.is-quiet:hover,html.calm-layout #sb-auto-
 <h4>Documents and folders</h4>
 <ul>
 <li>New document, New folder or Import (.md, .opml): the File Explorer's + button (+ then Enter makes a document), or for a document <span class="help-kbd">Ctrl/Cmd</span> + <span class="help-kbd">Alt</span> + <span class="help-kbd">N</span></li>
-<li>Right-click a document or folder to rename, duplicate, move, share or delete it. Drag documents and folders to file and order them</li>
+<li>Click or tap a folder to open or close it. Right-click a document or folder to rename, duplicate, move, share or delete it. Drag documents and folders to file and order them</li>
 <li>Deleted documents go to Trash at the bottom of the File Explorer, kept for 7 days by default (Settings → Documents)</li>
 </ul>
 </div>
@@ -4553,7 +4557,7 @@ html.calm-layout #sb-auto-rewrite-chip.is-quiet:hover,html.calm-layout #sb-auto-
 <li>Ask it to "put this in Sakura" and, if you allowed it when connecting, it sends a new draft to your inbox (the bell): preview it, then Add (it starts as a Draft) or Decline. Drafts you never add are removed after 30 days. Before you add it, ask for changes and it replaces the draft. It never changes your existing documents</li>
 <li>Not sure what to ask? Just say "Sakura": the assistant lists your recent documents and what it can do. In Claude, the Sakura connector also offers ready-made starters: Work on a document, What's still open, Search my notes</li>
 <li>Useful phrases: "Be my assistant for my Sakura document <i>System landscape</i>", "What's still open in <i>…</i>?", "Search my Sakura notes for <i>…</i>". It re-reads a document before answering, so it sees your latest edits</li>
-<li>What it reads goes to that assistant's provider. Settings → Account → AI assistants shows what's connected; Disconnect ends access at once</li>
+<li>What it reads goes to that assistant's provider. Settings → Account → AI assistants shows what's connected and when each last used it, so one you removed in the assistant stands out; Disconnect ends access at once</li>
 </ul>
 </div>
           <div class="help-section" data-cat="app" id="help-section-quick-assist">
@@ -14970,6 +14974,7 @@ function docMenuItems(){
   return items;
 }
 
+var _openTabsRestored=false; // var: renderSidebarDocs can run before this line (startup order)
 function restoreOpenTabsOnStartup(forceActiveId){
   let saved=null; try{ const raw=localStorage.getItem(OPEN_TABS_KEY); saved=raw?JSON.parse(raw):null }catch(e){}
   const validIds=new Set(loadActiveDocsIndex().map(d=>d.id));
@@ -15009,7 +15014,9 @@ function restoreOpenTabsOnStartup(forceActiveId){
   const tab=findOpenTab(activeId)||openTabs[0];
   if(tab){ applyTabSnapshot(tab) }
   else { clearToNoDocumentState() }
+  _openTabsRestored=true;
   renderTabStrip();
+  if(typeof renderSidebar==='function')renderSidebar(); // the list drawn before this had no open document yet
 }
 function createDoc(folderId){
   commitEdit(); saveToStorage();
@@ -15118,6 +15125,7 @@ async function duplicateDoc(id){
     const payload={...d,title:newTitle,docStatus:'',diagrams:newDiagrams};
     localStorage.setItem(docKey(newId),JSON.stringify(payload));
     touchDocIndex(newId,newTitle);
+    queueSync('doc',newId); // to the account at once: opening it doesn't count as an edit (see addSentCopyToMyDocs)
     el('docs-menu')?.classList.remove('open');
     switchDoc(newId);
     showToast('Document duplicated');
@@ -32284,7 +32292,9 @@ function renderSidebarDocs(){
   // shouldn't vanish just because nothing's been filed into it yet.
   // Owner, 2026-10-20: with no document open the editor still shows "Untitled" (typing there
   // creates it), so the sidebar lists it at the top instead of saying "No documents".
-  if(currentDocId==null&&!q){
+  // Not before startup has opened the last document (owner 2026-11-25: an Untitled row flashed at
+  // the top on every reload, until something drew the list again).
+  if(currentDocId==null&&!q&&_openTabsRestored){
     const item=document.createElement('div'); item.className='sdoc-item active sdoc-unsaved'; item.dataset.tip='Not saved yet — type in the editor to create it';
     const t=(el('header-title')?.value||'').trim();
     item.innerHTML='<span class="sdoc-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></span><span class="sdoc-name-btn"></span>';
