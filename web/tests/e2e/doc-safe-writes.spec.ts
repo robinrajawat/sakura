@@ -43,6 +43,10 @@ test.beforeEach(async ({ page }) => {
     // @ts-expect-error
     nodes = [{ id: 1, depth: 0, text: 'Written on this device' }]; nextId = 2; dirty = true; saveToStorage();
   });
+  // A new document puts the caret in its title a moment later. These tests are about copies colliding
+  // with nothing being typed (a clash while typing waits: conflict-waits-for-typing.spec.ts).
+  await page.waitForFunction(() => document.activeElement?.id === 'header-title');
+  await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
 });
 
 const push = (page: import('@playwright/test').Page) =>
