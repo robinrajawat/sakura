@@ -80,6 +80,8 @@ export interface FirestoreReader {
   get(path: string): Promise<Record<string, unknown> | null>;
   /** Every record of a collection, as [id, fields]. Stops after `max`. */
   list(path: string, max: number): Promise<Array<[string, Record<string, unknown>]>>;
+  /** Several records at once (one request), only the named top-level fields; missing ones are left out. */
+  batchGet(paths: string[], fields: string[]): Promise<Array<[string, Record<string, unknown>]>>;
 }
 
 export function firestoreReader(projectId: string, idToken: () => Promise<string>, fetchImpl: FetchLike): FirestoreReader {
@@ -92,6 +94,7 @@ export function firestoreReader(projectId: string, idToken: () => Promise<string
     return (await res.json()) as Record<string, unknown>;
   };
   const enc = (path: string) => path.split('/').map(encodeURIComponent).join('/');
+  const root = `projects/${projectId}/databases/(default)/documents/`;
   return {
     async get(path) {
       const data = await call(base + enc(path));
@@ -109,6 +112,21 @@ export function firestoreReader(projectId: string, idToken: () => Promise<string
         }
         pageToken = typeof data.nextPageToken === 'string' ? data.nextPageToken : '';
       } while (pageToken);
+      return out;
+    },
+    async batchGet(paths, fields) {
+      if (!paths.length) return [];
+      const res = await fetchImpl(base.slice(0, -1) + ':batchGet', {
+        method: 'POST',
+        headers: { Authorization: 'Bearer ' + (await idToken()), 'Content-Type': 'application/json' },
+        body: JSON.stringify({ documents: paths.map((p) => root + p), mask: { fieldPaths: fields } })
+      });
+      if (res.status === 401 || res.status === 403) throw new SignInExpiredError();
+      if (!res.ok) throw new Error('Sakura storage unavailable (' + res.status + ')');
+      const out: Array<[string, Record<string, unknown>]> = [];
+      for (const item of (await res.json()) as Array<{ found?: { name: string; fields?: Record<string, unknown> } }>) {
+        if (item.found) out.push([item.found.name.slice(item.found.name.lastIndexOf('/') + 1), decodeFields(item.found.fields)]);
+      }
       return out;
     }
   };

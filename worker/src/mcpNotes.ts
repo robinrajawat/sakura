@@ -185,20 +185,44 @@ export async function toolGetDocument(db: FirestoreReader, uid: string, id: stri
   return documentToMarkdown(doc);
 }
 
-export async function toolSearch(db: FirestoreReader, uid: string, query: string): Promise<string> {
+/** Search reads documents newest first, a batch at a time, only the fields it needs, and stops at
+ * enough results or a time limit (owner 2026-11-25: "faster search"). Nothing is kept between calls:
+ * Sakura stores no copy of anyone's notes on its server. */
+const SEARCH_BATCH = 20;
+const SEARCH_PARALLEL = 3;
+const SEARCH_ENOUGH = 40;
+export const SEARCH_TIME_LIMIT_MS = 20_000;
+const SEARCH_FIELDS = ['title', 'nodes', 'remarks'];
+
+export async function toolSearch(db: FirestoreReader, uid: string, query: string, now: () => number = Date.now): Promise<string> {
   const q = String(query || '').trim();
   if (!q) return 'Give some words to search for.';
-  const list = await loadDocList(db, uid);
+  const started = now();
+  const list = (await loadDocList(db, uid)).slice(0, MAX_DOCS);
   const byId = new Map(list.map((d) => [d.id, d]));
-  const docs = await db.list(`users/${uid}/docs`, MAX_DOCS);
+  const batches: string[][] = [];
+  for (let i = 0; i < list.length; i += SEARCH_BATCH) batches.push(list.slice(i, i + SEARCH_BATCH).map((d) => d.id));
   const hits: SearchHit[] = [];
-  for (const [id, doc] of docs) {
-    const entry = byId.get(id);
-    if (!entry) continue;
-    const hit = searchDocument(entry, doc, q);
-    if (hit) hits.push(hit);
-  }
+  let searched = 0;
+  let next = 0;
+  const stop = () => hits.length >= SEARCH_ENOUGH || now() - started > SEARCH_TIME_LIMIT_MS;
+  const worker = async () => {
+    while (next < batches.length && !stop()) {
+      const ids = batches[next++];
+      const docs = await db.batchGet(ids.map((id) => `users/${uid}/docs/${id}`), SEARCH_FIELDS);
+      for (const [id, doc] of docs) {
+        const entry = byId.get(id);
+        const hit = entry && searchDocument(entry, doc, q);
+        if (hit) hits.push(hit);
+      }
+      searched += ids.length;
+    }
+  };
+  await Promise.all(Array.from({ length: Math.min(SEARCH_PARALLEL, batches.length) }, worker));
   hits.sort((a, b) => b.matches.length - a.matches.length || b.updated.localeCompare(a.updated));
-  if (!hits.length) return 'Nothing found for "' + q + '".';
-  return JSON.stringify(hits.slice(0, MAX_SEARCH_RESULTS), null, 1);
+  const partial = searched < list.length;
+  const note = partial ? `Searched the ${searched} most recently changed of ${list.length} documents${hits.length >= SEARCH_ENOUGH ? ' (enough matches found)' : ' (time limit)'}; use more specific words to look further.` : '';
+  if (!hits.length) return 'Nothing found for "' + q + '".' + (note ? ' ' + note : '');
+  const body = JSON.stringify(hits.slice(0, MAX_SEARCH_RESULTS), null, 1);
+  return note ? note + '\n' + body : body;
 }

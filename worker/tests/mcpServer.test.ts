@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { handleMcpRequest, allowCall } from '../src/mcpServer';
 import { SignInExpiredError, type FirestoreReader } from '../src/firestoreRest';
 
-const db: FirestoreReader = { async get() { return null; }, async list() { return []; } };
+const db: FirestoreReader = { async get() { return null; }, async list() { return []; }, async batchGet() { return []; } };
 const post = (body: unknown, raw = false) => new Request('https://x/mcp', { method: 'POST', body: raw ? String(body) : JSON.stringify(body) });
 
 describe('mcpServer', () => {
@@ -25,11 +25,11 @@ describe('mcpServer', () => {
     expect(r).toHaveLength(1);
   });
   it('an ended sign-in says how to reconnect; other failures never echo content', async () => {
-    const expired: FirestoreReader = { async get() { throw new SignInExpiredError(); }, async list() { throw new SignInExpiredError(); } };
+    const expired: FirestoreReader = { async get() { throw new SignInExpiredError(); }, async list() { throw new SignInExpiredError(); }, async batchGet() { throw new SignInExpiredError(); } };
     const r = (await (await handleMcpRequest(post({ jsonrpc: '2.0', id: 1, method: 'tools/call', params: { name: 'list_documents', arguments: {} } }), 'u2', expired)).json()) as { result: { isError: boolean; content: Array<{ text: string }> } };
     expect(r.result.isError).toBe(true);
     expect(r.result.content[0].text).toMatch(/connect again/);
-    const broken: FirestoreReader = { async get() { throw new Error('secret row text'); }, async list() { return []; } };
+    const broken: FirestoreReader = { async get() { throw new Error('secret row text'); }, async list() { return []; }, async batchGet() { return []; } };
     const b = (await (await handleMcpRequest(post({ jsonrpc: '2.0', id: 1, method: 'tools/call', params: { name: 'list_documents', arguments: {} } }), 'u3', broken)).json()) as { result: { content: Array<{ text: string }> } };
     expect(b.result.content[0].text).not.toContain('secret');
   });
