@@ -330,7 +330,8 @@ export const mcpApiHandler = {
     const idToken = () => idTokenFor(props.uid, props.refreshToken, env.FIREBASE_API_KEY, fetch);
     const db = firestoreReader(env.FIREBASE_PROJECT_ID, idToken, fetch);
     const scopes = ctx.auth ? ctx.auth.scope : [MCP_SCOPE];
-    return handleMcpRequest(request, props.uid, db, { scopes, write: scopes.includes(INBOX_SCOPE) ? firestoreWriter(env.FIREBASE_PROJECT_ID, idToken, fetch) : undefined });
+    // The writer is only used by send_document, which checks the inbox:write scope before writing.
+    return handleMcpRequest(request, props.uid, db, { scopes, write: firestoreWriter(env.FIREBASE_PROJECT_ID, idToken, fetch) });
   }
 };
 
