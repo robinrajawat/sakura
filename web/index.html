@@ -18251,7 +18251,34 @@ el('inbox-preview-add')?.addEventListener('click',async()=>{
   setInboxPreviewBusy(false);
   if(p.n.addedDocId||_inboxPreview!==p)closeInboxCopyPreview(); // added: done; failed: stay, so Add can be tried again
 });
-el('inbox-preview-decline')?.addEventListener('click',()=>{ const p=_inboxPreview; closeInboxCopyPreview(); if(p)deleteNotification(p.n.id); });
+el('inbox-preview-decline')?.addEventListener('click',()=>{ const p=_inboxPreview; closeInboxCopyPreview(); if(p)declineInboxCopy(p.n); });
+// Decline with Undo (owner 2026-11-25, Sakura's rule: anything that can't be brought back offers
+// Undo). A colleague's copy can't be re-created once deleted (only its sender may create it), so
+// Decline hides it at once and deletes it when the Undo window closes; if the page closes first,
+// it simply comes back.
+var _decliningCopies=new Set(); // var: renderNotifList can run before this line (start-up)
+var DECLINE_UNDO_MS=6000;
+function declineInboxCopy(n){
+  if(!n||!n.id||_decliningCopies.has(n.id))return;
+  _decliningCopies.add(n.id);
+  renderNotifList();
+  let undone=false;
+  const timer=setTimeout(()=>{ if(undone)return; deleteNotification(n.id).finally(()=>{ _decliningCopies.delete(n.id); renderNotifList(); }); },DECLINE_UNDO_MS);
+  showActionToast('Declined \u201c'+(n.docTitle||'a document')+'\u201d','Undo',()=>{ undone=true; clearTimeout(timer); _decliningCopies.delete(n.id); renderNotifList(); },DECLINE_UNDO_MS);
+}
+// Drafts from your AI assistant that you never added are removed after 30 days (owner 2026-11-25),
+// as long as versions are kept; a colleague's copy waits until you decide.
+var ASSISTANT_DRAFT_KEEP_MS=30*24*60*60*1000;
+var _expiringDrafts=new Set();
+function sweepExpiredAssistantDrafts(){
+  const now=Date.now();
+  for(const n of notifItems){
+    if(!isAssistantCopy(n)||n.addedDocId||_expiringDrafts.has(n.id))continue;
+    if(now-(Number(n.createdAt)||now)<ASSISTANT_DRAFT_KEEP_MS)continue;
+    _expiringDrafts.add(n.id);
+    deleteNotification(n.id).finally(()=>_expiringDrafts.delete(n.id));
+  }
+}
 // Recipient side: a doc_copy notification's docId is the id of the copy in copies/{uid}/items.
 // One document per inbox item, whatever happens (owner 2026-11-25: "should not end up in duplicate"):
 // its id comes from the inbox item's id (docIdForCopy), so Add twice, or on two devices at once,
@@ -18670,7 +18697,8 @@ document.addEventListener('keydown',e=>{ if(e.key==='Escape'&&isNotifMenuOpen())
 function renderNotifList(){
   const list=el('notif-list'); if(!list)return;
   list.innerHTML='';
-  const items=combinedNotifItems();
+  if(typeof _expiringDrafts!=='undefined')sweepExpiredAssistantDrafts();
+  const items=combinedNotifItems().filter(n=>typeof _decliningCopies==='undefined'||!_decliningCopies.has(n.id));
   const clearBtn=el('notif-clear-all-btn'); if(clearBtn)clearBtn.style.display=items.length?'':'none';
   if(!items.length){
     const empty=document.createElement('div'); empty.className='notif-empty'; empty.textContent="You're all caught up";
@@ -18709,7 +18737,7 @@ function renderNotifList(){
       }else{
         // Every inbox document is previewed before it can be added (owner 2026-11-25), whoever sent it.
         btn('Preview',true,()=>{ toggleNotifMenu(false); openInboxCopyPreview(n); });
-        btn('Decline',false,()=>deleteNotification(n.id));
+        btn('Decline',false,()=>declineInboxCopy(n));
       }
       body.appendChild(actions);
     }

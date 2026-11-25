@@ -142,7 +142,7 @@ test('the bell shows Preview and Decline for a sent copy; clicking the text adds
   await expect(page.locator('#header-title')).toHaveValue('Plan');
 });
 
-test('Decline deletes the sent copy', async ({ page }) => {
+test('Decline deletes the sent copy once the Undo window has passed', async ({ page }) => {
   const left = await page.evaluate(async () => {
     // @ts-expect-error -- bare globals from index.html
     const store = window.__store as Record<string, Record<string, unknown>>;
@@ -156,9 +156,58 @@ test('Decline deletes the sent copy', async ({ page }) => {
     toggleNotifMenu(true); renderNotifList();
     (document.querySelectorAll('#notif-list .notif-copy-btn')[1] as HTMLElement).click();
     await new Promise((r) => setTimeout(r, 50));
-    return Object.keys(store);
+    const during = Object.keys(store).length; // still there while Undo is offered
+    const hidden = document.querySelectorAll('#notif-list .notif-item').length;
+    // @ts-expect-error -- bare global from index.html
+    await new Promise((r) => setTimeout(r, DECLINE_UNDO_MS + 300));
+    return { during, hidden, after: Object.keys(store) };
   });
-  expect(left).toEqual([]);
+  expect(left.during).toBe(2);
+  expect(left.hidden).toBe(0);
+  expect(left.after).toEqual([]);
+});
+
+test('Undo after Decline brings the copy back and deletes nothing', async ({ page }) => {
+  const r = await page.evaluate(async () => {
+    // @ts-expect-error -- bare globals from index.html
+    const store = window.__store as Record<string, Record<string, unknown>>;
+    store['copies/bob/items/c1'] = { title: 'Plan', doc: '{}' };
+    store['notifications/bob/items/n1'] = { type: 'doc_copy', docId: 'c1' };
+    // @ts-expect-error
+    currentUser = { uid: 'bob' };
+    // @ts-expect-error
+    notifItems = [{ id: 'n1', type: 'doc_copy', docTitle: 'Plan', docId: 'c1', createdAt: Date.now(), read: false }];
+    // @ts-expect-error
+    toggleNotifMenu(true); renderNotifList();
+    (document.querySelectorAll('#notif-list .notif-copy-btn')[1] as HTMLElement).click();
+    await new Promise((r) => setTimeout(r, 50));
+    (document.querySelector('#toast .toast-action-btn') as HTMLElement).click();
+    // @ts-expect-error
+    await new Promise((r) => setTimeout(r, DECLINE_UNDO_MS + 300));
+    return { left: Object.keys(store).length, shown: document.querySelectorAll('#notif-list .notif-item').length };
+  });
+  expect(r).toEqual({ left: 2, shown: 1 });
+});
+
+test('a draft from your AI assistant left for 30 days is removed; a colleague\'s copy waits', async ({ page }) => {
+  const left = await page.evaluate(async () => {
+    // @ts-expect-error -- bare globals from index.html
+    const store = window.__store as Record<string, Record<string, unknown>>;
+    const old = Date.now() - 31 * 24 * 60 * 60 * 1000;
+    store['copies/bob/items/a1'] = { fromUid: 'bob', title: 'Old draft', doc: '{}' };
+    store['notifications/bob/items/na'] = { type: 'doc_copy', docId: 'a1' };
+    store['copies/bob/items/c1'] = { fromUid: 'ana', title: 'Plan', doc: '{}' };
+    store['notifications/bob/items/nc'] = { type: 'doc_copy', docId: 'c1' };
+    // @ts-expect-error
+    currentUser = { uid: 'bob' };
+    // @ts-expect-error
+    notifItems = [{ id: 'na', type: 'doc_copy', fromUid: 'bob', docTitle: 'Old draft', docId: 'a1', createdAt: old, read: false }, { id: 'nc', type: 'doc_copy', fromUid: 'ana', docTitle: 'Plan', docId: 'c1', createdAt: old, read: false }];
+    // @ts-expect-error
+    toggleNotifMenu(true); renderNotifList();
+    await new Promise((r) => setTimeout(r, 100));
+    return Object.keys(store).sort();
+  });
+  expect(left).toEqual(['copies/bob/items/c1', 'notifications/bob/items/nc']);
 });
 
 // Finding the recipient (owner 2026-11-19): exact email only, looked up at emailIndex/{sha256(email)}.
