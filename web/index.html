@@ -126,19 +126,15 @@ function a(e,t){return n(e)||r(e,t)||o(e,t)||i()}function o(e,n){if(e){if(typeof
 // unused (Safari can clear a site's data after about 7 days without a visit). Granted or not, it
 // is only a request; signing in is what keeps documents safe (owner 2026-11-16).
 try{ if(navigator.storage&&navigator.storage.persist)navigator.storage.persisted().then(p=>{ if(!p)navigator.storage.persist().catch(()=>{}); }).catch(()=>{}); }catch(e){}</script>
-  <!-- Icons (owner 2026-10-30: clean, flat, black). flower-glyph.svg is the tab favicon: the bare
-  glyph, ink #222, switching to #ececea on dark tab bars via its own prefers-color-scheme rule; a
-  vector scales to any tab/bookmark size. icon-192(-dark) and icon-512-maskable are the glyph flat on
-  white (#121212 for -dark): Android rounds those itself (the maskable one keeps the glyph in its safe
-  zone). apple-touch-icon(-dark) is a soft-gradient tile with 18% corners, transparent outside
-  (owner 2026-11-22): Safari on an iPad shows it unmasked as the tab icon, where the flat one was a
-  sharp white square; on the home screen iOS's own, rounder mask covers the corners, so no black
-  shows there. icon-192-pwa / icon-512-pwa ("any" in the manifests) are what desktop Chrome, Windows
-  and macOS show as-is, so they carry their own Apple-style rounded tile (90% of the canvas, flower ~78% of the tile as in the original icon, 22.5% corners, soft
-  shadow, subtle top-to-bottom shading, transparent outside). The PNG page icon (rel="icon") is
-  favicon-192.png, the glyph alone on transparent (owner 2026-11-22): Safari on an iPad uses it for
-  the tab (found by colour-coding every icon on a preview) and draws its own rounded white plate behind
-  transparent icons, so a baked-in tile showed as a tile within a tile, a fuzzy white square. -->
+  <!-- Icons (owner 2026-11-25: no backgrounds anywhere, "once and for all"). Every app icon is the bare
+  flower on transparent: flower-glyph.svg (the tab favicon; ink #222, #ececea on dark tab bars via its
+  own prefers-color-scheme rule) and favicon-192.png / icon-glyph-192.png as before; icon-192(-dark),
+  icon-192-pwa, icon-512-pwa, apple-touch-icon(-dark) and icon-512-maskable (glyph inside the safe
+  zone) are rendered from flower-glyph.svg in a mid-tone grey that reads on dark and light, since an
+  icon without a background shows on whatever the host draws. Earlier tiles and white squares showed
+  as hard white squares in Claude's connector list and the like. Known cost, accepted by the owner:
+  iOS fills a transparent home-screen icon with black, and Android launchers fill maskable icons with
+  their own colour. -->
 <!-- Inter ships with the app (owner 2026-11-02): preloaded, it is ready before the first paint, so text
      no longer shifts 1-2px when a Google-hosted copy arrives half a second in. SIL OFL 1.1, see
      THIRD-PARTY-NOTICES.md. Fira Code ships with it too (owner 2026-11-17): Google
