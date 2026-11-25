@@ -4506,7 +4506,7 @@ html.calm-layout #sb-auto-rewrite-chip.is-quiet:hover,html.calm-layout #sb-auto-
 <h4>Share and PDF</h4>
 <ul>
 <li>Share → Export as → PDF saves the whole document as a PDF file, with notes, threads, tables and images (signed out or offline, or once the day's PDF files are used up, the print dialog opens: choose Save as PDF). Cover page and PDF mark are in Settings → Documents</li>
-<li>Share → Send a copy (signed in) gives another Sakura user their own copy to edit and keep: type the exact email their account uses (it must be verified). It arrives in their notifications with Add to my documents and Decline; nothing is added until they choose</li>
+<li>Share → Send a copy (signed in) gives another Sakura user their own copy to edit and keep: type the exact email their account uses (it must be verified). It arrives in their notifications with Preview and Decline; they see it before choosing Add to my documents, and nothing is added until they do</li>
 <li>Share → Export as → Markdown saves the document as a .md file other notes apps open: headings, nested rows, To-Dos, notes, tables, bold, italic, strikethrough and links. Pictures, diagrams, threads and remarks are listed by name only (PDF keeps them). OPML saves the outline for other outliners</li>
 <li>The File Explorer's + → Import (.md, .opml)… opens a Markdown or OPML file as a new document, or drop one on the File Explorer or the page. Headings nest, lists become rows, prose right under a heading becomes its note, and anything Markdown-only (math, HTML) comes in as plain text</li>
 </ul>
@@ -5182,7 +5182,7 @@ html.calm-layout #sb-auto-rewrite-chip.is-quiet:hover,html.calm-layout #sb-auto-
       <div id="sakura-modal-actions"></div>
     </div>
   </div>
-  <div id="draft-preview-overlay" class="history-modal-overlay" role="dialog" aria-modal="true" aria-label="Draft from your AI assistant">
+  <div id="draft-preview-overlay" class="history-modal-overlay" role="dialog" aria-modal="true" aria-label="Document in your inbox">
     <div class="history-modal">
       <div class="app-modal-head">
         <div><h2 id="draft-preview-title">Draft</h2><div class="cs-sub" id="draft-preview-sub"></div></div>
@@ -18071,7 +18071,7 @@ async function findAccountByEmail(email){
 // ---------- Send a copy ----------
 // Sharing is a copy, not live editing (owner, 2026-10-30): the sender writes a snapshot of the
 // document into the recipient's copies/{uid}/items inbox plus a doc_copy notification; the
-// recipient's "Add to my documents" turns it into an ordinary document of their own and removes
+// recipient previews it, and "Add to my documents" turns it into an ordinary document of their own and removes
 // the inbox copy. Nothing links the two documents afterwards, so nothing can conflict.
 const DOC_COPY_MAX_BYTES=900000; // one Firestore document holds at most 1MB, leave room for the other fields
 // Builds the snapshot of a local document: its stored JSON with each diagram's xml put back
@@ -18109,41 +18109,66 @@ async function sendDocCopy(docId,docTitle,profile){
 // Stored HTML is cleaned on the way in (standing rule): a received copy's notes, tables and thread
 // entries are cleaned before it becomes a document, whoever sent it (an AI assistant's draft
 // included), not only when it is next opened.
+// It is also repaired into a well-formed document (owner 2026-11-25: "should not end up in a corrupt
+// document"): unique numeric row ids, indents that step down one level at a time, a next id past
+// them all, diagrams with an id and drawing, and thread entries only on rows that exist.
 function cleanReceivedCopy(d){
   if(!d||typeof d!=='object')return d;
-  d.nodes=(Array.isArray(d.nodes)?d.nodes:[]).filter(n=>n&&typeof n==='object').map(n=>({...n,
-    text:typeof n.text==='string'?n.text:'',
-    note:typeof n.note==='string'?sakuraSanitizeRichHtml(n.note):'',
-    tables:Array.isArray(n.tables)?n.tables.filter(t=>typeof t==='string').map(t=>tidyTableHtml(sakuraSanitizeRichHtml(t))):[]}));
-  d.remarks=(Array.isArray(d.remarks)?d.remarks:[]).filter(r=>r&&typeof r==='object').map(r=>({...r,
-    ...(typeof r.text==='string'?{text:sakuraSanitizeRichHtml(r.text)}:{}),
-    ...(typeof r.title==='string'?{title:sakuraSanitizeRichHtml(r.title)}:{})}));
+  const seen=new Set(); let maxId=0, prevDepth=-1;
+  d.nodes=(Array.isArray(d.nodes)?d.nodes:[]).filter(n=>n&&typeof n==='object'&&!Array.isArray(n)).map(n=>{
+    let id=Number(n.id); if(!Number.isInteger(id)||id<1||seen.has(id))id=0;
+    if(id){ seen.add(id); maxId=Math.max(maxId,id); }
+    const depth=Math.max(0,Math.min(Number.isInteger(Number(n.depth))?Number(n.depth):0,prevDepth+1)); prevDepth=depth;
+    return {...n,id,depth,
+      styles:n.styles&&typeof n.styles==='object'&&!Array.isArray(n.styles)?n.styles:{},
+      text:typeof n.text==='string'?n.text:'',
+      note:typeof n.note==='string'?sakuraSanitizeRichHtml(n.note):'',
+      tables:Array.isArray(n.tables)?n.tables.filter(t=>typeof t==='string').map(t=>tidyTableHtml(sakuraSanitizeRichHtml(t))):[],
+      images:Array.isArray(n.images)?n.images:[]};
+  });
+  d.nodes.forEach(n=>{ if(!n.id){ n.id=++maxId; seen.add(n.id); } });
+  const parent=[]; d.nodes.forEach(n=>{ parent.length=n.depth; n.parentId=n.depth?parent[n.depth-1]??null:null; parent[n.depth]=n.id; });
+  d.nextId=maxId+1;
+  d.title=typeof d.title==='string'?d.title:'';
+  d.diagrams=(Array.isArray(d.diagrams)?d.diagrams:[]).filter(g=>g&&typeof g==='object'&&typeof g.xml==='string'&&g.xml.trim())
+    .map((g,i)=>({...g,id:typeof g.id==='string'&&g.id?g.id:'dg'+Date.now()+'-'+i,anchorNodeId:seen.has(Number(g.anchorNodeId))?Number(g.anchorNodeId):(d.nodes[0]?.id??null)}));
+  d.remarks=(Array.isArray(d.remarks)?d.remarks:[]).filter(r=>r&&typeof r==='object'&&seen.has(Number(r.anchorNodeId))).map(r=>{
+    const out={...r};
+    for(const k of ['text','title'])if(typeof out[k]==='string')out[k]=sakuraSanitizeRichHtml(out[k]);
+    return out;
+  });
   return d;
 }
 // A copy your AI assistant sent you (copies and notices it writes carry your own account as the
 // sender, which firestore.rules lets no one else do).
 function isAssistantCopy(n){ return !!(n&&n.type==='doc_copy'&&currentUser&&n.fromUid===currentUser.uid); }
-// Preview of a draft from your AI assistant, read-only, before it can become a document (owner
-// 2026-11-25): its rows with what each holds, then Add (as a Draft) or Decline.
+// Preview of a document in your inbox, read-only, before it can become a document (owner
+// 2026-11-25: for every inbox document, whoever sent it): its rows with what each holds, then Add or
+// Decline. A draft from your AI assistant is marked as such and added as a Draft.
 let _draftPreviewNotif=null;
-async function openAssistantDraftPreview(n){
+async function openInboxCopyPreview(n){
   const overlay=el('draft-preview-overlay'), body=el('draft-preview-body'); if(!overlay||!body||!currentUser)return;
   let d;
   try{
     const {mod,db}=await loadFirestoreMods();
     const snap=await mod.getDoc(mod.doc(db,'copies',currentUser.uid,'items',n.docId));
-    if(!snap.exists()){ showToast('This draft was already added or is no longer available'); return; }
+    if(!snap.exists()){ showToast('This document was already added or is no longer available'); return; }
     d=cleanReceivedCopy(JSON.parse(snap.data().doc||'{}'));
-  }catch(e){ showToast('Could not open this draft \u2014 try again'); return; }
+  }catch(e){ showToast('Could not open this document \u2014 try again'); return; }
   _draftPreviewNotif=n;
   el('draft-preview-title').textContent=d.title||n.docTitle||'Untitled';
   const nodes=d.nodes, diagrams=Array.isArray(d.diagrams)?d.diagrams:[];
   const tables=nodes.reduce((a,x)=>a+x.tables.length,0), follow=nodes.filter(x=>normalizeThreadStatus(x.marker)==='followup').length;
-  el('draft-preview-sub').textContent=['From your AI assistant',nodes.length+' row'+(nodes.length===1?'':'s'),tables&&(tables+' table'+(tables===1?'':'s')),diagrams.length&&(diagrams.length+' diagram'+(diagrams.length===1?'':'s')),follow&&(follow+' follow-up'+(follow===1?'':'s')),'Draft'].filter(Boolean).join(' \u00b7 ');
+  const fromAssistant=isAssistantCopy(n);
+  const statusLabel=fromAssistant?'Draft':(d.docStatus?docStatusLabel(d.docStatus):'');
+  el('draft-preview-sub').textContent=[fromAssistant?'From your AI assistant':'From '+(n.fromDisplayName||n.fromEmail||'someone'),nodes.length+' row'+(nodes.length===1?'':'s'),tables&&(tables+' table'+(tables===1?'':'s')),diagrams.length&&(diagrams.length+' diagram'+(diagrams.length===1?'':'s')),follow&&(follow+' follow-up'+(follow===1?'':'s')),statusLabel].filter(Boolean).join(' \u00b7 ');
   body.innerHTML='';
   const list=document.createElement('div'); list.className='history-preview-rows';
   const STATUS={confirmed:'Agreed',followup:'Follow-up',parked:'Out of scope'};
-  nodes.forEach(x=>{
+  // A very long document shows its first rows here; all of it is added.
+  const PREVIEW_ROWS=300;
+  if(!nodes.length){ const e=document.createElement('div'); e.className='history-empty'; e.textContent='This document is empty.'; list.appendChild(e); }
+  nodes.slice(0,PREVIEW_ROWS).forEach(x=>{
     const line=document.createElement('div'); line.className='history-preview-row'+(x.styles&&x.styles.heading?' draft-preview-heading':'');
     line.style.paddingLeft=(6+Math.min(Number(x.depth)||0,8)*16)+'px';
     line.textContent=(x.isCheckbox?(x.checked?'\u2611 ':'\u2610 '):'')+(String(x.text||'').trim()||'(empty row)');
@@ -18152,31 +18177,53 @@ async function openAssistantDraftPreview(n){
     if(extras){ const e=document.createElement('span'); e.className='history-row-extras'; e.textContent=extras; line.appendChild(e); }
     list.appendChild(line);
   });
+  if(nodes.length>PREVIEW_ROWS){ const more=document.createElement('div'); more.className='history-empty'; more.textContent='\u2026and '+(nodes.length-PREVIEW_ROWS)+' more rows'; list.appendChild(more); }
   body.appendChild(list);
+  ['draft-preview-add','draft-preview-decline'].forEach(id=>{ const b=el(id); if(b)b.disabled=false; });
   overlay.classList.add('open');
   setTimeout(()=>el('draft-preview-add')?.focus(),30);
 }
-function closeAssistantDraftPreview(){ el('draft-preview-overlay')?.classList.remove('open'); _draftPreviewNotif=null; }
-el('draft-preview-close-x')?.addEventListener('click',closeAssistantDraftPreview);
-el('draft-preview-overlay')?.addEventListener('keydown',e=>{ if(e.key==='Escape'){ e.stopPropagation(); closeAssistantDraftPreview(); } });
-el('draft-preview-add')?.addEventListener('click',async e=>{
-  const n=_draftPreviewNotif; if(!n)return; const b=e.currentTarget; b.disabled=true;
-  await addSentCopyToMyDocs(n); b.disabled=false; closeAssistantDraftPreview();
+function closeInboxCopyPreview(){ el('draft-preview-overlay')?.classList.remove('open'); _draftPreviewNotif=null; }
+el('draft-preview-close-x')?.addEventListener('click',closeInboxCopyPreview);
+el('draft-preview-overlay')?.addEventListener('keydown',e=>{ if(e.key==='Escape'){ e.stopPropagation(); closeInboxCopyPreview(); } });
+el('draft-preview-overlay')?.addEventListener('mousedown',e=>{ if(e.target===e.currentTarget)closeInboxCopyPreview(); });
+el('draft-preview-add')?.addEventListener('click',async()=>{
+  const n=_draftPreviewNotif; if(!n)return;
+  const btns=['draft-preview-add','draft-preview-decline'].map(id=>el(id)).filter(Boolean);
+  btns.forEach(b=>b.disabled=true);
+  await addSentCopyToMyDocs(n); // says why when it can't (already added elsewhere, offline)
+  btns.forEach(b=>b.disabled=false);
+  if(n.addedDocId||_draftPreviewNotif!==n)closeInboxCopyPreview(); // added: done; failed: stay, so Add can be tried again
 });
-el('draft-preview-decline')?.addEventListener('click',()=>{ const n=_draftPreviewNotif; closeAssistantDraftPreview(); if(n)deleteNotification(n.id); });
+el('draft-preview-decline')?.addEventListener('click',()=>{ const n=_draftPreviewNotif; closeInboxCopyPreview(); if(n)deleteNotification(n.id); });
 // Recipient side: a doc_copy notification's docId is the id of the copy in copies/{uid}/items.
+// One document per inbox item, whatever happens (owner 2026-11-25: "should not end up in duplicate"):
+// its id comes from the inbox item's id, so Add twice, or on two devices at once, lands on the same
+// document (sync then sees one document, not two), and a second Add while one runs does nothing.
+const _copyAdding=new Set();
+function docIdForCopy(copyId){ return 'dc'+String(copyId||'').replace(/[^A-Za-z0-9]/g,'').slice(0,40); }
 async function addSentCopyToMyDocs(n){
-  if(!currentUser)return;
+  if(!currentUser||!n||!n.docId||_copyAdding.has(n.docId))return;
+  _copyAdding.add(n.docId);
   try{
     const {mod,db}=await loadFirestoreMods();
     const ref=mod.doc(db,'copies',currentUser.uid,'items',n.docId);
+    const markAdded=async id=>{
+      try{ await mod.deleteDoc(ref); }catch(e){ console.warn('[sakura] could not remove the sent copy after adding it:',e); }
+      // The notification stays as "Added … to your documents" with Open, rather than vanishing.
+      n.addedDocId=id; n.read=true;
+      if(n.id)try{ await mod.updateDoc(mod.doc(db,'notifications',currentUser.uid,'items',n.id),{addedDocId:id,read:true}); }catch(e){ console.warn('[sakura] could not mark the sent copy as added:',e); }
+      renderSidebar(); renderNotifList();
+    };
+    const newId=docIdForCopy(n.docId);
+    // Already added (here, or on another device and synced): never a second copy.
+    if(loadDocsIndex().some(x=>x.id===newId)||localStorage.getItem(docKey(newId))){ await markAdded(newId); showToast('Already in your documents'); return; }
     const snap=await mod.getDoc(ref);
     if(!snap.exists()){ showToast('This copy was already added or is no longer available'); return; }
     const d=JSON.parse(snap.data().doc||'{}');
     cleanReceivedCopy(d);
     // A draft from your own AI assistant (sent with your own account: no one else can) starts as Draft.
     if(snap.data().fromUid===currentUser.uid)d.docStatus='draft';
-    const newId=genDocId();
     const diagrams=[];
     for(const dg of (Array.isArray(d.diagrams)?d.diagrams:[])){
       const {xml,...meta}=dg;
@@ -18184,15 +18231,13 @@ async function addSentCopyToMyDocs(n){
       diagrams.push({...meta,xml:xml||'',blobSynced:false}); // inline xml stays until saveToStorage confirms the blob
     }
     const title=(d.title||n.docTitle||'Untitled').trim()||'Untitled';
+    // Stored whole or not at all: a full device leaves nothing half-written, and the inbox keeps it.
     localStorage.setItem(docKey(newId),JSON.stringify({...d,title,diagrams}));
     touchDocIndex(newId,title);
-    try{ await mod.deleteDoc(ref); }catch(e){ console.warn('[sakura] could not remove the sent copy after adding it:',e); }
-    // The notification stays as "Added … to your documents" with Open, rather than vanishing.
-    n.addedDocId=newId; n.read=true;
-    if(n.id)try{ await mod.updateDoc(mod.doc(db,'notifications',currentUser.uid,'items',n.id),{addedDocId:newId,read:true}); }catch(e){ console.warn('[sakura] could not mark the sent copy as added:',e); }
-    renderSidebar(); renderNotifList();
+    await markAdded(newId);
     showToast('Added to your documents');
   }catch(e){ console.warn('[sakura] addSentCopyToMyDocs failed:',e); showToast('Could not add this copy — try again'); }
+  finally{ _copyAdding.delete(n.docId); }
 }
 
 // Share is how a document leaves Sakura (PDF, Export, a copy to someone), so it is always there.
@@ -18594,7 +18639,7 @@ function renderNotifList(){
       else if(fromAssistant)text.append('Your AI assistant sent you a draft: ',strong);
       else text.append(from+' sent you a copy of ',strong);
       const ago=formatRelativeTime(n.createdAt||Date.now());
-      meta.textContent=n.addedDocId?('From '+from+' \u00B7 '+ago):((fromAssistant?'Draft \u00B7 preview it before adding':'Not in your documents until you add it')+' \u00B7 '+ago);
+      meta.textContent=n.addedDocId?('From '+from+' \u00B7 '+ago):((fromAssistant?'Draft \u00B7 not in your documents until you add it':'Not in your documents until you add it')+' \u00B7 '+ago);
       const actions=document.createElement('div'); actions.className='notif-copy-actions';
       const btn=(label,primary,fn)=>{ const b=document.createElement('button'); b.type='button'; b.className='notif-copy-btn'+(primary?' primary':''); b.textContent=label; b.addEventListener('click',e=>{ e.stopPropagation(); fn(b); }); actions.appendChild(b); return b; };
       if(n.addedDocId){
@@ -18603,9 +18648,8 @@ function renderNotifList(){
           toggleNotifMenu(false); switchDoc(n.addedDocId);
         });
       }else{
-        // A draft from your AI assistant is previewed first; a colleague's copy keeps one-tap Add.
-        if(fromAssistant)btn('Preview',true,()=>{ toggleNotifMenu(false); openAssistantDraftPreview(n); });
-        else btn('Add to my documents',true,async b=>{ actions.querySelectorAll('button').forEach(x=>x.disabled=true); b.textContent='Adding\u2026'; await addSentCopyToMyDocs(n); if(!n.addedDocId)renderNotifList(); });
+        // Every inbox document is previewed before it can be added (owner 2026-11-25), whoever sent it.
+        btn('Preview',true,()=>{ toggleNotifMenu(false); openInboxCopyPreview(n); });
         btn('Decline',false,()=>deleteNotification(n.id));
       }
       body.appendChild(actions);

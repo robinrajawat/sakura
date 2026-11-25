@@ -109,7 +109,7 @@ test('you cannot send a copy to yourself', async ({ page }) => {
   expect(res.ok).toBe(false);
 });
 
-test('the bell shows Add and Decline for a sent copy; clicking the text adds nothing; Add then offers Open', async ({ page }) => {
+test('the bell shows Preview and Decline for a sent copy; clicking the text adds nothing; Preview, Add, then Open', async ({ page }) => {
   await page.evaluate(() => {
     // @ts-expect-error -- bare globals from index.html
     const store = window.__store as Record<string, Record<string, unknown>>;
@@ -124,12 +124,18 @@ test('the bell shows Add and Decline for a sent copy; clicking the text adds not
   const item = page.locator('#notif-list .notif-item').first();
   await expect(item.locator('.notif-item-text')).toHaveText('Robin sent you a copy of Plan');
   await expect(item.locator('.notif-item-meta')).toContainText('Not in your documents until you add it');
-  await expect(item.locator('.notif-copy-btn')).toHaveText(['Add to my documents', 'Decline']);
+  await expect(item.locator('.notif-copy-btn')).toHaveText(['Preview', 'Decline']); // every inbox document is previewed first (2026-11-25)
   await expect(item.locator('.notif-item-dismiss')).toHaveCount(0);
   const before = await page.evaluate(() => (window as unknown as { loadDocsIndex: () => unknown[] }).loadDocsIndex().length);
   await item.locator('.notif-item-text').click();
   expect(await page.evaluate(() => (window as unknown as { loadDocsIndex: () => unknown[] }).loadDocsIndex().length)).toBe(before);
   await item.locator('.notif-copy-btn.primary').click();
+  await expect(page.locator('#draft-preview-overlay')).toHaveClass(/open/);
+  await expect(page.locator('#draft-preview-sub')).toHaveText('From Robin · 1 row');
+  await page.click('#draft-preview-add');
+  await expect(page.locator('#draft-preview-overlay')).not.toHaveClass(/open/);
+  // @ts-expect-error -- bare global from index.html
+  await page.evaluate(() => toggleNotifMenu(true));
   await expect(page.locator('#notif-list .notif-item').first().locator('.notif-item-text')).toHaveText('Added Plan to your documents');
   await expect(page.locator('#notif-list .notif-item').first().locator('.notif-copy-btn')).toHaveText(['Open']);
   await page.locator('#notif-list .notif-copy-btn').click();
