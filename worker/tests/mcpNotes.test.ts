@@ -86,21 +86,24 @@ describe('mcpNotes', () => {
       if (path === 'users/u1/meta/docFolderMap') return { value: {} };
       if (path === 'users/u1/docs/d1') return doc1;
       if (path === 'users/u1/docs/d2') return { title: 'Old', nodes: [{ id: 1, text: 'OAuth in trash', depth: 0 }] };
+      // d4 is still listed here (another device's list not caught up) but deleted forever.
+      if (path === 'users/u1/deletedDocs/d4') return { deletedAt: 1 };
+      if (path === 'users/u1/docs/d4') return { title: 'Gone', nodes: [] };
       return null;
     },
-    async list(path) {
-      if (path === 'users/u1/deletedDocs') return [['d4', {}]];
-      return [];
+    async list() {
+      throw new Error('no collection listing: it costs a read per record');
     },
     async batchGet(paths) {
       // Only documents the list names are asked for (never d2 in Trash).
-      expect(paths.every((p) => p === 'users/u1/docs/d1' || p === 'users/u1/docs/d3')).toBe(true);
+      expect(paths.every((p) => ['users/u1/docs/d1', 'users/u1/docs/d3', 'users/u1/docs/d4'].includes(p))).toBe(true);
       return paths.filter((p) => p.endsWith('/d1')).map(() => ['d1', doc1] as [string, Record<string, unknown>]);
     }
   };
 
   it('tools read only listed documents', async () => {
-    expect(JSON.parse(await toolListDocuments(fakeDb, 'u1')).map((d: { id: string }) => d.id)).toEqual(['d1', 'd3']);
+    expect(JSON.parse(await toolListDocuments(fakeDb, 'u1')).map((d: { id: string }) => d.id)).toEqual(['d4', 'd1', 'd3']);
+    expect(await toolGetDocument(fakeDb, 'u1', 'd4')).toMatch(/it was deleted/);
     expect(await toolGetDocument(fakeDb, 'u1', 'd1')).toContain('# Auth design');
     expect(await toolGetDocument(fakeDb, 'u1', 'd2')).toMatch(/No document/);
     expect(await toolGetDocument(fakeDb, 'u1', '../x')).toMatch(/Give the id/);

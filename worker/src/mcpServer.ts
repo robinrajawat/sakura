@@ -25,7 +25,7 @@ export const TOOLS = [
   {
     name: 'get_document',
     title: 'Read a document',
-    description: 'Returns one Sakura document as Markdown: its outline rows with notes and tables, each row\'s status (Agreed, Follow-up, Out of scope) and its thread entries. Pictures and diagrams are named, not included.',
+    description: 'Returns one Sakura document as Markdown: its outline rows with notes and tables, each row\'s status (Agreed, Follow-up, Out of scope) and its thread entries. Pictures and diagrams are named, not included. The person keeps editing in Sakura while you talk: call this again before answering about the document\'s content, rather than relying on an earlier read.',
     inputSchema: { type: 'object', properties: { id: { type: 'string', description: 'The document id, from list_documents or search.' } }, required: ['id'], additionalProperties: false },
     annotations: READ_ONLY
   },
@@ -50,7 +50,42 @@ const SERVER_INFO = {
   websiteUrl: 'https://www.sakura-notes.com',
   icons: [{ src: SERVER_ICON, mimeType: 'image/png', sizes: ['512x512'] }]
 };
-const INSTRUCTIONS = 'Read-only access to one person\'s Sakura Notes: outlines of their own thinking (designs, analyses, decisions). Use search to find where something was worked out, then get_document to read it. Nothing can be changed through this server.';
+const INSTRUCTIONS = [
+  'Read-only access to one person\'s Sakura Notes: outlines of their own thinking (designs, analyses, decisions). Use search to find where something was worked out, then get_document to read it. Nothing can be changed through this server.',
+  'The person keeps editing their documents in Sakura while you talk. Before answering about a document\'s content, read it again with get_document; an earlier read may be out of date.',
+  'If the person just mentions Sakura or asks what you can do with it, list their five most recently changed documents (list_documents) and offer to: work on one of them with them, summarise it, find what is still open (rows marked Follow-up, unanswered threads), or search across their notes. Keep the offer short.'
+].join(' ');
+
+/** Ready-made starters (MCP prompts): assistants that support them list them under the connector, so
+ * nobody has to remember wording (owner 2026-11-25). */
+export const PROMPTS = [
+  {
+    name: 'work_on_document',
+    title: 'Work on a document',
+    description: 'Be my assistant for one Sakura document, re-reading it as I edit.',
+    arguments: [{ name: 'document', description: 'The document\'s title (or part of it)', required: true }]
+  },
+  {
+    name: 'whats_open',
+    title: 'What is still open',
+    description: 'Find what is still open in a Sakura document: follow-ups and unanswered questions.',
+    arguments: [{ name: 'document', description: 'The document\'s title (or part of it)', required: true }]
+  },
+  {
+    name: 'search_notes',
+    title: 'Search my notes',
+    description: 'Find where something was worked out across my Sakura notes.',
+    arguments: [{ name: 'topic', description: 'What to look for', required: true }]
+  }
+];
+
+export function promptMessage(name: string, args: Record<string, unknown>): string | null {
+  const a = (k: string) => String(args[k] ?? '').trim().slice(0, 200);
+  if (name === 'work_on_document') return `Be my assistant for my Sakura document "${a('document')}". Find it (search, or list_documents), read it with get_document, and give me a two-line summary and the three things most worth my attention. I'll keep editing it in Sakura while we talk: re-read it with get_document before each answer about its content.`;
+  if (name === 'whats_open') return `In my Sakura document "${a('document')}", what is still open? Read it with get_document and list rows marked Follow-up, questions without an answer, and anything else unresolved, each with the row above it for context.`;
+  if (name === 'search_notes') return `Search my Sakura notes for "${a('topic')}". Show which documents and rows mention it, then summarise what I worked out there, reading the most relevant document with get_document.`;
+  return null;
+}
 
 type Json = Record<string, unknown>;
 const rpcResult = (id: unknown, result: unknown) => ({ jsonrpc: '2.0', id, result });
@@ -92,12 +127,22 @@ async function handleMessage(msg: unknown, uid: string, db: FirestoreReader): Pr
     case 'initialize': {
       const asked = String(params.protocolVersion || '');
       const protocolVersion = SUPPORTED_PROTOCOL_VERSIONS.includes(asked) ? asked : SUPPORTED_PROTOCOL_VERSIONS[2];
-      return rpcResult(m.id, { protocolVersion, capabilities: { tools: { listChanged: false } }, serverInfo: SERVER_INFO, instructions: INSTRUCTIONS });
+      return rpcResult(m.id, { protocolVersion, capabilities: { tools: { listChanged: false }, prompts: { listChanged: false } }, serverInfo: SERVER_INFO, instructions: INSTRUCTIONS });
     }
     case 'ping':
       return rpcResult(m.id, {});
     case 'tools/list':
       return rpcResult(m.id, { tools: TOOLS });
+    case 'prompts/list':
+      return rpcResult(m.id, { prompts: PROMPTS });
+    case 'prompts/get': {
+      const name = String(params.name || '');
+      const args = (params.arguments && typeof params.arguments === 'object' ? params.arguments : {}) as Json;
+      const text = promptMessage(name, args);
+      if (text === null) return rpcError(m.id, -32602, 'Unknown prompt: ' + name);
+      const p = PROMPTS.find((x) => x.name === name);
+      return rpcResult(m.id, { description: p?.description, messages: [{ role: 'user', content: { type: 'text', text } }] });
+    }
     case 'tools/call': {
       const name = String(params.name || '');
       if (!TOOLS.some((t) => t.name === name)) return rpcError(m.id, -32602, 'Unknown tool: ' + name);

@@ -160,14 +160,16 @@ function snippetAround(text: string, word: string): string {
 // ---------------------------------------------------------------------------------------------
 // Tool bodies
 
+/** Three reads: the documents list (Delete forever takes a document off it), folders and the folder
+ * map. Listing every "deleted forever" marker as well cost one read per marker, ever (owner
+ * 2026-11-25: read costs); a single document's marker is checked only when it's read. */
 async function loadDocList(db: FirestoreReader, uid: string): Promise<DocListEntry[]> {
-  const [index, folders, docFolder, deleted] = await Promise.all([
+  const [index, folders, docFolder] = await Promise.all([
     db.get(`users/${uid}/meta/docsIndex`),
     db.get(`users/${uid}/meta/folders`),
-    db.get(`users/${uid}/meta/docFolderMap`),
-    db.list(`users/${uid}/deletedDocs`, 5000)
+    db.get(`users/${uid}/meta/docFolderMap`)
   ]);
-  return buildDocList(index?.value, folders?.value, docFolder?.value, new Set(deleted.map(([id]) => id)));
+  return buildDocList(index?.value, folders?.value, docFolder?.value, new Set());
 }
 
 export async function toolListDocuments(db: FirestoreReader, uid: string): Promise<string> {
@@ -180,7 +182,8 @@ export async function toolGetDocument(db: FirestoreReader, uid: string, id: stri
   if (!id || /[/]/.test(id)) return 'Give the id of a document from list_documents or search.';
   const list = await loadDocList(db, uid);
   if (!list.some((d) => d.id === id)) return 'No document with that id (it may be in Trash).';
-  const doc = await db.get(`users/${uid}/docs/${id}`);
+  const [doc, deleted] = await Promise.all([db.get(`users/${uid}/docs/${id}`), db.get(`users/${uid}/deletedDocs/${id}`)]);
+  if (deleted) return 'No document with that id (it was deleted).';
   if (!doc) return 'That document has not reached the account yet.';
   return documentToMarkdown(doc);
 }
