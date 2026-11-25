@@ -153,6 +153,9 @@ describe('MCP connection flow', () => {
     const authz = { Authorization: 'Bearer ' + idToken };
     const list = (await (await call(new Request(BASE + '/connections', { headers: authz }))).json()) as { connections: Array<{ id: string; name: string }> };
     expect(list.connections.map((c) => c.name)).toEqual(['Claude']);
+    // It was used through /mcp above: Settings can say when.
+    expect((list.connections[0] as unknown as { lastUsedAt: number }).lastUsedAt).toBeGreaterThan(0);
+    expect(JSON.stringify(list)).not.toContain('clientId');
     expect(JSON.stringify(list)).not.toContain('good-refresh');
     const del = await call(new Request(BASE + '/connections?id=' + encodeURIComponent(list.connections[0].id), { method: 'DELETE', headers: authz }));
     expect(del.status).toBe(200);

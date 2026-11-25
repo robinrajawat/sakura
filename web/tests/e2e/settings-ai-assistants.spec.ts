@@ -13,7 +13,7 @@ test('lists connected assistants; Disconnect removes one', async ({ page }) => {
     localStorage.setItem('sakura_welcome_seen', '1');
     sessionStorage.setItem('sakura_landing_dismissed', 'true');
   });
-  let connections = [{ id: 'g1', name: 'Claude', connectedAt: Date.UTC(2026, 10, 25) }];
+  let connections = [{ id: 'g1', name: 'Claude', connectedAt: Date.UTC(2026, 10, 25), lastUsedAt: null as number | null }, { id: 'g2', name: 'ChatGPT', connectedAt: Date.UTC(2026, 10, 20), lastUsedAt: Date.now() - 3 * 86_400_000 }];
   const deleted: string[] = [];
   await page.route('https://ai.sakura-notes.com/connections**', async (route) => {
     const req = route.request();
@@ -39,13 +39,14 @@ test('lists connected assistants; Disconnect removes one', async ({ page }) => {
   await expect(section).toBeVisible();
   await expect(section.locator('#mcp-connect-url')).toHaveText('https://ai.sakura-notes.com/mcp');
   const rows = section.locator('#mcp-connections-list .settings-list-row');
-  await expect(rows).toHaveCount(1);
+  await expect(rows).toHaveCount(2);
   await expect(rows.first()).toContainText('Claude');
-  await expect(rows.first()).toContainText('can read your documents');
+  await expect(rows.first()).toContainText('not used yet · can read your documents');
+  await expect(rows.nth(1)).toContainText(/· last used \S/); // the app's own relative time ("3 days ago", or a date)
   await section.screenshot({ path: test.info().outputPath('assistants.png') });
   await rows.first().getByRole('button', { name: 'Disconnect' }).click();
-  await expect(section.locator('#mcp-connections-status')).toHaveText('No assistant is connected.');
-  await expect(rows).toHaveCount(0);
+  await expect(rows).toHaveCount(1);
+  await expect(rows.first()).toContainText('ChatGPT');
   expect(deleted).toEqual(['g1 Bearer id-token-1']);
 });
 

@@ -20,6 +20,7 @@ import type { JWTVerifyGetKey } from 'jose';
 import { verifyFirebaseIdToken } from './auth';
 import { idTokenFor, forgetIdToken, SignInExpiredError, type FetchLike } from './firestoreRest';
 import { INBOX_SCOPE } from './mcpSend';
+import { lastUsed, forgetUsed, type LastUsedKV } from './lastUsed';
 
 export const CONNECT_PAGE = 'https://www.sakura-notes.com/connect.html';
 export const MCP_SCOPE = 'notes:read';
@@ -126,25 +127,35 @@ export async function handleAuthorizePost(request: Request, deps: AuthorizeDeps)
 }
 
 /** GET /connections: this person's connected assistants (no tokens, nothing secret). */
-export async function handleConnectionsGet(uid: string, oauth: OAuthHelpers): Promise<Response> {
-  const items: Array<{ id: string; name: string; connectedAt: number; canSend: boolean }> = [];
+export async function handleConnectionsGet(uid: string, oauth: OAuthHelpers, kv: LastUsedKV): Promise<Response> {
+  const items: Array<{ id: string; name: string; connectedAt: number; canSend: boolean; lastUsedAt: number | null; clientId: string }> = [];
   let cursor: string | undefined;
   do {
     const page = await oauth.listUserGrants(uid, { limit: 100, cursor });
     for (const g of page.items) {
       const meta = (g.metadata && typeof g.metadata === 'object' ? g.metadata : {}) as Record<string, unknown>;
-      items.push({ id: g.id, name: typeof meta.name === 'string' ? meta.name : 'AI assistant', connectedAt: Number(meta.connectedAt) || g.createdAt, canSend: Array.isArray(g.scope) && g.scope.includes(INBOX_SCOPE) });
+      items.push({ id: g.id, name: typeof meta.name === 'string' ? meta.name : 'AI assistant', connectedAt: Number(meta.connectedAt) || g.createdAt, canSend: Array.isArray(g.scope) && g.scope.includes(INBOX_SCOPE), lastUsedAt: null, clientId: g.clientId });
     }
     cursor = page.cursor;
   } while (cursor);
+  await Promise.all(items.map(async (it) => { it.lastUsedAt = await lastUsed(kv, uid, it.clientId); }));
   items.sort((a, b) => b.connectedAt - a.connectedAt);
-  return Response.json({ connections: items });
+  return Response.json({ connections: items.map(({ clientId: _c, ...rest }) => rest) });
 }
 
 /** DELETE /connections?id=…: disconnects one assistant at once. */
-export async function handleConnectionsDelete(uid: string, oauth: OAuthHelpers, id: string | null): Promise<Response> {
+export async function handleConnectionsDelete(uid: string, oauth: OAuthHelpers, id: string | null, kv: LastUsedKV): Promise<Response> {
   if (!id) return Response.json({ error: 'Missing id query parameter' }, { status: 400 });
+  // Its last-use record goes with it (found by the assistant it was for).
+  let clientId = '';
+  let cursor: string | undefined;
+  do {
+    const page = await oauth.listUserGrants(uid, { limit: 100, cursor });
+    clientId = page.items.find((g) => g.id === id)?.clientId || clientId;
+    cursor = clientId ? undefined : page.cursor;
+  } while (cursor);
   await oauth.revokeGrant(id, uid);
+  if (clientId) await forgetUsed(kv, uid, clientId);
   forgetIdToken(uid);
   return Response.json({ ok: true });
 }

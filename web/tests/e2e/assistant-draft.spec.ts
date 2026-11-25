@@ -74,8 +74,11 @@ test('an assistant draft is marked, previewed, and added as a cleaned Draft', as
   const added = await page.evaluate(() => {
     const id = notifItems.find((x) => x.id === 'n1')?.addedDocId;
     const d = JSON.parse(localStorage.getItem(docKey(id)) || '{}');
-    return { status: d.docStatus, note: d.nodes[1].note, inboxGone: !('copies/me/items/c1' in window.__store), pwned: !!window.__pwned };
+    return { status: d.docStatus, note: d.nodes[1].note, inboxGone: !('copies/me/items/c1' in window.__store), pwned: !!window.__pwned, queued: _syncPushQueue.has('doc:' + id), listed: loadActiveDocsIndex().some((x) => x.id === id) };
   });
+  // Sent to the account, not only kept on this device (it vanished when only its list entry synced).
+  expect(added.queued).toBe(true);
+  expect(added.listed).toBe(true);
   expect(added.status).toBe('draft');
   expect(added.note).not.toContain('onerror');
   expect(added.inboxGone).toBe(true);

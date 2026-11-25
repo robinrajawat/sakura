@@ -3661,6 +3661,10 @@ html.calm-layout #sb-auto-rewrite-chip.is-quiet:hover,html.calm-layout #sb-auto-
   html.phone-editing #editor-pane { padding-bottom: 56px; }
   /* Hover tooltips: a tap would leave one stuck. */
   #node-timestamp-tip { display: none !important; }
+  /* Sidebar folders: a finger-sized row, and the whole row is the target (owner 2026-11-25, iPhone:
+     closing one folder closed another). */
+  .sfolder-row { min-height: 40px; }
+  .sfolder-toggle { padding: 11px 6px 11px 10px; }
 }
 /* GENERATED:css-touch:END */
 </style>
@@ -15072,7 +15076,7 @@ function renameDoc(id,anchor){
 function applyDocRename(id,name){
   const trimmed=name.trim()||'Untitled';
   if(id===currentDocId){ setDocTitleField(trimmed); saveToStorage() }
-  else { touchDocIndex(id,trimmed); try{const raw=localStorage.getItem(docKey(id)); if(raw){const d=JSON.parse(raw); d.title=trimmed; localStorage.setItem(docKey(id),JSON.stringify(d))}}catch(e){showToast('Storage full — rename may not have saved. Free up space or export a backup.')} const openTab=findOpenTab(id); if(openTab)openTab.title=trimmed; renderTabStrip(); }
+  else { touchDocIndex(id,trimmed); try{const raw=localStorage.getItem(docKey(id)); if(raw){const d=JSON.parse(raw); d.title=trimmed; localStorage.setItem(docKey(id),JSON.stringify(d)); queueSync('doc',id)}}catch(e){showToast('Storage full — rename may not have saved. Free up space or export a backup.')} const openTab=findOpenTab(id); if(openTab)openTab.title=trimmed; renderTabStrip(); }
   renderDocsList(); if(typeof renderSidebar==='function')renderSidebar();
 }
 async function duplicateDoc(id){
@@ -18320,6 +18324,10 @@ async function addSentCopyToMyDocs(n,prepared){
     // Stored whole or not at all: a full device leaves nothing half-written, and the inbox keeps it.
     localStorage.setItem(docKey(newId),JSON.stringify({...d,title,diagrams}));
     touchDocIndex(newId,title);
+    // To the account now, like any saved document (owner 2026-11-25: an added draft vanished: only
+    // its list entry was synced, so another device dropped an entry it had no content for, and that
+    // removal came back here).
+    queueSync('doc',newId);
     await markAdded(newId);
     showToast('Added to your documents');
   }catch(e){ console.warn('[sakura] addSentCopyToMyDocs failed:',e); showToast('Could not add this copy — try again'); }
@@ -19087,7 +19095,7 @@ async function refreshMcpConnections(){
     const row=document.createElement('div'); row.className='settings-list-row';
     const text=document.createElement('div'); text.className='settings-row-text';
     const name=document.createElement('span'); name.className='settings-switch-text'; name.textContent=String(c.name||'AI assistant');
-    const when=document.createElement('span'); when.className='settings-row-desc'; when.textContent='Connected '+new Date(Number(c.connectedAt)||Date.now()).toLocaleDateString(undefined,{day:'numeric',month:'short',year:'numeric'})+' \u00b7 can read your documents'+(c.canSend?' and send drafts to your inbox':'');
+    const when=document.createElement('span'); when.className='settings-row-desc'; when.textContent='Connected '+new Date(Number(c.connectedAt)||Date.now()).toLocaleDateString(undefined,{day:'numeric',month:'short',year:'numeric'})+' \u00b7 '+(c.lastUsedAt?'last used '+formatRelativeTime(c.lastUsedAt):'not used yet')+' \u00b7 can read your documents'+(c.canSend?' and send drafts to your inbox':'');
     text.append(name,when);
     const btn=document.createElement('button'); btn.type='button'; btn.className='btn'; btn.textContent='Disconnect';
     btn.addEventListener('click',()=>disconnectMcpConnection(c.id,String(c.name||'AI assistant'),btn));
@@ -32004,6 +32012,7 @@ function renderSidebarTrash(){
   row.dataset.tip='Documents you deleted, kept here until restored or purged';
   const tog=document.createElement('button'); tog.className='sfolder-toggle'+(trashSectionOpen?' open':''); tog.innerHTML=sfolderChevron();
   tog.addEventListener('click',e=>{ e.stopPropagation(); trashSectionOpen=!trashSectionOpen; renderSidebarTrash(); });
+  row.addEventListener('click',()=>{ trashSectionOpen=!trashSectionOpen; renderSidebarTrash(); }); // the whole row, as folders
   row.appendChild(tog);
   const icon=document.createElement('span'); icon.className='sfolder-icon'; icon.innerHTML=TRASH_ICON.replace('width="24" height="24"','width="13" height="13"').replace('stroke-width="1.8"','stroke-width="2"');
   row.appendChild(icon);
@@ -32184,7 +32193,13 @@ function renderSidebarDocs(){
     const tog = document.createElement('button'); tog.className='sfolder-toggle'+(isOpen?' open':'');
     tog.innerHTML=sfolderChevron();
     if(q){ tog.disabled=true; tog.style.opacity='.4'; tog.style.cursor='default'; }
-    else tog.addEventListener('click',e=>{ e.stopPropagation(); toggleFolder(folder.id); });
+    else{
+      tog.addEventListener('click',e=>{ e.stopPropagation(); toggleFolder(folder.id); });
+      // The whole row opens and closes the folder, as in Finder, Files and other sidebars (owner
+      // 2026-11-25, iPhone: closing one folder closed another: the only target was this 18px arrow,
+      // and Safari moves a tap that misses it to the nearest one, often the next folder's).
+      folderRow.addEventListener('click',e=>{ if(folder.id===_folderInlineEditId||e.target.closest('input'))return; toggleFolder(folder.id); });
+    }
     folderRow.appendChild(tog);
 
     const icon = document.createElement('span'); icon.className='sfolder-icon'; icon.innerHTML='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>';
