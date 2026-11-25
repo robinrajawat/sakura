@@ -5,6 +5,9 @@
  *   GET/POST /admin/config           — the admin tunes the daily AI quota at runtime
  *   POST /ai/complete                — a signed-in user gets an AI completion, quota-gated
  *   POST /pdf                        — a signed-in user turns print-ready HTML into a PDF file (src/pdf.ts)
+ *   POST /mcp                        — read-only MCP server for AI assistants (docs/mcp-plan.md, src/mcpServer.ts),
+ *                                      behind OAuth 2.1 (@cloudflare/workers-oauth-provider: /register, /token,
+ *                                      discovery documents); /authorize and /connections in src/connect.ts
  *
  * Route handlers are exported individually and tested directly with injected dependencies
  * (getKey, fetchImpl) rather than through the router — the router itself (the default export's
@@ -25,6 +28,10 @@ import { consumeQuota } from './quota';
 import { buildAiRequest, parseAiResponse, parseAiErrorMessage, type AiShape } from './providerShapes';
 import type { JWTVerifyGetKey } from 'jose';
 import { handlePdf, browserRenderer, DEFAULT_DAILY_PDF_QUOTA } from './pdf';
+import { OAuthProvider, type OAuthHelpers } from '@cloudflare/workers-oauth-provider';
+import { handleAuthorizeGet, handleAuthorizePost, handleConnectionsGet, handleConnectionsDelete, MCP_SCOPE, type ConnectionProps } from './connect';
+import { handleMcpRequest } from './mcpServer';
+import { firestoreReader, idTokenFor } from './firestoreRest';
 
 export interface Env {
   SAKURA_VAULT_KV: KVNamespace;
@@ -35,7 +42,15 @@ export interface Env {
   /** Cloudflare Browser Rendering binding ([browser] in wrangler.toml), used by POST /pdf. */
   BROWSER: Fetcher;
   DAILY_PDF_QUOTA?: string;
+  /** Firebase's public web API key (not a secret), to turn a connection's refresh token into an ID token. */
+  FIREBASE_API_KEY: string;
+  /** The OAuth library's store: clients, grants, hashed tokens (same KV namespace, its own key prefixes). */
+  OAUTH_KV: KVNamespace;
+  /** Set by OAuthProvider for every request it passes on. */
+  OAUTH_PROVIDER: OAuthHelpers;
 }
+
+export const MCP_ORIGIN = 'https://ai.sakura-notes.com';
 
 const VALID_SHAPES: readonly AiShape[] = ['gemini', 'openai', 'cerebras', 'anthropic'];
 const DEFAULT_DAILY_QUOTA = 20;
@@ -238,7 +253,8 @@ export async function handleAiComplete(
   return jsonResponse({ error: 'All providers failed', details: errors }, 502);
 }
 
-export default {
+/** Everything that isn't OAuth's own or the MCP endpoint. */
+export const router = {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
     const origin = request.headers.get('Origin');
@@ -269,6 +285,15 @@ export default {
       response = await handleAdminConfigPost(request, env, getKey);
     } else if (url.pathname === '/ai/complete' && request.method === 'POST') {
       response = await handleAiComplete(request, env, getKey, fetch);
+    } else if (url.pathname === '/authorize' && request.method === 'GET') {
+      return handleAuthorizeGet(request, env.OAUTH_PROVIDER); // a page for the person, not an API: no CORS
+    } else if (url.pathname === '/authorize' && request.method === 'POST') {
+      return handleAuthorizePost(request, { oauth: env.OAUTH_PROVIDER, projectId: env.FIREBASE_PROJECT_ID, apiKey: env.FIREBASE_API_KEY, getKey, fetchImpl: fetch });
+    } else if (url.pathname === '/connections' && (request.method === 'GET' || request.method === 'DELETE')) {
+      const uidOrResponse = await requireUid(request, env, getKey);
+      if (uidOrResponse instanceof Response) response = uidOrResponse;
+      else if (request.method === 'GET') response = await handleConnectionsGet(uidOrResponse, env.OAUTH_PROVIDER);
+      else response = await handleConnectionsDelete(uidOrResponse, env.OAUTH_PROVIDER, url.searchParams.get('id'));
     } else if (url.pathname === '/pdf' && request.method === 'POST') {
       const uidOrResponse = await requireUid(request, env, getKey);
       if (uidOrResponse instanceof Response) response = uidOrResponse;
@@ -283,3 +308,32 @@ export default {
     return withCors(response, origin);
   }
 };
+
+/** POST /mcp, reached only with a valid access token; ctx.props is the connection's. */
+export const mcpApiHandler = {
+  async fetch(request: Request, env: Env, ctx: ExecutionContext & { props?: unknown; auth?: { scope: string[] } }): Promise<Response> {
+    const props = ctx.props as ConnectionProps | undefined;
+    if (!props || typeof props.uid !== 'string' || typeof props.refreshToken !== 'string') return new Response('Unauthorized', { status: 401 });
+    if (ctx.auth && !ctx.auth.scope.includes(MCP_SCOPE)) return new Response('Forbidden', { status: 403 });
+    const db = firestoreReader(env.FIREBASE_PROJECT_ID, () => idTokenFor(props.uid, props.refreshToken, env.FIREBASE_API_KEY, fetch), fetch);
+    return handleMcpRequest(request, props.uid, db);
+  }
+};
+
+const DAY_SECONDS = 24 * 60 * 60;
+
+export default new OAuthProvider<Env>({
+  apiRoute: '/mcp',
+  apiHandler: mcpApiHandler,
+  defaultHandler: router,
+  authorizeEndpoint: '/authorize',
+  tokenEndpoint: '/token',
+  clientRegistrationEndpoint: '/register',
+  scopesSupported: [MCP_SCOPE],
+  requiredScopes: [MCP_SCOPE],
+  resourceMetadata: { resource: MCP_ORIGIN + '/mcp', authorization_servers: [MCP_ORIGIN], resource_name: 'Sakura Notes' },
+  // A connection lasts while it's used: it ends after 30 days without use, and after 180 days at most.
+  refreshTokenTTL: 180 * DAY_SECONDS,
+  refreshTokenIdleTTL: 30 * DAY_SECONDS,
+  clientIdMetadataDocumentEnabled: true
+});

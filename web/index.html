@@ -3024,6 +3024,9 @@ html.calm-layout #sb-auto-rewrite-chip.is-quiet:hover,html.calm-layout #sb-auto-
 
 /* New feedback for the admin: a count on the Settings button (refreshFeedbackUnread). */
 #rail-settings-btn{position:relative}
+.mcp-connect-url{display:block;margin-top:6px;font-size:var(--fs-xs);color:var(--fg);user-select:all;word-break:break-all}
+.mcp-connections-status:empty{display:none}
+.mcp-connections-status{margin:0}
 /* GENERATED:css-app:END */
 </style>
 <style>
@@ -4211,6 +4214,14 @@ html.calm-layout #sb-auto-rewrite-chip.is-quiet:hover,html.calm-layout #sb-auto-
               </div>
               <div class="settings-form-actions"><button type="button" class="btn quiet" id="ai-vault-provider-cancel-btn">Cancel</button><button type="button" class="btn primary" id="ai-vault-provider-add-btn">Save provider</button></div>
             </div>
+          </div>
+          <div class="settings-section" data-cat="account" id="settings-section-account-assistants" data-feature-hidden="1" style="display:none">
+            <div class="settings-section-title">AI assistants</div>
+            <div class="settings-list">
+              <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Connect an assistant</span><span class="settings-row-desc">Lets Claude, ChatGPT or another assistant that supports MCP read your documents. It can never change them. Add this address as a connector in the assistant, then allow it when Sakura asks. What it reads goes to that assistant's provider.</span><code id="mcp-connect-url" class="mcp-connect-url">https://ai.sakura-notes.com/mcp</code></div><button type="button" class="btn" id="mcp-copy-url-btn">Copy address</button></div>
+            </div>
+            <div id="mcp-connections-status" class="muted-help mcp-connections-status"></div>
+            <div class="settings-list" id="mcp-connections-list" hidden></div>
           </div>
           <div class="settings-section" data-cat="account" id="settings-section-account-danger" data-feature-hidden="1" style="display:none">
             <div class="settings-list">
@@ -17387,6 +17398,8 @@ function updateAccountUI(user){
     const acctRail=el('settings-rail-account-btn'); if(acctRail)acctRail.style.display='';
     const dangerSec=el('settings-section-account-danger');
     if(dangerSec){ dangerSec.style.display=''; dangerSec.dataset.featureHidden=''; }
+    const mcpSec=el('settings-section-account-assistants');
+    if(mcpSec){ mcpSec.style.display=''; mcpSec.dataset.featureHidden=''; }
   }else{
     if(signedOutEl)signedOutEl.style.display='';
     if(signedInEl)signedInEl.style.display='none'; const soWrap=el('account-signout-wrap'); if(soWrap)soWrap.style.display='none';
@@ -17398,6 +17411,8 @@ function updateAccountUI(user){
     if(typeof activeSettingsCategory!=='undefined'&&activeSettingsCategory==='account')applySettingsCategory('general');
     const dangerSec=el('settings-section-account-danger');
     if(dangerSec){ dangerSec.style.display='none'; dangerSec.dataset.featureHidden='1'; }
+    const mcpSec=el('settings-section-account-assistants');
+    if(mcpSec){ mcpSec.style.display='none'; mcpSec.dataset.featureHidden='1'; }
     updateSyncStatusUI('idle');
   }
 }
@@ -17738,6 +17753,7 @@ async function deleteAccountPermanently(){
   const {auth,authMod}=await loadFirebaseMods();
   const uid=auth.currentUser?.uid; if(!uid)throw new Error('Not signed in');
   stopRealtimeSync();
+  await disconnectAllMcpConnections();
   const failed=await deleteAccountCloudData(uid);
   if(failed)throw new Error('Some account data could not be removed ('+failed+')');
   try{
@@ -18731,6 +18747,57 @@ document.addEventListener('keydown',e=>{
 // ADMIN_UID check, so a non-admin who somehow reached this UI still gets a 403 from every call,
 // not real access). The list is (re)loaded from the settings-toggle click handler below, right
 // alongside this panel's sibling status refreshes, whenever an admin opens Settings.
+// AI assistants connected to this account (docs/mcp-plan.md): read-only access through the MCP
+// server on the Worker. Connecting happens from the assistant (it opens connect.html); here the
+// person sees what is connected and disconnects, which ends that assistant's access at once.
+async function mcpConnectionsFetch(path,options={}){
+  if(!currentUser)throw new Error('Sign in first.');
+  const token=await currentUser.getIdToken();
+  const res=await fetch(AI_VAULT_WORKER_URL+path,{...options,headers:{Authorization:'Bearer '+token,...(options.headers||{})}});
+  const data=await res.json().catch(()=>({}));
+  if(!res.ok)throw new Error(data.error||('Request failed ('+res.status+')'));
+  return data;
+}
+let _mcpConnectionsLoad=0;
+async function refreshMcpConnections(){
+  const status=el('mcp-connections-status'), list=el('mcp-connections-list');
+  if(!status||!list||!currentUser)return;
+  const run=++_mcpConnectionsLoad;
+  status.textContent='Loading connected assistants\u2026';
+  let items;
+  try{ items=(await mcpConnectionsFetch('/connections')).connections||[]; }
+  catch(e){ if(run===_mcpConnectionsLoad){ status.textContent='Connected assistants couldn\u2019t be loaded. Try again later.'; list.hidden=true; } return; }
+  if(run!==_mcpConnectionsLoad)return;
+  list.innerHTML='';
+  status.textContent=items.length?'':'No assistant is connected.';
+  list.hidden=!items.length;
+  for(const c of items){
+    const row=document.createElement('div'); row.className='settings-list-row';
+    const text=document.createElement('div'); text.className='settings-row-text';
+    const name=document.createElement('span'); name.className='settings-switch-text'; name.textContent=String(c.name||'AI assistant');
+    const when=document.createElement('span'); when.className='settings-row-desc'; when.textContent='Connected '+new Date(Number(c.connectedAt)||Date.now()).toLocaleDateString(undefined,{day:'numeric',month:'short',year:'numeric'})+' \u00b7 can read your documents';
+    text.append(name,when);
+    const btn=document.createElement('button'); btn.type='button'; btn.className='btn'; btn.textContent='Disconnect';
+    btn.addEventListener('click',()=>disconnectMcpConnection(c.id,String(c.name||'AI assistant'),btn));
+    row.append(text,btn); list.appendChild(row);
+  }
+}
+async function disconnectMcpConnection(id,name,btn){
+  if(btn)btn.disabled=true;
+  try{ await mcpConnectionsFetch('/connections?id='+encodeURIComponent(id),{method:'DELETE'}); showToast(name+' can no longer read your documents'); }
+  catch(e){ showToast('Couldn\u2019t disconnect '+name+'. Try again.'); if(btn)btn.disabled=false; return; }
+  refreshMcpConnections();
+}
+// Deleting the account disconnects every assistant first (best effort: the Worker can be away; the
+// sign-in it holds stops working once the account is gone either way).
+async function disconnectAllMcpConnections(){
+  try{ const items=(await mcpConnectionsFetch('/connections')).connections||[]; for(const c of items)await mcpConnectionsFetch('/connections?id='+encodeURIComponent(c.id),{method:'DELETE'}); }
+  catch(e){ console.warn('[sakura] delete account: could not disconnect AI assistants',e); }
+}
+el('mcp-copy-url-btn')?.addEventListener('click',async()=>{
+  const url=el('mcp-connect-url')?.textContent||'';
+  try{ await navigator.clipboard.writeText(url); showToast('Address copied'); }catch(e){ showToast('Copy the address shown above'); }
+});
 let aiVaultProvidersItems=[];
 let aiVaultProvidersLoading=false;
 let aiVaultProvidersError=null;
@@ -28642,7 +28709,7 @@ el('search-input').addEventListener('keydown',e=>{
   if (matchesShortcut(e,'findInTree') || matchesShortcut(e,'findReplace')) return;
   e.stopPropagation(); if(e.key==='Enter'||e.key==='F3'){e.preventDefault(); jumpSearch(e.shiftKey?-1:1)} else if(e.key==='Escape'){e.preventDefault(); closeSearch()}});
 document.querySelectorAll('.fmt-btn').forEach(btn=>btn.addEventListener('click',()=>handleToolbarStyle(btn.dataset.style)));
-el('settings-toggle').addEventListener('click',e=>{e.stopPropagation(); el('help-panel').classList.remove('open'); el('export-menu')?.classList.remove('open'); el('hl-palette')?.classList.remove('open'); el('fc-palette')?.classList.remove('open'); toggleNotifMenu(false); el('settings-panel').classList.toggle('open'); setSettingsSearchVisible(false); if(el('settings-panel').classList.contains('open')){updateExportStatus(); updatePreRestoreSnapshotStatus(); if(isAdmin){refreshAiVaultProvidersList(); refreshAiVaultQuota();}}}); el('help-close-btn')?.addEventListener('click',e=>{e.stopPropagation(); el('help-panel').classList.remove('open');}); el('help-toggle').addEventListener('click',e=>{e.stopPropagation(); el('settings-panel').classList.remove('open'); el('export-menu')?.classList.remove('open'); el('hl-palette')?.classList.remove('open'); el('fc-palette')?.classList.remove('open'); toggleNotifMenu(false); el('help-panel').classList.toggle('open'); setHelpSearchVisible(false)});
+el('settings-toggle').addEventListener('click',e=>{e.stopPropagation(); el('help-panel').classList.remove('open'); el('export-menu')?.classList.remove('open'); el('hl-palette')?.classList.remove('open'); el('fc-palette')?.classList.remove('open'); toggleNotifMenu(false); el('settings-panel').classList.toggle('open'); setSettingsSearchVisible(false); if(el('settings-panel').classList.contains('open')){updateExportStatus(); updatePreRestoreSnapshotStatus(); if(currentUser)refreshMcpConnections(); if(isAdmin){refreshAiVaultProvidersList(); refreshAiVaultQuota();}}}); el('help-close-btn')?.addEventListener('click',e=>{e.stopPropagation(); el('help-panel').classList.remove('open');}); el('help-toggle').addEventListener('click',e=>{e.stopPropagation(); el('settings-panel').classList.remove('open'); el('export-menu')?.classList.remove('open'); el('hl-palette')?.classList.remove('open'); el('fc-palette')?.classList.remove('open'); toggleNotifMenu(false); el('help-panel').classList.toggle('open'); setHelpSearchVisible(false)});
 el('export-toggle').addEventListener('click',e=>{e.stopPropagation(); toggleNotifMenu(false); openSbMenuUnder(e.currentTarget,exportMenuItems(),{id:'export-menu',label:'Export',alignRight:true,keyboard:e.detail===0});});
 el('import-toggle')?.addEventListener('click',e=>{e.stopPropagation(); toggleNotifMenu(false); openSbMenuUnder(e.currentTarget,importMenuItems(),{id:'import-menu',label:'Import',alignRight:true,keyboard:e.detail===0});});
 // Escape closes Settings or Help like every other panel, when focus is in that sheet or on the

@@ -73,7 +73,9 @@ describe('privacy policy and terms', () => {
   it('cover the standard site basics (owner 2026-11-19)', () => {
     // Privacy policy names what is kept on the device and why no consent is asked.
     expect(PRIVACY).toContain('<h2>Cookies and storage on your device</h2>');
-    expect(PRIVACY).toContain('Sakura sets no cookies.');
+    // One exception since 2026-11-25: the short-lived cookie while connecting an AI assistant (docs/mcp-plan.md).
+    expect(PRIVACY).toContain('Sakura sets no cookies, with one exception: while you connect an AI assistant');
+    expect(PRIVACY).toContain('It expires within ten minutes.');
     // Each policy page has its own canonical address and link-preview tags.
     for (const [p, name] of [[PRIVACY, 'privacy'], [TERMS, 'terms'], [NOTICES, 'third-party-notices']] as const) {
       expect(p).toContain(`<link rel="canonical" href="https://www.sakura-notes.com/${name}.html">`);

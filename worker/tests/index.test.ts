@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import { SignJWT, generateKeyPair, type JWTVerifyGetKey } from 'jose';
 import {
-  default as worker,
+  router as worker,
   handleAdminProvidersPost,
   handleAdminProvidersGet,
   handleAdminProvidersDelete,
@@ -77,6 +77,9 @@ function makeEnv(kv: FakeKv, overrides: Partial<Env> = {}): Env {
     // in quota.ts/providers.ts) — safe to cast here since nothing calls the methods it lacks.
     SAKURA_VAULT_KV: kv as unknown as KVNamespace,
     FIREBASE_PROJECT_ID: PROJECT_ID,
+    FIREBASE_API_KEY: 'test-api-key',
+    OAUTH_KV: kv as unknown as KVNamespace,
+    OAUTH_PROVIDER: undefined as unknown as Env['OAUTH_PROVIDER'],
     VAULT_KEK: kekBase64,
     ADMIN_UID,
     // Only POST /pdf touches the browser binding; its handler is tested in pdf.test.ts.
