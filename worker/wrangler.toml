@@ -28,7 +28,9 @@ name = "sakura-vault"
 main = "src/index.ts"
 compatibility_date = "2026-08-31"
 # @cloudflare/puppeteer (POST /pdf) needs the Node.js compatibility layer.
-compatibility_flags = ["nodejs_compat"]
+# global_fetch_strictly_public: the OAuth library fetches client metadata documents (CIMD) from
+# addresses an assistant gives; this keeps those fetches on the public internet.
+compatibility_flags = ["nodejs_compat", "global_fetch_strictly_public"]
 
 [vars]
 FIREBASE_PROJECT_ID = "sakura-4cdae"
@@ -38,9 +40,19 @@ FIREBASE_PROJECT_ID = "sakura-4cdae"
 DAILY_AI_QUOTA = "20"
 # PDF files per signed-in user per UTC day (POST /pdf, src/pdf.ts). Separate from the AI quota.
 DAILY_PDF_QUOTA = "50"
+# Firebase's public web API key (the same one in web/index.html's FIREBASE_CONFIG; not a secret):
+# the MCP server turns a connection's refresh token into an ID token with it (src/firestoreRest.ts).
+FIREBASE_API_KEY = "AIzaSyB0WitU2dazVbt_MCkkxZuL_pxSH76Xlj0"
 
 [[kv_namespaces]]
 binding = "SAKURA_VAULT_KV"
+id = "160c845516104abbb49306c740e809ed"
+
+# The MCP server's OAuth store (@cloudflare/workers-oauth-provider needs the binding named OAUTH_KV):
+# the same namespace, under the library's own key prefixes (client:, grant:, token:, …), which don't
+# meet this Worker's (provider:, config:, quota keys).
+[[kv_namespaces]]
+binding = "OAUTH_KV"
 id = "160c845516104abbb49306c740e809ed"
 
 # Cloudflare Browser Rendering: POST /pdf prints the app's HTML to a PDF in headless Chrome.

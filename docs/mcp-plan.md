@@ -1,4 +1,6 @@
-# Read-only MCP server — idea, not started
+# Read-only MCP server
+
+**Status (2026-11-25): built (owner: 3–4 target users consulted, the gate below is met).** As built: OAuth 2.1 through `@cloudflare/workers-oauth-provider` 1.2.4 in the existing Worker (one Worker as authorization server and resource; `/register`, `/token`, `/authorize`, discovery documents), the MCP endpoint at `POST /mcp` (plain JSON answers, no sessions; `worker/src/mcpServer.ts`), tools in `worker/src/mcpNotes.ts`, Firestore REST in `worker/src/firestoreRest.ts`, consent in `worker/src/connect.ts` plus `web/public/connect.html`, Settings → Account → AI assistants in index.html. Changes from the design below: the refresh token is kept in the grant's props, which the library encrypts with a key only the assistant's token unwraps (stronger than the vault KEK, and nothing to manage); the library's store is a second binding (`OAUTH_KV`) to the same KV namespace; the rate limit is per isolate (60 calls a minute per person) rather than in KV, to stay inside the free plan's 1k KV writes a day. The rest of this file is the original discussion.
 
 **Status (2026-11-22): parked idea, not approved for building.** Owner asked whether Sakura should
 have an MCP server so people can use their notes from an AI assistant (Claude, ChatGPT, Cursor and

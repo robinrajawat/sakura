@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<meta name="referrer" content="no-referrer">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://apis.google.com; style-src 'unsafe-inline'; img-src 'self' data:; connect-src https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.gstatic.com; frame-src https://auth.sakura-notes.com https://sakura-4cdae.firebaseapp.com; base-uri 'none'">
+<title>Connect an assistant · Sakura Notes</title>
+<link rel="icon" href="flower-glyph.svg" type="image/svg+xml">
+<!--
+  Connecting an AI assistant (docs/mcp-plan.md). The assistant's sign-in request reaches the Worker
+  (ai.sakura-notes.com/authorize), which holds it and sends the person here with what to show in the
+  address's fragment (never sent to any server). Here, where the person is already signed in to
+  Sakura, they allow or decline it; the answer goes back to the Worker as a form post. On Allow it
+  carries their Firebase sign-in (an ID token saying who they are, and the refresh token the Worker
+  keeps, encrypted, to read as them later). Read-only access only.
+-->
+<style>
+  :root{--bg:#f8f8f6;--fg:#3d3929;--muted:#73716b;--border:#e3e0d8;--card:#ffffff;--accent:#2e8479;--btn-bg:#222;--btn-fg:#fff;--warn-bg:#fdf3e1;--warn-fg:#7a4b06}
+  @media (prefers-color-scheme: dark){:root{--bg:#121212;--fg:#eae9e4;--muted:#9d9a93;--border:#2a2a27;--card:#1c1c1a;--accent:#3caa9b;--btn-bg:#eee;--btn-fg:#1a1a1a;--warn-bg:#3a2a0e;--warn-fg:#fbd38d}}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif}
+  main{max-width:30rem;margin:0 auto;padding:48px 16px}
+  .brand{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:14px;margin-bottom:24px}
+  .brand img{width:20px;height:20px}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:24px}
+  h1{font-size:20px;line-height:1.3;margin:0 0 12px}
+  p{margin:0 0 12px}
+  ul{margin:0 0 16px;padding-left:20px}
+  li{margin:4px 0}
+  .muted{color:var(--muted);font-size:14px}
+  .warn{background:var(--warn-bg);color:var(--warn-fg);border-radius:8px;padding:10px 12px;font-size:14px;margin:0 0 16px}
+  .actions{display:flex;gap:8px;justify-content:flex-end;margin-top:20px;flex-wrap:wrap}
+  button,.btn{font:inherit;font-size:15px;border-radius:8px;padding:8px 16px;border:1px solid var(--border);background:transparent;color:var(--fg);cursor:pointer;text-decoration:none}
+  button.primary{background:var(--btn-bg);color:var(--btn-fg);border-color:var(--btn-bg)}
+  button:disabled{opacity:.6;cursor:default}
+  strong{font-weight:600}
+  [hidden]{display:none!important}
+</style>
+</head>
+<body>
+<main>
+  <div class="brand"><img src="flower-glyph.svg" alt=""> Sakura Notes</div>
+  <div class="card">
+    <div id="state-loading"><p class="muted">Checking your sign-in…</p></div>
+
+    <div id="state-invalid" hidden>
+      <h1>Nothing to connect</h1>
+      <p>This page opens when an AI assistant asks to read your Sakura documents. Start connecting from the assistant: add <strong>https://ai.sakura-notes.com/mcp</strong> as a connector there.</p>
+    </div>
+
+    <div id="state-signin" hidden>
+      <h1>Sign in to Sakura first</h1>
+      <p>To let an assistant read your documents, sign in to Sakura in this browser, then come back to this tab.</p>
+      <div class="actions"><a class="btn" href="./" target="_blank" rel="noopener">Open Sakura</a><button type="button" class="primary" id="signed-in-btn">I've signed in</button></div>
+    </div>
+
+    <div id="state-ask" hidden>
+      <h1>Allow <span id="client-name"></span> to read your Sakura documents?</h1>
+      <p class="muted" id="client-origin"></p>
+      <p>It will be able to:</p>
+      <ul>
+        <li>list your documents and folders</li>
+        <li>read your documents, with their notes, tables and threads</li>
+        <li>search across them</li>
+      </ul>
+      <p>It can't change, add or delete anything. What it reads goes to that assistant's provider, under their terms.</p>
+      <p class="muted">Signed in as <strong id="account-email"></strong>. You can disconnect it at any time in Sakura: Settings → Account → AI assistants.</p>
+      <p class="warn" id="loopback-warning" hidden>Access goes to an app on this computer. Allow it only if you just started connecting from that app.</p>
+      <div class="actions"><button type="button" id="deny-btn">Don't allow</button><button type="button" class="primary" id="allow-btn">Allow</button></div>
+    </div>
+
+    <div id="state-sending" hidden><p class="muted">Connecting…</p></div>
+    <div id="state-error" hidden><h1>Couldn't connect</h1><p id="error-text"></p></div>
+  </div>
+</main>
+<form id="answer" method="post" action="https://ai.sakura-notes.com/authorize" hidden>
+  <input type="hidden" name="handle">
+  <input type="hidden" name="decision">
+  <input type="hidden" name="idToken">
+  <input type="hidden" name="refreshToken">
+</form>
+<script type="module">
+  const FIREBASE_SDK_VERSION = '10.14.1';
+  const FIREBASE_CONFIG = { apiKey: 'AIzaSyB0WitU2dazVbt_MCkkxZuL_pxSH76Xlj0', authDomain: 'auth.sakura-notes.com', projectId: 'sakura-4cdae', appId: '1:547935562547:web:50ddb56ab0db0089452c46' };
+  const $ = (id) => document.getElementById(id);
+  const show = (name) => { for (const s of ['loading', 'invalid', 'signin', 'ask', 'sending', 'error']) $('state-' + s).hidden = s !== name; };
+  const fail = (msg) => { $('error-text').textContent = msg; show('error'); };
+  // Never inside another site's frame, where Allow could be clicked through a disguise. (GitHub Pages
+  // can't send frame-ancestors, and a meta CSP can't carry it.)
+  let framed = true;
+  try { framed = window.top !== window.self; } catch (e) { /* a cross-origin top: framed */ }
+  if (framed) { document.body.innerHTML = ''; throw new Error('Sakura’s connect page can’t be shown inside another page.'); }
+
+  // The request is kept in this tab only (sessionStorage), and leaves the address bar, so a copied
+  // link can't replay it; "I've signed in" reloads the page and finds it again.
+  let fragment = location.hash.slice(1);
+  try {
+    if (fragment) sessionStorage.setItem('sakura_connect_request', fragment);
+    else fragment = sessionStorage.getItem('sakura_connect_request') || '';
+  } catch (e) { /* storage unavailable: the address keeps it instead */ }
+  if (location.hash) { try { if (sessionStorage.getItem('sakura_connect_request') === fragment) history.replaceState(null, '', location.pathname); } catch (e) { /* keep the address */ } }
+  const params = new URLSearchParams(fragment);
+  const handle = params.get('handle') || '';
+  if (!handle) {
+    show('invalid');
+  } else {
+    // Names come from the assistant itself: shown only as text, never as markup.
+    $('client-name').textContent = params.get('client') || 'An AI assistant';
+    const domain = params.get('domain');
+    const to = params.get('to') || '';
+    $('client-origin').textContent = (domain ? 'Published by ' + domain + '. ' : 'This assistant named itself; Sakura can’t verify the name. ') + (to ? 'Access will be sent to ' + to + '.' : '');
+    $('loopback-warning').hidden = params.get('local') !== '1';
+    start().catch(() => fail('Sakura couldn’t load. Check the connection and start connecting again from your assistant.'));
+  }
+
+  async function start() {
+    const [appMod, authMod] = await Promise.all([
+      import(`https://www.gstatic.com/firebasejs/${FIREBASE_SDK_VERSION}/firebase-app.js`),
+      import(`https://www.gstatic.com/firebasejs/${FIREBASE_SDK_VERSION}/firebase-auth.js`)
+    ]);
+    const auth = authMod.getAuth(appMod.initializeApp(FIREBASE_CONFIG));
+    let user = null;
+    authMod.onAuthStateChanged(auth, (u) => {
+      user = u;
+      if (!u) { show('signin'); return; }
+      $('account-email').textContent = u.email || 'your account';
+      show('ask');
+    });
+    $('signed-in-btn').addEventListener('click', () => location.reload());
+    const answer = async (allow) => {
+      const form = $('answer');
+      form.elements.handle.value = handle;
+      form.elements.decision.value = allow ? 'allow' : 'deny';
+      if (allow) {
+        if (!user) { show('signin'); return; }
+        show('sending');
+        try {
+          form.elements.idToken.value = await user.getIdToken(true);
+          form.elements.refreshToken.value = user.refreshToken;
+        } catch (e) {
+          fail('Your sign-in couldn’t be confirmed. Sign in to Sakura again, then start connecting again from your assistant.');
+          return;
+        }
+      } else {
+        show('sending');
+      }
+      try { sessionStorage.removeItem('sakura_connect_request'); } catch (e) { /* nothing kept */ }
+      form.submit();
+    };
+    $('allow-btn').addEventListener('click', () => answer(true));
+    $('deny-btn').addEventListener('click', () => answer(false));
+  }
+</script>
+</body>
+</html>

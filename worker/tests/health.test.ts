@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import worker, { type Env } from '../src/index';
+import { router as worker, type Env } from '../src/index';
 
 const fakeEnv = {} as Env;
 
