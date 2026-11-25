@@ -158,7 +158,7 @@ Two ways to run it:
 
 - **Sign in** (Google or email) and your documents, folders, To-Dos and settings are kept in your account, on every device, with version history.
 - **Try it without an account.** Everything then stays in your browser and works offline once loaded; signing in later brings it into your account. Sakura can also be installed as an app from the browser's address bar.
-- **Send a copy** of a document to another Sakura user. It becomes their own document; nothing stays linked.
+- **Send a copy** of a document to another Sakura user. They preview it before adding it, and it becomes their own document; nothing stays linked.
 - **Download all data** saves everything to one file at any time. Without an account it's **Backup**, and **Restore** brings it back (with one-step undo).
 - **Secure storage** locks your AI keys with a passphrase.
 - **No analytics or tracking.** Error reports (on by default, switch off in Settings → About) never include your content, account or IP address. Every font is served by Sakura itself.
