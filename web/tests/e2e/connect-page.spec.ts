@@ -13,8 +13,16 @@ async function open(page: Page, signedIn: boolean, hash: string) {
   await page.route('https://www.gstatic.com/firebasejs/**/firebase-app.js', (r) => r.fulfill({ contentType: 'text/javascript', body: 'export function initializeApp(){ return {}; }' }));
   await page.route('https://www.gstatic.com/firebasejs/**/firebase-auth.js', (r) => r.fulfill({
     contentType: 'text/javascript',
-    body: `export function getAuth(){ return {}; }
-      export function onAuthStateChanged(a, cb){ setTimeout(() => cb(${signedIn ? "{ email: 'robin@example.com', refreshToken: 'refresh-1', getIdToken: async () => 'id-1' }" : 'null'}), 0); }`
+    body: `const user = { email: 'robin@example.com', refreshToken: 'refresh-1', getIdToken: async () => 'id-1' };
+      let listener = null;
+      export function getAuth(){ return {}; }
+      export class GoogleAuthProvider {}
+      export function onAuthStateChanged(a, cb){ listener = cb; setTimeout(() => cb(${signedIn ? 'user' : 'null'}), 0); }
+      export async function signInWithEmailAndPassword(a, email, pw){
+        if (pw !== 'right') { const e = new Error('bad'); e.code = 'auth/invalid-credential'; throw e; }
+        listener && listener(user); return { user };
+      }
+      export async function signInWithPopup(){ listener && listener(user); return { user }; }`
   }));
   const posts: string[] = [];
   await page.route('https://ai.sakura-notes.com/authorize', async (r) => { posts.push(r.request().postData() || ''); await r.fulfill({ contentType: 'text/html', body: '<p id="done">sent</p>' }); });
@@ -54,12 +62,27 @@ test('Don\'t allow sends no sign-in', async ({ page }) => {
   expect(body.get('refreshToken')).toBe('');
 });
 
-test('signed out: asks to sign in first, and keeps the request across the reload', async ({ page }) => {
+test('signed out: signs in right on the page, then asks; the request survives a reload', async ({ page }) => {
   await open(page, false, request);
   await expect(page.locator('#state-signin')).toBeVisible();
+  await expect(page.locator('#signin-client')).toContainText('Claude');
   await page.reload();
   await expect(page.locator('#state-signin')).toBeVisible();
-  await expect(page.locator('#client-name')).toContainText('Claude');
+  await page.screenshot({ path: test.info().outputPath('connect-signin.png') });
+  await page.fill('#email-input', 'robin@example.com');
+  await page.fill('#password-input', 'wrong');
+  await page.click('#email-btn');
+  await expect(page.locator('#signin-error')).toHaveText('That email and password don\u2019t match a Sakura account.');
+  await page.fill('#password-input', 'right');
+  await page.click('#email-btn');
+  await expect(page.locator('#state-ask')).toBeVisible();
+  expect(await page.evaluate(() => localStorage.getItem('sakura_account_active'))).toBe('true');
+});
+
+test('signed out: Continue with Google signs in and asks', async ({ page }) => {
+  await open(page, false, request);
+  await page.click('#google-btn');
+  await expect(page.locator('#state-ask')).toBeVisible();
 });
 
 test('an app on this computer gets a warning; no request shows how to connect', async ({ page }) => {
