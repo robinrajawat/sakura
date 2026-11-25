@@ -5373,6 +5373,33 @@ function mergeThreadEntries(keptRemarks, keptTombstones, mineRemarks, mineTombst
         all.sort((a, b) => (Number(a.createdAt) || 0) - (Number(b.createdAt) || 0));
     return { remarks: all, remarkTombstones: mergeTombstones(keptTombstones, mineTombstones, now), added: extra.length, removed: keptAll.length - kept.length };
 }
+/**
+ * Thread entries a restored version brings back that were deleted since (owner 2026-11-25: restored
+ * entries vanished again). Their ids carry deletion records here and on every other device, so the
+ * next merge would delete them again; they come back under new ids instead (replies follow), as new
+ * entries no device has deleted.
+ * @param makeId a new entry id each call
+ */
+function reviveDeletedEntries(remarks, tombstones, makeId) {
+    const dead = tombstones && typeof tombstones === 'object' ? tombstones : {};
+    const list = Array.isArray(remarks) ? remarks.filter((r) => r && r.id != null) : [];
+    const newId = new Map();
+    for (const r of list)
+        if (String(r.id) in dead)
+            newId.set(String(r.id), makeId());
+    if (!newId.size)
+        return { remarks: list.map((r) => ({ ...r })), revived: 0 };
+    const out = list.map((r) => {
+        const c = { ...r };
+        const id = newId.get(String(r.id));
+        if (id !== undefined)
+            c.id = id;
+        if (c.answerTo != null && newId.has(String(c.answerTo)))
+            c.answerTo = newId.get(String(c.answerTo));
+        return c;
+    });
+    return { remarks: out, revived: newId.size };
+}
 
 /* GENERATED:threadMerge:END */
 // Thread entries deleted in each document (entry id → time), saved and synced with the document
@@ -15536,7 +15563,9 @@ async function restoreDocRevision(docId,ts){
     }
     // Threads come back with their rows (they used to stay as they are now, so comments on rows
     // that came back were gone).
-    if(Array.isArray(rev.remarks))remarks=JSON.parse(JSON.stringify(rev.remarks));
+    // Entries deleted since the version come back under new ids: their old ids carry deletion
+    // records on every device, and the next merge deleted them again (owner 2026-11-25).
+    if(Array.isArray(rev.remarks))remarks=reviveDeletedEntries(JSON.parse(JSON.stringify(rev.remarks)),docRemarkTombstones(docId),newRemarkId).remarks;
     setDocTitleField(rev.title||'');
     if('author' in rev&&el('doc-author')){ setDocAuthorField(rev.author||''); if(typeof updateAuthorDisplay==='function')updateAuthorDisplay(); }
     if('docLinkedUrl' in rev)setDocLinkedUrl(rev.docLinkedUrl||'',rev.docLinkedUrlLabel||'',false);
@@ -15548,7 +15577,7 @@ async function restoreDocRevision(docId,ts){
     regenerateMissingDiagramPreviews();
     restoreOrphanMsg=describeOrphanedLinksAfterRestore(nodes,diagrams,remarks);
   } else {
-    let prevQa=[]; let prevDiagramsCurrent=[]; let prevDocStatusCurrent=''; let prevRemarksCurrent=[]; let prevLinkCurrent=['',''];
+    let prevQa=[]; let prevDiagramsCurrent=[]; let prevDocStatusCurrent=''; let prevRemarksCurrent=[]; let prevLinkCurrent=['','']; let prevTombstones={};
     try{
       // Diagram xml filled in first (storedDocForRevision), or the "before restore" safety copy
       // would remember diagrams with no recoverable content.
@@ -15560,6 +15589,7 @@ async function restoreDocRevision(docId,ts){
         prevDocStatusCurrent=typeof prev.docStatus==='string'?prev.docStatus:'';
         prevRemarksCurrent=Array.isArray(prev.remarks)?prev.remarks:[];
         prevLinkCurrent=[typeof prev.docLinkedUrl==='string'?prev.docLinkedUrl:'',typeof prev.docLinkedUrlLabel==='string'?prev.docLinkedUrlLabel:''];
+        prevTombstones=prev.remarkTombstones&&typeof prev.remarkTombstones==='object'?prev.remarkTombstones:{};
       }
     }catch(e){}
     // Same fallback logic as the active-doc branch above: restore from the revision when it has
@@ -15576,18 +15606,26 @@ async function restoreDocRevision(docId,ts){
     // localStorage until that document is next opened and saved, reintroducing the exact
     // bloat this whole overflow-store split exists to avoid.
     const restoredDiagramsMeta=[];
+    // A diagram whose drawing is the same as now keeps its picture (versions hold no pictures, and
+    // writing an empty one blanked every diagram of the document, owner 2026-11-25). One whose
+    // drawing couldn't be stored on its own rides along inline, as a first save does.
     for(const dg of restoredDiagrams){
       const {xml,previewSvg,pageSvgs,_hydrated,...meta}=dg;
-      try{ await idbSet('diagblob:'+docId+':'+dg.id,{xml:xml||'',previewSvg:previewSvg||'',pageSvgs:Array.isArray(pageSvgs)?pageSvgs:[]}); }catch(e){}
-      restoredDiagramsMeta.push(meta);
+      let pic={previewSvg:previewSvg||'',pageSvgs:Array.isArray(pageSvgs)?pageSvgs:[]};
+      try{ const cur=await idbGet('diagblob:'+docId+':'+dg.id); if(cur&&typeof cur.xml==='string'&&cur.xml===(xml||'')&&cur.previewSvg)pic={previewSvg:cur.previewSvg,pageSvgs:Array.isArray(cur.pageSvgs)?cur.pageSvgs:[]}; }catch(e){}
+      let stored=false;
+      try{ stored=await idbSet('diagblob:'+docId+':'+dg.id,{xml:xml||'',...pic})===true; }catch(e){}
+      restoredDiagramsMeta.push(stored?meta:{...meta,xml:xml||'',...pic});
     }
     const restoredDocStatus='docStatus' in rev?(rev.docStatus||''):prevDocStatusCurrent;
-    const restoredRemarks=Array.isArray(rev.remarks)?rev.remarks:prevRemarksCurrent;
+    const allTombstones={...prevTombstones,...docRemarkTombstones(docId)};
+    const restoredRemarks=Array.isArray(rev.remarks)?reviveDeletedEntries(rev.remarks,allTombstones,newRemarkId).remarks:prevRemarksCurrent;
     const restoredLink='docLinkedUrl' in rev?[rev.docLinkedUrl||'',rev.docLinkedUrlLabel||'']:prevLinkCurrent;
-    const payload={rowFormat:ROW_FORMAT,nodes:freshNodes,nextId:safeNextId(freshNodes),selectedId:freshNodes[0]?.id??null,multiSelectedIds:[],selectionAnchorId:freshNodes[0]?.id??null,collapsed:[],title:rev.title||'',author:rev.author||'',docStatus:restoredDocStatus,docLinkedUrl:restoredLink[0],docLinkedUrlLabel:restoredLink[1],qa:restoredQa,diagrams:restoredDiagramsMeta,remarks:restoredRemarks};
+    const payload={rowFormat:ROW_FORMAT,nodes:freshNodes,nextId:safeNextId(freshNodes),selectedId:freshNodes[0]?.id??null,multiSelectedIds:[],selectionAnchorId:freshNodes[0]?.id??null,collapsed:[],title:rev.title||'',author:rev.author||'',docStatus:restoredDocStatus,docLinkedUrl:restoredLink[0],docLinkedUrlLabel:restoredLink[1],qa:restoredQa,diagrams:restoredDiagramsMeta,remarks:restoredRemarks,remarkTombstones:allTombstones};
     restoreOrphanMsg=describeOrphanedLinksAfterRestore(freshNodes,restoredDiagrams,restoredRemarks);
     try{ localStorage.setItem(docKey(docId),JSON.stringify(payload)); }catch(e){ showToast('Storage full — restore did not save. Free up space or export a backup.'); renderVersionHistoryList(); return; }
     touchDocIndex(docId,rev.title||'Untitled');
+    queueSync('doc',docId); // the restored copy goes to the account like any edit (it stayed on this device)
     // If it's open in the background (not on screen), refresh that cached copy too —
     // otherwise switching to it later would show what was there before this restore.
     const bgTab=openTabs.find(t=>t.docId===docId);
@@ -15852,10 +15890,12 @@ async function fetchDiagramPreviewFromAccount(d){
 }
 function regenerateMissingDiagramPreviews(){
   const self=regenerateMissingDiagramPreviews;
-  if(!self.tried){ self.tried=new Set(); self.queue=Promise.resolve(); }
+  // Tried once per drawing, not once per diagram: a version restore brings back another drawing
+  // under the same id, which was left without a picture for the rest of the session.
+  if(!self.tried){ self.tried=new Map(); self.queue=Promise.resolve(); }
   (diagrams||[]).forEach(d=>{
-    if(!d||!d.xml||d.previewSvg||self.tried.has(d.id))return;
-    self.tried.add(d.id);
+    if(!d||!d.xml||d.previewSvg||self.tried.get(d.id)===d.xml)return;
+    self.tried.set(d.id,d.xml);
     self.queue=self.queue.then(async()=>{
       const live=findDiagram(d.id); if(!live||!live.xml||live.previewSvg)return;
       if(await fetchDiagramPreviewFromAccount(live))return; // another device drew it: no redraw needed
@@ -24630,7 +24670,9 @@ const aiOutlineBtn=document.getElementById('es-ai-outline-btn'); if(aiOutlineBtn
     // Words and formatting both come from the editor's DOM (readRowMarksFromDom: text is exactly
     // textContent, formatting only from the tags rowMarksToHtml writes).
     const i=getIndex(nodes,node.id); const read=readRowMarksFromDom(input); const plain=read.text;
-    if(i>=0){nodes[i].text=plain; setRowMarksOn(nodes[i],read.marks); nodes[i].modifiedAt=Date.now();}
+    // Saved as you type, like notes (owner 2026-11-25): a row used to be saved only when you left
+    // it or the page was hidden, so a Safari reload while typing lost the row's new words.
+    if(i>=0){nodes[i].text=plain; setRowMarksOn(nodes[i],read.marks); nodes[i].modifiedAt=Date.now(); markDirty();}
     if(e&&e.inputType&&/insertFromPaste|insertFromDrop|insertFromYank/i.test(e.inputType))autoRewritePasteTainted=true;
     autosizeNodeInput(input); handleAtInput(input,node.id);
   });

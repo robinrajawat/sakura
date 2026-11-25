@@ -73,3 +73,26 @@ export function mergeThreadEntries(
   if (extra.length) all.sort((a, b) => (Number(a.createdAt) || 0) - (Number(b.createdAt) || 0));
   return { remarks: all, remarkTombstones: mergeTombstones(keptTombstones, mineTombstones, now), added: extra.length, removed: keptAll.length - kept.length };
 }
+
+/**
+ * Thread entries a restored version brings back that were deleted since (owner 2026-11-25: restored
+ * entries vanished again). Their ids carry deletion records here and on every other device, so the
+ * next merge would delete them again; they come back under new ids instead (replies follow), as new
+ * entries no device has deleted.
+ * @param makeId a new entry id each call
+ */
+export function reviveDeletedEntries(remarks: ThreadEntry[] | null | undefined, tombstones: Tombstones | null | undefined, makeId: () => string): { remarks: ThreadEntry[]; revived: number } {
+  const dead = tombstones && typeof tombstones === 'object' ? tombstones : {};
+  const list = Array.isArray(remarks) ? remarks.filter((r) => r && r.id != null) : [];
+  const newId = new Map<string, string>();
+  for (const r of list) if (String(r.id) in dead) newId.set(String(r.id), makeId());
+  if (!newId.size) return { remarks: list.map((r) => ({ ...r })), revived: 0 };
+  const out = list.map((r) => {
+    const c: ThreadEntry = { ...r };
+    const id = newId.get(String(r.id));
+    if (id !== undefined) c.id = id;
+    if (c.answerTo != null && newId.has(String(c.answerTo))) c.answerTo = newId.get(String(c.answerTo));
+    return c;
+  });
+  return { remarks: out, revived: newId.size };
+}
