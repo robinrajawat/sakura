@@ -32,10 +32,14 @@
     position: fixed; left: 52px; top: 0; bottom: 0; height: 100dvh; z-index: 1200;
     width: min(320px, calc(100vw - 52px - 56px)) !important; flex-basis: auto !important;
     opacity: 1; pointer-events: auto;
-    transform: translateX(calc(-100% - 52px)); transition: transform .2s cubic-bezier(.22,.8,.34,1);
+    transform: translateX(calc(-100% - 52px)); transition: transform .2s cubic-bezier(.22,.8,.34,1), visibility 0s .2s;
+    /* Closed, it is hidden once it has slid away, not only moved off-screen: iPhone Safari tints its
+       bars from fixed panels at the screen's edges and kept the open drawer's darker colour after it
+       closed (owner 2026-11-25: "the editor gets a sharp top edge"). Also off-limits to VoiceOver and Tab. */
+    visibility: hidden;
   }
   html.phone.phone-drawer-open #appbar { left: 0; }
-  html.phone.phone-drawer-open #sidebar { transform: none; box-shadow: 8px 0 24px rgba(0,0,0,.12); }
+  html.phone.phone-drawer-open #sidebar { transform: none; box-shadow: 8px 0 24px rgba(0,0,0,.12); visibility: visible; transition: transform .2s cubic-bezier(.22,.8,.34,1), visibility 0s; }
   html.phone #phone-drawer-backdrop { position: fixed; inset: 0; z-index: 1199; background: rgba(0,0,0,.28); }
   html.phone #sidebar-resize-handle { display: none; }
   html.phone body:has(#todos-panel.open) #app-layout, html.phone body:has(.help-panel.open) #app-layout { margin: 0; }
