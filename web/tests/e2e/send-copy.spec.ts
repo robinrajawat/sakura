@@ -130,10 +130,10 @@ test('the bell shows Preview and Decline for a sent copy; clicking the text adds
   await item.locator('.notif-item-text').click();
   expect(await page.evaluate(() => (window as unknown as { loadDocsIndex: () => unknown[] }).loadDocsIndex().length)).toBe(before);
   await item.locator('.notif-copy-btn.primary').click();
-  await expect(page.locator('#draft-preview-overlay')).toHaveClass(/open/);
-  await expect(page.locator('#draft-preview-sub')).toHaveText('From Robin · 1 row');
-  await page.click('#draft-preview-add');
-  await expect(page.locator('#draft-preview-overlay')).not.toHaveClass(/open/);
+  await expect(page.locator('#inbox-preview-overlay')).toHaveClass(/open/);
+  await expect(page.locator('#inbox-preview-sub')).toHaveText('From Robin · 1 row');
+  await page.click('#inbox-preview-add');
+  await expect(page.locator('#inbox-preview-overlay')).not.toHaveClass(/open/);
   // @ts-expect-error -- bare global from index.html
   await page.evaluate(() => toggleNotifMenu(true));
   await expect(page.locator('#notif-list .notif-item').first().locator('.notif-item-text')).toHaveText('Added Plan to your documents');

@@ -61,15 +61,15 @@ test('an assistant draft is marked, previewed, and added as a cleaned Draft', as
   }
 
   await items.nth(0).getByRole('button', { name: 'Preview' }).click();
-  const dlg = page.locator('#draft-preview-overlay');
+  const dlg = page.locator('#inbox-preview-overlay');
   await expect(dlg).toHaveClass(/open/);
-  await expect(page.locator('#draft-preview-title')).toHaveText('Kickoff notes');
-  await expect(page.locator('#draft-preview-sub')).toHaveText('From your AI assistant · 3 rows · 1 table · 1 diagram · 1 follow-up · Draft');
+  await expect(page.locator('#inbox-preview-title')).toHaveText('Kickoff notes');
+  await expect(page.locator('#inbox-preview-sub')).toHaveText('From your AI assistant · 3 rows · 1 table · 1 diagram · 1 follow-up · Draft');
   await expect(dlg.locator('.history-preview-row', { hasText: 'Migrate CRM data' })).toContainText('Follow-up · note');
   await expect(dlg.locator('.history-preview-row', { hasText: 'Systems' })).toContainText('table · diagram');
   await dlg.screenshot({ path: test.info().outputPath('draft-preview.png') });
 
-  await page.click('#draft-preview-add');
+  await page.click('#inbox-preview-add');
   await expect(dlg).not.toHaveClass(/open/);
   const added = await page.evaluate(() => {
     const id = notifItems.find((x) => x.id === 'n1')?.addedDocId;
@@ -85,15 +85,15 @@ test('an assistant draft is marked, previewed, and added as a cleaned Draft', as
 test('Decline from the preview removes the draft; nothing is added', async ({ page }) => {
   await page.locator('.notif-item').nth(0).getByRole('button', { name: 'Preview' }).click();
   const before = await page.evaluate(() => loadDocsIndex().length);
-  await page.click('#draft-preview-decline');
-  await expect(page.locator('#draft-preview-overlay')).not.toHaveClass(/open/);
+  await page.click('#inbox-preview-decline');
+  await expect(page.locator('#inbox-preview-overlay')).not.toHaveClass(/open/);
   expect(await page.evaluate(() => loadDocsIndex().length)).toBe(before);
 });
 
 test('a colleague\'s copy is previewed too, keeps its own status, and is not marked as a draft', async ({ page }) => {
   await page.locator('.notif-item').nth(1).getByRole('button', { name: 'Preview' }).click();
-  await expect(page.locator('#draft-preview-sub')).toHaveText('From Your AI assistant · 1 row');
-  await page.click('#draft-preview-add');
+  await expect(page.locator('#inbox-preview-sub')).toHaveText('From Your AI assistant · 1 row');
+  await page.click('#inbox-preview-add');
   const status = await page.evaluate(() => { const id = notifItems.find((x) => x.id === 'n2')?.addedDocId; return JSON.parse(localStorage.getItem(docKey(id)) || '{}').docStatus || ''; });
   expect(status).toBe('');
 });
@@ -111,36 +111,36 @@ test.describe('preview robustness', () => {
     await put(page, '{not json');
     await preview(page);
     await expect(page.locator('#toast')).toContainText('Could not open this document');
-    await expect(page.locator('#draft-preview-overlay')).not.toHaveClass(/open/);
+    await expect(page.locator('#inbox-preview-overlay')).not.toHaveClass(/open/);
   });
 
   test('an empty document and odd row values still show', async ({ page }) => {
     await put(page, { title: 'Odd', nodes: [null, 'x', { id: 1, text: 42, depth: 'deep', styles: null, tables: 'no' }] });
     await preview(page);
-    await expect(page.locator('#draft-preview-sub')).toContainText('1 row');
-    await expect(page.locator('#draft-preview-body .history-preview-row')).toHaveCount(1);
-    await page.click('#draft-preview-close-x');
+    await expect(page.locator('#inbox-preview-sub')).toContainText('1 row');
+    await expect(page.locator('#inbox-preview-body .history-preview-row')).toHaveCount(1);
+    await page.click('#inbox-preview-close-x');
     await put(page, { title: 'Empty' });
     await preview(page);
-    await expect(page.locator('#draft-preview-body')).toContainText('This document is empty.');
+    await expect(page.locator('#inbox-preview-body')).toContainText('This document is empty.');
   });
 
   test('a very long document shows its first 300 rows and says how many more', async ({ page }) => {
     await put(page, { title: 'Long', nodes: Array.from({ length: 350 }, (_, i) => ({ id: i + 1, text: 'Row ' + i, depth: 0 })) });
     await preview(page);
-    await expect(page.locator('#draft-preview-body .history-preview-row')).toHaveCount(300);
-    await expect(page.locator('#draft-preview-body')).toContainText('…and 50 more rows');
+    await expect(page.locator('#inbox-preview-body .history-preview-row')).toHaveCount(300);
+    await expect(page.locator('#inbox-preview-body')).toContainText('…and 50 more rows');
   });
 
   test('if adding fails the preview stays open to try again; outside click closes it', async ({ page }) => {
     await preview(page);
     await page.evaluate(() => { delete window.__store['copies/me/items/c1']; }); // added on another device meanwhile
-    await page.click('#draft-preview-add');
+    await page.click('#inbox-preview-add');
     await expect(page.locator('#toast')).toContainText('already added or is no longer available');
-    await expect(page.locator('#draft-preview-overlay')).toHaveClass(/open/);
-    await expect(page.locator('#draft-preview-add')).toBeEnabled();
+    await expect(page.locator('#inbox-preview-overlay')).toHaveClass(/open/);
+    await expect(page.locator('#inbox-preview-add')).toBeEnabled();
     await page.mouse.click(5, 5);
-    await expect(page.locator('#draft-preview-overlay')).not.toHaveClass(/open/);
+    await expect(page.locator('#inbox-preview-overlay')).not.toHaveClass(/open/);
   });
 });
 

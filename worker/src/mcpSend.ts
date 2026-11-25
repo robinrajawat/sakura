@@ -20,8 +20,8 @@ import { parseMarkdown } from '../../web/src/utils/markdownImport';
 import type { FirestoreReader, FirestoreWriter } from './firestoreRest';
 
 export const INBOX_SCOPE = 'inbox:write';
-export const DRAFT_MAX_BYTES = 900_000;
-export const DIAGRAM_MAX_BYTES = 200_000;
+const DRAFT_MAX_BYTES = 900_000;
+const DIAGRAM_MAX_BYTES = 200_000;
 const MAX_DIAGRAMS = 10;
 export const ASSISTANT_NAME = 'Your AI assistant';
 
@@ -134,19 +134,22 @@ export async function toolSendDocument(read: FirestoreReader, write: FirestoreWr
   // Revising a pending draft: only one this person's assistant sent, still in the inbox.
   const replaces = String(args.replaces ?? '').trim();
   if (replaces) {
-    if (/[/]/.test(replaces)) return { isError: true, text: 'Give "replaces" as the id send_document returned.' };
-    const old = await read.get(`copies/${uid}/items/${replaces}`);
-    if (!old || old.fromUid !== uid) return { isError: true, text: 'That draft is no longer waiting in the inbox (added or declined). Send it as a new draft instead.' };
+    if (replaces.includes('/')) return { isError: true, text: 'Give "replaces" as the id send_document returned.' };
+    // Only the sender is needed: the draft itself (up to 900 KB) isn't downloaded.
+    const [hit] = await read.batchGet([`copies/${uid}/items/${replaces}`], ['fromUid']);
+    if (!hit || hit[1].fromUid !== uid) return { isError: true, text: 'That draft is no longer waiting in the inbox (added or declined). Send it as a new draft instead.' };
   }
-  const fields = { fromUid: uid, fromEmail: '', fromDisplayName: ASSISTANT_NAME, title: built.title, doc: json, createdAt: t };
-  const copyId = await write.create(`copies/${uid}/items`, fields);
-  await write.create(`notifications/${uid}/items`, { type: 'doc_copy', fromUid: uid, fromEmail: '', fromDisplayName: ASSISTANT_NAME, docId: copyId, docTitle: built.title, createdAt: t, read: false });
+  // Exactly the fields firestore.rules allows for an inbox item and its notice.
+  const from = { fromUid: uid, fromEmail: '', fromDisplayName: ASSISTANT_NAME };
+  const copyId = await write.create(`copies/${uid}/items`, { ...from, title: built.title, doc: json, createdAt: t });
+  await write.create(`notifications/${uid}/items`, { type: 'doc_copy', ...from, docId: copyId, docTitle: built.title, createdAt: t, read: false });
   if (replaces) {
-    for (const id of await write.findIds(`notifications/${uid}/items`, 'docId', replaces)) await write.remove(`notifications/${uid}/items/${id}`);
-    await write.remove(`copies/${uid}/items/${replaces}`);
+    const [notices] = await Promise.all([write.findIds(`notifications/${uid}/items`, 'docId', replaces), write.remove(`copies/${uid}/items/${replaces}`)]);
+    await Promise.all(notices.map((id) => write.remove(`notifications/${uid}/items/${id}`)));
   }
   const s = built.stats;
-  const what = [s.rows + ' row' + (s.rows === 1 ? '' : 's'), s.tables && s.tables + ' table' + (s.tables === 1 ? '' : 's'), s.diagrams && s.diagrams + ' diagram' + (s.diagrams === 1 ? '' : 's'), s.followUps && s.followUps + ' follow-up' + (s.followUps === 1 ? '' : 's')].filter(Boolean).join(', ');
+  const count = (k: number, one: string) => k + ' ' + one + (k === 1 ? '' : 's');
+  const what = [count(s.rows, 'row'), s.tables && count(s.tables, 'table'), s.diagrams && count(s.diagrams, 'diagram'), s.followUps && count(s.followUps, 'follow-up')].filter(Boolean).join(', ');
   return {
     isError: false,
     text: `Sent "${built.title}" (${what}) to the person's Sakura inbox${replaces ? ', replacing the earlier draft' : ''}. Nothing is added to their documents until they preview it and tap Add; it then starts as a Draft. To revise it before then, call send_document again with replaces: "${copyId}".` + (built.notes.length ? ' Note: ' + built.notes.join(' ') : '')

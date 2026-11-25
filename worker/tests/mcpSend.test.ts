@@ -63,7 +63,11 @@ describe('building a draft', () => {
 function fakes(existing: Record<string, Record<string, unknown>> = {}) {
   const created: Array<[string, Record<string, unknown>]> = [];
   const removed: string[] = [];
-  const read: FirestoreReader = { async get(p) { return existing[p] || null; }, async list() { return []; }, async batchGet() { return []; } };
+  const read: FirestoreReader = {
+    async get() { throw new Error('a replaced draft is checked by its sender only, never downloaded whole'); },
+    async list() { return []; },
+    async batchGet(paths, fields) { expect(fields).toEqual(['fromUid']); return paths.filter((p) => existing[p]).map((p) => [p.split('/').pop() as string, existing[p]]); }
+  };
   const write: FirestoreWriter = {
     async create(c, f) { created.push([c, f]); return c.includes('copies') ? 'copy' + created.length : 'note' + created.length; },
     async remove(p) { removed.push(p); },
@@ -96,7 +100,7 @@ describe('sending a draft', () => {
     const mine = fakes({ 'copies/u1/items/old1': { fromUid: 'u1' } });
     const r = await toolSendDocument(mine.read, mine.write, 'u1', { title: 'v2', markdown: '- a', replaces: 'old1' }, [INBOX_SCOPE], () => NOW);
     expect(r.isError).toBe(false);
-    expect(mine.removed).toEqual(['notifications/u1/items/n9', 'copies/u1/items/old1']);
+    expect([...mine.removed].sort()).toEqual(['copies/u1/items/old1', 'notifications/u1/items/n9']);
     const theirs = fakes({ 'copies/u1/items/old1': { fromUid: 'colleague' } });
     const r2 = await toolSendDocument(theirs.read, theirs.write, 'u1', { title: 'v2', markdown: '- a', replaces: 'old1' }, [INBOX_SCOPE], () => NOW);
     expect(r2.isError).toBe(true);

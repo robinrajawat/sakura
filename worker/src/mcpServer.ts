@@ -9,7 +9,7 @@
 import { toolListDocuments, toolGetDocument, toolSearch } from './mcpNotes';
 import { toolOpenItems, toolCurrentDocument, toolWhatChanged, toolTodos } from './mcpMore';
 import type { FirestoreReader, FirestoreWriter } from './firestoreRest';
-import { toolSendDocument } from './mcpSend';
+import { toolSendDocument, INBOX_SCOPE } from './mcpSend';
 import { SignInExpiredError } from './firestoreRest';
 
 export const SUPPORTED_PROTOCOL_VERSIONS = ['2026-07-28', '2025-11-25', '2025-06-18', '2025-03-26'];
@@ -97,13 +97,13 @@ const SERVER_INFO = {
   websiteUrl: 'https://www.sakura-notes.com',
   icons: [{ src: SERVER_ICON, mimeType: 'image/png', sizes: ['512x512'] }]
 };
-const INSTRUCTIONS = [
-  'Access to one person\'s Sakura Notes: outlines of their own thinking (designs, analyses, decisions). Use search to find where something was worked out, then get_document to read it. Existing documents can never be changed through this server; with the person\'s permission, send_document puts a NEW draft in their Sakura inbox for them to review and add.',
-  'When the person gives you material (notes, an email, requirements) and wants it in Sakura, structure it as an outline and use send_document; tell them it is waiting in their Sakura inbox. To refine it before they add it, send it again with replaces.',
-  'The person keeps editing their documents in Sakura while you talk. Before answering about a document\'s content, read it again with get_document; an earlier read may be out of date.',
-  'When they say "this document" or "what I am working on" without naming one, use current_document. For a long document, read one part with get_document and section.',
-  'If the person just mentions Sakura or asks what you can do with it, list their five most recently changed documents (list_documents) and offer to: work on one of them with them, summarise it, find what is still open (open_items), say what changed lately (what_changed), go through their To-Dos (todos), search across their notes, or turn something they paste into a new Sakura draft (send_document). Keep the offer short.'
-].join(' ');
+// What every connection is told; the parts about sending drafts only when it may (scope inbox:write).
+const ABOUT = 'Access to one person\'s Sakura Notes: outlines of their own thinking (designs, analyses, decisions). Use search to find where something was worked out, then get_document to read it. Existing documents can never be changed through this server.';
+const ABOUT_SENDING = 'With the person\'s permission, send_document puts a NEW draft in their Sakura inbox for them to review and add. When they give you material (notes, an email, requirements) and want it in Sakura, structure it as an outline and use send_document; tell them it is waiting in their Sakura inbox. To refine it before they add it, send it again with replaces.';
+const FRESH = 'The person keeps editing their documents in Sakura while you talk. Before answering about a document\'s content, read it again with get_document; an earlier read may be out of date. When they say "this document" or "what I am working on" without naming one, use current_document. For a long document, read one part with get_document and section.';
+const offer = (canSend: boolean) => 'If the person just mentions Sakura or asks what you can do with it, list their five most recently changed documents (list_documents) and offer to: work on one of them with them, summarise it, find what is still open (open_items), say what changed lately (what_changed), go through their To-Dos (todos), ' + (canSend ? 'search across their notes, or turn something they paste into a new Sakura draft (send_document).' : 'or search across their notes.') + ' Keep the offer short.';
+const INSTRUCTIONS = [ABOUT, ABOUT_SENDING, FRESH, offer(true)].join(' ');
+const READ_ONLY_INSTRUCTIONS = [ABOUT, FRESH, offer(false)].join(' ');
 
 /** Ready-made starters (MCP prompts): assistants that support them list them under the connector, so
  * nobody has to remember wording (owner 2026-11-25). */
@@ -151,7 +151,7 @@ export function allowCall(uid: string, now = Date.now()): boolean {
   return true;
 }
 
-export interface McpExtras { write?: FirestoreWriter; scopes?: string[] }
+interface McpExtras { write?: FirestoreWriter; scopes?: string[] }
 
 async function callTool(name: string, args: Json, uid: string, db: FirestoreReader, extras: McpExtras = {}): Promise<{ text: string; isError: boolean }> {
   try {
@@ -184,14 +184,17 @@ async function handleMessage(msg: unknown, uid: string, db: FirestoreReader, ext
   if (isNotification) return null;
   switch (method) {
     case 'initialize': {
+      const canSend = (extras.scopes || []).includes(INBOX_SCOPE);
       const asked = String(params.protocolVersion || '');
       const protocolVersion = SUPPORTED_PROTOCOL_VERSIONS.includes(asked) ? asked : SUPPORTED_PROTOCOL_VERSIONS[2];
-      return rpcResult(m.id, { protocolVersion, capabilities: { tools: { listChanged: false }, prompts: { listChanged: false } }, serverInfo: SERVER_INFO, instructions: INSTRUCTIONS });
+      return rpcResult(m.id, { protocolVersion, capabilities: { tools: { listChanged: false }, prompts: { listChanged: false } }, serverInfo: SERVER_INFO, instructions: canSend ? INSTRUCTIONS : READ_ONLY_INSTRUCTIONS });
     }
     case 'ping':
       return rpcResult(m.id, {});
     case 'tools/list':
-      return rpcResult(m.id, { tools: TOOLS });
+      // A connection without permission to send drafts isn't offered send_document at all (calling it
+      // anyway still says how to allow it).
+      return rpcResult(m.id, { tools: (extras.scopes || []).includes(INBOX_SCOPE) ? TOOLS : TOOLS.filter((t) => t.name !== 'send_document') });
     case 'prompts/list':
       return rpcResult(m.id, { prompts: PROMPTS });
     case 'prompts/get': {

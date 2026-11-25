@@ -1531,8 +1531,8 @@ body:has(#diagram-viewer.open) .sb-context-menu,body:has(#node-image-viewer.open
 .first-sync-actions{display:flex;gap:8px;justify-content:center;margin-top:20px}
 .first-sync-actions:not(:has(button:not([hidden]))){display:none}
 .history-row-extras{margin-left:8px;font-size:var(--fs-xs);color:var(--muted);white-space:nowrap}
-.draft-preview-actions{display:flex;gap:8px}
-.draft-preview-heading{font-weight:600}
+.inbox-preview-actions{display:flex;gap:8px}
+.inbox-preview-heading{font-weight:600}
 .notif-from-assistant .notif-item-text::before{content:"\2726";margin-right:6px;color:var(--accent)}
 /* Tables (plain, polished, and every Show as display) as the computer draws them. Shared by
    index.html and the phone's reader (hub.html), which shows the computer's ready-made copy of each
@@ -5182,16 +5182,16 @@ html.calm-layout #sb-auto-rewrite-chip.is-quiet:hover,html.calm-layout #sb-auto-
       <div id="sakura-modal-actions"></div>
     </div>
   </div>
-  <div id="draft-preview-overlay" class="history-modal-overlay" role="dialog" aria-modal="true" aria-label="Document in your inbox">
+  <div id="inbox-preview-overlay" class="history-modal-overlay" role="dialog" aria-modal="true" aria-label="Document in your inbox">
     <div class="history-modal">
       <div class="app-modal-head">
-        <div><h2 id="draft-preview-title">Draft</h2><div class="cs-sub" id="draft-preview-sub"></div></div>
-        <button id="draft-preview-close-x" class="app-modal-close-btn" aria-label="Close"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="4" y1="4" x2="20" y2="20"/><line x1="20" y1="4" x2="4" y2="20"/></svg></button>
+        <div><h2 id="inbox-preview-title"></h2><div class="cs-sub" id="inbox-preview-sub"></div></div>
+        <button id="inbox-preview-close-x" class="app-modal-close-btn" aria-label="Close"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="4" y1="4" x2="20" y2="20"/><line x1="20" y1="4" x2="4" y2="20"/></svg></button>
       </div>
-      <div id="draft-preview-body" class="history-modal-body"></div>
+      <div id="inbox-preview-body" class="history-modal-body"></div>
       <div class="history-modal-footer">
         <span class="history-modal-footer-hint">Not in your documents until you add it</span>
-        <span class="draft-preview-actions"><button id="draft-preview-decline" class="btn">Decline</button><button id="draft-preview-add" class="btn primary">Add to my documents</button></span>
+        <span class="inbox-preview-actions"><button id="inbox-preview-decline" class="btn">Decline</button><button id="inbox-preview-add" class="btn primary">Add to my documents</button></span>
       </div>
     </div>
   </div>
@@ -18106,129 +18106,188 @@ async function sendDocCopy(docId,docTitle,profile){
     return {ok:true};
   }catch(e){ console.warn('[sakura] sendDocCopy failed:',e); return {ok:false,error:'Could not send — try again'}; }
 }
-// Stored HTML is cleaned on the way in (standing rule): a received copy's notes, tables and thread
-// entries are cleaned before it becomes a document, whoever sent it (an AI assistant's draft
-// included), not only when it is next opened.
-// It is also repaired into a well-formed document (owner 2026-11-25: "should not end up in a corrupt
-// document"): unique numeric row ids, indents that step down one level at a time, a next id past
-// them all, diagrams with an id and drawing, and thread entries only on rows that exist.
-function cleanReceivedCopy(d){
-  if(!d||typeof d!=='object')return d;
-  const seen=new Set(); let maxId=0, prevDepth=-1;
-  d.nodes=(Array.isArray(d.nodes)?d.nodes:[]).filter(n=>n&&typeof n==='object'&&!Array.isArray(n)).map(n=>{
-    let id=Number(n.id); if(!Number.isInteger(id)||id<1||seen.has(id))id=0;
-    if(id){ seen.add(id); maxId=Math.max(maxId,id); }
-    const depth=Math.max(0,Math.min(Number.isInteger(Number(n.depth))?Number(n.depth):0,prevDepth+1)); prevDepth=depth;
-    return {...n,id,depth,
-      styles:n.styles&&typeof n.styles==='object'&&!Array.isArray(n.styles)?n.styles:{},
-      text:typeof n.text==='string'?n.text:'',
-      note:typeof n.note==='string'?sakuraSanitizeRichHtml(n.note):'',
-      tables:Array.isArray(n.tables)?n.tables.filter(t=>typeof t==='string').map(t=>tidyTableHtml(sakuraSanitizeRichHtml(t))):[],
-      images:Array.isArray(n.images)?n.images:[]};
-  });
-  d.nodes.forEach(n=>{ if(!n.id){ n.id=++maxId; seen.add(n.id); } });
-  const parent=[]; d.nodes.forEach(n=>{ parent.length=n.depth; n.parentId=n.depth?parent[n.depth-1]??null:null; parent[n.depth]=n.id; });
-  d.nextId=maxId+1;
-  d.title=typeof d.title==='string'?d.title:'';
-  d.diagrams=(Array.isArray(d.diagrams)?d.diagrams:[]).filter(g=>g&&typeof g==='object'&&typeof g.xml==='string'&&g.xml.trim())
-    .map((g,i)=>({...g,id:typeof g.id==='string'&&g.id?g.id:'dg'+Date.now()+'-'+i,anchorNodeId:seen.has(Number(g.anchorNodeId))?Number(g.anchorNodeId):(d.nodes[0]?.id??null)}));
-  d.remarks=(Array.isArray(d.remarks)?d.remarks:[]).filter(r=>r&&typeof r==='object'&&seen.has(Number(r.anchorNodeId))).map(r=>{
-    const out={...r};
-    for(const k of ['text','title'])if(typeof out[k]==='string')out[k]=sakuraSanitizeRichHtml(out[k]);
-    return out;
-  });
-  return d;
+/* GENERATED:receivedCopy:START — DO NOT EDIT BY HAND. Source of truth: src/utils/receivedCopy.ts (tests: tests/unit/receivedCopy.test.ts). Regenerate with `npm run generate` after changing the source; CI fails if this block drifts from what the generator produces (see .github/workflows/ci.yml and scripts/generate-index-blocks.mjs). */
+/**
+ * A document that arrives in the inbox (Send a copy, or a draft from your AI assistant's
+ * send_document), made safe and well-formed before it can become a document (owner 2026-11-25:
+ * "should not end up in a duplicate, corrupt document").
+ *
+ * - Stored HTML is cleaned on the way in (standing rule): notes, tables and thread entries, through
+ *   the cleaners the caller passes (index.html's sakuraSanitizeRichHtml / tidyTableHtml).
+ * - It is repaired: unique positive row ids, indents that step down one level at a time, parent
+ *   links from the indents (the rule rebuildParentIdsCore applies in the editor; that one needs the
+ *   app's globals, so it can't run here), a next id past every row, diagrams with
+ *   an id and a drawing, anchored to a row that exists, and thread entries only on existing rows.
+ * - `docIdForCopy` gives each inbox item one document id, so adding it twice, or on two devices,
+ *   lands on the same document.
+ *
+ * Wired into index.html via scripts/generate-index-blocks.mjs's `receivedCopy` block.
+ */
+const isRec = (v) => !!v && typeof v === 'object' && !Array.isArray(v);
+/** The document id an inbox item becomes: the same every time, on every device. */
+function docIdForCopy(copyId) {
+    return 'dc' + String(copyId || '').replace(/[^A-Za-z0-9]/g, '').slice(0, 40);
 }
-// A copy your AI assistant sent you (copies and notices it writes carry your own account as the
-// sender, which firestore.rules lets no one else do).
-function isAssistantCopy(n){ return !!(n&&n.type==='doc_copy'&&currentUser&&n.fromUid===currentUser.uid); }
+/** Cleans and repairs a received document in place, and returns it. */
+function cleanReceivedCopy(d, c) {
+    if (!isRec(d))
+        return d;
+    const seen = new Set();
+    let maxId = 0;
+    let prevDepth = -1;
+    const nodes = (Array.isArray(d.nodes) ? d.nodes : []).filter(isRec).map((n) => {
+        let id = Number(n.id);
+        if (!Number.isInteger(id) || id < 1 || seen.has(id))
+            id = 0;
+        if (id) {
+            seen.add(id);
+            maxId = Math.max(maxId, id);
+        }
+        const asked = Number(n.depth);
+        const depth = Math.max(0, Math.min(Number.isInteger(asked) ? asked : 0, prevDepth + 1));
+        prevDepth = depth;
+        return {
+            ...n, id, depth, parentId: null,
+            styles: isRec(n.styles) ? n.styles : {},
+            text: typeof n.text === 'string' ? n.text : '',
+            note: typeof n.note === 'string' ? c.sanitize(n.note) : '',
+            tables: Array.isArray(n.tables) ? n.tables.filter((t) => typeof t === 'string').map((t) => c.tidyTable(c.sanitize(t))) : [],
+            images: Array.isArray(n.images) ? n.images : []
+        };
+    });
+    for (const n of nodes)
+        if (!n.id) {
+            n.id = ++maxId;
+            seen.add(n.id);
+        }
+    const parent = [];
+    for (const n of nodes) {
+        parent.length = n.depth;
+        n.parentId = n.depth ? parent[n.depth - 1] ?? null : null;
+        parent[n.depth] = n.id;
+    }
+    d.nodes = nodes;
+    d.nextId = maxId + 1;
+    d.title = typeof d.title === 'string' ? d.title : '';
+    const firstRow = nodes[0]?.id ?? null;
+    d.diagrams = (Array.isArray(d.diagrams) ? d.diagrams : [])
+        .filter((g) => isRec(g) && typeof g.xml === 'string' && !!g.xml.trim())
+        .map((g) => ({ ...g, id: typeof g.id === 'string' && g.id ? g.id : c.newDiagramId(), anchorNodeId: seen.has(Number(g.anchorNodeId)) ? Number(g.anchorNodeId) : firstRow }));
+    d.remarks = (Array.isArray(d.remarks) ? d.remarks : []).filter((r) => isRec(r) && seen.has(Number(r.anchorNodeId))).map((r) => {
+        const out = { ...r };
+        for (const k of ['text', 'title'])
+            if (typeof out[k] === 'string')
+                out[k] = c.sanitize(out[k]);
+        return out;
+    });
+    return d;
+}
+
+/* GENERATED:receivedCopy:END */
+// The cleaners and id maker a received copy is repaired with (src/utils/receivedCopy.ts).
+function copyCleaners(){ return {sanitize:sakuraSanitizeRichHtml,tidyTable:tidyTableHtml,newDiagramId}; }
+// A copy your AI assistant sent you: inbox items and their notices carry your own account as the
+// sender, which firestore.rules lets no one else set (fromDisplayName is the sender's own choice).
+function isFromMe(fromUid){ return !!(currentUser&&fromUid===currentUser.uid); }
+function isAssistantCopy(n){ return !!(n&&n.type==='doc_copy'&&isFromMe(n.fromUid)); }
+const countLabel=(k,one,many)=>k+' '+(k===1?one:(many||one+'s'));
+const INBOX_PREVIEW_BUTTONS=['inbox-preview-add','inbox-preview-decline'];
 // Preview of a document in your inbox, read-only, before it can become a document (owner
 // 2026-11-25: for every inbox document, whoever sent it): its rows with what each holds, then Add or
-// Decline. A draft from your AI assistant is marked as such and added as a Draft.
-let _draftPreviewNotif=null;
+// Decline. A draft from your AI assistant is marked as such and added as a Draft. What the preview
+// read and cleaned is what Add stores, so it is read once.
+let _inboxPreview=null; // {n, d, fromMe}
+const INBOX_PREVIEW_ROWS=300; // a very long document shows its first rows here; all of it is added
 async function openInboxCopyPreview(n){
-  const overlay=el('draft-preview-overlay'), body=el('draft-preview-body'); if(!overlay||!body||!currentUser)return;
-  let d;
+  const overlay=el('inbox-preview-overlay'), body=el('inbox-preview-body'); if(!overlay||!body||!currentUser)return;
+  let d, fromMe;
   try{
     const {mod,db}=await loadFirestoreMods();
     const snap=await mod.getDoc(mod.doc(db,'copies',currentUser.uid,'items',n.docId));
     if(!snap.exists()){ showToast('This document was already added or is no longer available'); return; }
-    d=cleanReceivedCopy(JSON.parse(snap.data().doc||'{}'));
-  }catch(e){ showToast('Could not open this document \u2014 try again'); return; }
-  _draftPreviewNotif=n;
-  el('draft-preview-title').textContent=d.title||n.docTitle||'Untitled';
-  const nodes=d.nodes, diagrams=Array.isArray(d.diagrams)?d.diagrams:[];
+    const data=snap.data();
+    d=cleanReceivedCopy(JSON.parse(data.doc||'{}'),copyCleaners());
+    fromMe=isFromMe(data.fromUid);
+  }catch(e){ showToast('Could not open this document — try again'); return; }
+  _inboxPreview={n,d,fromMe};
+  el('inbox-preview-title').textContent=d.title||n.docTitle||'Untitled';
+  const nodes=d.nodes, diagrams=d.diagrams;
   const tables=nodes.reduce((a,x)=>a+x.tables.length,0), follow=nodes.filter(x=>normalizeThreadStatus(x.marker)==='followup').length;
-  const fromAssistant=isAssistantCopy(n);
-  const statusLabel=fromAssistant?'Draft':(d.docStatus?docStatusLabel(d.docStatus):'');
-  el('draft-preview-sub').textContent=[fromAssistant?'From your AI assistant':'From '+(n.fromDisplayName||n.fromEmail||'someone'),nodes.length+' row'+(nodes.length===1?'':'s'),tables&&(tables+' table'+(tables===1?'':'s')),diagrams.length&&(diagrams.length+' diagram'+(diagrams.length===1?'':'s')),follow&&(follow+' follow-up'+(follow===1?'':'s')),statusLabel].filter(Boolean).join(' \u00b7 ');
+  el('inbox-preview-sub').textContent=[
+    fromMe?'From your AI assistant':'From '+(n.fromDisplayName||n.fromEmail||'someone'),
+    countLabel(nodes.length,'row'),
+    tables&&countLabel(tables,'table'),
+    diagrams.length&&countLabel(diagrams.length,'diagram'),
+    follow&&countLabel(follow,'follow-up'),
+    fromMe?'Draft':(d.docStatus?docStatusLabel(d.docStatus):'')
+  ].filter(Boolean).join(' · ');
   body.innerHTML='';
   const list=document.createElement('div'); list.className='history-preview-rows';
-  const STATUS={confirmed:'Agreed',followup:'Follow-up',parked:'Out of scope'};
-  // A very long document shows its first rows here; all of it is added.
-  const PREVIEW_ROWS=300;
-  if(!nodes.length){ const e=document.createElement('div'); e.className='history-empty'; e.textContent='This document is empty.'; list.appendChild(e); }
-  nodes.slice(0,PREVIEW_ROWS).forEach(x=>{
-    const line=document.createElement('div'); line.className='history-preview-row'+(x.styles&&x.styles.heading?' draft-preview-heading':'');
-    line.style.paddingLeft=(6+Math.min(Number(x.depth)||0,8)*16)+'px';
-    line.textContent=(x.isCheckbox?(x.checked?'\u2611 ':'\u2610 '):'')+(String(x.text||'').trim()||'(empty row)');
-    const st=STATUS[normalizeThreadStatus(x.marker)];
-    const extras=[st,versionRowExtras(x,diagrams)].filter(Boolean).join(' \u00b7 ');
+  const note=text=>{ const e=document.createElement('div'); e.className='history-empty'; e.textContent=text; list.appendChild(e); };
+  if(!nodes.length)note('This document is empty.');
+  nodes.slice(0,INBOX_PREVIEW_ROWS).forEach(x=>{
+    const line=document.createElement('div'); line.className='history-preview-row'+(x.styles.heading?' inbox-preview-heading':'');
+    line.style.paddingLeft=(6+Math.min(x.depth,8)*16)+'px';
+    line.textContent=(x.isCheckbox?(x.checked?'☑ ':'☐ '):'')+(x.text.trim()||'(empty row)');
+    const extras=[nodeMarkerLabel(normalizeThreadStatus(x.marker)),versionRowExtras(x,diagrams)].filter(Boolean).join(' · ');
     if(extras){ const e=document.createElement('span'); e.className='history-row-extras'; e.textContent=extras; line.appendChild(e); }
     list.appendChild(line);
   });
-  if(nodes.length>PREVIEW_ROWS){ const more=document.createElement('div'); more.className='history-empty'; more.textContent='\u2026and '+(nodes.length-PREVIEW_ROWS)+' more rows'; list.appendChild(more); }
+  if(nodes.length>INBOX_PREVIEW_ROWS)note('…and '+(nodes.length-INBOX_PREVIEW_ROWS)+' more rows');
   body.appendChild(list);
-  ['draft-preview-add','draft-preview-decline'].forEach(id=>{ const b=el(id); if(b)b.disabled=false; });
+  setInboxPreviewBusy(false);
   overlay.classList.add('open');
-  setTimeout(()=>el('draft-preview-add')?.focus(),30);
+  setTimeout(()=>el('inbox-preview-add')?.focus(),30);
 }
-function closeInboxCopyPreview(){ el('draft-preview-overlay')?.classList.remove('open'); _draftPreviewNotif=null; }
-el('draft-preview-close-x')?.addEventListener('click',closeInboxCopyPreview);
-el('draft-preview-overlay')?.addEventListener('keydown',e=>{ if(e.key==='Escape'){ e.stopPropagation(); closeInboxCopyPreview(); } });
-el('draft-preview-overlay')?.addEventListener('mousedown',e=>{ if(e.target===e.currentTarget)closeInboxCopyPreview(); });
-el('draft-preview-add')?.addEventListener('click',async()=>{
-  const n=_draftPreviewNotif; if(!n)return;
-  const btns=['draft-preview-add','draft-preview-decline'].map(id=>el(id)).filter(Boolean);
-  btns.forEach(b=>b.disabled=true);
-  await addSentCopyToMyDocs(n); // says why when it can't (already added elsewhere, offline)
-  btns.forEach(b=>b.disabled=false);
-  if(n.addedDocId||_draftPreviewNotif!==n)closeInboxCopyPreview(); // added: done; failed: stay, so Add can be tried again
+function setInboxPreviewBusy(on){ INBOX_PREVIEW_BUTTONS.forEach(id=>{ const b=el(id); if(b)b.disabled=on; }); }
+function closeInboxCopyPreview(){ el('inbox-preview-overlay')?.classList.remove('open'); _inboxPreview=null; }
+el('inbox-preview-close-x')?.addEventListener('click',closeInboxCopyPreview);
+el('inbox-preview-overlay')?.addEventListener('keydown',e=>{ if(e.key==='Escape'){ e.stopPropagation(); closeInboxCopyPreview(); } });
+onOverlayBackdropClick(el('inbox-preview-overlay'),closeInboxCopyPreview);
+el('inbox-preview-add')?.addEventListener('click',async()=>{
+  const p=_inboxPreview; if(!p)return;
+  setInboxPreviewBusy(true);
+  await addSentCopyToMyDocs(p.n,p); // says why when it can't (already added elsewhere, offline)
+  setInboxPreviewBusy(false);
+  if(p.n.addedDocId||_inboxPreview!==p)closeInboxCopyPreview(); // added: done; failed: stay, so Add can be tried again
 });
-el('draft-preview-decline')?.addEventListener('click',()=>{ const n=_draftPreviewNotif; closeInboxCopyPreview(); if(n)deleteNotification(n.id); });
+el('inbox-preview-decline')?.addEventListener('click',()=>{ const p=_inboxPreview; closeInboxCopyPreview(); if(p)deleteNotification(p.n.id); });
 // Recipient side: a doc_copy notification's docId is the id of the copy in copies/{uid}/items.
 // One document per inbox item, whatever happens (owner 2026-11-25: "should not end up in duplicate"):
-// its id comes from the inbox item's id, so Add twice, or on two devices at once, lands on the same
-// document (sync then sees one document, not two), and a second Add while one runs does nothing.
+// its id comes from the inbox item's id (docIdForCopy), so Add twice, or on two devices at once,
+// lands on the same document (sync then sees one document, not two), and a second Add while one
+// runs does nothing. `prepared` is what the preview already read and cleaned ({d, fromMe}).
 const _copyAdding=new Set();
-function docIdForCopy(copyId){ return 'dc'+String(copyId||'').replace(/[^A-Za-z0-9]/g,'').slice(0,40); }
-async function addSentCopyToMyDocs(n){
+async function addSentCopyToMyDocs(n,prepared){
   if(!currentUser||!n||!n.docId||_copyAdding.has(n.docId))return;
   _copyAdding.add(n.docId);
   try{
     const {mod,db}=await loadFirestoreMods();
     const ref=mod.doc(db,'copies',currentUser.uid,'items',n.docId);
     const markAdded=async id=>{
-      try{ await mod.deleteDoc(ref); }catch(e){ console.warn('[sakura] could not remove the sent copy after adding it:',e); }
       // The notification stays as "Added … to your documents" with Open, rather than vanishing.
       n.addedDocId=id; n.read=true;
-      if(n.id)try{ await mod.updateDoc(mod.doc(db,'notifications',currentUser.uid,'items',n.id),{addedDocId:id,read:true}); }catch(e){ console.warn('[sakura] could not mark the sent copy as added:',e); }
+      await Promise.all([
+        mod.deleteDoc(ref).catch(e=>console.warn('[sakura] could not remove the sent copy after adding it:',e)),
+        n.id?mod.updateDoc(mod.doc(db,'notifications',currentUser.uid,'items',n.id),{addedDocId:id,read:true}).catch(e=>console.warn('[sakura] could not mark the sent copy as added:',e)):null
+      ]);
       renderSidebar(); renderNotifList();
     };
     const newId=docIdForCopy(n.docId);
     // Already added (here, or on another device and synced): never a second copy.
-    if(loadDocsIndex().some(x=>x.id===newId)||localStorage.getItem(docKey(newId))){ await markAdded(newId); showToast('Already in your documents'); return; }
+    if(loadDocsIndex().some(x=>x.id===newId)){ await markAdded(newId); showToast('Already in your documents'); return; }
+    // The copy must still be in the inbox, even when the preview already read it.
     const snap=await mod.getDoc(ref);
     if(!snap.exists()){ showToast('This copy was already added or is no longer available'); return; }
-    const d=JSON.parse(snap.data().doc||'{}');
-    cleanReceivedCopy(d);
+    const data=snap.data();
+    const d=prepared?prepared.d:cleanReceivedCopy(JSON.parse(data.doc||'{}'),copyCleaners());
     // A draft from your own AI assistant (sent with your own account: no one else can) starts as Draft.
-    if(snap.data().fromUid===currentUser.uid)d.docStatus='draft';
+    if(prepared?prepared.fromMe:isFromMe(data.fromUid))d.docStatus='draft';
     const diagrams=[];
-    for(const dg of (Array.isArray(d.diagrams)?d.diagrams:[])){
+    for(const dg of d.diagrams){
       const {xml,...meta}=dg;
-      try{ await idbSet('diagblob:'+newId+':'+dg.id,{xml:xml||'',previewSvg:'',pageSvgs:[]}); }catch(e){}
-      diagrams.push({...meta,xml:xml||'',blobSynced:false}); // inline xml stays until saveToStorage confirms the blob
+      try{ await idbSet('diagblob:'+newId+':'+dg.id,{xml,previewSvg:'',pageSvgs:[]}); }catch(e){}
+      diagrams.push({...meta,xml,blobSynced:false}); // inline xml stays until saveToStorage confirms the blob
     }
     const title=(d.title||n.docTitle||'Untitled').trim()||'Untitled';
     // Stored whole or not at all: a full device leaves nothing half-written, and the inbox keeps it.

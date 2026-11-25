@@ -71,7 +71,7 @@ export async function idTokenFor(uid: string, refreshToken: string, apiKey: stri
 }
 
 /** Plain JSON → Firestore's typed JSON value (the inverse of decodeValue). */
-export function encodeValue(v: unknown): unknown {
+function encodeValue(v: unknown): unknown {
   if (v === null || v === undefined) return { nullValue: null };
   if (typeof v === 'boolean') return { booleanValue: v };
   if (typeof v === 'number') return Number.isInteger(v) ? { integerValue: String(v) } : { doubleValue: v };
@@ -80,7 +80,7 @@ export function encodeValue(v: unknown): unknown {
   if (typeof v === 'object') return { mapValue: { fields: encodeFields(v as Record<string, unknown>) } };
   return { nullValue: null };
 }
-export function encodeFields(o: Record<string, unknown>): Record<string, unknown> {
+function encodeFields(o: Record<string, unknown>): Record<string, unknown> {
   const out: Record<string, unknown> = {};
   for (const [k, v] of Object.entries(o)) if (v !== undefined) out[k] = encodeValue(v);
   return out;
@@ -110,8 +110,12 @@ export interface FirestoreWriter {
   findIds(collectionPath: string, field: string, value: string): Promise<string[]>;
 }
 
+/** The REST base for a project's documents, and a path made safe for it. */
+const documentsBase = (projectId: string) => `https://firestore.googleapis.com/v1/projects/${encodeURIComponent(projectId)}/databases/(default)/documents/`;
+const encPath = (path: string) => path.split('/').map(encodeURIComponent).join('/');
+
 export function firestoreReader(projectId: string, idToken: () => Promise<string>, fetchImpl: FetchLike): FirestoreReader {
-  const base = `https://firestore.googleapis.com/v1/projects/${encodeURIComponent(projectId)}/databases/(default)/documents/`;
+  const base = documentsBase(projectId);
   const call = async (url: string) => {
     const res = await fetchImpl(url, { headers: { Authorization: 'Bearer ' + (await idToken()) } });
     if (res.status === 404) return null;
@@ -119,7 +123,7 @@ export function firestoreReader(projectId: string, idToken: () => Promise<string
     if (!res.ok) throw new Error('Sakura storage unavailable (' + res.status + ')');
     return (await res.json()) as Record<string, unknown>;
   };
-  const enc = (path: string) => path.split('/').map(encodeURIComponent).join('/');
+  const enc = encPath;
   const root = `projects/${projectId}/databases/(default)/documents/`;
   return {
     async get(path) {
@@ -159,8 +163,8 @@ export function firestoreReader(projectId: string, idToken: () => Promise<string
 }
 
 export function firestoreWriter(projectId: string, idToken: () => Promise<string>, fetchImpl: FetchLike): FirestoreWriter {
-  const base = `https://firestore.googleapis.com/v1/projects/${encodeURIComponent(projectId)}/databases/(default)/documents/`;
-  const enc = (path: string) => path.split('/').map(encodeURIComponent).join('/');
+  const base = documentsBase(projectId);
+  const enc = encPath;
   const call = async (url: string, init: RequestInit) => {
     const res = await fetchImpl(url, { ...init, headers: { Authorization: 'Bearer ' + (await idToken()), 'Content-Type': 'application/json' } });
     if (res.status === 401) throw new SignInExpiredError();
