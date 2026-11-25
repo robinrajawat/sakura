@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { summarizeVersionChange, formatVersionSummary, describeDevice, formatVersionTime, diffWords } from '../../src/utils/versionSummary';
+import { summarizeVersionChange, formatVersionSummary, describeDevice, formatVersionTime, diffWords, versionRowExtras } from '../../src/utils/versionSummary';
 
 const row = (id: number, text: string, extra: object = {}) => ({ id, text, depth: 0, note: '', tables: [], images: [], ...extra });
 
@@ -68,5 +68,33 @@ describe('diffWords', () => {
     expect(diffWords('a b', 'a b')).toEqual([{ t: 'same', s: 'a b' }]);
     const long = Array.from({ length: 500 }, (_, i) => 'w' + i).join(' ');
     expect(diffWords(long, long + ' x').map((p) => p.t)).toEqual(['del', 'add']);
+  });
+});
+
+describe('version changes beyond words (owner 2026-11-25)', () => {
+  const row = (id: number, extra: object = {}) => ({ id, text: 'Row ' + id, depth: 0, ...extra });
+  it('formatting, headings, tags and statuses count as edits', () => {
+    const a = { nodes: [row(1), row(2), row(3), row(4)] };
+    const b = { nodes: [row(1, { marks: [{ s: 0, e: 3, k: 'b' }] }), row(2, { styles: { heading: 2, bold: false } }), row(3, { tags: ['risk'] }), row(4, { marker: 'confirmed' })] };
+    expect(summarizeVersionChange(a, b).rowsEdited).toBe(4);
+    // Unset styles listed or not are the same.
+    expect(summarizeVersionChange({ nodes: [row(1, { styles: {} })] }, { nodes: [row(1, { styles: { bold: false, heading: 0 } })] }).rowsEdited).toBe(0);
+  });
+  it('a row dragged to another place counts as one moved row', () => {
+    const a = { nodes: [row(1), row(2), row(3), row(4), row(5)] };
+    const b = { nodes: [row(1), row(3), row(4), row(5), row(2)] };
+    expect(summarizeVersionChange(a, b).rowsMoved).toBe(1);
+    expect(formatVersionSummary(summarizeVersionChange(a, b))).toBe('1 row moved');
+  });
+  it('diagrams and the link count', () => {
+    const a = { nodes: [], diagrams: [{ id: 'd1', xml: '<a/>' }, { id: 'd2', xml: '<b/>' }], docLinkedUrl: '' };
+    const b = { nodes: [], diagrams: [{ id: 'd1', xml: '<a2/>' }, { id: 'd3', xml: '<c/>' }], docLinkedUrl: 'https://x' };
+    const c = summarizeVersionChange(a, b);
+    expect([c.diagramsAdded, c.diagramsRemoved, c.diagramsEdited, c.linkChanged]).toEqual([1, 1, 1, true]);
+    expect(formatVersionSummary(c)).toBe('1 diagram added · 1 diagram removed · 1 diagram changed · link changed');
+  });
+  it('names what a row holds besides its words', () => {
+    expect(versionRowExtras({ id: 1, note: '<p>x</p>', tables: ['a', 'b'], images: [{}] }, [{ id: 'd', anchorNodeId: 1 }])).toBe('note · 2 tables · picture · diagram');
+    expect(versionRowExtras({ id: 1, note: '<p>&nbsp;</p>' })).toBe('');
   });
 });
