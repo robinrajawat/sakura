@@ -38,10 +38,11 @@ export const TOOLS = [
   }
 ];
 
-/** The app icon as a full-bleed, opaque square (web/public/icon-512-connector.png: the flower on the
- * app tile's soft gradient). Assistants paint a hard white square behind any transparency and round
- * the corners themselves, so the icon has none. */
-export const SERVER_ICON = 'https://www.sakura-notes.com/icon-512-connector.png';
+/** The installed app's icon: the flower on a rounded tile with transparent corners. Claude shows an
+ * icon's own pixels as they are (a square image shows as a sharp square in its approval dialog), and a
+ * bare glyph all but disappears in dark mode, so the tile carries its own rounded shape (owner
+ * 2026-11-25: the flat glyph on a white square looked cheap). */
+export const SERVER_ICON = 'https://www.sakura-notes.com/icon-512-pwa.png';
 const SERVER_INFO = {
   name: 'sakura-notes',
   title: 'Sakura Notes',
