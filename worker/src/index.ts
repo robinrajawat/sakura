@@ -33,6 +33,7 @@ import { handleAuthorizeGet, handleAuthorizePost, handleConnectionsGet, handleCo
 import { handleMcpRequest, SERVER_ICON } from './mcpServer';
 import { firestoreReader, firestoreWriter, idTokenFor } from './firestoreRest';
 import { INBOX_SCOPE } from './mcpSend';
+import { noteUsed } from './lastUsed';
 
 export interface Env {
   SAKURA_VAULT_KV: KVNamespace;
@@ -304,8 +305,8 @@ export const router = {
     } else if (url.pathname === '/connections' && (request.method === 'GET' || request.method === 'DELETE')) {
       const uidOrResponse = await requireUid(request, env, getKey);
       if (uidOrResponse instanceof Response) response = uidOrResponse;
-      else if (request.method === 'GET') response = await handleConnectionsGet(uidOrResponse, env.OAUTH_PROVIDER);
-      else response = await handleConnectionsDelete(uidOrResponse, env.OAUTH_PROVIDER, url.searchParams.get('id'));
+      else if (request.method === 'GET') response = await handleConnectionsGet(uidOrResponse, env.OAUTH_PROVIDER, env.SAKURA_VAULT_KV);
+      else response = await handleConnectionsDelete(uidOrResponse, env.OAUTH_PROVIDER, url.searchParams.get('id'), env.SAKURA_VAULT_KV);
     } else if (url.pathname === '/pdf' && request.method === 'POST') {
       const uidOrResponse = await requireUid(request, env, getKey);
       if (uidOrResponse instanceof Response) response = uidOrResponse;
@@ -323,13 +324,15 @@ export const router = {
 
 /** POST /mcp, reached only with a valid access token; ctx.props is the connection's. */
 export const mcpApiHandler = {
-  async fetch(request: Request, env: Env, ctx: ExecutionContext & { props?: unknown; auth?: { scope: string[] } }): Promise<Response> {
+  async fetch(request: Request, env: Env, ctx: ExecutionContext & { props?: unknown; auth?: { scope: string[]; clientId?: string } }): Promise<Response> {
     const props = ctx.props as ConnectionProps | undefined;
     if (!props || typeof props.uid !== 'string' || typeof props.refreshToken !== 'string') return new Response('Unauthorized', { status: 401 });
     if (ctx.auth && !ctx.auth.scope.includes(MCP_SCOPE)) return new Response('Forbidden', { status: 403 });
     const idToken = () => idTokenFor(props.uid, props.refreshToken, env.FIREBASE_API_KEY, fetch);
     const db = firestoreReader(env.FIREBASE_PROJECT_ID, idToken, fetch);
     const scopes = ctx.auth ? ctx.auth.scope : [MCP_SCOPE];
+    // "Last used" for Settings, after the answer and never holding it up (src/lastUsed.ts).
+    if (ctx.auth?.clientId) ctx.waitUntil(noteUsed(env.SAKURA_VAULT_KV, props.uid, ctx.auth.clientId).catch(() => {}));
     // The writer is only used by send_document, which checks the inbox:write scope before writing.
     return handleMcpRequest(request, props.uid, db, { scopes, write: firestoreWriter(env.FIREBASE_PROJECT_ID, idToken, fetch) });
   }

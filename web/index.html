@@ -19087,7 +19087,7 @@ async function refreshMcpConnections(){
     const row=document.createElement('div'); row.className='settings-list-row';
     const text=document.createElement('div'); text.className='settings-row-text';
     const name=document.createElement('span'); name.className='settings-switch-text'; name.textContent=String(c.name||'AI assistant');
-    const when=document.createElement('span'); when.className='settings-row-desc'; when.textContent='Connected '+new Date(Number(c.connectedAt)||Date.now()).toLocaleDateString(undefined,{day:'numeric',month:'short',year:'numeric'})+' \u00b7 can read your documents'+(c.canSend?' and send drafts to your inbox':'');
+    const when=document.createElement('span'); when.className='settings-row-desc'; when.textContent='Connected '+new Date(Number(c.connectedAt)||Date.now()).toLocaleDateString(undefined,{day:'numeric',month:'short',year:'numeric'})+' \u00b7 '+(c.lastUsedAt?'last used '+formatRelativeTime(c.lastUsedAt):'not used yet')+' \u00b7 can read your documents'+(c.canSend?' and send drafts to your inbox':'');
     text.append(name,when);
     const btn=document.createElement('button'); btn.type='button'; btn.className='btn'; btn.textContent='Disconnect';
     btn.addEventListener('click',()=>disconnectMcpConnection(c.id,String(c.name||'AI assistant'),btn));
