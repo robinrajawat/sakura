@@ -45,6 +45,8 @@
   .error{color:#c0392b;font-size:14px}
   @media (prefers-color-scheme: dark){.error{color:#f87171}}
   a{color:var(--accent)}
+  label.opt{display:flex;gap:10px;align-items:flex-start;color:var(--fg);font-size:15px;margin:4px 0 16px;cursor:pointer}
+  label.opt input{display:inline-block;width:auto;margin:3px 0 0;flex:none}
   [hidden]{display:none!important}
 </style>
 </head>
@@ -82,7 +84,8 @@
         <li>read your documents, with their notes, tables and threads</li>
         <li>search across them</li>
       </ul>
-      <p>It can't change, add or delete anything. What it reads goes to that assistant's provider, under their terms.</p>
+      <p>It can't change or delete anything you have. What it reads goes to that assistant's provider, under their terms.</p>
+      <label class="opt"><input type="checkbox" id="send-input" checked> <span><strong>Also let it send new drafts to your inbox.</strong> When you ask it to put something in Sakura, it sends a new document to your inbox; you preview it and choose to add it, as a Draft, or decline it. It never changes your existing documents.</span></label>
       <p class="muted">Signed in as <strong id="account-email"></strong>. You can disconnect it at any time in Sakura: Settings → Account → AI assistants.</p>
       <p class="warn" id="loopback-warning" hidden>Access goes to an app on this computer. Allow it only if you just started connecting from that app.</p>
       <div class="actions"><button type="button" id="deny-btn">Don't allow</button><button type="button" class="primary" id="allow-btn">Allow</button></div>
@@ -97,6 +100,7 @@
   <input type="hidden" name="decision">
   <input type="hidden" name="idToken">
   <input type="hidden" name="refreshToken">
+  <input type="hidden" name="send">
 </form>
 <script type="module">
   const FIREBASE_SDK_VERSION = '10.14.1';
@@ -172,6 +176,7 @@
       const form = $('answer');
       form.elements.handle.value = handle;
       form.elements.decision.value = allow ? 'allow' : 'deny';
+      form.elements.send.value = allow && $('send-input').checked ? '1' : '';
       if (allow) {
         if (!user) { show('signin'); return; }
         show('sending');

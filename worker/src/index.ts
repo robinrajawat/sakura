@@ -31,7 +31,8 @@ import { handlePdf, browserRenderer, DEFAULT_DAILY_PDF_QUOTA } from './pdf';
 import { OAuthProvider, type OAuthHelpers } from '@cloudflare/workers-oauth-provider';
 import { handleAuthorizeGet, handleAuthorizePost, handleConnectionsGet, handleConnectionsDelete, MCP_SCOPE, type ConnectionProps } from './connect';
 import { handleMcpRequest, SERVER_ICON } from './mcpServer';
-import { firestoreReader, idTokenFor } from './firestoreRest';
+import { firestoreReader, firestoreWriter, idTokenFor } from './firestoreRest';
+import { INBOX_SCOPE } from './mcpSend';
 
 export interface Env {
   SAKURA_VAULT_KV: KVNamespace;
@@ -326,8 +327,10 @@ export const mcpApiHandler = {
     const props = ctx.props as ConnectionProps | undefined;
     if (!props || typeof props.uid !== 'string' || typeof props.refreshToken !== 'string') return new Response('Unauthorized', { status: 401 });
     if (ctx.auth && !ctx.auth.scope.includes(MCP_SCOPE)) return new Response('Forbidden', { status: 403 });
-    const db = firestoreReader(env.FIREBASE_PROJECT_ID, () => idTokenFor(props.uid, props.refreshToken, env.FIREBASE_API_KEY, fetch), fetch);
-    return handleMcpRequest(request, props.uid, db);
+    const idToken = () => idTokenFor(props.uid, props.refreshToken, env.FIREBASE_API_KEY, fetch);
+    const db = firestoreReader(env.FIREBASE_PROJECT_ID, idToken, fetch);
+    const scopes = ctx.auth ? ctx.auth.scope : [MCP_SCOPE];
+    return handleMcpRequest(request, props.uid, db, { scopes, write: scopes.includes(INBOX_SCOPE) ? firestoreWriter(env.FIREBASE_PROJECT_ID, idToken, fetch) : undefined });
   }
 };
 
@@ -340,7 +343,7 @@ export default new OAuthProvider<Env>({
   authorizeEndpoint: '/authorize',
   tokenEndpoint: '/token',
   clientRegistrationEndpoint: '/register',
-  scopesSupported: [MCP_SCOPE],
+  scopesSupported: [MCP_SCOPE, INBOX_SCOPE],
   requiredScopes: [MCP_SCOPE],
   resourceMetadata: { resource: MCP_ORIGIN + '/mcp', authorization_servers: [MCP_ORIGIN], resource_name: 'Sakura Notes' },
   // A connection lasts while it's used: it ends after 30 days without use, and after 180 days at most.

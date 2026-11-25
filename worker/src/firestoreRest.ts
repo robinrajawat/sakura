@@ -70,6 +70,22 @@ export async function idTokenFor(uid: string, refreshToken: string, apiKey: stri
   return data.id_token;
 }
 
+/** Plain JSON → Firestore's typed JSON value (the inverse of decodeValue). */
+export function encodeValue(v: unknown): unknown {
+  if (v === null || v === undefined) return { nullValue: null };
+  if (typeof v === 'boolean') return { booleanValue: v };
+  if (typeof v === 'number') return Number.isInteger(v) ? { integerValue: String(v) } : { doubleValue: v };
+  if (typeof v === 'string') return { stringValue: v };
+  if (Array.isArray(v)) return { arrayValue: { values: v.map(encodeValue) } };
+  if (typeof v === 'object') return { mapValue: { fields: encodeFields(v as Record<string, unknown>) } };
+  return { nullValue: null };
+}
+export function encodeFields(o: Record<string, unknown>): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(o)) if (v !== undefined) out[k] = encodeValue(v);
+  return out;
+}
+
 /** Forgets a cached ID token (after a refusal, or when a connection is removed). */
 export function forgetIdToken(uid: string): void {
   idTokenCache.delete(uid);
@@ -82,6 +98,16 @@ export interface FirestoreReader {
   list(path: string, max: number): Promise<Array<[string, Record<string, unknown>]>>;
   /** Several records at once (one request), only the named top-level fields; missing ones are left out. */
   batchGet(paths: string[], fields: string[]): Promise<Array<[string, Record<string, unknown>]>>;
+}
+
+/** Writing, for send_document only: new records in the person's own inbox, and removing them. The
+ * project's rules decide what is allowed (copies and notifications sent by oneself, nothing else). */
+export interface FirestoreWriter {
+  /** A new record in a collection; resolves its id. */
+  create(collectionPath: string, fields: Record<string, unknown>): Promise<string>;
+  remove(path: string): Promise<void>;
+  /** Ids of the records in a collection whose field equals a string. */
+  findIds(collectionPath: string, field: string, value: string): Promise<string[]>;
 }
 
 export function firestoreReader(projectId: string, idToken: () => Promise<string>, fetchImpl: FetchLike): FirestoreReader {
@@ -128,6 +154,37 @@ export function firestoreReader(projectId: string, idToken: () => Promise<string
         if (item.found) out.push([item.found.name.slice(item.found.name.lastIndexOf('/') + 1), decodeFields(item.found.fields)]);
       }
       return out;
+    }
+  };
+}
+
+export function firestoreWriter(projectId: string, idToken: () => Promise<string>, fetchImpl: FetchLike): FirestoreWriter {
+  const base = `https://firestore.googleapis.com/v1/projects/${encodeURIComponent(projectId)}/databases/(default)/documents/`;
+  const enc = (path: string) => path.split('/').map(encodeURIComponent).join('/');
+  const call = async (url: string, init: RequestInit) => {
+    const res = await fetchImpl(url, { ...init, headers: { Authorization: 'Bearer ' + (await idToken()), 'Content-Type': 'application/json' } });
+    if (res.status === 401) throw new SignInExpiredError();
+    if (!res.ok && res.status !== 404) throw new Error('Sakura storage refused the write (' + res.status + ')');
+    return res;
+  };
+  return {
+    async create(collectionPath, fields) {
+      const res = await call(base + enc(collectionPath), { method: 'POST', body: JSON.stringify({ fields: encodeFields(fields) }) });
+      const data = (await res.json()) as { name?: string };
+      return String(data.name || '').split('/').pop() || '';
+    },
+    async remove(path) {
+      await call(base + enc(path), { method: 'DELETE' });
+    },
+    async findIds(collectionPath, field, value) {
+      const i = collectionPath.lastIndexOf('/');
+      const parent = collectionPath.slice(0, i), collectionId = collectionPath.slice(i + 1);
+      const res = await call(base + enc(parent) + ':runQuery', {
+        method: 'POST',
+        body: JSON.stringify({ structuredQuery: { from: [{ collectionId }], where: { fieldFilter: { field: { fieldPath: field }, op: 'EQUAL', value: { stringValue: value } } }, limit: 20 } })
+      });
+      const rows = (await res.json()) as Array<{ document?: { name: string } }>;
+      return rows.filter((r) => r.document).map((r) => r.document!.name.split('/').pop() as string);
     }
   };
 }

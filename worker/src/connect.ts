@@ -19,6 +19,7 @@ import { AuthorizationError, CimdFetchError, type OAuthHelpers } from '@cloudfla
 import type { JWTVerifyGetKey } from 'jose';
 import { verifyFirebaseIdToken } from './auth';
 import { idTokenFor, forgetIdToken, SignInExpiredError, type FetchLike } from './firestoreRest';
+import { INBOX_SCOPE } from './mcpSend';
 
 export const CONNECT_PAGE = 'https://www.sakura-notes.com/connect.html';
 export const MCP_SCOPE = 'notes:read';
@@ -105,14 +106,16 @@ export async function handleAuthorizePost(request: Request, deps: AuthorizeDeps)
       if (e instanceof SignInExpiredError) return notConfirmed();
       throw e;
     }
-    const approved = await deps.oauth.approveConsent(request, handle, { scope: [MCP_SCOPE] });
+    // Reading is always granted; sending drafts to the inbox only when the person ticked it.
+    const scope = form.get('send') === '1' ? [MCP_SCOPE, INBOX_SCOPE] : [MCP_SCOPE];
+    const approved = await deps.oauth.approveConsent(request, handle, { scope });
     const client = await deps.oauth.lookupClient(approved.request.clientId);
     const props: ConnectionProps = { uid, refreshToken };
     const { redirectTo } = await deps.oauth.completeAuthorization({
       request: approved.request,
       userId: uid,
       metadata: { name: client?.clientName || 'AI assistant', connectedAt: Date.now() },
-      scope: [MCP_SCOPE],
+      scope,
       props
     });
     approved.headers.set('Location', redirectTo);
@@ -124,13 +127,13 @@ export async function handleAuthorizePost(request: Request, deps: AuthorizeDeps)
 
 /** GET /connections: this person's connected assistants (no tokens, nothing secret). */
 export async function handleConnectionsGet(uid: string, oauth: OAuthHelpers): Promise<Response> {
-  const items: Array<{ id: string; name: string; connectedAt: number }> = [];
+  const items: Array<{ id: string; name: string; connectedAt: number; canSend: boolean }> = [];
   let cursor: string | undefined;
   do {
     const page = await oauth.listUserGrants(uid, { limit: 100, cursor });
     for (const g of page.items) {
       const meta = (g.metadata && typeof g.metadata === 'object' ? g.metadata : {}) as Record<string, unknown>;
-      items.push({ id: g.id, name: typeof meta.name === 'string' ? meta.name : 'AI assistant', connectedAt: Number(meta.connectedAt) || g.createdAt });
+      items.push({ id: g.id, name: typeof meta.name === 'string' ? meta.name : 'AI assistant', connectedAt: Number(meta.connectedAt) || g.createdAt, canSend: Array.isArray(g.scope) && g.scope.includes(INBOX_SCOPE) });
     }
     cursor = page.cursor;
   } while (cursor);
