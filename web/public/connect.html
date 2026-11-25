@@ -36,6 +36,15 @@
   button.primary{background:var(--btn-bg);color:var(--btn-fg);border-color:var(--btn-bg)}
   button:disabled{opacity:.6;cursor:default}
   strong{font-weight:600}
+  button.wide{width:100%;margin-top:4px}
+  .or{display:flex;align-items:center;gap:12px;color:var(--muted);font-size:13px;margin:16px 0}
+  .or::before,.or::after{content:"";flex:1;border-top:1px solid var(--border)}
+  label{display:block;font-size:14px;color:var(--muted);margin:0 0 12px}
+  input{display:block;width:100%;margin-top:4px;font:inherit;font-size:16px;padding:9px 12px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--fg)}
+  input:focus{outline:2px solid var(--accent);outline-offset:1px}
+  .error{color:#c0392b;font-size:14px}
+  @media (prefers-color-scheme: dark){.error{color:#f87171}}
+  a{color:var(--accent)}
   [hidden]{display:none!important}
 </style>
 </head>
@@ -51,9 +60,17 @@
     </div>
 
     <div id="state-signin" hidden>
-      <h1>Sign in to Sakura first</h1>
-      <p>To let an assistant read your documents, sign in to Sakura in this browser, then come back to this tab.</p>
-      <div class="actions"><a class="btn" href="./" target="_blank" rel="noopener">Open Sakura</a><button type="button" class="primary" id="signed-in-btn">I've signed in</button></div>
+      <h1>Sign in to Sakura</h1>
+      <p><span id="signin-client"></span> is asking to read your Sakura documents. Sign in to the account it should read.</p>
+      <button type="button" class="wide" id="google-btn">Continue with Google</button>
+      <div class="or"><span>or</span></div>
+      <form id="email-form" novalidate>
+        <label>Email<input id="email-input" type="email" autocomplete="email" required></label>
+        <label>Password<input id="password-input" type="password" autocomplete="current-password" required></label>
+        <p class="error" id="signin-error" role="alert" hidden></p>
+        <button type="submit" class="primary wide" id="email-btn">Sign in</button>
+      </form>
+      <p class="muted">No account yet? <a href="./" target="_blank" rel="noopener">Create one in Sakura</a>, then come back here.</p>
     </div>
 
     <div id="state-ask" hidden>
@@ -128,7 +145,29 @@
       $('account-email').textContent = u.email || 'your account';
       show('ask');
     });
-    $('signed-in-btn').addEventListener('click', () => location.reload());
+    // Signing in right here (owner 2026-11-25), with the same account methods as the app; a new
+    // account is made in the app, which also sets it up. Same origin, so the app is signed in too.
+    $('signin-client').textContent = params.get('client') || 'An AI assistant';
+    const signinError = (msg) => { const e = $('signin-error'); e.textContent = msg; e.hidden = !msg; };
+    const signedIn = () => { try { localStorage.setItem('sakura_account_active', 'true'); } catch (e) { /* the app asks again */ } };
+    const busy = (on) => { for (const id of ['google-btn', 'email-btn']) $(id).disabled = on; };
+    $('google-btn').addEventListener('click', async () => {
+      signinError(''); busy(true);
+      try { await authMod.signInWithPopup(auth, new authMod.GoogleAuthProvider()); signedIn(); }
+      catch (e) { if (!/popup-closed|cancelled-popup/.test(String(e && e.code))) signinError('Google sign-in didn\u2019t finish. Try again.'); }
+      finally { busy(false); }
+    });
+    $('email-form').addEventListener('submit', async (ev) => {
+      ev.preventDefault();
+      const email = $('email-input').value.trim(), password = $('password-input').value;
+      if (!email || !password) { signinError('Enter your email and password.'); return; }
+      signinError(''); busy(true);
+      try { await authMod.signInWithEmailAndPassword(auth, email, password); signedIn(); }
+      catch (e) {
+        const code = String(e && e.code);
+        signinError(/invalid-credential|wrong-password|user-not-found|invalid-email/.test(code) ? 'That email and password don\u2019t match a Sakura account.' : /too-many-requests/.test(code) ? 'Too many tries. Wait a moment, then try again.' : 'Sign-in didn\u2019t finish. Check the connection and try again.');
+      } finally { busy(false); }
+    });
     const answer = async (allow) => {
       const form = $('answer');
       form.elements.handle.value = handle;
