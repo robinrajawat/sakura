@@ -7,6 +7,7 @@
  */
 
 import { toolListDocuments, toolGetDocument, toolSearch } from './mcpNotes';
+import { toolOpenItems, toolCurrentDocument, toolWhatChanged, toolTodos } from './mcpMore';
 import type { FirestoreReader } from './firestoreRest';
 import { SignInExpiredError } from './firestoreRest';
 
@@ -26,7 +27,7 @@ export const TOOLS = [
     name: 'get_document',
     title: 'Read a document',
     description: 'Returns one Sakura document as Markdown: its outline rows with notes and tables, each row\'s status (Agreed, Follow-up, Out of scope) and its thread entries. Pictures and diagrams are named, not included. The person keeps editing in Sakura while you talk: call this again before answering about the document\'s content, rather than relying on an earlier read.',
-    inputSchema: { type: 'object', properties: { id: { type: 'string', description: 'The document id, from list_documents or search.' } }, required: ['id'], additionalProperties: false },
+    inputSchema: { type: 'object', properties: { id: { type: 'string', description: 'The document id, from list_documents or search.' }, section: { type: 'string', description: 'Optional: words from a row or heading. Returns only that row and the rows under it, for long documents.' } }, required: ['id'], additionalProperties: false },
     annotations: READ_ONLY
   },
   {
@@ -34,6 +35,34 @@ export const TOOLS = [
     title: 'Search documents',
     description: 'Finds Sakura documents containing all the given words, in titles, rows, notes or thread entries. Returns each document\'s id and title with the matching rows (and the rows above them). Use get_document to read one in full.',
     inputSchema: { type: 'object', properties: { query: { type: 'string', description: 'Words to look for.' } }, required: ['query'], additionalProperties: false },
+    annotations: READ_ONLY
+  },
+  {
+    name: 'open_items',
+    title: 'What is still open',
+    description: 'Lists what is still open: rows marked Follow-up (with how long) and questions in threads without an answer, each with the rows above it. For one document (id) or across all documents (newest first). Good for an agenda or a status check.',
+    inputSchema: { type: 'object', properties: { id: { type: 'string', description: 'Optional: one document\'s id. Leave out to look across all documents.' } }, additionalProperties: false },
+    annotations: READ_ONLY
+  },
+  {
+    name: 'current_document',
+    title: 'The document being worked on',
+    description: 'Returns the document the person changed most recently (the one they are working on), in full as Markdown, with its title and id. Use it when they say "this document" or "what I\'m working on" without naming one.',
+    inputSchema: { type: 'object', properties: {}, additionalProperties: false },
+    annotations: READ_ONLY
+  },
+  {
+    name: 'what_changed',
+    title: 'What changed',
+    description: 'What changed in a document since a date (default: the last 7 days), from its Version history: a one-line summary, and the rows added, removed and reworded.',
+    inputSchema: { type: 'object', properties: { id: { type: 'string', description: 'The document id.' }, since: { type: 'string', description: 'Optional: a date like 2026-11-20. Default: 7 days ago.' } }, required: ['id'], additionalProperties: false },
+    annotations: READ_ONLY
+  },
+  {
+    name: 'todos',
+    title: 'To-Dos',
+    description: 'The person\'s Sakura To-Do list in its sections (Pinned, Today, Upcoming, Anytime, Waiting), with due dates, repeats, subtasks and who each task is waiting for. Done tasks only when asked.',
+    inputSchema: { type: 'object', properties: { include_done: { type: 'boolean', description: 'Also list done tasks.' } }, additionalProperties: false },
     annotations: READ_ONLY
   }
 ];
@@ -53,7 +82,8 @@ const SERVER_INFO = {
 const INSTRUCTIONS = [
   'Read-only access to one person\'s Sakura Notes: outlines of their own thinking (designs, analyses, decisions). Use search to find where something was worked out, then get_document to read it. Nothing can be changed through this server.',
   'The person keeps editing their documents in Sakura while you talk. Before answering about a document\'s content, read it again with get_document; an earlier read may be out of date.',
-  'If the person just mentions Sakura or asks what you can do with it, list their five most recently changed documents (list_documents) and offer to: work on one of them with them, summarise it, find what is still open (rows marked Follow-up, unanswered threads), or search across their notes. Keep the offer short.'
+  'When they say "this document" or "what I am working on" without naming one, use current_document. For a long document, read one part with get_document and section.',
+  'If the person just mentions Sakura or asks what you can do with it, list their five most recently changed documents (list_documents) and offer to: work on one of them with them, summarise it, find what is still open (open_items), say what changed lately (what_changed), go through their To-Dos (todos), or search across their notes. Keep the offer short.'
 ].join(' ');
 
 /** Ready-made starters (MCP prompts): assistants that support them list them under the connector, so
@@ -106,7 +136,11 @@ async function callTool(name: string, args: Json, uid: string, db: FirestoreRead
   try {
     if (!allowCall(uid)) return { text: 'Too many requests; try again in a minute.', isError: true };
     if (name === 'list_documents') return { text: await toolListDocuments(db, uid), isError: false };
-    if (name === 'get_document') return { text: await toolGetDocument(db, uid, String(args.id ?? '')), isError: false };
+    if (name === 'get_document') return { text: await toolGetDocument(db, uid, String(args.id ?? ''), String(args.section ?? '')), isError: false };
+    if (name === 'open_items') return { text: await toolOpenItems(db, uid, String(args.id ?? '')), isError: false };
+    if (name === 'current_document') return { text: await toolCurrentDocument(db, uid), isError: false };
+    if (name === 'what_changed') return { text: await toolWhatChanged(db, uid, String(args.id ?? ''), String(args.since ?? '')), isError: false };
+    if (name === 'todos') return { text: await toolTodos(db, uid, args.include_done === true), isError: false };
     if (name === 'search') return { text: await toolSearch(db, uid, String(args.query ?? '')), isError: false };
     return { text: 'Unknown tool: ' + name, isError: true };
   } catch (e) {

@@ -28,9 +28,9 @@ export interface DocListEntry {
   updated: string;
 }
 
-type Rec = Record<string, unknown>;
-const arr = (v: unknown): Rec[] => (Array.isArray(v) ? (v.filter((x) => x && typeof x === 'object') as Rec[]) : []);
-const str = (v: unknown): string => (typeof v === 'string' ? v : '');
+export type Rec = Record<string, unknown>;
+export const arr = (v: unknown): Rec[] => (Array.isArray(v) ? (v.filter((x) => x && typeof x === 'object') as Rec[]) : []);
+export const str = (v: unknown): string => (typeof v === 'string' ? v : '');
 
 const STATUS_LABEL: Record<string, string> = {
   confirmed: 'Agreed', resolved: 'Agreed', decision: 'Agreed',
@@ -163,7 +163,7 @@ function snippetAround(text: string, word: string): string {
 /** Three reads: the documents list (Delete forever takes a document off it), folders and the folder
  * map. Listing every "deleted forever" marker as well cost one read per marker, ever (owner
  * 2026-11-25: read costs); a single document's marker is checked only when it's read. */
-async function loadDocList(db: FirestoreReader, uid: string): Promise<DocListEntry[]> {
+export async function loadDocList(db: FirestoreReader, uid: string): Promise<DocListEntry[]> {
   const [index, folders, docFolder] = await Promise.all([
     db.get(`users/${uid}/meta/docsIndex`),
     db.get(`users/${uid}/meta/folders`),
@@ -178,14 +178,41 @@ export async function toolListDocuments(db: FirestoreReader, uid: string): Promi
   return JSON.stringify(list, null, 1);
 }
 
-export async function toolGetDocument(db: FirestoreReader, uid: string, id: string): Promise<string> {
+/** A document the person has (listed, not deleted forever), or why it can't be read. */
+export async function loadDocument(db: FirestoreReader, uid: string, id: string): Promise<{ entry: DocListEntry; doc: Rec } | string> {
   if (!id || /[/]/.test(id)) return 'Give the id of a document from list_documents or search.';
   const list = await loadDocList(db, uid);
-  if (!list.some((d) => d.id === id)) return 'No document with that id (it may be in Trash).';
+  const entry = list.find((d) => d.id === id);
+  if (!entry) return 'No document with that id (it may be in Trash).';
   const [doc, deleted] = await Promise.all([db.get(`users/${uid}/docs/${id}`), db.get(`users/${uid}/deletedDocs/${id}`)]);
   if (deleted) return 'No document with that id (it was deleted).';
   if (!doc) return 'That document has not reached the account yet.';
-  return documentToMarkdown(doc);
+  return { entry, doc };
+}
+
+/** One branch of a document: the first row whose words contain `section` (any case), with the rows
+ * under it, raised to the top. Null when no row matches. Keeps a long document within what an
+ * assistant takes in one answer (owner 2026-11-25). */
+export function sectionOf(doc: Rec, section: string): Rec | null {
+  const nodes = arr(doc.nodes);
+  const want = section.trim().toLowerCase();
+  const at = nodes.findIndex((n) => str(n.text).toLowerCase().includes(want));
+  if (!want || at < 0) return null;
+  const base = Number(nodes[at].depth) || 0;
+  let end = at + 1;
+  while (end < nodes.length && (Number(nodes[end].depth) || 0) > base) end++;
+  const branch = nodes.slice(at, end).map((n) => ({ ...n, depth: (Number(n.depth) || 0) - base }));
+  return { ...doc, title: (str(doc.title).trim() || 'Untitled') + ' › ' + str(nodes[at].text).trim(), nodes: branch };
+}
+
+export async function toolGetDocument(db: FirestoreReader, uid: string, id: string, section = ''): Promise<string> {
+  const got = await loadDocument(db, uid, id);
+  if (typeof got === 'string') return got;
+  if (section.trim()) {
+    const part = sectionOf(got.doc, section);
+    return part ? documentToMarkdown(part) : 'No row in that document contains "' + section.trim() + '". Read it whole, or try other words.';
+  }
+  return documentToMarkdown(got.doc);
 }
 
 /** Search reads documents newest first, a batch at a time, only the fields it needs, and stops at
