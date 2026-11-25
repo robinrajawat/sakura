@@ -39,3 +39,10 @@ describe('mcpServer', () => {
     expect(allowCall('rate', 62_000)).toBe(true);
   });
 });
+
+describe('server icon', () => {
+  it('initialize names the app-icon tile', async () => {
+    const r = (await (await handleMcpRequest(post({ jsonrpc: '2.0', id: 1, method: 'initialize', params: { protocolVersion: '2025-11-25' } }), 'u', db)).json()) as { result: { serverInfo: { icons: Array<{ src: string }> } } };
+    expect(r.result.serverInfo.icons[0].src).toBe('https://www.sakura-notes.com/icon-512-pwa.png');
+  });
+});

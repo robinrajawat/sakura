@@ -15,3 +15,13 @@ describe('worker scaffold', () => {
     expect(res.status).toBe(404);
   });
 });
+
+describe('icon for this address', () => {
+  it('favicon requests go to the app-icon tile, and the home page links it', async () => {
+    const res = await worker.fetch(new Request('https://example.com/favicon.ico'), fakeEnv);
+    expect(res.status).toBe(302);
+    expect(res.headers.get('Location')).toBe('https://www.sakura-notes.com/icon-512-pwa.png');
+    const home = await worker.fetch(new Request('https://example.com/'), fakeEnv);
+    expect(await home.text()).toContain('rel="icon"');
+  });
+});

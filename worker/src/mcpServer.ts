@@ -38,7 +38,18 @@ export const TOOLS = [
   }
 ];
 
-const SERVER_INFO = { name: 'sakura-notes', title: 'Sakura Notes', version: '1.0.0' };
+/** The installed app's icon: the flower on a rounded tile with transparent corners. Claude shows an
+ * icon's own pixels as they are (a square image shows as a sharp square in its approval dialog), and a
+ * bare glyph all but disappears in dark mode, so the tile carries its own rounded shape (owner
+ * 2026-11-25: the flat glyph on a white square looked cheap). */
+export const SERVER_ICON = 'https://www.sakura-notes.com/icon-512-pwa.png';
+const SERVER_INFO = {
+  name: 'sakura-notes',
+  title: 'Sakura Notes',
+  version: '1.0.0',
+  websiteUrl: 'https://www.sakura-notes.com',
+  icons: [{ src: SERVER_ICON, mimeType: 'image/png', sizes: ['512x512'] }]
+};
 const INSTRUCTIONS = 'Read-only access to one person\'s Sakura Notes: outlines of their own thinking (designs, analyses, decisions). Use search to find where something was worked out, then get_document to read it. Nothing can be changed through this server.';
 
 type Json = Record<string, unknown>;

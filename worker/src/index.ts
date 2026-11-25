@@ -30,7 +30,7 @@ import type { JWTVerifyGetKey } from 'jose';
 import { handlePdf, browserRenderer, DEFAULT_DAILY_PDF_QUOTA } from './pdf';
 import { OAuthProvider, type OAuthHelpers } from '@cloudflare/workers-oauth-provider';
 import { handleAuthorizeGet, handleAuthorizePost, handleConnectionsGet, handleConnectionsDelete, MCP_SCOPE, type ConnectionProps } from './connect';
-import { handleMcpRequest } from './mcpServer';
+import { handleMcpRequest, SERVER_ICON } from './mcpServer';
 import { firestoreReader, idTokenFor } from './firestoreRest';
 
 export interface Env {
@@ -51,6 +51,9 @@ export interface Env {
 }
 
 export const MCP_ORIGIN = 'https://ai.sakura-notes.com';
+
+const ICON_PATHS = ['/favicon.ico', '/favicon.png', '/apple-touch-icon.png', '/apple-touch-icon-precomposed.png', '/icon.png'];
+const SERVER_HOME = `<!doctype html><meta charset="utf-8"><title>Sakura Notes</title><link rel="icon" type="image/png" sizes="512x512" href="${SERVER_ICON}"><link rel="apple-touch-icon" href="${SERVER_ICON}"><meta name="robots" content="noindex"><p>Sakura Notes server. Open <a href="https://www.sakura-notes.com">www.sakura-notes.com</a>.</p>`;
 
 const VALID_SHAPES: readonly AiShape[] = ['gemini', 'openai', 'cerebras', 'anthropic'];
 const DEFAULT_DAILY_QUOTA = 20;
@@ -264,6 +267,14 @@ export const router = {
     // a handler.
     if (request.method === 'OPTIONS') {
       return new Response(null, { status: 204, headers: corsHeadersFor(origin) });
+    }
+
+    // An assistant (or a favicon service) looking up this address's icon finds the app's tile.
+    if (request.method === 'GET' && ICON_PATHS.includes(url.pathname)) {
+      return new Response(null, { status: 302, headers: { Location: SERVER_ICON, 'Cache-Control': 'public, max-age=86400' } });
+    }
+    if (request.method === 'GET' && url.pathname === '/') {
+      return new Response(SERVER_HOME, { headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'public, max-age=3600' } });
     }
 
     if (url.pathname === '/health') {
