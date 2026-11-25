@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { handleMcpRequest, allowCall } from '../src/mcpServer';
+import { handleMcpRequest, allowCall, PROMPTS } from '../src/mcpServer';
 import { SignInExpiredError, type FirestoreReader } from '../src/firestoreRest';
 
 const db: FirestoreReader = { async get() { return null; }, async list() { return []; }, async batchGet() { return []; } };
@@ -44,5 +44,21 @@ describe('server icon', () => {
   it('initialize names the app-icon tile', async () => {
     const r = (await (await handleMcpRequest(post({ jsonrpc: '2.0', id: 1, method: 'initialize', params: { protocolVersion: '2025-11-25' } }), 'u', db)).json()) as { result: { serverInfo: { icons: Array<{ src: string }> } } };
     expect(r.result.serverInfo.icons[0].src).toBe('https://www.sakura-notes.com/icon-512-pwa.png');
+  });
+});
+
+describe('prompts and guidance', () => {
+  it('lists ready-made starters and fills them in', async () => {
+    const init = (await (await handleMcpRequest(post({ jsonrpc: '2.0', id: 1, method: 'initialize', params: { protocolVersion: '2025-06-18' } }), 'u', db)).json()) as { result: { capabilities: { prompts?: unknown }; instructions: string } };
+    expect(init.result.capabilities.prompts).toBeTruthy();
+    expect(init.result.instructions).toMatch(/read it again with get_document/);
+    const list = (await (await handleMcpRequest(post({ jsonrpc: '2.0', id: 2, method: 'prompts/list' }), 'u', db)).json()) as { result: { prompts: Array<{ name: string }> } };
+    expect(list.result.prompts.map((p) => p.name)).toEqual(PROMPTS.map((p) => p.name));
+    const got = (await (await handleMcpRequest(post({ jsonrpc: '2.0', id: 3, method: 'prompts/get', params: { name: 'work_on_document', arguments: { document: 'System landscape' } } }), 'u', db)).json()) as { result: { messages: Array<{ role: string; content: { text: string } }> } };
+    expect(got.result.messages[0].role).toBe('user');
+    expect(got.result.messages[0].content.text).toContain('"System landscape"');
+    expect(got.result.messages[0].content.text).toMatch(/re-read it with get_document before each answer/);
+    const bad = (await (await handleMcpRequest(post({ jsonrpc: '2.0', id: 4, method: 'prompts/get', params: { name: 'nope' } }), 'u', db)).json()) as { error: { code: number } };
+    expect(bad.error.code).toBe(-32602);
   });
 });

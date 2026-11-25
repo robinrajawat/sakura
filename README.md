@@ -152,7 +152,7 @@ Two ways to run it:
 - **Sakura Hosted AI:** sign in and it just works, with no key to find. Each account gets a daily quota.
 - **Bring your own key:** Gemini, Groq, OpenRouter and GitHub Models have free tiers, Cerebras depends on the account, and Claude and ChatGPT need a paid account. Your text goes straight from your browser to that provider. You can set a fallback order for when one provider fails.
 
-**Your notes in your AI assistant.** Signed in, you can let Claude, ChatGPT or another assistant that supports MCP read your documents: add `https://ai.sakura-notes.com/mcp` as a connector in the assistant, then allow it on Sakura's page. It can list, read and search your documents (newest first), never change them; documents in Trash are left out. **Settings → Account → AI assistants** shows what's connected, and **Disconnect** ends access at once. What the assistant reads goes to its provider.
+**Your notes in your AI assistant.** Signed in, you can let Claude, ChatGPT or another assistant that supports MCP read your documents: add `https://ai.sakura-notes.com/mcp` as a connector in the assistant, then allow it on Sakura's page. It can list, read and search your documents (newest first), never change them; documents in Trash are left out. **Settings → Account → AI assistants** shows what's connected, and **Disconnect** ends access at once. What the assistant reads goes to its provider. To start, just say "Sakura" (it lists your recent documents and what it can do), pick one of the connector's starters (Work on a document, What's still open, Search my notes), or ask "Be my assistant for my Sakura document *…*"; it re-reads the document before each answer, so it keeps up with your edits.
 
 ## Your data
 
