@@ -61,6 +61,7 @@ It works well for:
 - Every line is a **row**. **Enter** adds a row, **Tab** and **Shift+Tab** indent and outdent, and **Alt+↑/↓** moves a row together with everything under it. You can also drag a row onto another to nest it.
 - **Fold** any branch to hide its detail. A folded row shows **+N** for its hidden rows, and the count turns teal when an open question or follow-up is hidden inside.
 - Rows are real rich text: bold, italic, underline, strikethrough, colour, highlight and links. Select words and a small bar appears.
+- **Numbered lists**: right-click a row (on a phone, long-press it) → **Numbered list**, and the rows under it show 1, 2, 3. Move a row and the numbers follow; the PDF, Markdown and OPML keep them.
 - **Headings** (three levels) and **checkboxes** come from the **/** list. Type `/` at the start of a word anywhere: in a row it inserts headings, a note, table, image, diagram or thread, and everywhere it offers dates and characters.
 - **@** links one row to another. The link keeps working when either row is renamed.
 - **#tags** on rows. Click one to filter the document to it.
@@ -219,7 +220,7 @@ web/            the app
   hub.html      forwards to index.html (the old phone page's address)
   src/          typed, tested logic and the CSS, spliced into the pages at build time
   tests/        unit tests (Vitest) and end-to-end tests (Playwright)
-  public/       icons, manifests, service worker, social card
+  public/       icons (drawn by scripts/render-icons.mjs), manifests, service worker, social card
 worker/         Cloudflare Worker for Sakura Hosted AI
 firebase/       Firestore security rules
 docs/           feature reference, design notes and the session handoff
