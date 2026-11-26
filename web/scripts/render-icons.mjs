@@ -14,24 +14,21 @@ import path from 'node:path';
 
 const OUT = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'public');
 
-// Design (owner 2026-11-26, inspired by how Apple's Photos icon gets depth from colour rather than
-// shadow): five translucent petals in cherry-blossom tones that overlap and blend, so each overlap
-// makes a new, deeper tone, on a white squircle. The five-petal layout is Sakura's own glyph,
-// pulled in so neighbours overlap. Dark: the same petals glowing (screen blend) on a near-black tile.
-// Petals clockwise from the top: [light-theme colour pair (centre side, outer side)].
-const PETALS = [
-  ['#ffd0e0', '#ff5f97'], // rose
-  ['#ffe0cc', '#ff8a6b'], // peach-coral
-  ['#ffd6ec', '#e8508f'], // deep pink
-  ['#eadcff', '#a776e6'], // lilac
-  ['#ffe6f0', '#ff9cc4'], // blush
-];
+// Design (owner 2026-11-26): the overlapping-translucent-petal effect of Apple's Photos icon, in
+// Sakura's own greys (no colour). Five petals, Sakura's glyph pulled in so neighbours overlap; each
+// overlap multiplies into a deeper grey, which is where the depth comes from. Petal tones differ
+// slightly, as in flower-glyph.svg, so every overlap reads. Dark: light petals with a screen blend.
+// [inner, outer] per petal, clockwise from the top; light and dark sets.
+const PETALS = {
+  light: [['#e2e1de', '#5f5e5b'], ['#e8e7e4', '#7b7a77'], ['#e5e4e1', '#6d6c69'], ['#ecebe8', '#8c8b87'], ['#eae9e6', '#81807c']],
+  dark: [['#5a5a5c', '#e9e8e5'], ['#4e4e50', '#cfcecb'], ['#545456', '#dbdad7'], ['#474749', '#bdbcb9'], ['#4b4b4d', '#c6c5c2']],
+};
 
 const THEMES = {
-  light: { top: '#ffffff', bottom: '#f1efed', edge: 'rgba(0,0,0,0.08)', hi: 'rgba(255,255,255,1)',
-    blend: 'multiply', alpha: 0.82, stamen: '#fff6d8', stamenEdge: '#ffcf7a' },
-  dark: { top: '#2b2a2e', bottom: '#111113', edge: 'rgba(255,255,255,0.08)', hi: 'rgba(255,255,255,0.10)',
-    blend: 'screen', alpha: 0.78, stamen: '#fff3cf', stamenEdge: '#ffc65c' },
+  light: { top: '#ffffff', bottom: '#eeede9', edge: 'rgba(0,0,0,0.08)', hi: 'rgba(255,255,255,1)',
+    blend: 'multiply', alpha: 0.78, stamen: '#a3a29e', stamenEdge: '#6f6e6b' },
+  dark: { top: '#2b2b2d', bottom: '#111112', edge: 'rgba(255,255,255,0.08)', hi: 'rgba(255,255,255,0.10)',
+    blend: 'screen', alpha: 0.62, stamen: '#8c8b88', stamenEdge: '#5e5d5b' },
 };
 
 // Superellipse |x|^n + |y|^n = 1, the continuous-corner shape Apple's icons use.
@@ -58,7 +55,7 @@ function svg({ theme, shape, flowerScale }) {
   const R = half * flowerScale;            // flower radius
   const r = R * 0.52, d = R - r;           // petal radius and distance from centre: neighbours overlap
   const grads = [], petals = [];
-  PETALS.forEach(([inner, outer], i) => {
+  PETALS[theme].forEach(([inner, outer], i) => {
     const a = (-90 + i * 72) * Math.PI / 180;
     const x = S / 2 + d * Math.cos(a), y = cy0 + d * Math.sin(a);
     // Light from the flower's centre outwards: pale where petals meet, saturated at the rim.
@@ -75,7 +72,7 @@ function svg({ theme, shape, flowerScale }) {
       <stop offset="0" stop-color="${t.hi}" stop-opacity="0.9"/><stop offset="0.2" stop-color="${t.hi}" stop-opacity="0"/>
     </linearGradient>
     <radialGradient id="stamen" cx="0.4" cy="0.35" r="0.7">
-      <stop offset="0" stop-color="#ffffff"/><stop offset="0.6" stop-color="${t.stamen}"/><stop offset="1" stop-color="${t.stamenEdge}"/>
+      <stop offset="0" stop-color="${t.stamen}" stop-opacity="0.6"/><stop offset="0.6" stop-color="${t.stamen}"/><stop offset="1" stop-color="${t.stamenEdge}"/>
     </radialGradient>
     ${grads.join('')}
     <filter id="drop" x="-20%" y="-20%" width="140%" height="150%">
