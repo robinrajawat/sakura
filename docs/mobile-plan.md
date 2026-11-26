@@ -159,8 +159,11 @@ Guests: the phone works without an account like the desktop does (try first, sig
   checkbox, move up, move down, Done. It sits on top of the on-screen keyboard: its bottom
   follows `visualViewport` (`keyboardInset`). A press on it never takes focus from the row, so
   the keyboard stays up, and each action re-opens the same row at the same caret position.
+  Closing the keyboard counts as Done (owner 2026-11-26, iPhone): the row is saved and the toolbar
+  goes. A redraw that ends editing re-checks the toolbar (Safari sends no focus event when the row is
+  replaced), and any toolbar button closes a stale one (`phone-toolbar-stale.phone.spec.ts`).
 - **Long-press a row** (500ms, still to within 10px; `createLongPress`) for a bottom sheet
-  (`#phone-row-menu`): Add a row below, Add or Edit a note, Checkbox, Heading H1/H2/H3, Delete.
+  (`#phone-row-menu`): Add a row below, Add or Edit a note, Checkbox, Numbered list (rows with children; 2026-11-26), Heading H1/H2/H3, Delete.
   It calls the desktop's own actions (`runQuickAction`, `applyHeadingOption`). Android's
   long-press `contextmenu` is swallowed on a phone, so the desktop menu never opens there. The
   plan's "copy link" was dropped: the desktop has no row-link copy to reuse. Row labels turn off

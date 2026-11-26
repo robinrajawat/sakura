@@ -38,7 +38,7 @@ CommonMark plus the two GitHub extensions everyone produces: **tables** and **ta
 | `# Title` as the file's first line | the document's title (not a row) |
 | otherwise, file name | the document's title |
 | `## Heading` … `######` | a row with a heading style; each heading level nests under the one above it (H2 at the top, H3 inside it, …) |
-| `- item`, `* item`, `+ item`, `1. item` | a row, nested by indentation, under the heading it follows |
+| `- item`, `* item`, `+ item`, `1. item` | a row, nested by indentation, under the heading it follows; `1.` items make their parent row a numbered list (2026-11-26), and numbers typed into the words ("1. Step") are moved off them the same way. Export writes a numbered list's rows as `1.` items |
 | `- [ ] item` / `- [x] item` | a To-Do (checkbox) row, unchecked / checked |
 | prose right under a heading (before any list) | that heading's note |
 | any other paragraph that isn't a list item | a row under the current heading |
