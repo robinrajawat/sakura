@@ -203,7 +203,7 @@ test.describe('Fixed right-click menu, no hover toolbar', () => {
     await page.locator('#context-more-panel [data-flyout="insert"]').hover();
     expect(await actions('#context-menu .sb-context-submenu [data-action]')).toEqual(['date-time']);
     await page.locator('#context-more-panel [data-flyout="row"]').hover();
-    expect(await actions('#context-menu .sb-context-submenu [data-action]')).toEqual(['focus', 'fold', 'tags', 'version-history', 'no-export']);
+    expect(await actions('#context-menu .sb-context-submenu [data-action]')).toEqual(['focus', 'fold', 'numbered', 'tags', 'version-history', 'no-export']);
     expect(errors).toEqual([]);
   });
 });
