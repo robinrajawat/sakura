@@ -1,113 +1,140 @@
-// Renders every app icon PNG in web/public from one design (owner 2026-11-26: keep a background,
-// properly rounded, with depth). Run: node web/scripts/render-icons.mjs  (uses the e2e Playwright).
+// Renders every Sakura icon file in web/public from one design: the original flower (flower-glyph.svg's
+// five petals and centre, geometry unchanged), soft-lit (owner 2026-11-26: "keep the background,
+// properly rounded, with a 3D feel"; variant A of three). Each petal is gently lit from above, a thin
+// highlight runs along its upper edge, and the flower casts a soft shadow onto what it sits on.
+//
+//   CHROMIUM_PATH=/opt/pw-browsers/chromium node web/scripts/render-icons.mjs   (cloud container)
+//   node web/scripts/render-icons.mjs                                            (Playwright's own browser)
 //
 // Each surface clips differently, so each gets the shape it needs:
-//   full  - opaque square, edge to edge. iOS home screen and Android launchers draw their own
-//           rounded mask over it; a pre-rounded icon there shows black/white corners.
-//   tile  - Apple-style squircle (superellipse, not a rounded rect) inside a transparent margin,
-//           with a soft shadow. Desktop Chrome/Windows/macOS installs and Claude's connector list
-//           show the PNG as-is, so the rounding has to be in the image.
-// Tab favicons (flower-glyph.svg, favicon-192.png, icon-glyph-192.png) stay the bare glyph.
+//   tile  - Apple-style squircle (superellipse, not a rounded rect) inside a transparent margin, with
+//           a soft shadow. Desktop Chrome/Windows/macOS installs and Claude's connector list show the
+//           PNG as-is, so the rounding has to be in the image.
+//   full  - opaque square, edge to edge. iOS home screen and Android launchers draw their own mask
+//           over it; a pre-rounded icon there shows black or white corners.
+//   glyph - the soft-lit flower alone on transparent, for tab favicons. Safari on an iPad draws its own
+//           rounded plate behind a tab icon, so a baked-in tile there shows as a tile within a tile.
+//           PNGs can't follow the tab bar's theme, so they use a mid-grey that reads on light and dark.
+// flower-glyph.svg is written as text: a vector that switches ink on dark tab bars by itself.
+// The flower drawn inside the app (the .sakura-mark SVGs in index.html) gets the same light from
+// src/styles/index/sakura-mark.css and the #sakura-mark-light gradient.
 import { chromium } from '@playwright/test';
+import { writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 
 const OUT = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'public');
 
-// Design (owner 2026-11-26): the overlapping-translucent-petal effect of Apple's Photos icon, in
-// Sakura's own greys (no colour). Five petals, Sakura's glyph pulled in so neighbours overlap; each
-// overlap multiplies into a deeper grey, which is where the depth comes from. Petal tones differ
-// slightly, as in flower-glyph.svg, so every overlap reads. Dark: light petals with a screen blend.
-// [inner, outer] per petal, clockwise from the top; light and dark sets.
-const PETALS = {
-  light: [['#e2e1de', '#5f5e5b'], ['#e8e7e4', '#7b7a77'], ['#e5e4e1', '#6d6c69'], ['#ecebe8', '#8c8b87'], ['#eae9e6', '#81807c']],
-  dark: [['#5a5a5c', '#e9e8e5'], ['#4e4e50', '#cfcecb'], ['#545456', '#dbdad7'], ['#474749', '#bdbcb9'], ['#4b4b4d', '#c6c5c2']],
-};
+// flower-glyph.svg geometry on a 512 grid: cx, cy, r, ink strength.
+const PETALS = [
+  [256, 152, 71, 0.72], [122, 240, 67, 0.62], [390, 240, 67, 0.64],
+  [166, 360, 63, 0.56], [346, 360, 67, 0.56], [256, 256, 37, 0.40],
+];
 
 const THEMES = {
-  light: { top: '#ffffff', bottom: '#eeede9', edge: 'rgba(0,0,0,0.08)', hi: 'rgba(255,255,255,1)',
-    blend: 'multiply', alpha: 0.78, stamen: '#a3a29e', stamenEdge: '#6f6e6b' },
-  dark: { top: '#2b2b2d', bottom: '#111112', edge: 'rgba(255,255,255,0.08)', hi: 'rgba(255,255,255,0.10)',
-    blend: 'screen', alpha: 0.62, stamen: '#8c8b88', stamenEdge: '#5e5d5b' },
+  light: { top: '#ffffff', bottom: '#ebe9e4', ink: '34,34,34', edge: 'rgba(0,0,0,0.09)', rimAlpha: 0.9, shine: 0.28, shadow: 0.28 },
+  dark: { top: '#38383b', bottom: '#131315', ink: '236,236,234', edge: 'rgba(255,255,255,0.08)', rimAlpha: 0.12, shine: 0.35, shadow: 0.7 },
+  // Transparent PNG favicons: no theme switching, so a grey that holds up on white and on near-black.
+  neutral: { ink: '84,83,80', shine: 0.35, shadow: 0.3 },
 };
 
 // Superellipse |x|^n + |y|^n = 1, the continuous-corner shape Apple's icons use.
 function squircle(cx, cy, half, n = 5, steps = 256) {
   let d = '';
   for (let i = 0; i < steps; i++) {
-    const t = (i / steps) * Math.PI * 2;
-    const c = Math.cos(t), s = Math.sin(t);
+    const a = (i / steps) * Math.PI * 2;
+    const c = Math.cos(a), s = Math.sin(a);
     const x = cx + half * Math.sign(c) * Math.abs(c) ** (2 / n);
     const y = cy + half * Math.sign(s) * Math.abs(s) ** (2 / n);
-    d += `${i ? 'L' : 'M'}${x.toFixed(2)} ${y.toFixed(2)}`;
+    d += `${i ? 'L' : 'M'}${x.toFixed(1)} ${y.toFixed(1)}`;
   }
   return d + 'Z';
 }
 
-// flowerScale: flower size relative to the background it sits on.
-function svg({ theme, shape, flowerScale }) {
+// The soft-lit flower on the 512 grid. `ink(i)` gives each stop's colour attribute(s) so the same
+// code serves fixed-colour PNGs and the CSS-variable tab SVG.
+function flower({ ink, shadow, shine, strokeAttr }) {
+  const defs = PETALS.map(([, , , a], i) => `<linearGradient id="g${i}" x1="0" y1="0" x2="0" y2="1">`
+    + `<stop offset="0" ${ink((a * 0.72).toFixed(3))}/><stop offset="1" ${ink(Math.min(1, a * 1.18).toFixed(3))}/></linearGradient>`).join('')
+    + `<filter id="sh" x="-30%" y="-30%" width="160%" height="170%"><feGaussianBlur in="SourceAlpha" stdDeviation="6.5"/>`
+    + `<feOffset dy="7"/><feComponentTransfer><feFuncA type="linear" slope="${shadow}"/></feComponentTransfer>`
+    + `<feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge></filter>`;
+  const body = '<g filter="url(#sh)">'
+    + PETALS.map(([x, y, r], i) => `<circle cx="${x}" cy="${y}" r="${r}" fill="url(#g${i})" ${strokeAttr} stroke-width="2.2"/>`).join('')
+    + '</g>'
+    // A thin highlight along each petal's upper-left edge: light from above.
+    + PETALS.slice(0, 5).map(([x, y, r]) => `<circle cx="${x}" cy="${y}" r="${r - 2}" fill="none" stroke="#fff" stroke-opacity="${shine}" stroke-width="2.2" stroke-linecap="round" stroke-dasharray="${(r * 1.2).toFixed(1)} ${(r * 9).toFixed(1)}" transform="rotate(200 ${x} ${y})"/>`).join('');
+  return { defs, body };
+}
+
+const fixedInk = (t) => flower({
+  ink: (op) => `stop-color="rgb(${t.ink})" stop-opacity="${op}"`,
+  shadow: t.shadow, shine: t.shine, strokeAttr: `stroke="rgba(${t.ink},0.35)"`,
+});
+
+// The flower alone, filling a 512 box with room for its shadow.
+const GLYPH_FIT = 'translate(256 256) scale(0.94) translate(-256 -262)';
+
+// shape: tile | full | glyph. flowerScale: flower width relative to the background it sits on.
+function iconSvg({ theme, shape, flowerScale }) {
   const t = THEMES[theme];
+  const f = fixedInk(t);
+  if (shape === 'glyph') {
+    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><defs>${f.defs}</defs><g transform="${GLYPH_FIT}">${f.body}</g></svg>`;
+  }
   const S = 1024;
   const tile = shape === 'tile';
-  const half = tile ? S * 0.41 : S / 2; // tile = 82% of canvas, as macOS's icon grid
-  const cy0 = tile ? S / 2 - 6 : S / 2;
-  const bgPath = tile ? squircle(S / 2, cy0, half) : `M0 0H${S}V${S}H0Z`;
-  const R = half * flowerScale;            // flower radius
-  const r = R * 0.52, d = R - r;           // petal radius and distance from centre: neighbours overlap
-  const grads = [], petals = [];
-  PETALS[theme].forEach(([inner, outer], i) => {
-    const a = (-90 + i * 72) * Math.PI / 180;
-    const x = S / 2 + d * Math.cos(a), y = cy0 + d * Math.sin(a);
-    // Light from the flower's centre outwards: pale where petals meet, saturated at the rim.
-    grads.push(`<radialGradient id="g${i}" gradientUnits="userSpaceOnUse" cx="${S / 2}" cy="${cy0}" r="${R}">
-      <stop offset="0.15" stop-color="${inner}"/><stop offset="1" stop-color="${outer}"/></radialGradient>`);
-    petals.push(`<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${r.toFixed(1)}" fill="url(#g${i})" fill-opacity="${t.alpha}" style="mix-blend-mode:${t.blend}"/>`);
+  const half = tile ? S * 0.41 : S / 2; // tile = 82% of the canvas, as macOS's icon grid
+  const cy = tile ? S / 2 - 6 : S / 2;
+  const bg = tile ? squircle(S / 2, cy, half) : `M0 0H${S}V${S}H0Z`;
+  const k = (half * 2 * flowerScale) / 512;
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${S} ${S}"><defs>`
+    + `<linearGradient id="bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${t.top}"/><stop offset="1" stop-color="${t.bottom}"/></linearGradient>`
+    + `<linearGradient id="rim" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity="${t.rimAlpha}"/><stop offset="0.2" stop-color="#fff" stop-opacity="0"/></linearGradient>`
+    + `<filter id="drop" x="-20%" y="-20%" width="140%" height="150%"><feGaussianBlur in="SourceAlpha" stdDeviation="12"/><feOffset dy="14"/>`
+    + `<feComponentTransfer><feFuncA type="linear" slope="0.24"/></feComponentTransfer><feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge></filter>`
+    + `${f.defs}</defs>`
+    + `<g${tile ? ' filter="url(#drop)"' : ''}><path d="${bg}" fill="url(#bg)"/></g>`
+    + `<path d="${bg}" fill="url(#rim)"/>`
+    + (tile ? `<path d="${bg}" fill="none" stroke="${t.edge}" stroke-width="3"/>` : '')
+    + `<g transform="translate(${S / 2} ${cy + 6}) scale(${k.toFixed(4)}) translate(-256 -256)">${f.body}</g></svg>`;
+}
+
+// flower-glyph.svg, the tab favicon: ink #222, switching to #ececea on dark tab bars through its own
+// prefers-color-scheme rule (a CSS variable drives the gradient stops and outlines).
+function tabSvg() {
+  const f = flower({
+    ink: (op) => `style="stop-color:var(--ink);stop-opacity:${op}"`,
+    shadow: 0.3, shine: 0.3, strokeAttr: 'class="p"',
   });
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${S}" height="${S}" viewBox="0 0 ${S} ${S}">
-  <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="${t.top}"/><stop offset="1" stop-color="${t.bottom}"/>
-    </linearGradient>
-    <linearGradient id="rim" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="${t.hi}" stop-opacity="0.9"/><stop offset="0.2" stop-color="${t.hi}" stop-opacity="0"/>
-    </linearGradient>
-    <radialGradient id="stamen" cx="0.4" cy="0.35" r="0.7">
-      <stop offset="0" stop-color="${t.stamen}" stop-opacity="0.6"/><stop offset="0.6" stop-color="${t.stamen}"/><stop offset="1" stop-color="${t.stamenEdge}"/>
-    </radialGradient>
-    ${grads.join('')}
-    <filter id="drop" x="-20%" y="-20%" width="140%" height="150%">
-      <feGaussianBlur in="SourceAlpha" stdDeviation="12"/><feOffset dy="14"/>
-      <feComponentTransfer><feFuncA type="linear" slope="0.24"/></feComponentTransfer>
-      <feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
-    </filter>
-  </defs>
-  <g ${tile ? 'filter="url(#drop)"' : ''}><path d="${bgPath}" fill="url(#bg)"/></g>
-  <path d="${bgPath}" fill="url(#rim)"/>
-  ${tile ? `<path d="${bgPath}" fill="none" stroke="${t.edge}" stroke-width="3"/>` : ''}
-  <g style="isolation:isolate">${petals.join('')}</g>
-  <circle cx="${S / 2}" cy="${cy0}" r="${(r * 0.34).toFixed(1)}" fill="url(#stamen)"/>
-</svg>`;
+  return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><style>svg{--ink:#222}'
+    + '@media (prefers-color-scheme:dark){svg{--ink:#ececea}}.p{stroke:var(--ink);stroke-opacity:.35}</style>'
+    + `<defs>${f.defs}</defs><g transform="${GLYPH_FIT}">${f.body}</g></svg>\n`;
 }
 
 const TARGETS = [
   // file, size, theme, shape, flowerScale
-  ['icon-512-pwa.png', 512, 'light', 'tile', 0.74],
-  ['icon-192-pwa.png', 192, 'light', 'tile', 0.74],
-  ['icon-192.png', 192, 'light', 'tile', 0.74],
-  ['icon-192-dark.png', 192, 'dark', 'tile', 0.74],
-  ['apple-touch-icon.png', 180, 'light', 'full', 0.70],
-  ['apple-touch-icon-dark.png', 180, 'dark', 'full', 0.70],
-  ['icon-512-maskable.png', 512, 'light', 'full', 0.62], // inside the 80% safe circle
+  ['icon-512-pwa.png', 512, 'light', 'tile', 0.70],
+  ['icon-192-pwa.png', 192, 'light', 'tile', 0.70],
+  ['icon-192.png', 192, 'light', 'tile', 0.70],
+  ['icon-192-dark.png', 192, 'dark', 'tile', 0.70],
+  ['apple-touch-icon.png', 180, 'light', 'full', 0.62],
+  ['apple-touch-icon-dark.png', 180, 'dark', 'full', 0.62],
+  ['icon-512-maskable.png', 512, 'light', 'full', 0.52], // inside the 80% safe circle
+  ['favicon-192.png', 192, 'neutral', 'glyph'],
+  ['icon-glyph-192.png', 192, 'neutral', 'glyph'],
 ];
+
+writeFileSync(path.join(OUT, 'flower-glyph.svg'), tabSvg());
+console.log('wrote flower-glyph.svg');
 
 // CHROMIUM_PATH: a browser outside Playwright's own cache (the cloud container's /opt/pw-browsers/chromium).
 const browser = await chromium.launch(process.env.CHROMIUM_PATH ? { executablePath: process.env.CHROMIUM_PATH } : {});
 const page = await browser.newPage({ deviceScaleFactor: 1 });
 for (const [file, size, theme, shape, flowerScale] of TARGETS) {
   await page.setViewportSize({ width: size, height: size });
-  await page.setContent(`<html><body style="margin:0;background:transparent">
-    <img src="data:image/svg+xml;base64,${Buffer.from(svg({ theme, shape, flowerScale })).toString('base64')}"
-         width="${size}" height="${size}" style="display:block"></body></html>`);
+  const src = Buffer.from(iconSvg({ theme, shape, flowerScale })).toString('base64');
+  await page.setContent(`<html><body style="margin:0;background:transparent"><img src="data:image/svg+xml;base64,${src}" width="${size}" height="${size}" style="display:block"></body></html>`);
   await page.waitForFunction(() => document.images[0].complete);
   await page.screenshot({ path: path.join(OUT, file), omitBackground: true });
   console.log('wrote', file);
