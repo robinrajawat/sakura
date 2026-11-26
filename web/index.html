@@ -32784,12 +32784,20 @@ function swipeAxis(dx, dy, slop = 10) {
   };
   document.addEventListener('focusin',()=>setTimeout(syncBar,0));
   document.addEventListener('focusout',()=>setTimeout(syncBar,0));
+  // A redraw (a sync, an autosave, Undo) can end editing by replacing the row being typed in, and
+  // that sends no focus event in Safari, so the toolbar stayed with nothing being edited (owner
+  // 2026-11-26, iPhone: "sometimes it doesn't close"). Check again after the editor changes.
+  let syncQueued=false;
+  new MutationObserver(()=>{ if(bar.hidden||syncQueued)return; syncQueued=true; requestAnimationFrame(()=>{ syncQueued=false; syncBar(); }); }).observe(pane,{childList:true,subtree:true});
   window.visualViewport?.addEventListener('resize',placeBar);
   window.visualViewport?.addEventListener('scroll',placeBar);
   // A press on the toolbar must not take focus from the row, or the keyboard would close.
   ['pointerdown','mousedown'].forEach(t=>bar.addEventListener(t,e=>{ if(e.target.closest('button'))e.preventDefault(); }));
   bar.addEventListener('click',e=>{
-    const b=e.target.closest('button[data-act]'); const id=editingId; if(!b||id===null)return;
+    const b=e.target.closest('button[data-act]'); const id=editingId; if(!b)return;
+    // Nothing is being edited any more (editing ended without a focus event): the toolbar is stale,
+    // so any of its buttons just closes it.
+    if(id===null){ if(document.activeElement&&document.activeElement.blur)document.activeElement.blur(); bar.hidden=true; document.documentElement.classList.remove('phone-editing'); return; }
     const inp=getEditingInput(); const off=(inp&&getEditableCaretOffset(inp))??0; const act=b.dataset.act;
     if(act==='done'){ commitEdit(); if(document.activeElement&&document.activeElement.blur)document.activeElement.blur(); syncBar(); return; }
     // ⋯ opens the row's menu (the same one a long-press opens), so its actions can be found.
