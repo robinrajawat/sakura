@@ -247,4 +247,32 @@
      walk through the desktop layout). */
   html.phone #settings-panel [data-cat="ai"], html.phone #settings-panel [data-cat="shortcuts"], html.phone #settings-panel [data-cat="data"],
   html.phone #help-tour-replay-row, html.phone #help-cheatsheet-row, html.phone #help-demo-row { display: none !important; }
+
+  /* ---- File Explorer, option B (owner 2026-11-26: "doesn't feel premium"). ---- */
+  /* The 44px+ rows stay (finger-sized); what changes is their structure, as Apple's lists do it:
+     thin dividers between rows (from the words, not the edge), the disclosure arrow on the right
+     after the count, larger teal icons, list-size names, and a soft teal tint for the open
+     document instead of a bold grey pill. Flat on the panel, like the rest of Sakura. */
+  html.phone .sfolder-row, html.phone .sdoc-item { position: relative; min-height: 48px; margin: 0; border-radius: 10px; }
+  html.phone .sfolder-row + .sfolder-children + .sfolder-row::before,
+  html.phone .sfolder-children > .sfolder-row:not(:first-child)::before,
+  html.phone .sfolder-children > .sdoc-item:not(:first-child)::before,
+  html.phone .sfolder-children > .sfolder-children + .sdoc-item::before,
+  html.phone #sb-docs-list > .sb-unfiled-row + .sdoc-item ~ .sdoc-item::before {
+    content: ''; position: absolute; left: 44px; right: 8px; top: 0; height: 1px; transform: scaleY(.5); transform-origin: top;
+    background: var(--border); pointer-events: none;
+  }
+  html.phone .sfolder-toggle { order: 4; padding: 14px 6px 14px 10px; color: var(--muted); opacity: .7; }
+  html.phone .sfolder-icon, html.phone .sdoc-icon { width: 22px; justify-content: center; margin: 0 12px 0 8px; color: var(--accent); opacity: 1; }
+  html.phone .sfolder-icon svg, html.phone .sdoc-icon svg { width: 19px; height: 19px; }
+  html.phone .sfolder-name, html.phone .sdoc-name-btn { font-size: var(--fs-xl); font-weight: 400; color: var(--fg); letter-spacing: -.01em; }
+  html.phone .sfolder-count, html.phone .sfolder-row:hover .sfolder-count { display: inline; margin: 0 0 0 auto; font-size: var(--fs-lg); color: var(--muted); }
+  html.phone .sb-unfiled-row { min-height: 36px; padding: 14px 8px 4px 10px; font-size: var(--fs-sm); text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+  html.phone .sdoc-item.active { background: color-mix(in srgb, var(--accent) 11%, transparent); }
+  html.phone .sdoc-item.active .sdoc-name-btn { color: var(--accent); font-weight: 500; }
+  html.phone .sdoc-item.active .sdoc-icon { color: var(--accent); }
+  /* Names centred on their icons, and documents' names starting where folders' do. */
+  html.phone .sfolder-name { padding: 0 4px 0 0; line-height: 1.3; }
+  html.phone .sdoc-name-btn { padding: 0 8px 0 0; line-height: 1.3; }
+  html.phone .sdoc-item.active::before, html.phone .sdoc-item.active + .sdoc-item::before { display: none; }
 }
