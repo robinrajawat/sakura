@@ -45,3 +45,45 @@ test('Done hides the toolbar even when no row is being edited any more', async (
   await bar.locator('[data-act="done"]').tap();
   await expect(bar).toBeHidden();
 });
+
+// Owner 2026-11-26: closing the iPhone keyboard and then tapping Done didn't work. Closing the
+// keyboard now counts as Done. A stand-in visualViewport lets the test open and close a keyboard.
+test.describe('closing the keyboard', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.addInitScript(() => {
+      const vv = new EventTarget() as EventTarget & { height: number; offsetTop: number; width: number; offsetLeft: number; scale: number };
+      vv.height = window.innerHeight; vv.offsetTop = 0; vv.width = window.innerWidth; vv.offsetLeft = 0; vv.scale = 1;
+      Object.defineProperty(window, 'visualViewport', { value: vv, configurable: true });
+      (window as any).__setKeyboard = (px: number) => { vv.height = window.innerHeight - px; vv.dispatchEvent(new Event('resize')); };
+    });
+    await page.reload();
+    await page.waitForFunction(() => typeof (window as any).render === 'function');
+  });
+
+  test('saves the row and hides the toolbar, as Done does', async ({ page }) => {
+    const bar = page.locator('#phone-edit-bar');
+    await page.locator('.node-row', { hasText: 'Second' }).first().locator('.node-label').tap();
+    await page.evaluate(() => (window as any).__setKeyboard(300));
+    await expect(bar).toBeVisible();
+    expect(Math.round((await bar.boundingBox())!.y + (await bar.boundingBox())!.height)).toBe(page.viewportSize()!.height - 300);
+    await page.keyboard.press('End');
+    await page.keyboard.type(' edited');
+    await page.evaluate(() => (window as any).__setKeyboard(0));
+    await expect(bar).toBeHidden();
+    expect(await page.evaluate(() => (window as any).eval('editingId'))).toBe(null);
+    expect(await page.evaluate(() => (window as any).eval('nodes[1].text'))).toBe('Second edited');
+    // Tapping a row again brings the toolbar back.
+    await page.locator('.node-row', { hasText: 'First' }).first().locator('.node-label').tap();
+    await page.evaluate(() => (window as any).__setKeyboard(300));
+    await expect(bar).toBeVisible();
+  });
+
+  test('a small change in the visible height (no keyboard) does not end editing', async ({ page }) => {
+    const bar = page.locator('#phone-edit-bar');
+    await page.locator('.node-row', { hasText: 'Second' }).first().locator('.node-label').tap();
+    await expect(bar).toBeVisible();
+    await page.evaluate(() => (window as any).__setKeyboard(20));
+    await page.evaluate(() => (window as any).__setKeyboard(0));
+    await expect(bar).toBeVisible();
+  });
+});
