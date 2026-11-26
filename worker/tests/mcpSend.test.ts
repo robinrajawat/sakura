@@ -108,3 +108,15 @@ describe('sending a draft', () => {
     expect(theirs.removed).toHaveLength(0);
   });
 });
+
+describe('numbered lists in a draft', () => {
+  it('a 1. 2. list, or numbers typed into bullets, becomes a numbered list', () => {
+    const r = buildDraft({ title: 'T', markdown: '## Steps\n\n1. Create\n2. Confirm\n\n## Flow\n\n- 1. Read\n- 2. Write\n' }, NOW);
+    if (typeof r === 'string') throw new Error(r);
+    const nodes = r.doc.nodes as Array<Record<string, unknown>>;
+    expect(nodes.map((n) => [n.text, !!n.numbered])).toEqual([
+      ['Steps', true], ['Create', false], ['Confirm', false], ['Flow', true], ['Read', false], ['Write', false],
+    ]);
+  });
+});
+

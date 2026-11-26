@@ -120,3 +120,36 @@ describe('document', () => {
     expect(mdSerializeDocument('', [])).toBe('# Untitled\n');
   });
 });
+
+describe('numbered lists', () => {
+  const rows: MdExportRow[] = [
+    { text: 'Runtime flow', depth: 0, heading: 1, numbered: true },
+    { text: 'Document is created', depth: 1, numbered: true, noteMd: 'A note.' },
+    { text: 'Inbound', depth: 2 },
+    { text: 'Outbound', depth: 2 },
+    { text: 'Process is determined', depth: 1 },
+    { text: 'Plain', depth: 0 },
+    { text: 'child', depth: 1 },
+  ];
+
+  it('writes 1. 2. for a numbered row\'s children and indents under the number', () => {
+    expect(mdSerializeDocument('Doc', rows)).toBe([
+      '# Doc', '', '## Runtime flow', '',
+      '1. Document is created', '', '   A note.', '',
+      '   1. Inbound', '   2. Outbound',
+      '2. Process is determined',
+      '- Plain', '  - child', '',
+    ].join('\n'));
+  });
+
+  it('reads back to the same rows and flags', () => {
+    // (A plain top-level row after a heading reads back as part of that heading's section, as it
+    // always has: Markdown can't say otherwise. So the round trip stops before 'Plain'.)
+    const back = parseMarkdown(mdSerializeDocument('Doc', rows.slice(0, 5)));
+    expect(back.rows.map((r) => [r.text, r.depth, !!r.numbered])).toEqual([
+      ['Runtime flow', 0, true], ['Document is created', 1, true], ['Inbound', 2, false], ['Outbound', 2, false],
+      ['Process is determined', 1, false],
+    ]);
+    expect(back.rows[1].note).toContain('A note.');
+  });
+});

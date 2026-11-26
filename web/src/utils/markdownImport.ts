@@ -11,6 +11,8 @@
  * escaped text only.
  */
 
+import { repairTypedNumbers } from './listNumbers';
+
 export interface MdMark {
   s: number;
   e: number;
@@ -30,6 +32,8 @@ export interface MdRow {
   note: string;
   /** Table HTML in Sakura's own shape (thead/tbody), built from escaped cell text. */
   tables: string[];
+  /** Its children came in as a numbered list (`1.` items, or typed "1. 2. 3."; listNumbers.ts). */
+  numbered?: boolean;
 }
 
 export interface MdImportResult {
@@ -338,7 +342,7 @@ export function parseMarkdown(input: string): MdImportResult {
   let title = '';
 
   // Headings nest by level; rows outside lists sit one level under the current heading.
-  const headingStack: { level: number; depth: number }[] = [];
+  const headingStack: { level: number; depth: number; row: MdRow | null }[] = [];
   const sectionDepth = () => (headingStack.length ? headingStack[headingStack.length - 1].depth + 1 : 0);
   // Open list items: where their marker sits and where their content starts.
   let listStack: { markerIndent: number; contentIndent: number; row: MdRow }[] = [];
@@ -479,6 +483,12 @@ export function parseMarkdown(input: string): MdImportResult {
       if (task) { isCheckbox = true; checked = task[1] !== ' '; content = task[2]; }
       // A quote marker inside a list item is just text.
       const depth = sectionDepth() + listStack.length;
+      // A numbered item numbers its parent's list: the item it sits in, else its heading. A
+      // numbered list at the very top of a file has no parent row and comes in as bullets.
+      if (/^\d/.test(li[2])) {
+        const parent = listStack.length ? listStack[listStack.length - 1].row : headingStack.length ? headingStack[headingStack.length - 1].row : null;
+        if (parent) parent.numbered = true;
+      }
       headingForNote = null;
       const row = newRow(content, depth, { isCheckbox, checked });
       listStack.push({ markerIndent, contentIndent, row });
@@ -525,6 +535,8 @@ export function parseMarkdown(input: string): MdImportResult {
     blankSeen = false;
   }
   flushPara();
+  // Numbers typed into the words ("1. Step", "2. Step") become a real numbered list.
+  repairTypedNumbers(rows);
 
   function handleHeading(level: number, rawText: string) {
     closeLists();
@@ -541,7 +553,7 @@ export function parseMarkdown(input: string): MdImportResult {
     // Size by nesting: a top-level heading is Heading 1 whatever its #-level.
     const size = Math.min(3, headingStack.length + 1);
     headingForNote = newRow(text, depth, { heading: size });
-    headingStack.push({ level, depth });
+    headingStack.push({ level, depth, row: headingForNote });
     blankSeen = false;
   }
 

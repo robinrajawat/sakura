@@ -196,3 +196,25 @@ describe('files shaped like other apps\' exports', () => {
     expect(r.rows[2].note).toBe('<p>Run tool --help.</p>');
   });
 });
+
+describe('numbered lists', () => {
+  it('numbers the parent of a 1. 2. list, under a heading or an item', () => {
+    const r = parseMarkdown('## Steps\n\n1. One\n2. Two\n   - a\n   - b\n\n## Notes\n\n- x\n  1) y\n  2) z\n').rows;
+    expect(r.map((x) => [x.text, x.depth, !!x.numbered])).toEqual([
+      ['Steps', 0, true], ['One', 1, false], ['Two', 1, false], ['a', 2, false], ['b', 2, false],
+      ['Notes', 0, false], ['x', 1, true], ['y', 2, false], ['z', 2, false],
+    ]);
+  });
+
+  it('a numbered list at the very top has no parent row and comes in as bullets', () => {
+    const r = parseMarkdown('1. One\n2. Two\n').rows;
+    expect(r.map((x) => [x.text, !!x.numbered])).toEqual([['One', false], ['Two', false]]);
+  });
+
+  it('repairs numbers typed into bullet items', () => {
+    const r = parseMarkdown('## Runtime flow\n\n- 1. Warehouse document is created\n- 2. EWM determines the process\n').rows;
+    expect(r.map((x) => [x.text, !!x.numbered])).toEqual([
+      ['Runtime flow', true], ['Warehouse document is created', false], ['EWM determines the process', false],
+    ]);
+  });
+});

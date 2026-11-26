@@ -105,6 +105,7 @@ export function documentToMarkdown(doc: Rec): string {
         heading: Number(styles.heading) || 0,
         isCheckbox: !!n.isCheckbox,
         checked: !!n.checked,
+        numbered: !!n.numbered,
         noteMd: str(n.note) ? mdFromNoteHtml(parseHtmlFragment(str(n.note))) : '',
         tables,
         mentions

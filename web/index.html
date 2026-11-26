@@ -868,6 +868,15 @@ body.zen-mode #quick-bar{display:none}
 /* === Outline numbering === */
 .node-number{color:var(--muted);margin-right:7px;font-variant-numeric:tabular-nums;user-select:none;font-size:.92em;flex:0 0 auto}
 
+/* Numbered lists (owner 2026-11-26): a numbered row's children show "1." where their dot was. The
+   dot element stays (it is the drag and fold handle); only what it draws changes. */
+.node-dot.is-num,.fold-dot.is-num{width:1.75em;min-width:0;height:var(--row-line);margin:0 .35em 0 0;font-size:inherit;font-weight:400;justify-content:flex-end}
+/* One fixed, right-aligned column (fits "10."), so 9. and 10. start their words at the same place;
+   the margin also replaces the phone's wider fold-dot target margins, which would overlap the words. */
+html.phone .fold-dot.is-num{width:1.75em;height:var(--row-line);margin:0 .35em 0 0}
+.node-dot.is-num::before,.fold-dot.is-num::before{content:attr(data-num);width:auto;height:auto;border-radius:0;background:none;opacity:1;font-variant-numeric:tabular-nums}
+.fold-dot.is-num.is-folded::before{width:auto;height:auto;font-weight:600}
+.fold-dot.is-num.is-folded::after{content:none}
 /* === Search bar === */
 #editor-wrap{position:relative}
 #search-replace-wrap{position:absolute;top:8px;right:18px;z-index:45;display:flex;flex-direction:column;width:360px;max-width:calc(100% - 36px)}
@@ -2499,6 +2508,8 @@ body{--pv-row-bcol:43px;--pv-heading-bcol:24px}
 .pv-section{flex:1;min-width:60px;display:flex;align-items:center;gap:10px;margin:0 0 6px;font:700 12px 'Inter',sans-serif;letter-spacing:.04em;color:var(--muted);text-transform:uppercase}
 .pv-section::after{content:'';flex:1;height:1px;background:var(--border)}
 .pv-bullet{flex:0 0 auto;width:16px;display:flex;justify-content:center;color:var(--hint);font-size:14.5px}
+/* Numbered lists (owner 2026-11-26): "1." where the dot was, right-aligned so 9. and 10. line up. */
+.pv-bullet.pv-num{width:auto;min-width:16px;justify-content:flex-end;padding-right:5px;color:var(--muted);font-size:inherit;font-variant-numeric:tabular-nums}
 .pv-cb{flex:0 0 auto;width:14px;height:14px;margin:2.5px 1px 0 1px;border:1.5px solid color-mix(in srgb,var(--muted) 55%,var(--border));border-radius:3px;cursor:pointer;position:relative;transition:background .1s,border-color .1s}
 .pv-cb:hover{border-color:var(--muted)}
 .pv-cb.pv-cb-checked{background:transparent;border-color:var(--muted)}
@@ -4429,6 +4440,7 @@ html.calm-layout #sb-auto-rewrite-chip.is-quiet:hover,html.calm-layout #sb-auto-
 <li>Checkbox: the Insert list or right-click; a parent shows how many of its children are done, and checks itself when all are</li>
 <li>Type <span class="help-kbd">@</span> to link another row by name. The link follows a rename; if the row is deleted, the link becomes plain words</li>
 <li>Tags: right-click a row → Tags. Click a #tag on a row to show only rows with that tag</li>
+<li>Numbered list: right-click a row → More → Row › Numbered list. The rows right under it show 1, 2, 3; move one and the numbers follow</li>
 </ul>
 </div>
           <div class="help-section" data-cat="writing">
@@ -13638,7 +13650,7 @@ function captionFromLegacyAlt(alt) {
 function emptyStyles(){return {bold:false,italic:false,underline:false,strike:false,highlight:false,color:false,heading:0}}
 function normalizeStyles(st){const hl=HIGHLIGHT_COLORS[st?.highlight]?st.highlight:false; const fc=FONT_COLORS.includes(st?.color)?st.color:false; const hd=Number.isInteger(st?.heading)&&st.heading>=1&&st.heading<=7?Math.min(st.heading,3):0; return {bold:!!st?.bold,italic:!!st?.italic,underline:!!st?.underline,strike:!!st?.strike,highlight:hl,color:fc,heading:hd}}
 function normalizeTags(t){return Array.isArray(t)?t.filter(s=>typeof s==='string'&&s.trim()).map(s=>s.trim()):[];}
-function normalizeNode(n){const _now=Date.now(); return normalizeNodeMarks({id:Number.isFinite(n.id)?n.id:nextId++,text:typeof n.text==='string'?n.text:'',depth:Number.isFinite(n.depth)?n.depth:0,parentId:n.parentId??null,styles:normalizeStyles(n.styles||{}),note:typeof n.note==='string'?sakuraSanitizeRichHtml(n.note):'',noteTitle:typeof n.noteTitle==='string'?n.noteTitle:'',tables:Array.isArray(n.tables)?n.tables.filter(t=>typeof t==='string').map(t=>tidyTableHtml(sakuraSanitizeRichHtml(t))):[],images:normalizeNodeImages(n.images,_now,newNodeImageId),tags:normalizeTags(n.tags),checked:!!n.checked,isCheckbox:!!n.isCheckbox,marker:normalizeThreadStatus(n.marker)||'',...normalizeRowStatusMeta(n),createdAt:Number.isFinite(n.createdAt)&&n.createdAt>0?n.createdAt:_now,modifiedAt:Number.isFinite(n.modifiedAt)&&n.modifiedAt>0?n.modifiedAt:_now,completedAt:(Number.isFinite(n.completedAt)&&n.completedAt>0)?n.completedAt:(n.checked&&n.isCheckbox?_now:null),...(n.noExport?{noExport:true}:{})},n)}
+function normalizeNode(n){const _now=Date.now(); return normalizeNodeMarks({id:Number.isFinite(n.id)?n.id:nextId++,text:typeof n.text==='string'?n.text:'',depth:Number.isFinite(n.depth)?n.depth:0,parentId:n.parentId??null,styles:normalizeStyles(n.styles||{}),note:typeof n.note==='string'?sakuraSanitizeRichHtml(n.note):'',noteTitle:typeof n.noteTitle==='string'?n.noteTitle:'',tables:Array.isArray(n.tables)?n.tables.filter(t=>typeof t==='string').map(t=>tidyTableHtml(sakuraSanitizeRichHtml(t))):[],images:normalizeNodeImages(n.images,_now,newNodeImageId),tags:normalizeTags(n.tags),checked:!!n.checked,isCheckbox:!!n.isCheckbox,marker:normalizeThreadStatus(n.marker)||'',...normalizeRowStatusMeta(n),createdAt:Number.isFinite(n.createdAt)&&n.createdAt>0?n.createdAt:_now,modifiedAt:Number.isFinite(n.modifiedAt)&&n.modifiedAt>0?n.modifiedAt:_now,completedAt:(Number.isFinite(n.completedAt)&&n.completedAt>0)?n.completedAt:(n.checked&&n.isCheckbox?_now:null),...(n.noExport?{noExport:true}:{}),...(n.numbered?{numbered:true}:{})},n)}
 // images (8th arg) is always deep-copied with fresh image ids -- every caller passing one is
 // creating a NEW node from an existing one's content (duplicate, paste), so the copy's pictures
 // must be independent objects, not shared references into the source node.
@@ -23572,6 +23584,77 @@ function looksLikeMarkdown(text) {
 }
 
 /* GENERATED:rowMarks:END */
+/* GENERATED:listNumbers:START — DO NOT EDIT BY HAND. Source of truth: src/utils/listNumbers.ts (tests: tests/unit/listNumbers.test.ts). Regenerate with `npm run generate` after changing the source; CI fails if this block drifts from what the generator produces (see .github/workflows/ci.yml and scripts/generate-index-blocks.mjs). */
+/**
+ * Numbered lists (owner 2026-11-26): a row with `numbered: true` shows its direct children as
+ * 1, 2, 3 in place of their dots. One level only, digits only: a grandchild list is numbered
+ * only if its own parent is switched on, and starts again at 1. Nothing is written into the
+ * rows' text, so moving a row renumbers the list.
+ *
+ * Shared by the editor, the PDF, Markdown export (the app's and the AI connector's), Markdown
+ * import, OPML and copy as text; spliced into index.html by scripts/generate-index-blocks.mjs.
+ */
+/**
+ * Each row's number in its parent's numbered list, or 0 when its parent isn't numbered (or it has
+ * no parent row). Parents are found from depth in list order, so a list that leaves rows out
+ * (rows left out of an export, a zoomed-in branch) numbers what it actually shows.
+ */
+function computeListNumbers(list) {
+    const open = [];
+    return list.map((row) => {
+        const depth = Math.max(0, Math.floor(row.depth || 0));
+        open.length = Math.min(open.length, depth);
+        const parent = depth > 0 ? open[depth - 1] : undefined;
+        const n = parent && parent.numbered ? ++parent.count : 0;
+        open[depth] = { numbered: !!row.numbered, count: 0 };
+        return n;
+    });
+}
+const TYPED_NUMBER_RE = /^(\d{1,3})[.)][ \t]+/;
+/**
+ * Repairs lists whose numbers were typed into the words ("1. Warehouse document is created",
+ * "2. …"), as an AI draft or a pasted list often has them: when every child of a row (two or
+ * more) starts with 1., 2., 3.… in order, the numbers come off the text (formatting marks shift
+ * with it) and the parent becomes a numbered list. Anything less regular is left exactly as
+ * typed. Changes `list` in place; returns how many lists it repaired.
+ */
+function repairTypedNumbers(list) {
+    let repaired = 0;
+    for (let p = 0; p < list.length; p++) {
+        const depth = Math.max(0, Math.floor(list[p].depth || 0));
+        const kids = [];
+        for (let i = p + 1; i < list.length; i++) {
+            const d = Math.max(0, Math.floor(list[i].depth || 0));
+            if (d <= depth)
+                break;
+            if (d === depth + 1)
+                kids.push(i);
+        }
+        if (kids.length < 2)
+            continue;
+        const cuts = kids.map((i, k) => {
+            const m = TYPED_NUMBER_RE.exec(list[i].text || '');
+            return m && Number(m[1]) === k + 1 ? m[0].length : -1;
+        });
+        if (cuts.some((c) => c < 0))
+            continue;
+        kids.forEach((i, k) => {
+            const row = list[i];
+            const cut = cuts[k];
+            row.text = row.text.slice(cut);
+            if (Array.isArray(row.marks)) {
+                row.marks = row.marks
+                    .map((m) => ({ ...m, s: Math.max(0, m.s - cut), e: m.e - cut }))
+                    .filter((m) => m.e > m.s);
+            }
+        });
+        list[p].numbered = true;
+        repaired++;
+    }
+    return repaired;
+}
+
+/* GENERATED:listNumbers:END */
 /* GENERATED:versionHistory:START — DO NOT EDIT BY HAND. Source of truth: src/utils/versionHistory.ts (tests: tests/unit/versionHistory.test.ts). Regenerate with `npm run generate` after changing the source; CI fails if this block drifts from what the generator produces (see .github/workflows/ci.yml and scripts/generate-index-blocks.mjs). */
 /**
  * Version history rules shared by documents and the To-Dos list (owner, 2026-10-29: "check that
@@ -24577,6 +24660,13 @@ function handleDrop(draggedId,targetId,mode='below'){if(!draggedId)return; if(mo
 // "Leave out of export" (owner, 2026-10-20): a row, and everything under it, is skipped by the PDF and
 // OPML exports. It stays as it is in the editor, apart from one quiet eye-with-a-slash dot.
 const NOEXPORT_DOT_SVG='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.9 4.2A10 10 0 0 1 12 4c7 0 10 8 10 8a17 17 0 0 1-2.2 3.4"/><path d="M6.6 6.6C3.6 8.6 2 12 2 12s3 8 10 8a9.7 9.7 0 0 0 5.4-1.6"/><path d="M14.1 14.1a3 3 0 1 1-4.2-4.2"/><line x1="2" y1="2" x2="22" y2="22"/></svg>';
+// Numbered list: the row's direct children show 1, 2, 3 in place of their dots (listNumbers.ts).
+function setNodeNumbered(id,on){
+  const i=getIndex(nodes,id); if(i<0||!!nodes[i].numbered===!!on)return;
+  pushUndo(); const n=nodes[i]; if(on)n.numbered=true; else delete n.numbered; n.modifiedAt=Date.now();
+  markDirty(); scheduleAutoSave(); render();
+  showToast((on?'Numbered list':'Bulleted list')+' — Ctrl/Cmd+Z to undo');
+}
 function setNodesNoExport(ids,on){
   const list=ids.map(id=>nodes[getIndex(nodes,id)]).filter(Boolean).filter(n=>!!n.noExport!==on); if(!list.length)return;
   pushUndo(); const now=Date.now();
@@ -24633,6 +24723,8 @@ const CTX_ACTION_META={
   up:{label:'Move up',glyph:'↑',group:'structure'},
   down:{label:'Move down',glyph:'↓',group:'structure'},
   fold:{label:'Collapse/expand branch',svg:'<polyline points="6 9 12 15 18 9"/>',group:'structure'},
+  // Numbered list (owner 2026-11-26): numbers this row's direct children 1, 2, 3 (listNumbers.ts).
+  numbered:{label:'Numbered list',dynamicLabel:true,svg:'<line x1="10" y1="6" x2="21" y2="6"/><line x1="10" y1="12" x2="21" y2="12"/><line x1="10" y1="18" x2="21" y2="18"/><path d="M4 6h1v4"/><path d="M4 10h2"/><path d="M6 18H4c0-1 2-2 2-3s-1-1.5-2-1"/>',group:'structure'},
   'ai-rewrite':{label:'Rewrite row',svg:'<path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z" fill="currentColor" stroke="currentColor" stroke-width="1"/>',group:'ai'},
   note:{label:'Note…',dynamicLabel:true,svg:'<path d="M16 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8Z"/><path d="M15 3v4a2 2 0 0 0 2 2h4"/>',group:'node'},
   remark:{label:'Thread…',svg:'<path d="M14 9a2 2 0 0 1-2 2H6l-4 4V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2z"/><path d="M18 9h2a2 2 0 0 1 2 2v11l-4-4h-6a2 2 0 0 1-2-2v-1"/>',group:'discuss'},
@@ -24645,7 +24737,7 @@ const CTX_ACTION_META={
   'no-export':{label:'Leave out of export',dynamicLabel:true,svg:'<path d="M9.9 4.2A10 10 0 0 1 12 4c7 0 10 8 10 8a17 17 0 0 1-2.2 3.4"/><path d="M6.6 6.6C3.6 8.6 2 12 2 12s3 8 10 8a9.7 9.7 0 0 0 5.4-1.6"/><path d="M14.1 14.1a3 3 0 1 1-4.2-4.2"/><line x1="2" y1="2" x2="22" y2="22"/>',group:'info'},
   delete:{label:'Delete',svg:'<polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>',group:'delete',danger:true}
 };
-const CTX_ACTION_ORDER=['child','above','below','duplicate','focus','up','down','fold','ai-rewrite','note','date-time','remark','table','image','diagram','tags','version-history','no-export','delete'];
+const CTX_ACTION_ORDER=['child','above','below','duplicate','focus','up','down','fold','numbered','ai-rewrite','note','date-time','remark','table','image','diagram','tags','version-history','no-export','delete'];
 const NODE_QA_ACTION_META={
   emdash:{label:'Insert em dash',glyph:'—'},
   endash:{label:'Insert en dash',glyph:'–'},
@@ -24658,7 +24750,7 @@ const NODE_QA_ACTION_META={
 const CTX_GROUP_ORDER=['insert','structure','ai','notes','delete']; // order for leftover items in the More panel
 
 function _ctxNoteLabelText(){const idx=getIndex(nodes,contextMenuNodeId??selectedId); if(idx<0)return 'Note…'; const n=nodes[idx]; const hasNote=!!(n.note&&n.note.trim()); return hasNote?'Edit note…':'Add note…'}
-function ctxDynamicLabel(actionId){ if(actionId==='note')return _ctxNoteLabelText(); if(actionId==='no-export'){ const i=getIndex(nodes,contextMenuNodeId??selectedId); return i>=0&&nodes[i].noExport?'Include in export':'Leave out of export'; } return CTX_ACTION_META[actionId].label; }
+function ctxDynamicLabel(actionId){ if(actionId==='note')return _ctxNoteLabelText(); if(actionId==='no-export'){ const i=getIndex(nodes,contextMenuNodeId??selectedId); return i>=0&&nodes[i].noExport?'Include in export':'Leave out of export'; } if(actionId==='numbered'){ const i=getIndex(nodes,contextMenuNodeId??selectedId); return i>=0&&nodes[i].numbered?'Bulleted list':'Numbered list'; } return CTX_ACTION_META[actionId].label; }
 
 // Builds the entire merged top row of the context menu in one pass: the fixed
 // Agreed/Follow-up/Out of scope marker strip (mirrors the node-marker popover's quick-mark
@@ -24718,7 +24810,7 @@ function ctxActionEnabled(){
   const single=roots.length===1?roots[0]:null; const one=selectedId!==null&&!selectAllMode;
   return {child:one, above:one, below:one, duplicate:hasSelection, focus:one&&multiSelectedIds.length<=1, tags:one,
     up:roots.length===1&&single!==0, down:single!==null&&getSubtreeEnd(nodes,single)<nodes.length,
-    delete:hasSelection||selectAllMode, sort:single!==null&&nodeHasChildren(nodes,single)};
+    delete:hasSelection||selectAllMode, sort:single!==null&&nodeHasChildren(nodes,single), numbered:single!==null&&nodeHasChildren(nodes,single)};
 }
 function ctxMenuItems(nodeId,moreOpen){
   const on=ctxActionEnabled(); const enabled=a=>on[a]!==false;
@@ -24757,7 +24849,7 @@ function ctxMenuItems(nodeId,moreOpen){
     const items=[]; groups.forEach(([heading,l],gi)=>{ if(heading)items.push({heading}); else if(gi)items.push({divider:true}); items.push(...l.map(item)); });
     return [{label:name, icon:`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${svg}</svg>`, data:{flyout:name.toLowerCase()}, submenu:items}]; };
   group([...sub('Insert','<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>',[['Basics',inGroup('node')],['Discuss',inGroup('discuss')],['Visuals',inGroup('visual')]]),
-    ...sub('Row','<line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="14" y2="18"/>',[[null,rest(['focus','fold'])],[null,inGroup('info')]])]);
+    ...sub('Row','<line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="14" y2="18"/>',[[null,rest(['focus','fold','numbered'])],[null,inGroup('info')]])]);
   group(inGroup('delete').map(item));
   // Owner, 2026-10-23: More is a ⋯ at the end of the quick row (after a divider), unfolding below.
   if(more.length)top.push({sep:true},{label:'More', id:'context-more-toggle', bodyId:'context-more-panel', cls:'ctx-more', open:!!moreOpen,
@@ -25070,7 +25162,7 @@ function render(){const _keptInlineSel=_inlineFieldSelection(); if(_apiEd)apiEdi
   }
   const _scrollAnchor=captureRenderScrollAnchor();
   const pane=el('editor-pane-inner'); pane.innerHTML=''; const focusIdx=focusedId!==null?getIndex(nodes,focusedId):-1; const focusActive=focusIdx>=0; const focusBaseDepth=focusActive?nodes[focusIdx].depth:0; const focusEnd=focusActive?getSubtreeEnd(nodes,focusIdx):-1; if(focusActive)pane.appendChild(buildFocusBar(focusIdx)); let focusEmptyEl=null; if(focusActive && focusEnd<=focusIdx+1){const empty=document.createElement('div'); empty.className='empty-state focus-empty-state'; empty.innerHTML='<div style="font-size:.92em;opacity:.7;line-height:1.6;cursor:text">No sub-items yet. Press <kbd style="font-family:inherit;font-size:.85em;padding:1px 6px;border:1px solid var(--border);border-radius:5px;background:color-mix(in srgb,var(--bg) 80%,var(--tb-bg) 20%)">Enter</kbd> or just start typing to add one.</div>'; empty.addEventListener('click',()=>{if(focusedId!==null)insertChildFirst(focusedId,true)}); focusEmptyEl=empty;} if(!focusActive&&!nodes.length){const empty=document.createElement('div'); empty.className='empty-state doc-empty'; const hint='Press <kbd style="font-family:inherit;font-size:.85em;padding:1px 6px;border:1px solid var(--border);border-radius:5px;background:color-mix(in srgb,var(--bg) 80%,var(--tb-bg) 20%)">Enter</kbd> or just type — or paste a tree.'; const greetName=getGreetingName(); const esTitle=greetName?`${esc(getGreetingTimePrefix())}, ${esc(greetName)}`:'Nothing here yet'; const esSubtitle=greetName?`Nothing here yet. ${hint}`:hint; empty.innerHTML=`<div><div class="empty-state-illustration"><svg width="72" height="72" viewBox="0 0 72 72" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><g opacity="0.9" filter="url(#sakura-mark-lift)"><ellipse cx="36" cy="18" rx="9" ry="9" fill="color-mix(in srgb,var(--fg) 38%,transparent)" stroke="color-mix(in srgb,var(--fg) 55%,transparent)" stroke-width="1"/><ellipse cx="18" cy="30" rx="9" ry="9" fill="color-mix(in srgb,var(--fg) 30%,transparent)" stroke="color-mix(in srgb,var(--fg) 45%,transparent)" stroke-width="1"/><ellipse cx="54" cy="30" rx="9" ry="9" fill="color-mix(in srgb,var(--fg) 30%,transparent)" stroke="color-mix(in srgb,var(--fg) 45%,transparent)" stroke-width="1"/><ellipse cx="24" cy="46" rx="9" ry="9" fill="color-mix(in srgb,var(--fg) 22%,transparent)" stroke="color-mix(in srgb,var(--fg) 38%,transparent)" stroke-width="1"/><ellipse cx="48" cy="46" rx="9" ry="9" fill="color-mix(in srgb,var(--fg) 22%,transparent)" stroke="color-mix(in srgb,var(--fg) 38%,transparent)" stroke-width="1"/><circle cx="36" cy="32" r="5.5" fill="color-mix(in srgb,var(--fg) 18%,transparent)" stroke="color-mix(in srgb,var(--fg) 48%,transparent)" stroke-width="1.2"/></g><g fill="url(#sakura-mark-light)"><circle cx="36" cy="18" r="9"/><circle cx="18" cy="30" r="9"/><circle cx="54" cy="30" r="9"/><circle cx="24" cy="46" r="9"/><circle cx="48" cy="46" r="9"/><circle cx="36" cy="32" r="5.5"/></g></svg></div><div style="font-size:1.1em;margin-bottom:6px;color:var(--fg)">${esTitle}</div><div style="font-size:.88em;opacity:.7;line-height:1.6">${esSubtitle}</div><div class="empty-state-actions"><button class="btn primary" id="es-first-row-btn">Add first row</button><button class="btn" id="es-ai-outline-btn">Generate with AI ✦</button></div></div>`; pane.appendChild(empty); const firstRowBtn=document.getElementById('es-first-row-btn'); if(firstRowBtn)firstRowBtn.addEventListener('click',()=>createRootAndEdit());
-const aiOutlineBtn=document.getElementById('es-ai-outline-btn'); if(aiOutlineBtn)aiOutlineBtn.addEventListener('click',()=>generateOutlineWithAi(aiOutlineBtn));} else {const frag=document.createDocumentFragment(); const counters=[]; let skipDepth=null; nodes.forEach((node,idx)=>{ if(focusActive&&(idx<focusIdx||idx>=focusEnd)){ return } if(skipDepth!==null){ if(node.depth>skipDepth){ return } else { skipDepth=null } } const folded=collapsedIds.has(node.id); const hasChildren=nodeHasChildren(nodes,idx); if(folded&&hasChildren) skipDepth=node.depth; let numberStr=''; if(outlineNumbering){ const depth=(node.depth||0)-(focusActive?focusBaseDepth:0); counters.length=depth+1; counters[depth]=(counters[depth]||0)+1; numberStr=counters.slice(0,depth+1).join('.') } const row=document.createElement('div'); const isSectionNode=nodeIsSection(node,sectionMarkersDepthZero); const isMatch=searchMatches.includes(node.id); const isCurrentMatch=isMatch&&searchMatches[searchIndex]===node.id; row.className='node-row'+(isIdSelected(node.id,selectAllMode,multiSelectedIds,selectedId)?' selected':'')+(node.id===selectedId?' primary-selection':'')+(node.id===flashNodeId?' flash-new':'')+(isSectionNode?' is-section':'')+(hasChildren&&!isSectionNode?' has-kids':'')+(isMatch?' search-match':'')+(isCurrentMatch?' search-current':''); row.dataset.id=String(node.id); if(hideTreeLines){ const vDepth=focusActive?((node.depth||0)-focusBaseDepth):(node.depth||0); row.style.paddingLeft=(vDepth*32+0*editorScale)+'px'; if(depthGuideLines){ const vFlags=focusActive?buildVertFlags(nodes.slice(focusIdx,focusEnd),idx-focusIdx,-focusBaseDepth):buildVertFlags(nodes,idx,0); vFlags.forEach((hasSib,d)=>{ if(hasSib){ const vg=document.createElement('span'); vg.className='node-vguide'; vg.style.left=(d*32+0*editorScale+9)+'px'; row.appendChild(vg) } }) } } else { const prefix=focusActive?buildPrefix(nodes.slice(focusIdx,focusEnd),idx-focusIdx,treeIndentWidth,-focusBaseDepth):buildPrefix(nodes,idx,treeIndentWidth,0); const pfx=document.createElement('span'); pfx.className='node-prefix'; pfx.innerHTML=(prefix.vert?`<span>${esc(prefix.vert)}</span>`:'')+(prefix.conn?`<span class="node-conn">${esc(prefix.conn)}</span>`:''); row.appendChild(pfx) } if(hasChildren&&hideTreeLines){ const foldBtn=document.createElement('span'); foldBtn.className='fold-dot'+(folded?' is-folded':''); foldBtn.addEventListener('mouseenter',()=>{foldBtn.classList.add('is-hover'); foldBtn.textContent=folded?'+':'−'}); foldBtn.addEventListener('mouseleave',()=>{foldBtn.classList.remove('is-hover'); foldBtn.textContent=''}); foldBtn.addEventListener('mousedown',e=>{e.stopPropagation(); e.preventDefault(); armNodeDrag(e,row,node,()=>{if(e.shiftKey||e.ctrlKey||e.metaKey)selectRowFromPointer(node.id,e); else toggleCollapse(node.id)},true)}); row.appendChild(foldBtn) } else if(hasChildren){ const foldBtn=document.createElement('span'); foldBtn.className='fold-toggle'; foldBtn.textContent=folded?'▸':'▾'; foldBtn.dataset.tip=folded?'Expand subtree':'Collapse subtree'; foldBtn.addEventListener('mouseenter',()=>{foldBtn.classList.add('is-hover'); foldBtn.textContent=folded?'+':'−'}); foldBtn.addEventListener('mouseleave',()=>{foldBtn.classList.remove('is-hover'); foldBtn.textContent=folded?'▸':'▾'}); foldBtn.addEventListener('mousedown',e=>{e.stopPropagation(); e.preventDefault(); toggleCollapse(node.id)}); row.appendChild(foldBtn) } else if(hideTreeLines){ const dot=document.createElement('span'); dot.className='node-dot'; dot.addEventListener('mousedown',e=>{e.stopPropagation(); e.preventDefault(); armNodeDrag(e,row,node,()=>selectRowFromPointer(node.id,e),true)}); row.appendChild(dot) } if(numberStr){ const numEl=document.createElement('span'); numEl.className='node-number'; numEl.textContent=numberStr; row.appendChild(numEl) } if(node.id===editingId){
+const aiOutlineBtn=document.getElementById('es-ai-outline-btn'); if(aiOutlineBtn)aiOutlineBtn.addEventListener('click',()=>generateOutlineWithAi(aiOutlineBtn));} else {const frag=document.createDocumentFragment(); const counters=[]; const listNums=outlineNumbering?null:computeListNumbers(nodes); let skipDepth=null; nodes.forEach((node,idx)=>{ if(focusActive&&(idx<focusIdx||idx>=focusEnd)){ return } if(skipDepth!==null){ if(node.depth>skipDepth){ return } else { skipDepth=null } } const folded=collapsedIds.has(node.id); const hasChildren=nodeHasChildren(nodes,idx); if(folded&&hasChildren) skipDepth=node.depth; let numberStr=''; if(outlineNumbering){ const depth=(node.depth||0)-(focusActive?focusBaseDepth:0); counters.length=depth+1; counters[depth]=(counters[depth]||0)+1; numberStr=counters.slice(0,depth+1).join('.') } else if(!hideTreeLines&&listNums&&listNums[idx]) numberStr=listNums[idx]+'.'; const row=document.createElement('div'); const isSectionNode=nodeIsSection(node,sectionMarkersDepthZero); const isMatch=searchMatches.includes(node.id); const isCurrentMatch=isMatch&&searchMatches[searchIndex]===node.id; row.className='node-row'+(isIdSelected(node.id,selectAllMode,multiSelectedIds,selectedId)?' selected':'')+(node.id===selectedId?' primary-selection':'')+(node.id===flashNodeId?' flash-new':'')+(isSectionNode?' is-section':'')+(hasChildren&&!isSectionNode?' has-kids':'')+(isMatch?' search-match':'')+(isCurrentMatch?' search-current':''); row.dataset.id=String(node.id); if(hideTreeLines){ const vDepth=focusActive?((node.depth||0)-focusBaseDepth):(node.depth||0); row.style.paddingLeft=(vDepth*32+0*editorScale)+'px'; if(depthGuideLines){ const vFlags=focusActive?buildVertFlags(nodes.slice(focusIdx,focusEnd),idx-focusIdx,-focusBaseDepth):buildVertFlags(nodes,idx,0); vFlags.forEach((hasSib,d)=>{ if(hasSib){ const vg=document.createElement('span'); vg.className='node-vguide'; vg.style.left=(d*32+0*editorScale+9)+'px'; row.appendChild(vg) } }) } } else { const prefix=focusActive?buildPrefix(nodes.slice(focusIdx,focusEnd),idx-focusIdx,treeIndentWidth,-focusBaseDepth):buildPrefix(nodes,idx,treeIndentWidth,0); const pfx=document.createElement('span'); pfx.className='node-prefix'; pfx.innerHTML=(prefix.vert?`<span>${esc(prefix.vert)}</span>`:'')+(prefix.conn?`<span class="node-conn">${esc(prefix.conn)}</span>`:''); row.appendChild(pfx) } if(hasChildren&&hideTreeLines){ const foldBtn=document.createElement('span'); foldBtn.className='fold-dot'+(folded?' is-folded':''); if(listNums&&listNums[idx]){foldBtn.classList.add('is-num'); foldBtn.dataset.num=listNums[idx]+'.'} foldBtn.addEventListener('mouseenter',()=>{foldBtn.classList.add('is-hover'); foldBtn.textContent=folded?'+':'−'}); foldBtn.addEventListener('mouseleave',()=>{foldBtn.classList.remove('is-hover'); foldBtn.textContent=''}); foldBtn.addEventListener('mousedown',e=>{e.stopPropagation(); e.preventDefault(); armNodeDrag(e,row,node,()=>{if(e.shiftKey||e.ctrlKey||e.metaKey)selectRowFromPointer(node.id,e); else toggleCollapse(node.id)},true)}); row.appendChild(foldBtn) } else if(hasChildren){ const foldBtn=document.createElement('span'); foldBtn.className='fold-toggle'; foldBtn.textContent=folded?'▸':'▾'; foldBtn.dataset.tip=folded?'Expand subtree':'Collapse subtree'; foldBtn.addEventListener('mouseenter',()=>{foldBtn.classList.add('is-hover'); foldBtn.textContent=folded?'+':'−'}); foldBtn.addEventListener('mouseleave',()=>{foldBtn.classList.remove('is-hover'); foldBtn.textContent=folded?'▸':'▾'}); foldBtn.addEventListener('mousedown',e=>{e.stopPropagation(); e.preventDefault(); toggleCollapse(node.id)}); row.appendChild(foldBtn) } else if(hideTreeLines){ const dot=document.createElement('span'); dot.className='node-dot'; if(listNums&&listNums[idx]){dot.classList.add('is-num'); dot.dataset.num=listNums[idx]+'.'} dot.addEventListener('mousedown',e=>{e.stopPropagation(); e.preventDefault(); armNodeDrag(e,row,node,()=>selectRowFromPointer(node.id,e),true)}); row.appendChild(dot) } if(numberStr){ const numEl=document.createElement('span'); numEl.className='node-number'; numEl.textContent=numberStr; row.appendChild(numEl) } if(node.id===editingId){
   const stCls=(node.styles.bold?' style-bold':'')+(node.styles.italic?' style-italic':'')+(node.styles.underline?' style-underline':'')+(node.styles.strike?' style-strike':'')+(node.styles.heading?' style-heading-'+node.styles.heading:'');
   const iColor=node.styles.color?`var(--fc-${node.styles.color})`:'var(--node-fg)';
   const input=document.createElement('div'); input.className='node-input'+stCls; input.contentEditable='true'; input.style.color=iColor;
@@ -26130,7 +26222,7 @@ function deleteSelected(){
   cleanupRowLinksTo(deletedIds);
   rebuildParentIds(); const fallbackIdx=Math.min(roots[0],Math.max(0,nodes.length-1)); selectedId=nodes[fallbackIdx]?.id??nodes[nodes.length-1]?.id??null; editingId=null; clearMultiSelection(); selectionAnchorId=selectedId; flashNodeId=null; render(); showDeletedRowsToast(`Deleted ${count} row${count===1?'':'s'}`+(goneWith?` with ${goneWith}`:''));
 }
-function duplicateSelected(){const roots=getSelectionRootIndexes(); if(!roots.length)return; pushUndo(); markDirty(); let firstNewId=null; for(let r=roots.length-1;r>=0;r--){const idx=roots[r]; const end=getSubtreeEnd(nodes,idx); const originals=nodes.slice(idx,end); const clones=originals.map(n=>makeNode(n.text,n.depth,null,n.styles,n.note||'',false,n.tables,n.images,rowMarksOf(n))); nodes.splice(end,0,...clones); originals.forEach((n,k)=>{ const {qas,rms}=nodeDiscussionCopies(n.id); attachDiscussionCopies(clones[k].id,qas,rms); copyNodeDiagrams(n.id,clones[k].id); if(n.marker)Object.assign(clones[k],{marker:n.marker},normalizeRowStatusMeta(n)); }); firstNewId=clones[0]?.id??firstNewId} rebuildParentIds(); if(firstNewId!==null){setSingleSelection(firstNewId); flashNode(firstNewId)} render()}
+function duplicateSelected(){const roots=getSelectionRootIndexes(); if(!roots.length)return; pushUndo(); markDirty(); let firstNewId=null; for(let r=roots.length-1;r>=0;r--){const idx=roots[r]; const end=getSubtreeEnd(nodes,idx); const originals=nodes.slice(idx,end); const clones=originals.map(n=>makeNode(n.text,n.depth,null,n.styles,n.note||'',false,n.tables,n.images,rowMarksOf(n))); nodes.splice(end,0,...clones); originals.forEach((n,k)=>{ const {qas,rms}=nodeDiscussionCopies(n.id); attachDiscussionCopies(clones[k].id,qas,rms); copyNodeDiagrams(n.id,clones[k].id); if(n.marker)Object.assign(clones[k],{marker:n.marker},normalizeRowStatusMeta(n)); if(n.numbered)clones[k].numbered=true; }); firstNewId=clones[0]?.id??firstNewId} rebuildParentIds(); if(firstNewId!==null){setSingleSelection(firstNewId); flashNode(firstNewId)} render()}
 // A tree drawn with plain characters (|-- a, `-- b, +-- c, \-- d, as `tree` and older tools print it)
 // becomes the same tree drawn with ├── └── │, which the parser below understands. Only when every
 // line under the first is such a branch, so ordinary text with "|--" in it is left alone.
@@ -26158,6 +26250,7 @@ function pasteParsedNodes(parsed,toastVerb='Pasted',clipExtras=null){if(!Array.i
   if(Array.isArray(clipExtras)&&clipExtras.length){
     clipExtras.forEach(ex=>{
       const targetNode=mapped[ex.i]; if(!targetNode)return;
+      if(ex.nb)targetNode.numbered=true;
       if(Array.isArray(ex.mk)&&typeof ex.mt==='string')setRowMarksOn(targetNode,adjustRowMarksForText(ex.mk,ex.mt,targetNode.text||''));
       if(Array.isArray(ex.imgs)&&ex.imgs.length){
         const copies=cloneNodeImagesWithNewIds(ex.imgs,Date.now(),newNodeImageId);
@@ -26427,7 +26520,9 @@ function serializeTreeTextCore(scopeNodes, rebaseDepth, outlineNumbering, treeIn
     if (!scopeNodes.length)
         return '';
     const minDepth = rebaseDepth ? Math.min(...scopeNodes.map((n) => n.depth)) : 0;
-    const numbers = computeOutlineNumbers(scopeNodes, outlineNumbering);
+    const outlineNums = computeOutlineNumbers(scopeNodes, outlineNumbering);
+    const listNums = outlineNumbering ? null : computeListNumbers(scopeNodes);
+    const numbers = outlineNums.map((n, i) => n || (listNums && listNums[i] ? listNums[i] + '.' : ''));
     return scopeNodes
         .map((node, idx) => {
         const p = buildPrefix(scopeNodes, idx, treeIndentWidth, -minDepth);
@@ -26554,7 +26649,9 @@ function serializeClipboardHtmlCore(scopeNodes, rebaseDepth, outlineNumbering, t
         return '';
     const minDepth = rebaseDepth ? Math.min(...scopeNodes.map((n) => n.depth)) : 0;
     const colors = getClipboardExportColorsCore();
-    const numbers = computeOutlineNumbers(scopeNodes, outlineNumbering);
+    const outlineNums = computeOutlineNumbers(scopeNodes, outlineNumbering);
+    const listNums = outlineNumbering ? null : computeListNumbers(scopeNodes);
+    const numbers = outlineNums.map((n, i) => n || (listNums && listNums[i] ? listNums[i] + '.' : ''));
     const rows = scopeNodes
         .map((node, idx) => {
         const p = buildPrefix(scopeNodes, idx, treeIndentWidth, -minDepth);
@@ -26984,9 +27081,11 @@ function buildNodeClipboardPayload(scopeNodes){
     // pasted row's text can differ slightly (a plain-text serializer may change it), so paste moves
     // the marks onto it with adjustRowMarksForText.
     const mk=rowMarksOf(n);
-    if(!dgs.length&&!imgs.length&&!qas.length&&!rms.length&&!mk.length)return;
+    // A numbered list (`nb`) rides along too, so a copied list pastes numbered.
+    if(!dgs.length&&!imgs.length&&!qas.length&&!rms.length&&!mk.length&&!n.numbered)return;
     extras.push({
       i,
+      ...(n.numbered?{nb:1}:{}),
       ...(mk.length?{mk,mt:n.text||''}:{}),
       ...(imgs.length?{imgs:JSON.parse(JSON.stringify(imgs))}:{}),
       ...(qas.length?{qas}:{}),
@@ -27048,7 +27147,7 @@ function nodesToOutlineXmlCore(list, startIdx, parentDepth, includeNotes, stripH
             const checkboxPrefix = node.isCheckbox ? (node.checked ? '[x] ' : '[ ] ') : '';
             const text = escAttrLocal(checkboxPrefix + label);
             const noteText = node.note ? stripHtmlToText(node.note) : '';
-            const noteAttr = includeNotes && noteText ? ` _note="${escAttrLocal(noteText)}"` : '';
+            const noteAttr = (includeNotes && noteText ? ` _note="${escAttrLocal(noteText)}"` : '') + (node.numbered && hasKids ? ' _numbered="true"' : '');
             xml += hasKids
                 ? `<outline text="${text}"${noteAttr}>${nodesToOutlineXmlCore(list, i + 1, parentDepth + 1, includeNotes, stripHtmlToText)}</outline>`
                 : `<outline text="${text}"${noteAttr}/>`;
@@ -27568,6 +27667,13 @@ function parseMarkdown(input) {
             }
             // A quote marker inside a list item is just text.
             const depth = sectionDepth() + listStack.length;
+            // A numbered item numbers its parent's list: the item it sits in, else its heading. A
+            // numbered list at the very top of a file has no parent row and comes in as bullets.
+            if (/^\d/.test(li[2])) {
+                const parent = listStack.length ? listStack[listStack.length - 1].row : headingStack.length ? headingStack[headingStack.length - 1].row : null;
+                if (parent)
+                    parent.numbered = true;
+            }
             headingForNote = null;
             const row = newRow(content, depth, { isCheckbox, checked });
             listStack.push({ markerIndent, contentIndent, row });
@@ -27620,6 +27726,8 @@ function parseMarkdown(input) {
         blankSeen = false;
     }
     flushPara();
+    // Numbers typed into the words ("1. Step", "2. Step") become a real numbered list.
+    repairTypedNumbers(rows);
     function handleHeading(level, rawText) {
         closeLists();
         const text = rawText.trim();
@@ -27640,7 +27748,7 @@ function parseMarkdown(input) {
         // Size by nesting: a top-level heading is Heading 1 whatever its #-level.
         const size = Math.min(3, headingStack.length + 1);
         headingForNote = newRow(text, depth, { heading: size });
-        headingStack.push({ level, depth });
+        headingStack.push({ level, depth, row: headingForNote });
         blankSeen = false;
     }
     return { title, rows, simplified };
@@ -27928,7 +28036,10 @@ function mdGridToTable(grid) {
 function mdSerializeDocument(title, rows) {
     const out = ['# ' + mdInline((title || 'Untitled').trim() || 'Untitled', [], true), ''];
     const headingAt = []; // per depth: is the open row at this depth a heading block?
-    const headingDepth = []; // per depth: depth of the nearest heading block at or above
+    // Per depth: the column a list item's words start at, so its children indent under them
+    // (2 for "- ", 3 for "1. ", 4 for "10. "); -1 for a heading.
+    const contentCol = [];
+    const listNums = computeListNumbers(rows);
     let prevWasList = false;
     const blank = () => { if (out[out.length - 1] !== '')
         out.push(''); };
@@ -27947,16 +28058,16 @@ function mdSerializeDocument(title, rows) {
             b.pop();
         return b;
     };
-    for (const r of rows) {
+    rows.forEach((r, ri) => {
         const depth = Math.max(0, Math.floor(r.depth || 0));
         headingAt.length = depth;
-        headingDepth.length = depth;
+        contentCol.length = depth;
         const parentIsHeading = depth === 0 || headingAt[depth - 1] === true;
         const isHeading = !!r.heading && r.heading > 0 && parentIsHeading;
         headingAt[depth] = isHeading;
-        headingDepth[depth] = isHeading ? depth : depth > 0 ? headingDepth[depth - 1] : -1;
         const blocks = blocksFor(r);
         if (isHeading) {
+            contentCol[depth] = -1;
             blank();
             out.push('#'.repeat(Math.min(6, depth + 2)) + ' ' + mdInline(r.text, r.marks));
             if (blocks.length) {
@@ -27965,24 +28076,27 @@ function mdSerializeDocument(title, rows) {
             }
             out.push('');
             prevWasList = false;
-            continue;
+            return;
         }
-        const base = depth > 0 ? headingDepth[depth - 1] + 1 : 0;
-        const indent = '  '.repeat(Math.max(0, depth - base));
+        const parentCol = depth > 0 ? contentCol[depth - 1] ?? -1 : -1;
+        const indent = ' '.repeat(Math.max(0, parentCol));
+        const marker = listNums[ri] ? listNums[ri] + '. ' : '- ';
+        contentCol[depth] = indent.length + marker.length;
         if (!prevWasList)
             blank();
         const box = r.isCheckbox ? (r.checked ? '[x] ' : '[ ] ') : '';
         // A row whose words would read as a task box or a list marker gets its first character escaped.
         const body = mdInline(r.text, r.marks, true);
-        out.push(indent + '- ' + box + (box ? body : body.replace(/^\[([ xX])\]/, '\\[$1\\]')));
+        out.push(indent + marker + box + (box ? body : body.replace(/^\[([ xX])\]/, '\\[$1\\]')));
         if (blocks.length) {
+            const under = ' '.repeat(contentCol[depth]);
             out.push('');
             for (const l of blocks)
-                out.push(l ? indent + '  ' + l : '');
+                out.push(l ? under + l : '');
             out.push('');
         }
         prevWasList = true;
-    }
+    });
     while (out.length && out[out.length - 1] === '')
         out.pop();
     return out.join('\n') + '\n';
@@ -28378,7 +28492,7 @@ function parseOpmlToTreeNodes(xmlText){
         let isCheckbox=false; let checked=false;
         const cbMatch=text.match(/^\[( |x)\]\s?(.*)$/i);
         if(cbMatch){isCheckbox=true; checked=cbMatch[1].toLowerCase()==='x'; text=cbMatch[2];}
-        out.push({text,depth,note,isCheckbox,checked,styles:emptyStyles()});
+        out.push({text,depth,note,isCheckbox,checked,styles:emptyStyles(),...(child.getAttribute('_numbered')==='true'?{numbered:true}:{})});
         walk(child,depth+1);
       }
     });
@@ -28398,7 +28512,7 @@ function importOpmlText(xmlText){
   const mapped=parsed.map(n=>makeNodeFromTyped(n.text||'',n.depth,null,n.styles||emptyStyles(),sakuraSanitizeRichHtml(n.note||''),!!n.isCheckbox,Array.isArray(n.tables)?n.tables.map(t=>tidyTableHtml(sakuraSanitizeRichHtml(t))):n.tables));
   // makeNode() has no `checked` parameter (every new node starts unchecked) — apply the
   // checkbox state parsed out of the OPML text as a second pass instead of losing it.
-  mapped.forEach((node,i)=>{ if(parsed[i].isCheckbox && parsed[i].checked) node.checked=true; });
+  mapped.forEach((node,i)=>{ if(parsed[i].isCheckbox && parsed[i].checked) node.checked=true; if(parsed[i].numbered) node.numbered=true; });
   nodes=mapped;
   rebuildParentIds();
   selectedId=mapped[0]?.id??null; selectAllMode=false; clearMultiSelection(); selectionAnchorId=selectedId; editingId=null; flashNodeId=null;
@@ -28424,6 +28538,7 @@ function importMarkdownText(text,fileName){
   const mapped=parsed.rows.map(r=>{
     const n=makeNode(r.text,r.depth,null,{...emptyStyles(),heading:r.heading},sakuraSanitizeRichHtml(r.note||''),r.isCheckbox,r.tables.map(t=>tidyTableHtml(sakuraSanitizeRichHtml(t))),undefined,r.marks);
     if(r.isCheckbox&&r.checked){ n.checked=true; n.completedAt=Date.now(); }
+    if(r.numbered)n.numbered=true;
     return n;
   });
   nodes=mapped;
@@ -28459,7 +28574,7 @@ function exportMarkdown(){
     for(const q of qaItems.filter(q=>q.sourceNodeId===n.id)){ counts.thread++; const t=stripHtmlToText(q.question||q.text||'').trim(); mentions.push('Thread'+(t?': '+t:'')); }
     for(const r of remarks.filter(r=>r.anchorNodeId===n.id)){ counts.remark++; const t=stripHtmlToText(r.title||r.text||'').trim(); mentions.push('Remark'+(t?': '+t:'')); }
     const tables=(Array.isArray(n.tables)?n.tables:[]).map(t=>{ const tb=htmlRoot(t).querySelector('table'); return tb?mdTableToGrid(tb):[]; }).filter(g=>g.length);
-    return {text:n.text||'',marks:rowMarksOf(n),depth:n.depth||0,heading:n.styles?.heading||0,isCheckbox:!!n.isCheckbox,checked:!!n.checked,noteMd:n.note?mdFromNoteHtml(htmlRoot(n.note)):'',tables,mentions};
+    return {text:n.text||'',marks:rowMarksOf(n),depth:n.depth||0,heading:n.styles?.heading||0,isCheckbox:!!n.isCheckbox,checked:!!n.checked,numbered:!!n.numbered,noteMd:n.note?mdFromNoteHtml(htmlRoot(n.note)):'',tables,mentions};
   });
   const title=(getMeta().title||'').trim();
   const fileTitle=(title||'Untitled').replace(/[\\/:*?"<>|]+/g,'_');
@@ -29037,6 +29152,7 @@ async function runQuickAction(action,ctxNodeId,anchorRect){
   if(action==='date-time'){if(selectedId!==null)insertDateTime(); return}
   if(action==='tags'){if(_ctxNodeId!==null)openTagManager(_ctxNodeId,anchorRect); return}
   if(action==='version-history'){if(_ctxNodeId!==null)openNodeVersionHistory(_ctxNodeId); return}
+  if(action==='numbered'){if(_ctxNodeId===null)return; const _ni=getIndex(nodes,_ctxNodeId); if(_ni<0||!nodeHasChildren(nodes,_ni))return; setNodeNumbered(_ctxNodeId,!nodes[_ni].numbered); return}
   if(action==='no-export'){if(_ctxNodeId===null)return; const _ni=getIndex(nodes,_ctxNodeId); if(_ni<0)return; const ids=multiSelectedIds.length>1&&multiSelectedIds.includes(_ctxNodeId)?multiSelectedIds.slice():[_ctxNodeId]; setNodesNoExport(ids,!nodes[_ni].noExport); return}
   if(action==='toggle-checkbox'){const _ri=getIndex(nodes,_ctxNodeId); if(_ri>=0){if(nodes[_ri].isCheckbox)removeCheckbox(_ctxNodeId); else convertToCheckbox(_ctxNodeId);} return}
   if(action==='toggle-checked'){if(multiSelectedIds.length>1)toggleCheckboxMulti(); else{const _ri2=getIndex(nodes,_ctxNodeId); if(_ri2>=0&&isCheckboxNode(nodes[_ri2]))toggleCheckbox(_ctxNodeId);} return}
@@ -34455,6 +34571,8 @@ function renderPreviewBody(){
   let lastHeadingLevel=null;
   const HEADING_GAP_LOOSE={1:'26px',2:'20px',3:'16px',4:'13px',5:'11px',6:'9px',7:'9px'};
   const HEADING_GAP_TIGHT={1:'12px',2:'10px',3:'8px',4:'6px',5:'5px',6:'4px',7:'4px'};
+  // Numbered lists count only the rows that print (rows left out of the export don't take a number).
+  const pvListNums=new Map(); { const kept=withoutNoExportNodes(nodes); computeListNumbers(kept).forEach((n,i)=>{ if(n)pvListNums.set(kept[i].id,n); }); }
   nodes.forEach((node,idx)=>{
     if(skipDepth!==null){ if(node.depth>skipDepth){return;} else {skipDepth=null;} }
     if(node.noExport){ skipDepth=node.depth; return; }
@@ -34511,7 +34629,8 @@ function renderPreviewBody(){
         cb.addEventListener('click',e=>{ e.stopPropagation(); toggleCheckbox(node.id); renderPreviewBody(); });
         row.appendChild(cb);
       } else {
-        const bullet=document.createElement('span'); bullet.className='pv-bullet'; bullet.textContent='•';
+        const listNum=pvListNums.get(node.id);
+        const bullet=document.createElement('span'); bullet.className='pv-bullet'+(listNum?' pv-num':''); bullet.textContent=listNum?listNum+'.':'•';
         row.appendChild(bullet);
       }
       const txt=document.createElement('div'); txt.className='pv-text'+(depth>=4?' pv-deep':depth===3?' pv-d3':depth===2?' pv-d2':'')+' '+previewStyleClasses(node);
