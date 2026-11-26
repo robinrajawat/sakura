@@ -10,6 +10,7 @@ import {
 } from '../../src/utils/serializeClipboardHtml';
 import { buildPrefix } from '../../src/core/nodeQueries';
 import { computeOutlineNumbers } from '../../src/utils/computeOutlineNumbers';
+import { computeListNumbers } from '../../src/utils/listNumbers';
 import { escapeHtml } from '../../src/utils/escapeHtml';
 import { rowMarksOf, rowMarksToHtml } from '../../src/utils/rowMarks';
 
@@ -22,12 +23,14 @@ beforeAll(() => {
   const g = globalThis as unknown as {
     buildPrefix: typeof buildPrefix;
     computeOutlineNumbers: typeof computeOutlineNumbers;
+    computeListNumbers: typeof computeListNumbers;
     escapeHtml: typeof escapeHtml;
     rowMarksOf: typeof rowMarksOf;
     rowMarksToHtml: typeof rowMarksToHtml;
   };
   g.buildPrefix = buildPrefix;
   g.computeOutlineNumbers = computeOutlineNumbers;
+  g.computeListNumbers = computeListNumbers;
   g.escapeHtml = escapeHtml;
   g.rowMarksOf = rowMarksOf;
   g.rowMarksToHtml = rowMarksToHtml;

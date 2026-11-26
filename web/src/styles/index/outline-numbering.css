@@ -1,3 +1,12 @@
 /* === Outline numbering === */
 .node-number{color:var(--muted);margin-right:7px;font-variant-numeric:tabular-nums;user-select:none;font-size:.92em;flex:0 0 auto}
 
+/* Numbered lists (owner 2026-11-26): a numbered row's children show "1." where their dot was. The
+   dot element stays (it is the drag and fold handle); only what it draws changes. */
+.node-dot.is-num,.fold-dot.is-num{width:1.75em;min-width:0;height:var(--row-line);margin:0 .35em 0 0;font-size:inherit;font-weight:400;justify-content:flex-end}
+/* One fixed, right-aligned column (fits "10."), so 9. and 10. start their words at the same place;
+   the margin also replaces the phone's wider fold-dot target margins, which would overlap the words. */
+html.phone .fold-dot.is-num{width:1.75em;height:var(--row-line);margin:0 .35em 0 0}
+.node-dot.is-num::before,.fold-dot.is-num::before{content:attr(data-num);width:auto;height:auto;border-radius:0;background:none;opacity:1;font-variant-numeric:tabular-nums}
+.fold-dot.is-num.is-folded::before{width:auto;height:auto;font-weight:600}
+.fold-dot.is-num.is-folded::after{content:none}

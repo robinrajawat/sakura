@@ -137,3 +137,16 @@ describe('mcpNotes', () => {
     expect(slow).toMatch(/Nothing found for "nothing-matches"\. Searched the \d+ most recently changed of 120 documents \(time limit\)/);
   });
 });
+
+describe('numbered lists', () => {
+  it('a numbered row\'s children read as 1. 2.', () => {
+    const md = documentToMarkdown({ title: 'D', nodes: [
+      { id: 1, text: 'Runtime flow', depth: 0, numbered: true },
+      { id: 2, text: 'Create', depth: 1 },
+      { id: 3, text: 'Detail', depth: 2 },
+      { id: 4, text: 'Confirm', depth: 1 },
+    ] });
+    expect(md).toContain('- Runtime flow\n  1. Create\n     - Detail\n  2. Confirm');
+  });
+});
+

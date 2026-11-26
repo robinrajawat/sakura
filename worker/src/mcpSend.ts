@@ -93,6 +93,7 @@ export function buildDraft(input: DraftInput, now: number): DraftBuilt | string 
       tags: [],
       isCheckbox: r.isCheckbox,
       checked: r.checked,
+      ...(r.numbered ? { numbered: true } : {}),
       ...(marks.length ? { marks, marksText: text } : {}),
       ...(marker ? { marker, markerAt: now } : {}),
       createdAt: now,

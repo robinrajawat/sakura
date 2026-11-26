@@ -49,6 +49,8 @@ export interface OpmlNode extends QueryableNode {
   isCheckbox?: boolean;
   checked?: boolean;
   note?: string;
+  /** Its children are a numbered list (listNumbers.ts): written as `_numbered="true"`. */
+  numbered?: boolean;
 }
 
 /** Pure once `stripHtmlToText` is supplied: matches index.html's own `nodesToOutlineXml` exactly
@@ -76,7 +78,7 @@ export function nodesToOutlineXmlCore(
       const checkboxPrefix = node.isCheckbox ? (node.checked ? '[x] ' : '[ ] ') : '';
       const text = escAttrLocal(checkboxPrefix + label);
       const noteText = node.note ? stripHtmlToText(node.note) : '';
-      const noteAttr = includeNotes && noteText ? ` _note="${escAttrLocal(noteText)}"` : '';
+      const noteAttr = (includeNotes && noteText ? ` _note="${escAttrLocal(noteText)}"` : '') + (node.numbered && hasKids ? ' _numbered="true"' : '');
       xml += hasKids
         ? `<outline text="${text}"${noteAttr}>${nodesToOutlineXmlCore(list, i + 1, parentDepth + 1, includeNotes, stripHtmlToText)}</outline>`
         : `<outline text="${text}"${noteAttr}/>`;

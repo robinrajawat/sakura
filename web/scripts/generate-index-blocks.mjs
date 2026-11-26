@@ -298,6 +298,14 @@ initVaultState({
     footer: ''
   },
   {
+    name: 'listNumbers',
+    sourceFile: 'src/utils/listNumbers.ts',
+    testFile: 'tests/unit/listNumbers.test.ts',
+    // Numbered lists (a row's `numbered` flag numbers its direct children). New functions, called
+    // from the editor render, the PDF, the exports and Markdown import.
+    footer: ''
+  },
+  {
     name: 'pastedColours',
     sourceFile: 'src/utils/pastedColours.ts',
     testFile: 'tests/unit/pastedColours.test.ts',

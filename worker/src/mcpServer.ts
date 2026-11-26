@@ -69,7 +69,7 @@ export const TOOLS = [
   {
     name: 'send_document',
     title: 'Send a new draft to Sakura',
-    description: 'Creates a NEW Sakura document from Markdown and puts it in the person\'s Sakura inbox as a draft. It never changes an existing document: the person previews it in Sakura and decides to Add or Decline it, and it starts with status Draft. Use # headings and - list items (nesting = outline depth), a paragraph after a blank line, indented under an item, becomes its note, Markdown tables become tables, "- [ ]" a checkbox. Put [follow-up], [agreed] or [out of scope] in a list item to set its status. Optional draw.io diagrams (XML) are placed under the row whose words contain "under". To revise a draft still waiting in the inbox, pass its id as "replaces". Needs the person\'s permission to send drafts (asked when connecting).',
+    description: 'Creates a NEW Sakura document from Markdown and puts it in the person\'s Sakura inbox as a draft. It never changes an existing document: the person previews it in Sakura and decides to Add or Decline it, and it starts with status Draft. Use # headings and - list items (nesting = outline depth), a paragraph after a blank line, indented under an item, becomes its note, Markdown tables become tables, "- [ ]" a checkbox, "1." items a numbered list (use them for steps in order; Sakura shows the numbers, so do not type them into the words). Put [follow-up], [agreed] or [out of scope] in a list item to set its status. Optional draw.io diagrams (XML) are placed under the row whose words contain "under". To revise a draft still waiting in the inbox, pass its id as "replaces". Needs the person\'s permission to send drafts (asked when connecting).',
     inputSchema: {
       type: 'object',
       properties: {

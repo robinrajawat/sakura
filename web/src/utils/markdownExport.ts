@@ -8,6 +8,8 @@
  * `markdownExport` block; `exportMarkdown` in index.html gathers the rows and downloads the file.
  */
 
+import { computeListNumbers } from './listNumbers';
+
 export interface MdExportMark {
   s: number;
   e: number;
@@ -22,6 +24,8 @@ export interface MdExportRow {
   heading?: number;
   isCheckbox?: boolean;
   checked?: boolean;
+  /** Its children are a numbered list (listNumbers.ts): they come out as `1.`, `2.`… */
+  numbered?: boolean;
   /** The note as Markdown (from mdFromNoteHtml), '' when none. */
   noteMd?: string;
   /** Each table as rows of cell text (from mdTableToGrid). */
@@ -269,7 +273,10 @@ export function mdGridToTable(grid: string[][]): string[] {
 export function mdSerializeDocument(title: string, rows: MdExportRow[]): string {
   const out: string[] = ['# ' + mdInline((title || 'Untitled').trim() || 'Untitled', [], true), ''];
   const headingAt: boolean[] = []; // per depth: is the open row at this depth a heading block?
-  const headingDepth: number[] = []; // per depth: depth of the nearest heading block at or above
+  // Per depth: the column a list item's words start at, so its children indent under them
+  // (2 for "- ", 3 for "1. ", 4 for "10. "); -1 for a heading.
+  const contentCol: number[] = [];
+  const listNums = computeListNumbers(rows);
   let prevWasList = false;
 
   const blank = () => { if (out[out.length - 1] !== '') out.push(''); };
@@ -282,38 +289,41 @@ export function mdSerializeDocument(title: string, rows: MdExportRow[]): string 
     return b;
   };
 
-  for (const r of rows) {
+  rows.forEach((r, ri) => {
     const depth = Math.max(0, Math.floor(r.depth || 0));
     headingAt.length = depth;
-    headingDepth.length = depth;
+    contentCol.length = depth;
     const parentIsHeading = depth === 0 || headingAt[depth - 1] === true;
     const isHeading = !!r.heading && r.heading > 0 && parentIsHeading;
     headingAt[depth] = isHeading;
-    headingDepth[depth] = isHeading ? depth : depth > 0 ? headingDepth[depth - 1] : -1;
     const blocks = blocksFor(r);
 
     if (isHeading) {
+      contentCol[depth] = -1;
       blank();
       out.push('#'.repeat(Math.min(6, depth + 2)) + ' ' + mdInline(r.text, r.marks));
       if (blocks.length) { out.push(''); out.push(...blocks); }
       out.push('');
       prevWasList = false;
-      continue;
+      return;
     }
-    const base = depth > 0 ? headingDepth[depth - 1] + 1 : 0;
-    const indent = '  '.repeat(Math.max(0, depth - base));
+    const parentCol = depth > 0 ? contentCol[depth - 1] ?? -1 : -1;
+    const indent = ' '.repeat(Math.max(0, parentCol));
+    const marker = listNums[ri] ? listNums[ri] + '. ' : '- ';
+    contentCol[depth] = indent.length + marker.length;
     if (!prevWasList) blank();
     const box = r.isCheckbox ? (r.checked ? '[x] ' : '[ ] ') : '';
     // A row whose words would read as a task box or a list marker gets its first character escaped.
     const body = mdInline(r.text, r.marks, true);
-    out.push(indent + '- ' + box + (box ? body : body.replace(/^\[([ xX])\]/, '\\[$1\\]')));
+    out.push(indent + marker + box + (box ? body : body.replace(/^\[([ xX])\]/, '\\[$1\\]')));
     if (blocks.length) {
+      const under = ' '.repeat(contentCol[depth]);
       out.push('');
-      for (const l of blocks) out.push(l ? indent + '  ' + l : '');
+      for (const l of blocks) out.push(l ? under + l : '');
       out.push('');
     }
     prevWasList = true;
-  }
+  });
   while (out.length && out[out.length - 1] === '') out.pop();
   return out.join('\n') + '\n';
 }

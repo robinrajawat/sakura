@@ -36,6 +36,9 @@ declare function buildPrefix(
 
 declare function computeOutlineNumbers(list: QueryableNode[], outlineNumbering: boolean): string[];
 
+// Numbered lists (listNumbers.ts): used when whole-document outline numbering is off.
+declare function computeListNumbers(list: { depth: number; numbered?: boolean }[]): number[];
+
 declare function getNodePlainText(node: QueryableNode): string;
 
 /** Pure: matches index.html's own `serializeTreeText` exactly — renders `scopeNodes` as an
@@ -54,7 +57,9 @@ export function serializeTreeTextCore(
 ): string {
   if (!scopeNodes.length) return '';
   const minDepth = rebaseDepth ? Math.min(...scopeNodes.map((n) => n.depth)) : 0;
-  const numbers = computeOutlineNumbers(scopeNodes, outlineNumbering);
+  const outlineNums = computeOutlineNumbers(scopeNodes, outlineNumbering);
+  const listNums = outlineNumbering ? null : computeListNumbers(scopeNodes as { depth: number; numbered?: boolean }[]);
+  const numbers = outlineNums.map((n, i) => n || (listNums && listNums[i] ? listNums[i] + '.' : ''));
   return scopeNodes
     .map((node, idx) => {
       const p = buildPrefix(scopeNodes, idx, treeIndentWidth, -minDepth);

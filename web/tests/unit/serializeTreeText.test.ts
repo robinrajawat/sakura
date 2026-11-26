@@ -2,6 +2,7 @@ import { describe, it, expect, beforeAll } from 'vitest';
 import { serializeTreeTextCore } from '../../src/utils/serializeTreeText';
 import { buildPrefix } from '../../src/core/nodeQueries';
 import { computeOutlineNumbers } from '../../src/utils/computeOutlineNumbers';
+import { computeListNumbers } from '../../src/utils/listNumbers';
 import { getNodePlainText } from '../../src/utils/stripSemanticMarkers';
 import type { QueryableNode } from '../../src/core/nodeQueries';
 
@@ -14,10 +15,12 @@ beforeAll(() => {
   const g = globalThis as unknown as {
     buildPrefix: typeof buildPrefix;
     computeOutlineNumbers: typeof computeOutlineNumbers;
+    computeListNumbers: typeof computeListNumbers;
     getNodePlainText: typeof getNodePlainText;
   };
   g.buildPrefix = buildPrefix;
   g.computeOutlineNumbers = computeOutlineNumbers;
+  g.computeListNumbers = computeListNumbers;
   g.getNodePlainText = getNodePlainText;
 });
 
@@ -96,3 +99,12 @@ describe('serializeTreeTextCore', () => {
     expect(result).toBe(result.trimEnd());
   });
 });
+
+describe('numbered lists', () => {
+  it('a numbered row\'s children copy as 1. 2.; outline numbering takes over when on', () => {
+    const list = [{ ...node(0, 'Steps'), numbered: true }, node(1, 'One'), node(2, 'detail'), node(1, 'Two')] as QueryableNode[];
+    expect(serializeTreeTextCore(list, false, false, 4, true).split('\n').map((l) => l.trim())).toEqual(['Steps', '1. One', 'detail', '2. Two']);
+    expect(serializeTreeTextCore(list, false, true, 4, true).split('\n').map((l) => l.trim())).toEqual(['1 Steps', '1.1 One', '1.1.1 detail', '1.2 Two']);
+  });
+});
+
